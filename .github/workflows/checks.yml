@@ -1,0 +1,46 @@
+name: Tests and assets
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Configure test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+      - name: Install and compile frontend
+        run: |
+          npm install --ignore-scripts
+          npm run build
+      - name: Save prebuilt Vite assets for Hostinger (no Node required on server)
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-vite-build
+          path: public/build/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Run migrations
+        run: php artisan migrate --env=testing --force
+      - name: Run tests
+        run: php artisan test
