@@ -1,0 +1,66 @@
+/* Mobile storefront direction based on the supplied layout reference.
+   Layout patterns only: all imagery, brand marks and colors remain Polaris-owned. */
+.mobile-site-header{display:none}
+.slider-count{display:none}
+@media(max-width:760px){
+  body.is-home{padding-bottom:0}
+  body.is-home .mobile-bottom-nav{display:none}
+  .desktop-site-header{display:none}
+  .mobile-site-header{display:block;position:relative;z-index:35;background:#fff;box-shadow:0 1px 0 #e8ecee}
+  .mobile-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:66px;padding:0 17px;gap:8px}
+  .mobile-menu{justify-self:start}
+  .mobile-menu summary{display:grid;place-items:center;width:42px;height:44px;cursor:pointer;list-style:none}
+  .mobile-menu summary::-webkit-details-marker{display:none}
+  .mobile-menu summary svg,.mobile-top-actions svg{width:27px;height:27px;stroke:#202528;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .mobile-menu-panel{position:absolute;left:0;top:66px;width:min(85vw,355px);max-height:calc(100dvh - 95px);overflow:auto;background:#fff;border:1px solid #e1e7e9;border-radius:0 0 15px 0;box-shadow:0 24px 38px #142f3d25;padding:16px 18px 25px;z-index:70}
+  .mobile-menu-heading{font-weight:780;font-size:1.05rem;padding:9px 5px 16px}
+  .mobile-menu-panel a{display:flex;justify-content:space-between;align-items:center;padding:15px 5px;border-top:1px solid #ecf0f1;font-size:.94rem;font-weight:620}
+  .mobile-menu-panel a span{font-size:1.25rem;color:#839398}
+  .mobile-center-brand{display:flex;align-items:center;justify-content:center;justify-self:center}
+  .mobile-brand-mark{display:grid;place-items:center;color:#078790;width:47px;height:47px}
+  .mobile-brand-mark svg{width:43px;height:43px;filter:drop-shadow(0 2px 1px #1e4c4d15)}
+  .mobile-brand-name{display:none}
+  .mobile-top-actions{display:flex;gap:11px;justify-self:end;align-items:center}
+  .mobile-icon-disabled{display:grid;place-items:center;width:31px;height:42px;opacity:.8}
+  .mobile-search-bar{display:flex;align-items:center;gap:7px;height:44px;margin:4px 16px 13px;padding:3px 4px 3px 16px;border:1px solid #e1e6e8;background:#fff;border-radius:999px}
+  .mobile-search-bar input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#21323b;font-size:15px}
+  .mobile-search-bar input::placeholder{color:#9ba3a7}
+  .mobile-search-bar button{flex:0 0 38px;width:38px;height:38px;background:#f1f3f4;border:0;border-radius:50%;display:grid;place-items:center;color:#60686d}
+  .mobile-search-bar svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linejoin:round;stroke-linecap:round}
+  .mobile-category-pills{display:flex;gap:9px;align-items:center;overflow:auto;scrollbar-width:none;white-space:nowrap;padding:0 16px 15px;scroll-snap-type:x proximity}
+  .mobile-category-pills::-webkit-scrollbar{display:none}
+  .mobile-pill,.mobile-pill-home{height:37px;border:1px solid #e4e8ea;display:inline-flex;align-items:center;justify-content:center;flex:none;background:#fff;border-radius:999px;color:#4f585d;font-size:14px;font-weight:530;padding:0 15px;scroll-snap-align:start}
+  .mobile-pill-home{padding:0;width:44px;background:#f4f6f6}
+  .mobile-pill-home svg{width:21px;height:21px;stroke:#65757c;stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round;fill:none}
+  .homepage-hero.container{width:100%;max-width:none;margin:0;padding:0}
+  .homepage-hero .visual-slider{aspect-ratio:755/426;background:#0b2938;border-radius:0;overflow:hidden}
+  .homepage-hero .slide-item picture,.homepage-hero .slide-item img{width:100%;height:100%}
+  .homepage-hero .slide-item img{object-fit:cover}
+  .homepage-hero .slider-arrow{display:none}
+  .homepage-hero .slider-dots{position:absolute}
+  .homepage-hero .slider-count{display:block;position:absolute;right:10px;bottom:10px;z-index:4;color:#fff;background:#111c24aa;border-radius:7px;padding:4px 8px;font-size:12px;line-height:1.3;font-variant-numeric:tabular-nums}
+  .category-section.shop-section{padding-top:22px}
+  .category-section .section-heading{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .category-section .category-grid{display:flex;flex-wrap:nowrap;gap:13px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:0 16px 9px;margin:0 -15px}
+  .category-section .category-grid::-webkit-scrollbar{display:none}
+  .category-section .category-card{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex:0 0 100px;min-width:0;max-width:100px;text-align:center;scroll-snap-align:start;background:transparent!important;transform:none!important}
+  .category-section .category-art{width:100%;height:103px;aspect-ratio:auto;display:grid;place-items:center;border-radius:10px;background:#f4f5f6;overflow:hidden}
+  .category-section .category-art img{display:block;width:100%;height:100%;object-fit:contain;padding:12px}
+  .category-section .category-name{display:block;font-size:12px;line-height:1.28;min-height:2.56em;font-weight:520;letter-spacing:0;color:#2e363a}
+  .banner-strip.container{max-width:none;width:100%;padding:0;margin:18px 0 0;border-radius:0;background:none;overflow:visible}
+  .promo-track{display:flex;gap:11px;overflow:auto;scrollbar-width:none;scroll-snap-type:x mandatory;padding:0 16px 8px}
+  .promo-track::-webkit-scrollbar{display:none}
+  .promo-track picture,.promo-track>a,.promo-track>picture{display:block;flex:0 0 82vw;width:82vw;max-width:455px;aspect-ratio:3.65/1;border:1px solid #e7e9eb;border-radius:9px;overflow:hidden;scroll-snap-align:start;background:#f2f4f6}
+  .promo-track>a picture{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0}
+  .promo-track img{width:100%;height:100%;object-fit:cover}
+  .shop-section:not(.category-section){padding-top:31px}
+  .shop-section:not(.category-section) .section-heading{padding:0;margin-bottom:18px}
+  .shop-section:not(.category-section) .eyebrow{display:none}
+  .shop-section:not(.category-section) .section-heading h2{font-size:21px;letter-spacing:-.035em;font-weight:750}
+  .shop-section:not(.category-section) .section-all{font-size:13px;color:#0b838a}
+  .shop-section:not(.category-section) .section-all span{font-size:17px}
+  .shop-section:not(.category-section) .product-grid{display:flex;flex-wrap:nowrap;gap:11px;overflow:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:0 1px 10px}
+  .shop-section:not(.category-section) .product-grid::-webkit-scrollbar{display:none}
+  .shop-section:not(.category-section) .product-card{flex:0 0 43%;max-width:210px;scroll-snap-align:start}
+  .reassurance-strip{margin-top:24px}
+}

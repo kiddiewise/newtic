@@ -4,3 +4,5 @@
 @import './site-pages.css';
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
+
+@import './petlebi-mobile.css';
