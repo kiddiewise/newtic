@@ -49,6 +49,12 @@ class PolarisDemoSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        $slider->slides()->updateOrCreate(['sort_order' => 1], [
+            'desktop_image_path' => 'assets/banners/demo-sea-alt.svg',
+            'mobile_image_path' => 'assets/banners/demo-sea-mobile-alt.svg',
+            'is_active' => true,
+        ]);
+
         $categorySection = HomeSection::updateOrCreate(['type' => 'categories', 'sort_order' => 1], [
             'title' => 'Kategorileri keşfet', 'is_active' => true,
         ]);
