@@ -13,14 +13,14 @@ class PolarisDemoSeeder extends Seeder
     {
         $categories = [];
         foreach ([
-            ['Renkli Surf Kurşun', 'renkli-surf-kursun'],
-            ['Fosforlu Kurşun', 'fosforlu-kursun'],
-            ['Kaplamasız Kurşun', 'kaplamasiz-kursun'],
-            ['Olta Takımları', 'olta-takimlari'],
-        ] as $i => [$name, $slug]) {
+            ['Renkli Surf Kurşun', 'renkli-surf-kursun', 'assets/categories/renkli-kursun.svg'],
+            ['Fosforlu Kurşun', 'fosforlu-kursun', 'assets/categories/fosforlu-kursun.svg'],
+            ['Kaplamasız Kurşun', 'kaplamasiz-kursun', 'assets/categories/kaplamasiz-kursun.svg'],
+            ['Olta Takımları', 'olta-takimlari', 'assets/categories/olta-takimi.svg'],
+        ] as $i => [$name, $slug, $image]) {
             $categories[$slug] = Category::updateOrCreate(
                 ['slug' => $slug],
-                ['name' => $name, 'sort_order' => $i, 'is_active' => true],
+                ['name' => $name, 'image_path' => $image, 'sort_order' => $i, 'is_active' => true],
             );
         }
 
@@ -55,18 +55,23 @@ class PolarisDemoSeeder extends Seeder
         $categorySection->categories()->sync(collect(array_values($categories))
             ->mapWithKeys(fn ($category, $i) => [$category->id => ['sort_order' => $i]])->all());
 
-        $productsSection = HomeSection::updateOrCreate(['type' => 'products', 'sort_order' => 2], [
-            'title' => 'Popüler ürünler', 'is_active' => true,
+        $productsSection = HomeSection::updateOrCreate(['type' => 'products'], [
+            'title' => 'Popüler Ürünler', 'sort_order' => 3, 'is_active' => true,
         ]);
         $productsSection->products()->sync(collect($products)
             ->mapWithKeys(fn ($id, $i) => [$id => ['sort_order' => $i]])->all());
 
-        $banner = HomeSection::updateOrCreate(['type' => 'banner', 'sort_order' => 3], [
-            'title' => 'Koleksiyon bannerı', 'is_active' => true,
+        $banner = HomeSection::updateOrCreate(['type' => 'banner'], [
+            'title' => 'Koleksiyon bannerı', 'sort_order' => 2, 'is_active' => true,
         ]);
         $banner->slides()->updateOrCreate(['sort_order' => 0], [
-            'desktop_image_path' => 'assets/banners/demo-sea.svg',
-            'mobile_image_path' => 'assets/banners/demo-sea-mobile.svg',
+            'desktop_image_path' => 'assets/banners/promo-surf.svg',
+            'mobile_image_path' => 'assets/banners/promo-surf.svg',
+            'is_active' => true,
+        ]);
+        $banner->slides()->updateOrCreate(['sort_order' => 1], [
+            'desktop_image_path' => 'assets/banners/promo-glow.svg',
+            'mobile_image_path' => 'assets/banners/promo-glow.svg',
             'is_active' => true,
         ]);
     }

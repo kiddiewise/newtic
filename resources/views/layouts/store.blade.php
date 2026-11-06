@@ -9,7 +9,7 @@
   <meta name="description" content="@yield('description', 'Polaris Kurşun balıkçılık ekipmanları. Yeni mağaza tasarımı hazırlanmaktadır.')">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body class="{{ request()->routeIs('home') ? 'is-home' : '' }}">
 <a class="skip-link" href="#content">İçeriğe geç</a>
 <header class="site-header desktop-site-header">
   <div class="utility-bar"><div class="container utility-content">

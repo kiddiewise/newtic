@@ -2,7 +2,6 @@
 @import './site-base.css';
 @import './site-store.css';
 @import './site-pages.css';
+@import './petlebi-mobile.css';
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
-
-@import './petlebi-mobile.css';
