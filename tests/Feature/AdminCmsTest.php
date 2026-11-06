@@ -101,9 +101,9 @@ class AdminCmsTest extends TestCase
         $png = UploadedFile::fake()->image('banner.png', 800, 450);
         $this->post(route('admin.slides.store', $section), [
             'desktop_image' => $png,
-        ])->assertRedirect();
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
-        $new = $section->slides()->orderByDesc('id')->firstOrFail();
+        $new = $section->slides()->reorder()->orderByDesc('id')->firstOrFail();
         $this->assertStringStartsWith('storage/banners/', $new->desktop_image_path);
         Storage::disk('public')->assertExists(substr($new->desktop_image_path, 8));
 
