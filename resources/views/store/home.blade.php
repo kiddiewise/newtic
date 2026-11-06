@@ -2,8 +2,6 @@
 
 @section('content')
 <main id="content">
-  <div class="container stage-notice"><span class="notice-dot"></span> Yeni mağaza önizlemesi · Sipariş altyapısı henüz aktif değil</div>
-
   @forelse($sections as $section)
     @if($section->type === \App\Models\HomeSection::TYPE_SLIDER && $section->slides->isNotEmpty())
       <section class="container homepage-hero" aria-label="Ana görsel kaydırıcısı">
@@ -25,16 +23,17 @@
           @if($section->slides->count() > 1)
             <button type="button" class="slider-arrow slider-prev" data-slide-prev aria-label="Önceki görsel">‹</button>
             <button type="button" class="slider-arrow slider-next" data-slide-next aria-label="Sonraki görsel">›</button>
-            <div class="slider-dots" aria-label="Görsel seçimi">
+            <div class="slider-dots sr-only" aria-label="Görsel seçimi">
               @foreach($section->slides as $slide)
                 <button type="button" data-slide-dot="{{ $loop->index }}" aria-label="{{ $loop->iteration }}. görsele geç" aria-current="{{ $loop->first ? 'true' : 'false' }}"></button>
               @endforeach
             </div>
+            <div class="slider-count" aria-label="Görsel {{ $section->slides->count() }} görselden birincisi"><span data-slide-current>1</span>/<span>{{ $section->slides->count() }}</span></div>
           @endif
         </div>
       </section>
     @elseif($section->type === \App\Models\HomeSection::TYPE_CATEGORIES && $section->categories->isNotEmpty())
-      <section class="container shop-section" aria-labelledby="section-{{ $section->id }}">
+      <section class="container shop-section category-section" aria-labelledby="section-{{ $section->id }}">
         <div class="section-heading">
           <div><p class="eyebrow">KEŞFET</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Kategoriler' }}</h2></div>
           <a class="section-all" href="{{ route('search') }}">Tüm ürünler <span aria-hidden="true">↗</span></a>
@@ -42,7 +41,7 @@
         <div class="category-grid">
           @foreach($section->categories as $category)
             <a class="category-card" href="{{ route('category.show', $category->slug) }}">
-              <span class="category-art" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="26" stroke="currentColor" stroke-width="1.8" opacity=".24"/><path d="M18 43c16-20 31-23 48-11-9 2-16 6-23 13 8-3 15-3 23 1-18 0-32 7-42 19-1-7-3-14-6-22Z" fill="currentColor"/><circle cx="56" cy="32" r="2" fill="#fff"/></svg></span>
+              <span class="category-art"><img src="{{ asset($category->image_path ?: 'assets/categories/renkli-kursun.svg') }}" alt="" width="180" height="180" loading="lazy"></span>
               <span class="category-name">{{ $category->name }}</span>
               <span class="category-arrow" aria-hidden="true">↗</span>
             </a>
@@ -62,12 +61,13 @@
         </div>
       </section>
     @elseif($section->type === \App\Models\HomeSection::TYPE_BANNER && $section->slides->isNotEmpty())
-      <section class="container banner-strip" aria-label="Koleksiyon bannerları">
+      <section class="container banner-strip" aria-label="Koleksiyon bannerları"><div class="promo-track">
         @foreach($section->slides as $slide)
           @if($slide->link_url)<a href="{{ $slide->link_url }}" aria-label="Koleksiyonu incele">@endif
             <picture><source media="(max-width: 640px)" srcset="{{ $slide->mobile_image_url }}"><img src="{{ $slide->desktop_image_url }}" alt="Polaris Kurşun koleksiyon görseli" width="1440" height="560" loading="lazy"></picture>
           @if($slide->link_url)</a>@endif
         @endforeach
+        </div>
       </section>
     @endif
   @empty

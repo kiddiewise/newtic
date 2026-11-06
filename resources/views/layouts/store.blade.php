@@ -11,7 +11,7 @@
 </head>
 <body>
 <a class="skip-link" href="#content">İçeriğe geç</a>
-<header class="site-header">
+<header class="site-header desktop-site-header">
   <div class="utility-bar"><div class="container utility-content">
     <span>Balıkçılığa tutkuyla bağlı olanlara</span>
     <span>POLARIS / TÜRKİYE</span>
@@ -45,6 +45,44 @@
         <a href="{{ route('category.show', $navigationCategory->slug) }}">{{ $navigationCategory->name }}</a>
       @endforeach
     </div>
+  </nav>
+</header>
+
+<header class="mobile-site-header" aria-label="Mobil mağaza üst menüsü">
+  <div class="mobile-topbar">
+    <details class="mobile-menu">
+      <summary aria-label="Kategoriler menüsünü aç"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></summary>
+      <nav class="mobile-menu-panel" aria-label="Ürün kategorileri">
+        <div class="mobile-menu-heading">Kategorileri keşfet</div>
+        <a href="{{ route('home') }}">Ana sayfa</a>
+        @foreach(\App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->get() as $mobileMenuCategory)
+          <a href="{{ route('category.show', $mobileMenuCategory->slug) }}">{{ $mobileMenuCategory->name }} <span aria-hidden="true">›</span></a>
+        @endforeach
+        <a href="{{ route('search') }}">Tüm ürünler <span aria-hidden="true">›</span></a>
+      </nav>
+    </details>
+    <a class="mobile-center-brand" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+      <span class="mobile-brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36" fill="none"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/><circle cx="25" cy="12" r="1.5" fill="#fff"/></svg></span>
+      <span class="mobile-brand-name">POLARIS</span>
+    </a>
+    <div class="mobile-top-actions">
+      <span aria-label="Hesabım, geliştirme aşamasında" title="Hesabım geliştirme aşamasında" class="mobile-icon-disabled">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/></svg>
+      </span>
+      <span aria-label="Sepet, geliştirme aşamasında" title="Sepet geliştirme aşamasında" class="mobile-icon-disabled">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l2.5 12h13L22 7H5"/></svg>
+      </span>
+    </div>
+  </div>
+  <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search">
+    <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara">
+    <button type="submit" aria-label="Ara"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg></button>
+  </form>
+  <nav class="mobile-category-pills" aria-label="Hızlı kategoriler">
+    <a href="{{ route('home') }}" class="mobile-pill-home" aria-label="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 21v-8h6v8"/></svg></a>
+    @foreach(\App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->get() as $pillCategory)
+      <a href="{{ route('category.show', $pillCategory->slug) }}" class="mobile-pill">{{ $pillCategory->name }}</a>
+    @endforeach
   </nav>
 </header>
 

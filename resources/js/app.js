@@ -1,6 +1,7 @@
 document.querySelectorAll('[data-slider]').forEach((slider) => {
   const slides = [...slider.querySelectorAll('[data-slide]')];
   const dots = [...slider.querySelectorAll('[data-slide-dot]')];
+  const counter = slider.querySelector('[data-slide-current]');
   if (slides.length < 2) return;
   let current = 0, timer = null, startX = null;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
@@ -14,6 +15,7 @@ document.querySelectorAll('[data-slider]').forEach((slider) => {
       const a = el.querySelector('a'); if (a) a.tabIndex = active ? 0 : -1;
     });
     dots.forEach((el, i) => el.setAttribute('aria-current', String(i === current)));
+    if (counter) { counter.textContent = String(current + 1); counter.parentElement?.setAttribute('aria-label', 'Görsel ' + (current + 1) + ' / ' + slides.length); }
   }
   function stop() { if (timer) clearInterval(timer); timer = null; }
   function start() {
@@ -50,3 +52,8 @@ if (summary) {
   quantityInputs.forEach(el => el.addEventListener('input', update));
   update();
 }
+
+// Escape closes the native-details category drawer without trapping focus.
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') document.querySelectorAll('.mobile-menu[open]').forEach(menu => {menu.open = false; menu.querySelector('summary')?.focus();});
+});
