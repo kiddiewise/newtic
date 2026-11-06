@@ -19,7 +19,7 @@ class StorefrontTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Kategorileri keşfet')
-            ->assertSee('Popüler ürünler')
+            ->assertSee('Popüler Ürünler')
             ->assertSee('Renkli Surf Kurşun 125 gr')
             ->assertSee('visual-slider')
             ->assertSee('demo-sea-mobile.svg');
@@ -45,7 +45,7 @@ class StorefrontTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertDontSee('Popüler ürünler');
+            ->assertDontSee('Popüler Ürünler');
     }
 
     public function test_product_detail_keeps_every_product_independent_with_default_current_quantity(): void
