@@ -10,6 +10,13 @@
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="{{ request()->routeIs('home') ? 'is-home' : '' }}">
+@php
+  // Shared once by desktop navigation, mobile drawer and mobile category chips.
+  $navigationCategories = \App\Models\Category::query()
+      ->where('is_active', true)
+      ->orderBy('sort_order')
+      ->get();
+@endphp
 <a class="skip-link" href="#content">İçeriğe geç</a>
 <header class="site-header desktop-site-header">
   <div class="utility-bar"><div class="container utility-content">
@@ -41,7 +48,7 @@
   <nav class="desktop-nav" aria-label="Ana gezinme">
     <div class="container nav-content">
       <a href="{{ route('home') }}">Ana sayfa</a>
-      @foreach(\App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->limit(7)->get() as $navigationCategory)
+      @foreach($navigationCategories->take(7) as $navigationCategory)
         <a href="{{ route('category.show', $navigationCategory->slug) }}">{{ $navigationCategory->name }}</a>
       @endforeach
     </div>
@@ -55,7 +62,7 @@
       <nav class="mobile-menu-panel" aria-label="Ürün kategorileri">
         <div class="mobile-menu-heading">Kategorileri keşfet</div>
         <a href="{{ route('home') }}">Ana sayfa</a>
-        @foreach(\App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->get() as $mobileMenuCategory)
+        @foreach($navigationCategories as $mobileMenuCategory)
           <a href="{{ route('category.show', $mobileMenuCategory->slug) }}">{{ $mobileMenuCategory->name }} <span aria-hidden="true">›</span></a>
         @endforeach
         <a href="{{ route('search') }}">Tüm ürünler <span aria-hidden="true">›</span></a>
@@ -80,7 +87,7 @@
   </form>
   <nav class="mobile-category-pills" aria-label="Hızlı kategoriler">
     <a href="{{ route('home') }}" class="mobile-pill-home" aria-label="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 21v-8h6v8"/></svg></a>
-    @foreach(\App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->get() as $pillCategory)
+    @foreach($navigationCategories as $pillCategory)
       <a href="{{ route('category.show', $pillCategory->slug) }}" class="mobile-pill">{{ $pillCategory->name }}</a>
     @endforeach
   </nav>
