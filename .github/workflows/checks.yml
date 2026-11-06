@@ -33,6 +33,13 @@ jobs:
         run: |
           npm install --ignore-scripts
           npm run build
+      - name: Save prebuilt Vite assets for Hostinger (no Node required on server)
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-vite-build
+          path: public/build/
+          if-no-files-found: error
+          retention-days: 14
       - name: Run migrations
         run: php artisan migrate --env=testing --force
       - name: Run tests
