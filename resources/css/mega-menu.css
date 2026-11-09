@@ -199,3 +199,40 @@
     animation:none!important;transition:none!important;transform:none!important;
   }
 }
+
+
+/* Previous drawer had a broad "a span" typography rule. Reset it in the
+   new mega menu so quick links and category labels cannot inherit 20px text. */
+@media(max-width:760px){
+  .mobile-site-header .mega-menu-shell .mega-quick-links a>span{
+    font-size:11px!important;line-height:1.25!important;font-weight:690!important;
+    color:#395d69!important;letter-spacing:0!important;white-space:normal;text-align:center;
+  }
+  .mobile-site-header .mega-menu-shell .mega-menu-brand>span:last-child{
+    font-size:16px!important;line-height:1!important;color:#113a45!important;
+    font-weight:850!important;letter-spacing:-.055em!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-menu-brand>span:last-child small{
+    font-size:7.5px!important;color:#587882!important;font-weight:760;
+    line-height:1.1;letter-spacing:.38em;
+  }
+  .mobile-site-header .mega-menu-shell .mega-category-list .mega-category-copy{
+    min-width:0;color:#1a3a45!important;line-height:1.3;font-size:inherit!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-category-list .mega-category-copy strong{
+    color:#1a3a45!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-category-list .mega-category-copy small{
+    color:#82989d!important;font-size:10.5px!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-social-grid a>span{
+    font-size:10.5px!important;font-weight:680;color:#395d69!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2),
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) strong{
+    color:#1c7146!important;font-size:13px!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) small{
+    color:#548768!important;font-size:10.5px!important;
+  }
+}
