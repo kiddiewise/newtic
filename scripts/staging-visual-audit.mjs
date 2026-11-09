@@ -128,7 +128,9 @@ try {
         entry.quickCart.available = await firstCartButton.count() > 0;
         if (entry.quickCart.available) {
           await firstCartButton.click();
-          await page.waitForFunction(() => document.body.classList.contains('quick-cart-open'), { timeout: 12000 });
+          await page.waitForFunction(() => document.body.classList.contains('quick-cart-open'), null, { timeout: 12000 });
+          // The bottom sheet intentionally waits for its 420 ms entrance animation.
+          await page.waitForTimeout(500);
           entry.quickCart.panelOpen = await page.locator('[data-quick-sheet]').isVisible();
           entry.quickCart.initialCount = await page.locator('[data-quick-count]').innerText();
           entry.quickCart.initialQuantity = await page.locator('.quick-cart-selected [data-quick-quantity]').innerText();
