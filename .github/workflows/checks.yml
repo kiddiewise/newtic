@@ -44,41 +44,28 @@ jobs:
         run: php artisan migrate --env=testing --force
       - name: Run tests
         run: php artisan test
-
-  deploy-staging:
-    name: Deploy verified NEWTIC to Hostinger
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    concurrency:
-      group: newtic-ci-hostinger-release
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: newtic-vite-build
-          path: public/build
-      - name: Package tested assets
+      - name: Package verified frontend for staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set -euo pipefail
           test -f public/build/manifest.json
           tar -czf newtic-build.tar.gz -C public build
-      - name: Prepare SSH credentials and validate configuration
+      - name: Prepare staging SSH credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
           KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          test -n "$DEPLOY_KEY" || { echo "NEWTIC_SSH_PRIVATE_KEY secret missing"; exit 1; }
-          test -n "$KNOWN_HOSTS" || { echo "NEWTIC_SSH_KNOWN_HOSTS secret missing"; exit 1; }
+          test -n "$DEPLOY_KEY" || { echo "Missing SSH deploy key"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "Missing verified known_hosts"; exit 1; }
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
-      - name: Upload asset bundle and deploy
+      - name: Release verified build to Hostinger staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
@@ -100,10 +87,10 @@ jobs:
             fi
             sleep 7
           done
-      - name: Verify public staging homepage
+      - name: Verify staging homepage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set -euo pipefail
-          URL=https://powderblue-dinosaur-538060.hostingersite.com/
-          curl --fail --show-error --silent --location --retry 3 "$URL" -o homepage.html
+          curl --fail --show-error --silent --location --retry 3 https://powderblue-dinosaur-538060.hostingersite.com/ -o homepage.html
           grep -Fqi "POLARIS" homepage.html
-          echo "NEWTIC staging homepage verified"
+          echo "Staging homepage verified"
