@@ -21,6 +21,7 @@ try {
     { name: 'desktop-home', path: '/', viewport: { width: 1440, height: 900 }, mobile: false },
     { name: 'mobile-product', path: '/urun/demo-renkli-surf-125-gr', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-admin-login', path: '/admin/login', viewport: { width: 390, height: 844 }, mobile: true },
+    { name: 'mobile-account-register', path: '/uye-ol', viewport: { width: 390, height: 844 }, mobile: true },
   ];
 
   for (const target of targets) {
@@ -220,7 +221,7 @@ try {
         entry.interactions.defaultMobileNavHidden = await page.locator('.mobile-bottom-nav').evaluate(
           (element) => getComputedStyle(element).display === 'none'
         );
-        await page.locator('.cart-mobile-summary-open').click();
+        await page.locator('.cart-mobile-total').click();
         await page.waitForTimeout(370);
         entry.interactions.summarySheetVisible = await page.locator('[data-cart-summary-sheet]').evaluate(
           (element) => getComputedStyle(element).visibility === 'visible'
@@ -249,6 +250,34 @@ try {
         if (entry.interactions.cartUrl !== '/sepet' || entry.interactions.cartItemQuantity !== '2') {
           throw new Error('Mobile add-to-cart interaction did not complete correctly.');
         }
+
+        // Checkout smoke test in the same isolated cart session.
+        // Do not submit: no test orders or customer PII are created here.
+        await page.goto(new URL('/odeme', origin).href, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await page.waitForTimeout(450);
+        entry.checkout = {};
+        entry.checkout.url = new URL(page.url()).pathname;
+        entry.checkout.headingVisible = await page.locator('.checkout-form-intro h1').isVisible();
+        entry.checkout.guestLogin = await page.locator('.checkout-login-link').isVisible();
+        entry.checkout.mobileBarVisible = await page.locator('.checkout-bottom-bar').isVisible();
+        entry.checkout.total = await page.locator('.checkout-bottom-bar>div strong').innerText();
+        entry.checkout.corporateInitiallyHidden = await page.locator('[data-corporate-fields]').evaluate((node) => node.hidden);
+        await page.locator('input[name="invoice_type"][value="corporate"]').check();
+        entry.checkout.corporateFieldsVisible = await page.locator('[data-corporate-fields]').isVisible();
+        entry.checkout.companyTitleRequired = await page.locator('[name="company_title"]').evaluate((node) => node.required);
+        await page.locator('input[name="invoice_type"][value="individual"]').check();
+        entry.checkout.corporateHiddenAfterToggle = await page.locator('[data-corporate-fields]').evaluate((node) => node.hidden);
+        entry.checkout.horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+        await page.screenshot({ path: `${outputDir}/mobile-checkout-guest.png`, fullPage: true });
+        if (entry.checkout.url !== '/odeme' || !entry.checkout.headingVisible ||
+          !entry.checkout.guestLogin || !entry.checkout.mobileBarVisible ||
+          !entry.checkout.corporateInitiallyHidden || !entry.checkout.corporateFieldsVisible ||
+          !entry.checkout.companyTitleRequired || !entry.checkout.corporateHiddenAfterToggle ||
+          entry.checkout.horizontalOverflow) {
+          throw new Error('Mobile checkout regression: ' + JSON.stringify(entry.checkout));
+        }
+        // Return to cart before the existing clear-and-revisit regression check.
+        await page.goto(new URL('/sepet', origin).href, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
         // Clear the cart and revisit the same category: no previously selected
         // quantities (including the current SKU) may return.
