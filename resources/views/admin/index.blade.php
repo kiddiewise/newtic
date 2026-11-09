@@ -4,6 +4,11 @@
   <div class="admin-page-heading">
     <div><p class="admin-eyebrow">VİTRİN YÖNETİMİ</p><h1>Ana sayfa blokları</h1><p>Blokları düzenleyin ve sıralamalarını belirleyin.</p></div>
   </div>
+  <div class="admin-quick-links">
+    <a href="{{ route('admin.products.create') }}"><strong>+ Ürün ekle</strong><small>Fotoğraf, fiyat ve stok</small></a>
+    <a href="{{ route('admin.categories.create') }}"><strong>+ Kategori ekle</strong><small>Kategori adı ve görseli</small></a>
+    <a href="{{ route('admin.products.index') }}"><strong>Ürünleri yönet ↗</strong><small>İndirim ve görüntülenmeler</small></a>
+  </div>
   <div class="admin-panel">
     <div class="admin-panel-title"><h2>Yayındaki bloklar</h2><span>{{ $sections->count() }} blok</span></div>
     @forelse($sections as $section)

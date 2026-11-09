@@ -20,9 +20,27 @@ class CatalogController extends Controller
         return view('store.category', compact('category', 'products'));
     }
 
-    public function product(string $slug): View
+    public function product(Request $request, string $slug): View
     {
-        $product = Product::query()->with('category')->where('slug', $slug)->where('is_active', true)->firstOrFail();
+        $product = Product::query()->with(['category', 'images'])->where('slug', $slug)
+            ->where('is_active', true)
+            ->whereHas('category', fn ($q) => $q->where('is_active', true))
+            ->firstOrFail();
+
+        // An anonymous session is counted at most once per product every 24 hours.
+        // No raw IP addresses are collected or stored.
+        $sessionKey = 'product_seen_at.'.$product->id;
+        $lastSeen = (int) $request->session()->get($sessionKey, 0);
+        $agent = (string) $request->userAgent();
+        $robot = preg_match('/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp/i', $agent) === 1;
+        $adminPreview = (bool) $request->user()?->is_admin;
+        $now = now()->timestamp;
+
+        if (!$robot && !$adminPreview && ($lastSeen === 0 || $now - $lastSeen >= 86400)) {
+            $product->increment('view_count');
+            $request->session()->put($sessionKey, $now);
+        }
+
         $categoryProducts = Product::query()
             ->where('primary_category_id', $product->primary_category_id)
             ->where('is_active', true)

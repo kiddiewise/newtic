@@ -57,3 +57,5 @@ if (summary) {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') document.querySelectorAll('.mobile-menu[open]').forEach(menu => {menu.open = false; menu.querySelector('summary')?.focus();});
 });
+
+import './catalog-extras.js';

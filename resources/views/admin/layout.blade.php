@@ -14,11 +14,20 @@
       <div class="admin-top-actions">
         <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer">Mağazayı gör ↗</a>
         @auth
-        <form action="{{ route('admin.logout') }}" method="POST">@csrf<button type="submit" class="admin-logout">Çıkış yap</button></form>
+          <form action="{{ route('admin.logout') }}" method="POST">@csrf<button type="submit" class="admin-logout">Çıkış yap</button></form>
         @endauth
       </div>
     </div>
   </header>
+  @auth
+    @if(auth()->user()->is_admin)
+    <nav class="admin-main-nav" aria-label="Yönetim menüsü">
+      <a class="{{ request()->routeIs('admin.index', 'admin.sections.*') ? 'is-active' : '' }}" href="{{ route('admin.index') }}">Vitrin</a>
+      <a class="{{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}" href="{{ route('admin.categories.index') }}">Kategoriler</a>
+      <a class="{{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}" href="{{ route('admin.products.index') }}">Ürünler</a>
+    </nav>
+    @endif
+  @endauth
   <main class="admin-main">
     @if(session('success'))<div class="admin-alert admin-alert-success" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())

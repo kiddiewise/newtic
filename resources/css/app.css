@@ -6,3 +6,5 @@
 @import './admin.css';
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
+
+@import './catalog-extras.css';
