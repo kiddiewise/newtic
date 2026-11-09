@@ -102,6 +102,37 @@ try {
         );
         entry.interactions.postCartErrors = errors.slice();
         await page.screenshot({ path: `${outputDir}/mobile-cart-filled.png`, fullPage: true });
+        entry.interactions.mobileCartHeaderVisible = await page.locator('.cart-mobile-header').isVisible();
+        entry.interactions.bottomCartBarVisible = await page.locator('.cart-mobile-bottom').isVisible();
+        entry.interactions.defaultMobileNavHidden = await page.locator('.mobile-bottom-nav').evaluate(
+          (element) => getComputedStyle(element).display === 'none'
+        );
+        await page.locator('.cart-mobile-summary-open').click();
+        await page.waitForTimeout(370);
+        entry.interactions.summarySheetVisible = await page.locator('[data-cart-summary-sheet]').evaluate(
+          (element) => getComputedStyle(element).visibility === 'visible'
+        );
+        await page.screenshot({ path: `${outputDir}/mobile-cart-summary-sheet.png`, fullPage: false });
+        await page.locator('[data-cart-summary-close]').click();
+        const beforePlus = await page.locator('.cart-quantity-stepper input').first().inputValue();
+        await page.locator('[data-cart-plus]').first().click();
+        await page.waitForLoadState('domcontentloaded');
+        const afterPlus = await page.locator('.cart-quantity-stepper input').first().inputValue();
+        entry.interactions.stepperBeforePlus = beforePlus;
+        entry.interactions.stepperAfterPlus = afterPlus;
+        await page.locator('.cart-favorite-form button').first().click();
+        await page.waitForLoadState('domcontentloaded');
+        entry.interactions.favoriteNowSelected = await page.locator('.cart-favorite-form button').first().getAttribute('aria-pressed');
+        entry.interactions.newCartOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth
+        );
+        if (!entry.interactions.mobileCartHeaderVisible || !entry.interactions.bottomCartBarVisible ||
+            !entry.interactions.defaultMobileNavHidden || !entry.interactions.summarySheetVisible ||
+            Number(afterPlus) !== Number(beforePlus) + 1 ||
+            entry.interactions.favoriteNowSelected !== 'true' || entry.interactions.newCartOverflow) {
+          throw new Error('Redesigned mobile cart regression: ' + JSON.stringify(entry.interactions));
+        }
+
         if (entry.interactions.cartUrl !== '/sepet' || entry.interactions.cartItemQuantity !== '2') {
           throw new Error('Mobile add-to-cart interaction did not complete correctly.');
         }
