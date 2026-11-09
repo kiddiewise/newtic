@@ -119,6 +119,62 @@ try {
         if (entry.category.pillActive !== 1 || entry.category.arrowCount !== 0 ||
             entry.category.horizontalOverflow) {
           throw new Error('Category mobile navigation regression: ' + JSON.stringify(entry.category));
+        
+        // Real mobile add-to-cart flow: a native form is upgraded to AJAX.
+        // This runs in a throwaway browser session and does not place orders.
+        entry.quickCart = {};
+        const firstCartButton = page.locator('form[data-quick-add] button:not([disabled])').first();
+        entry.quickCart.available = await firstCartButton.count() > 0;
+        if (entry.quickCart.available) {
+          await firstCartButton.click();
+          await page.waitForFunction(() => document.body.classList.contains('quick-cart-open'), { timeout: 12000 });
+          entry.quickCart.panelOpen = await page.locator('[data-quick-sheet]').isVisible();
+          entry.quickCart.initialCount = await page.locator('[data-quick-count]').innerText();
+          entry.quickCart.initialQuantity = await page.locator('.quick-cart-selected [data-quick-quantity]').innerText();
+          entry.quickCart.relatedRows = await page.locator('.quick-cart-related-list [data-quick-row]').count();
+          entry.quickCart.badgeText = await page.locator('.mobile-nav-cart span').innerText();
+          entry.quickCart.overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+          await page.screenshot({ path: `${outputDir}/mobile-quick-cart-open.png`, fullPage: false });
+
+          const plus = page.locator('.quick-cart-selected [data-quick-plus]');
+          await plus.click();
+          await page.waitForFunction(
+            () => document.querySelector('.quick-cart-selected [data-quick-quantity]')?.textContent?.trim() === '2',
+            { timeout: 12000 }
+          );
+          entry.quickCart.quantityAfterPlus = await page.locator('.quick-cart-selected [data-quick-quantity]').innerText();
+
+          await page.locator('.quick-cart-selected [data-quick-minus]').click();
+          await page.waitForFunction(
+            () => document.querySelector('.quick-cart-selected [data-quick-quantity]')?.textContent?.trim() === '1',
+            { timeout: 12000 }
+          );
+          entry.quickCart.quantityAfterMinus = await page.locator('.quick-cart-selected [data-quick-quantity]').innerText();
+
+          const relatedPlus = page.locator('.quick-cart-related-list [data-quick-plus]:not([disabled])').first();
+          entry.quickCart.relatedAvailable = await relatedPlus.count() > 0;
+          if (entry.quickCart.relatedAvailable) {
+            await relatedPlus.click();
+            await page.waitForFunction(
+              () => [...document.querySelectorAll('.quick-cart-related-list [data-quick-quantity]')]
+                .some((node) => Number(node.textContent) > 0),
+              { timeout: 12000 }
+            );
+            entry.quickCart.relatedAdded = true;
+          }
+          entry.quickCart.finalCount = await page.locator('[data-quick-count]').innerText();
+          await page.screenshot({ path: `${outputDir}/mobile-quick-cart-related.png`, fullPage: false });
+          await page.locator('[data-quick-close]').click();
+          await page.waitForTimeout(550);
+          entry.quickCart.closed = !(await page.locator('[data-quick-sheet]').isVisible());
+          entry.quickCart.scrollRestored = await page.evaluate(() => !document.body.classList.contains('quick-cart-open'));
+
+          if (!entry.quickCart.panelOpen || entry.quickCart.initialQuantity.trim() !== '1' ||
+              entry.quickCart.quantityAfterPlus.trim() !== '2' || entry.quickCart.quantityAfterMinus.trim() !== '1' ||
+              entry.quickCart.relatedRows < 1 || !entry.quickCart.relatedAdded ||
+              entry.quickCart.overflow || !entry.quickCart.closed || !entry.quickCart.scrollRestored) {
+            throw new Error('Mobile quick add flow regression: ' + JSON.stringify(entry.quickCart));
+          }
         }
       }
 
