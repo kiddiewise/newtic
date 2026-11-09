@@ -76,6 +76,12 @@ try {
         entry.mega.menuBounds = await page.locator('[data-mega-panel]').boundingBox();
         entry.mega.closeVisible = await page.locator('[data-mega-close]').isVisible();
         entry.mega.heroVisible = await page.locator('.mega-hero-art').isVisible();
+        entry.mega.quickTextFontPx = await page.locator('.mega-quick-links a span').first().evaluate(
+          (element) => Number.parseFloat(getComputedStyle(element).fontSize)
+        );
+        entry.mega.categoryTextColor = await page.locator('.mega-tree-leaf .mega-category-copy strong').first().evaluate(
+          (element) => getComputedStyle(element).color
+        );
         entry.mega.menuOverflow = await page.evaluate(
           () => document.documentElement.scrollWidth > window.innerWidth
         );
@@ -95,6 +101,7 @@ try {
         if (!entry.mega.menuVisible || !entry.mega.closeVisible || !entry.mega.heroVisible ||
             !entry.mega.categoryExpanded || !entry.mega.subcategoryVisible || !entry.mega.closed ||
             !entry.mega.bodyScrollRestored || entry.mega.menuOverflow ||
+            entry.mega.quickTextFontPx > 12.5 ||
             Math.abs(entry.mega.menuBounds.width - 390) > 2) {
           throw new Error('Mega menu mobile regression: ' + JSON.stringify(entry.mega));
         }
