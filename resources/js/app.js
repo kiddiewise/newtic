@@ -53,10 +53,7 @@ if (summary) {
   update();
 }
 
-// Escape closes the native-details category drawer without trapping focus.
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') document.querySelectorAll('.mobile-menu[open]').forEach(menu => {menu.open = false; menu.querySelector('summary')?.focus();});
-});
+// The mobile mega menu manages Escape and focus itself.
 
 import './catalog-extras.js';
 
@@ -65,3 +62,5 @@ import './product-detail.js';
 import './cart-mobile.js';
 
 import './category-navigation.js';
+
+import './mega-menu.js';

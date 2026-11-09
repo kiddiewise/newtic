@@ -17,6 +17,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const targets = [
     { name: 'mobile-home', path: '/', viewport: { width: 390, height: 844 }, mobile: true },
+    { name: 'mobile-category-root', path: '/kategori/renkli-surf-kursun', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'desktop-home', path: '/', viewport: { width: 1440, height: 900 }, mobile: false },
     { name: 'mobile-product', path: '/urun/demo-renkli-surf-125-gr', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-admin-login', path: '/admin/login', viewport: { width: 390, height: 844 }, mobile: true },
@@ -67,6 +68,53 @@ try {
       entry.errors = errors;
       entry.resourceErrors = resourceErrors.slice(0, 20);
       await page.screenshot({ path: `${outputDir}/${target.name}.png`, fullPage: true });
+      if (target.name === 'mobile-home' && entry.status === 200) {
+        entry.mega = {};
+        await page.locator('[data-mega-toggle]').click();
+        await page.waitForTimeout(460);
+        entry.mega.menuVisible = await page.locator('[data-mega-panel]').isVisible();
+        entry.mega.menuBounds = await page.locator('[data-mega-panel]').boundingBox();
+        entry.mega.closeVisible = await page.locator('[data-mega-close]').isVisible();
+        entry.mega.heroVisible = await page.locator('.mega-hero-art').isVisible();
+        entry.mega.menuOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth
+        );
+        await page.screenshot({ path: `${outputDir}/mobile-mega-menu.png`, fullPage: false });
+        const firstRoot = page.locator('.mega-category-list>.mega-tree-group').first();
+        if (await firstRoot.count()) {
+          await firstRoot.locator(':scope > summary').click();
+          await page.waitForTimeout(360);
+          entry.mega.categoryExpanded = await firstRoot.evaluate((element) => element.open);
+          entry.mega.subcategoryVisible = await firstRoot.locator('.mega-tree-children').first().isVisible();
+          await page.screenshot({ path: `${outputDir}/mobile-mega-subcategories.png`, fullPage: false });
+        }
+        await page.locator('[data-mega-close]').click();
+        await page.waitForTimeout(460);
+        entry.mega.closed = !(await page.locator('[data-mega-menu]').evaluate((element) => element.open));
+        entry.mega.bodyScrollRestored = await page.evaluate(() => !document.body.classList.contains('mega-menu-open'));
+        if (!entry.mega.menuVisible || !entry.mega.closeVisible || !entry.mega.heroVisible ||
+            !entry.mega.categoryExpanded || !entry.mega.subcategoryVisible || !entry.mega.closed ||
+            !entry.mega.bodyScrollRestored || entry.mega.menuOverflow ||
+            Math.abs(entry.mega.menuBounds.width - 390) > 2) {
+          throw new Error('Mega menu mobile regression: ' + JSON.stringify(entry.mega));
+        }
+      }
+      if (target.name === 'mobile-category-root' && entry.status === 200) {
+        entry.category = {};
+        entry.category.pillActive = await page.locator('.mobile-pill.is-active').count();
+        entry.category.arrowCount = await page.locator('.category-child-arrow').count();
+        entry.category.childTitleSize = await page.locator('.category-child-card strong').first().evaluate(
+          (element) => getComputedStyle(element).fontSize
+        ).catch(() => null);
+        entry.category.horizontalOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth
+        );
+        if (entry.category.pillActive !== 1 || entry.category.arrowCount !== 0 ||
+            entry.category.horizontalOverflow) {
+          throw new Error('Category mobile navigation regression: ' + JSON.stringify(entry.category));
+        }
+      }
+
       if (target.name === 'mobile-product' && entry.status === 200) {
         const chooser = page.locator('[data-sheet-open]');
         entry.interactions = {};

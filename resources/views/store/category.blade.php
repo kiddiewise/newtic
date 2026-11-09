@@ -41,7 +41,6 @@
               <img src="{{ asset($subcategory->image_path ?: 'assets/categories/renkli-kursun.svg') }}" alt="" width="320" height="320" loading="lazy">
             </span>
             <strong>{{ $subcategory->name }}</strong>
-            <span class="category-child-arrow" aria-hidden="true">›</span>
           </a>
         @endforeach
       </div>
