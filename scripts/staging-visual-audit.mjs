@@ -95,7 +95,7 @@ try {
         entry.interactions.cartUrl = new URL(page.url()).pathname;
         entry.interactions.cartItemCount = await page.locator('.cart-item').count();
         entry.interactions.cartItemQuantity = await page.locator('.cart-update-form input[name="quantity"]').first().inputValue();
-        entry.interactions.shippingText = await page.locator('.cart-mobile-summary-sheet .cart-totals').innerText();
+        entry.interactions.shippingText = await page.locator('.cart-mobile-summary-sheet .cart-totals').textContent();
         entry.interactions.cartOverflow = await page.evaluate(
           () => document.documentElement.scrollWidth > window.innerWidth
         );
@@ -113,7 +113,7 @@ try {
         );
         await page.screenshot({ path: `${outputDir}/mobile-cart-summary-sheet.png`, fullPage: false });
         await page.locator('[data-cart-summary-close]').click();
-        const beforePlus = await page.locator('.cart-quantity-stepper input').first().inputValue();
+        const beforePlus = await page.locator('.cart-quantity-stepper input[name="quantity"]').first().inputValue();
         await page.locator('[data-cart-plus]').first().click();
         await page.waitForLoadState('domcontentloaded');
         const afterPlus = await page.locator('.cart-quantity-stepper input').first().inputValue();
