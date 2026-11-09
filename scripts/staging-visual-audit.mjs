@@ -19,6 +19,7 @@ try {
     { name: 'mobile-home', path: '/', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'desktop-home', path: '/', viewport: { width: 1440, height: 900 }, mobile: false },
     { name: 'mobile-product', path: '/urun/demo-renkli-surf-125-gr', viewport: { width: 390, height: 844 }, mobile: true },
+    { name: 'mobile-cart-empty', path: '/sepet', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-admin-login', path: '/admin/login', viewport: { width: 390, height: 844 }, mobile: true },
   ];
 
@@ -88,6 +89,22 @@ try {
           (element) => element.classList.contains('is-price-visible')
         );
         await page.screenshot({ path: `${outputDir}/mobile-product-scrolled.png`, fullPage: false });
+        // Public test environment only; isolated browser session, no payment/order.
+        await page.locator('.pdp-sticky-add').click();
+        await page.waitForURL('**/sepet', { timeout: 15000 });
+        await page.waitForTimeout(450);
+        entry.interactions.cartUrl = new URL(page.url()).pathname;
+        entry.interactions.cartItemCount = await page.locator('.cart-item').count();
+        entry.interactions.cartItemQuantity = await page.locator('.cart-update-form input[name="quantity"]').first().inputValue();
+        entry.interactions.shippingText = await page.locator('.cart-totals').innerText();
+        entry.interactions.cartOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth
+        );
+        entry.interactions.postCartErrors = errors.slice();
+        await page.screenshot({ path: `${outputDir}/mobile-cart-filled.png`, fullPage: true });
+        if (entry.interactions.cartUrl !== '/sepet' || entry.interactions.cartItemQuantity !== '2') {
+          throw new Error('Mobile add-to-cart interaction did not complete correctly.');
+        }
       }
     } catch (error) {
       entry.error = String(error).slice(0, 600);
