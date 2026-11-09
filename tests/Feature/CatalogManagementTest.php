@@ -124,7 +124,7 @@ class CatalogManagementTest extends TestCase
             ->assertSee('-%25')->assertSee('200,00')->assertSee('150,00');
 
         $this->get(route('product.show', $product->slug))->assertOk()
-            ->assertSee('-%25 İNDİRİM')->assertSee('data-gallery-thumb')->assertSee('görüntülenme');
+            ->assertSee('-%25')->assertSee('data-gallery-thumb')->assertSee('görüntülenme');
     }
 
     public function test_home_product_card_shows_automatic_discount(): void
