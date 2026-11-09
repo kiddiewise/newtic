@@ -119,7 +119,8 @@ try {
         if (entry.category.pillActive !== 1 || entry.category.arrowCount !== 0 ||
             entry.category.horizontalOverflow) {
           throw new Error('Category mobile navigation regression: ' + JSON.stringify(entry.category));
-        
+        }
+
         // Real mobile add-to-cart flow: a native form is upgraded to AJAX.
         // This runs in a throwaway browser session and does not place orders.
         entry.quickCart = {};
