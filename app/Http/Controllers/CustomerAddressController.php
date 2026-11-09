@@ -34,6 +34,8 @@ class CustomerAddressController extends Controller
         $data = AddressValidation::clean($request->validate(array_merge(AddressValidation::rules(), [
             'is_default' => ['nullable','boolean'],
         ])));
+        $data['label'] = $data['address_label'];
+        unset($data['address_label']);
         $default = $request->boolean('is_default') || !$request->user()->addresses()->exists();
         DB::transaction(function () use ($request, $data, $default) {
             if ($default) $request->user()->addresses()->update(['is_default' => false]);
@@ -48,6 +50,8 @@ class CustomerAddressController extends Controller
         $data = AddressValidation::clean($request->validate(array_merge(AddressValidation::rules(), [
             'is_default' => ['nullable','boolean'],
         ])));
+        $data['label'] = $data['address_label'];
+        unset($data['address_label']);
         $default = $request->boolean('is_default');
         DB::transaction(function () use ($request, $data, $default, $address) {
             if ($default) $request->user()->addresses()->update(['is_default' => false]);
