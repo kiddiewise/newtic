@@ -22,6 +22,7 @@ try {
     { name: 'mobile-product', path: '/urun/demo-renkli-surf-125-gr', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-admin-login', path: '/admin/login', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-account-register', path: '/uye-ol', viewport: { width: 390, height: 844 }, mobile: true },
+    { name: 'mobile-empty-cart', path: '/sepet', viewport: { width: 390, height: 844 }, mobile: true },
   ];
 
   for (const target of targets) {
@@ -69,6 +70,50 @@ try {
       entry.errors = errors;
       entry.resourceErrors = resourceErrors.slice(0, 20);
       await page.screenshot({ path: `${outputDir}/${target.name}.png`, fullPage: true });
+      if (target.name === 'mobile-empty-cart' && entry.status === 200) {
+        entry.cartIcon = await page.locator('.cart-empty-art svg.ui-icon').evaluate((svg) => ({
+          width: Math.round(svg.getBoundingClientRect().width),
+          height: Math.round(svg.getBoundingClientRect().height),
+          stroke: getComputedStyle(svg).stroke,
+          fill: getComputedStyle(svg).fill,
+          usesShoppingBag: svg.querySelector('use')?.getAttribute('href') === '#ui-shopping-bag',
+        }));
+        if (!entry.cartIcon.usesShoppingBag || entry.cartIcon.width > 70 ||
+            entry.cartIcon.width < 30 || entry.layout.documentWidth > entry.layout.viewportWidth) {
+          throw new Error('Empty cart icon styling regression: ' + JSON.stringify(entry.cartIcon));
+        }
+      }
+      if (target.name === 'mobile-account-register' && entry.status === 200) {
+        entry.socialAuth = {
+          googleButton: await page.getByRole('button', { name: /Google ile devam et/ }).count(),
+          facebookButton: await page.getByRole('button', { name: /Facebook ile devam et/ }).count(),
+          disabledButtons: await page.locator('.social-auth-button:disabled').count(),
+          originalBrandLogos: await page.locator('.social-provider-logo').count(),
+        };
+        if (entry.socialAuth.googleButton !== 1 || entry.socialAuth.facebookButton !== 1 ||
+            entry.socialAuth.disabledButtons !== 2 || entry.socialAuth.originalBrandLogos !== 2) {
+          throw new Error('Social auth preview regression: ' + JSON.stringify(entry.socialAuth));
+        }
+      }
+      if (target.name === 'mobile-category-root' && entry.status === 200) {
+        entry.productCartIcons = await page.locator('.product-card-action svg.ui-icon use[href="#ui-shopping-cart-plus"]').count();
+        if (entry.productCartIcons < 1) {
+          throw new Error('Product cards lost standardized cart icons');
+        }
+      }
+      if (target.name === 'mobile-home' && entry.status === 200) {
+        entry.iconSet = await page.evaluate(() => ({
+          symbolCount: document.querySelectorAll('.ui-icon-sprite symbol').length,
+          navIcons: document.querySelectorAll('.mobile-bottom-nav svg.ui-icon').length,
+          menuIcon: Boolean(document.querySelector('[data-mega-toggle] .ui-icon')),
+          activeHome: Boolean(document.querySelector('.mobile-pill-home .ui-icon use[href="#ui-house"]')),
+        }));
+        if (entry.iconSet.symbolCount < 17 || entry.iconSet.navIcons !== 4 ||
+            !entry.iconSet.menuIcon || !entry.iconSet.activeHome) {
+          throw new Error('Unified storefront icon set regression: ' + JSON.stringify(entry.iconSet));
+        }
+      }
+
       if (target.name === 'mobile-home' && entry.status === 200) {
         entry.mega = {};
         await page.locator('[data-mega-toggle]').click();
