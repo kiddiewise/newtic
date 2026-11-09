@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#102f3e">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>@yield('title', 'Polaris Kurşun | Balıkçılık Ekipmanları')</title>
@@ -172,6 +173,7 @@
 </header>
 
 @yield('content')
+@include('store.partials.quick-cart-sheet')
 
 <footer class="site-footer">
   <div class="container footer-grid">

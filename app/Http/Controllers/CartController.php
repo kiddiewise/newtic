@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Support\ShoppingCart;
+use App\Support\QuickCartSheet;
+use App\Support\CategoryHierarchy;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -20,7 +23,7 @@ class CartController extends Controller
         return view('store.cart', compact('cart', 'wishlistIds'));
     }
 
-    public function add(Request $request): RedirectResponse
+    public function add(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'items' => ['required', 'array', 'min:1', 'max:100'],
@@ -51,7 +54,7 @@ class CartController extends Controller
 
         foreach ($requested as $id => $qty) {
             $product = $products->get($id);
-            if (! $product) {
+            if (! $product || ! CategoryHierarchy::visible($product->category)) {
                 throw ValidationException::withMessages(['items' => 'Seçilen ürünlerden biri satışta değil.']);
             }
             if ($qty + (int) ($existing[$id] ?? 0) > min(999, $product->stock_quantity)) {
@@ -70,16 +73,24 @@ class CartController extends Controller
 
         ShoppingCart::put($request, $existing);
 
+        if ($request->expectsJson()) {
+            $first = $products->get(array_key_first($requested));
+            return $this->quickResponse($request, $first);
+        }
+
         return redirect()->route('cart.index')->with('success', 'Ürünler sepetinize eklendi.');
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, Product $product): RedirectResponse|JsonResponse
     {
         $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:999']]);
         ShoppingCart::snapshot($request);
         $items = ShoppingCart::raw($request);
 
         if (! array_key_exists($product->id, $items)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Ürün sepetinizde bulunamadı. Sepeti yenileyin.'], 409);
+            }
             return redirect()->route('cart.index')->with('error', 'Ürün sepetinizde bulunamadı.');
         }
 
@@ -94,6 +105,10 @@ class CartController extends Controller
         }
 
         ShoppingCart::put($request, $items);
+
+        if ($request->expectsJson()) {
+            return $this->quickResponse($request, $product);
+        }
 
         return redirect()->route('cart.index')->with('success', 'Sepet güncellendi.');
     }
@@ -112,5 +127,25 @@ class CartController extends Controller
         ShoppingCart::clear($request);
 
         return redirect()->route('cart.index')->with('success', 'Sepet boşaltıldı.');
+    }
+    /**
+     * The quick sheet is an opt-in JSON enhancement of the existing cart routes.
+     * A submitted price, stock or total is never accepted as authoritative.
+     */
+    private function quickResponse(Request $request, Product $fallback): JsonResponse
+    {
+        $requestedAnchor = $request->input('quick_anchor_id');
+        $anchor = $fallback;
+
+        if ($requestedAnchor !== null && ctype_digit((string) $requestedAnchor)) {
+            $candidate = Product::query()->with('category')->whereKey((int) $requestedAnchor)
+                ->where('is_active', true)->first();
+            if ($candidate && $candidate->category?->is_active
+                && CategoryHierarchy::visible($candidate->category)) {
+                $anchor = $candidate;
+            }
+        }
+
+        return response()->json(QuickCartSheet::response($request, $anchor));
     }
 }

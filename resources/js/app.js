@@ -64,3 +64,5 @@ import './cart-mobile.js';
 import './category-navigation.js';
 
 import './mega-menu.js';
+
+import './quick-cart.js';
