@@ -34,3 +34,36 @@
 .reassurance-strip{grid-template-columns:1fr;gap:20px;margin-top:30px;margin-bottom:42px;padding-block:18px}.reassurance-strip>div{justify-content:start}
 }
 @media(max-width:360px){.category-grid{gap:6px}.category-name{font-size:.61rem}}
+
+
+/* Two compact horizontal campaign banners on desktop; the mobile
+   storefront overrides this to a swipeable strip. */
+@media (min-width: 761px) {
+  .promo-track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .promo-track > a,
+  .promo-track > picture {
+    display: block;
+    min-width: 0;
+    aspect-ratio: 3.65 / 1;
+    overflow: hidden;
+    border: 1px solid #e6eeee;
+    border-radius: 15px;
+    background: #f3f8f8;
+  }
+  .promo-track > a picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .promo-track > picture img,
+  .promo-track > a img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
