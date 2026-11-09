@@ -64,3 +64,26 @@
   .category-tree-actions .admin-secondary{padding:7px 9px;font-size:.72rem}
 }
 @media(prefers-reduced-motion:reduce){.category-banner-track{scroll-behavior:auto}.category-child-card{transition:none}}
+
+
+/* Minimal category landing page: banner -> category title -> optional copy -> catalog. */
+.category-landing{padding-top:18px}
+.category-landing .category-banner-carousel{margin-bottom:18px}
+.category-landing .category-page-header{margin:0 0 22px}
+.category-landing .category-page-header h1{margin:0;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.2;letter-spacing:-.04em}
+.category-landing .category-page-header .category-description{font-size:.89rem;line-height:1.6;color:#728690;margin:8px 0 0}
+.category-landing .category-children-section{margin:0 0 25px}
+.category-landing .category-products-section{margin:0 0 32px}
+.category-landing .category-products-section .category-section-heading{margin-bottom:14px}
+.category-landing .category-products-section .category-section-heading h2{font-size:1.2rem;line-height:1.25;font-weight:780;letter-spacing:-.03em;margin:0}
+@media(max-width:760px){
+  .category-landing{padding-top:0}
+  .category-landing .category-banner-carousel{margin-bottom:19px}
+  .category-landing .category-page-header{margin:20px 0 20px}
+  .category-landing .category-banner-carousel + .category-page-header{margin-top:0}
+  .category-landing .category-page-header h1{font-size:1.48rem;line-height:1.24}
+  .category-landing .category-page-header .category-description{font-size:.8rem;line-height:1.55;margin-top:7px}
+  .category-landing .category-children-section{margin:0 0 23px}
+  .category-landing .category-products-section .category-section-heading{margin-bottom:13px}
+  .category-landing .category-products-section .category-section-heading h2{font-size:1.1rem}
+}
