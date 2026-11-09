@@ -120,7 +120,7 @@ class ShoppingCartTest extends TestCase
             ->assertSee('Ücretsiz kargo kazandın!')
             ->assertSee('1.000,00 ₺')
             ->assertDontSee('1.079,88 ₺')
-            ->assertSee('Genel toplam');
+            ->assertSee('Ödenecek tutar');
     }
 
     public function test_admin_can_change_shipping_threshold_and_fee_and_totals_refresh(): void
