@@ -85,7 +85,9 @@ class NestedCategoriesTest extends TestCase
         $this->get(route('category.show', $root->slug))->assertOk()
             ->assertSee($child->name)->assertSee($product->name)
             ->assertSee(route('category.show', $child->slug))
-            ->assertSee('Tüm alt kategori ürünleri');
+            ->assertSee('Ürünler')
+            ->assertDontSee('Tüm alt kategori ürünleri')
+            ->assertDontSee('KATEGORİ SEÇİMİ');
 
         $this->get(route('category.show', $child->slug))->assertOk()
             ->assertSee($leaf->name)->assertSee($product->name);
@@ -97,6 +99,41 @@ class NestedCategoriesTest extends TestCase
 
         $this->get(route('product.show', $product->slug))->assertOk()
             ->assertSee($product->name);
+    }
+
+    public function test_category_has_only_banner_title_optional_description_and_products_without_breadcrumbs(): void
+    {
+        $root = $this->category('Renkli Surf Kurşun');
+        $child = $this->category('Fırdöndülü Renkli Surf Kurşun', $root);
+        $product = $this->product($child);
+        $child->update(['description' => 'Fırdöndülü surf kurşunu seçenekleri.']);
+
+        $html = $this->get(route('category.show', $child->slug))
+            ->assertOk()
+            ->assertSee('Fırdöndülü surf kurşunu seçenekleri.')
+            ->assertSee($product->name)
+            ->assertDontSee('POLARIS KURŞUN / KATEGORİLER')
+            ->assertDontSee('KATEGORİ SEÇİMİ')
+            ->assertDontSee('ÜRÜNLERİ KEŞFET')
+            ->assertDontSee('Çeşitleri ve gramaj seçeneklerini keşfedin.')
+            ->assertDontSee('category-breadcrumbs')
+            ->getContent();
+
+        $main = strpos($html, '<main class="container inner-page category-landing"');
+        $title = strpos($html, '<h1>', $main);
+        $description = strpos($html, 'class="category-description"', $main);
+        $products = strpos($html, 'id="category-products-heading"', $main);
+        $this->assertTrue($main < $title && $title < $description && $description < $products);
+
+        $rootHtml = $this->get(route('category.show', $root->slug))->assertOk()
+            ->assertSee($child->name)
+            ->assertDontSee('category-description')
+            ->assertDontSee('category-breadcrumbs')
+            ->getContent();
+        $this->assertTrue(
+            strpos($rootHtml, 'class="category-page-header"') <
+            strpos($rootHtml, 'class="category-children-grid"')
+        );
     }
 
     public function test_mobile_navigation_contains_expandable_main_and_subcategories(): void
