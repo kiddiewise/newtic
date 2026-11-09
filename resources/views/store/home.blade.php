@@ -2,6 +2,7 @@
 
 @section('content')
 <main id="content">
+  <h1 class="sr-only">Polaris Kurşun — Balıkçılık ekipmanları</h1>
   @forelse($sections as $section)
     @if($section->type === \App\Models\HomeSection::TYPE_SLIDER && $section->slides->isNotEmpty())
       <section class="container homepage-hero" aria-label="Ana görsel kaydırıcısı">
