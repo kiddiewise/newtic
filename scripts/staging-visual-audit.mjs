@@ -67,6 +67,28 @@ try {
       entry.errors = errors;
       entry.resourceErrors = resourceErrors.slice(0, 20);
       await page.screenshot({ path: `${outputDir}/${target.name}.png`, fullPage: true });
+      if (target.name === 'mobile-product' && entry.status === 200) {
+        const chooser = page.locator('[data-sheet-open]');
+        entry.interactions = {};
+        entry.interactions.quickQuantityBefore = await page.locator('[data-quick-qty]').innerText();
+        await page.locator('[data-quick-plus]').click();
+        entry.interactions.quickQuantityAfterPlus = await page.locator('[data-quick-qty]').innerText();
+        entry.interactions.totalAfterPlus = await page.locator('[data-sticky-total]').innerText();
+        await chooser.click();
+        await page.waitForTimeout(450);
+        entry.interactions.sheetOpen = await page.locator('[data-product-sheet]').evaluate(
+          (element) => getComputedStyle(element).visibility === 'visible'
+        );
+        entry.interactions.quantityInputs = await page.locator('[data-order-quantity]').count();
+        await page.screenshot({ path: `${outputDir}/mobile-product-sheet.png`, fullPage: false });
+        await page.locator('.pdp-sheet-close').click();
+        await page.evaluate(() => window.scrollTo({ top: 650, behavior: 'instant' }));
+        await page.waitForTimeout(350);
+        entry.interactions.stickyPriceOnScroll = await page.locator('[data-sticky-bar]').evaluate(
+          (element) => element.classList.contains('is-price-visible')
+        );
+        await page.screenshot({ path: `${outputDir}/mobile-product-scrolled.png`, fullPage: false });
+      }
     } catch (error) {
       entry.error = String(error).slice(0, 600);
     }
