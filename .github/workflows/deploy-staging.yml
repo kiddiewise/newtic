@@ -25,12 +25,28 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Configure isolated test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
       - name: Install and compile frontend
         run: |
-          npm ci
+          npm install --ignore-scripts
           npm run build
           test -f public/build/manifest.json
           tar -czf newtic-build.tar.gz -C public build
+      - name: Verify migrations and run PHP tests before deployment
+        run: |
+          php artisan migrate --env=testing --force
+          php artisan test
       - name: Prepare SSH credentials and validate configuration
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
