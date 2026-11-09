@@ -22,6 +22,7 @@ Route::post('/sepet/temizle', [CartController::class, 'clear'])->name('cart.clea
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CategoryBannerController;
 use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
@@ -45,6 +46,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
     Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::post('/categories/{category}/banners', [CategoryBannerController::class, 'store'])->name('categories.banners.store');
+    Route::patch('/categories/{category}/banners/{banner}', [CategoryBannerController::class, 'update'])->name('categories.banners.update');
+    Route::delete('/categories/{category}/banners/{banner}', [CategoryBannerController::class, 'destroy'])->name('categories.banners.destroy');
 
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\CategoryHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,12 +13,22 @@ class CatalogController extends Controller
     public function category(string $slug): View
     {
         $category = Category::query()->where('slug', $slug)->where('is_active', true)->firstOrFail();
+        $all = CategoryHierarchy::all();
+        abort_unless(CategoryHierarchy::visible($category, $all), 404);
+
+        $breadcrumbs = CategoryHierarchy::ancestors($category, $all);
+        $categoryIds = CategoryHierarchy::descendantIds($category, $all);
+        $subcategories = $category->activeChildren()->get();
+        $banners = $category->banners()->visible()->get();
+
         $products = Product::query()
-            ->where('primary_category_id', $category->id)
+            ->whereIn('primary_category_id', $categoryIds)
             ->where('is_active', true)
             ->orderBy('name')->paginate(24);
 
-        return view('store.category', compact('category', 'products'));
+        return view('store.category', compact(
+            'category', 'breadcrumbs', 'subcategories', 'banners', 'products'
+        ));
     }
 
     public function product(Request $request, string $slug): View
@@ -26,6 +37,7 @@ class CatalogController extends Controller
             ->where('is_active', true)
             ->whereHas('category', fn ($q) => $q->where('is_active', true))
             ->firstOrFail();
+        abort_unless(CategoryHierarchy::visible($product->category), 404);
 
         // An anonymous session is counted at most once per product every 24 hours.
         // No raw IP addresses are collected or stored.
@@ -41,13 +53,12 @@ class CatalogController extends Controller
             $request->session()->put($sessionKey, $now);
         }
 
+        // The multi-grammage picker stays scoped to this specific subcategory.
         $categoryProducts = Product::query()
             ->where('primary_category_id', $product->primary_category_id)
             ->where('is_active', true)
             ->orderBy('name')->get();
 
-        // A new visitor starts with one selected SKU; any completed cart mutation
-        // clears the picker draft so it never appears to contain ghost items.
         $pickerReset = (bool) $request->session()->get('product_picker_reset', false);
 
         return view('store.product', compact('product', 'categoryProducts', 'pickerReset'));
@@ -57,7 +68,8 @@ class CatalogController extends Controller
     {
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
-        $products = Product::query()->where('is_active', true)
+
+        $products = Product::query()->with('category')->where('is_active', true)
             ->when($term !== '', fn ($q) => $q->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
             ->orderBy('name')->paginate(24)->withQueryString();
 

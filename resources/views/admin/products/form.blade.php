@@ -16,9 +16,10 @@
       <label>Stok kodu (SKU) *<input name="sku" required maxlength="100" value="{{ old('sku', $product->sku) }}" placeholder="Örn. POL-SURF-125"></label>
       <label>Kategori *
         <select name="primary_category_id" required>
-          <option value="">Kategori seçin</option>
-          @foreach($categories as $category)
-            <option value="{{ $category->id }}" @selected(old('primary_category_id', $product->primary_category_id) == $category->id)>{{ $category->name }}{{ !$category->is_active ? ' (pasif)' : '' }}</option>
+          <option value="">Kategori veya alt kategori seçin</option>
+          @foreach($categories as $choice)
+            @php $category = $choice['category']; @endphp
+            <option value="{{ $category->id }}" @selected(old('primary_category_id', $product->primary_category_id) == $category->id)>{{ $choice['label'] }}{{ !$category->is_active ? ' (pasif)' : '' }}</option>
           @endforeach
         </select>
       </label>

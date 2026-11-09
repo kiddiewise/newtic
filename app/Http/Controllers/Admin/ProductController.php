@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Support\CategoryHierarchy;
 use App\Support\UniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class ProductController extends Controller
     {
         return view('admin.products.form', [
             'product' => new Product(),
-            'categories' => Category::query()->orderBy('sort_order')->orderBy('name')->get(),
+            'categories' => collect(CategoryHierarchy::choices()),
         ]);
     }
 
@@ -44,7 +45,7 @@ class ProductController extends Controller
 
         return view('admin.products.form', [
             'product' => $product,
-            'categories' => Category::query()->orderBy('sort_order')->orderBy('name')->get(),
+            'categories' => collect(CategoryHierarchy::choices()),
         ]);
     }
 

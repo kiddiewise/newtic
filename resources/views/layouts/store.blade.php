@@ -15,7 +15,9 @@
   // Shared once by desktop navigation, mobile drawer and mobile category chips.
   $navigationCategories = \App\Models\Category::query()
       ->where('is_active', true)
+      ->whereNull('parent_id')
       ->orderBy('sort_order')
+      ->with('childrenRecursive')
       ->get();
 @endphp
 <a class="skip-link" href="#content">İçeriğe geç</a>
@@ -64,9 +66,7 @@
       <nav class="mobile-menu-panel" aria-label="Ürün kategorileri">
         <div class="mobile-menu-heading">Kategorileri keşfet</div>
         <a href="{{ route('home') }}">Ana sayfa</a>
-        @foreach($navigationCategories as $mobileMenuCategory)
-          <a href="{{ route('category.show', $mobileMenuCategory->slug) }}">{{ $mobileMenuCategory->name }} <span aria-hidden="true">›</span></a>
-        @endforeach
+        @include('store.partials.category-menu-items', ['items' => $navigationCategories, 'level' => 0])
         <a href="{{ route('search') }}">Tüm ürünler <span aria-hidden="true">›</span></a>
       </nav>
     </details>
