@@ -63,7 +63,7 @@ class ShoppingCart
         }
 
         if ($raw !== $normalized) {
-            $request->session()->put(self::SESSION_KEY, $normalized);
+            self::put($request, $normalized);
         }
 
         $settings = StoreSetting::current();
@@ -97,11 +97,14 @@ class ShoppingCart
     public static function put(Request $request, array $items): void
     {
         $request->session()->put(self::SESSION_KEY, $items);
+        // Draft selectors are temporary: never resurrect quantities after cart changes.
+        $request->session()->put('product_picker_reset', true);
     }
 
     public static function clear(Request $request): void
     {
         $request->session()->forget(self::SESSION_KEY);
+        $request->session()->put('product_picker_reset', true);
     }
 
     public static function itemCount(): int

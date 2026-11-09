@@ -1,4 +1,13 @@
 // Progressive enhancement: cart works with ordinary POST/PATCH forms without JavaScript.
+// Never display an outdated cart from the browser back/forward cache.
+if (document.body.classList.contains('is-cart-page')) {
+  window.addEventListener('pageshow', (event) => {
+    const navigation = performance.getEntriesByType('navigation')[0];
+    if (event.persisted || navigation?.type === 'back_forward') {
+      window.location.reload();
+    }
+  });
+}
 const cartForms = [...document.querySelectorAll('[data-cart-update-form]')];
 if (cartForms.length) {
   document.body.classList.add('cart-js-ready');

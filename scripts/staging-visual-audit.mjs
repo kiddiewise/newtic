@@ -135,6 +135,30 @@ try {
         if (entry.interactions.cartUrl !== '/sepet' || entry.interactions.cartItemQuantity !== '2') {
           throw new Error('Mobile add-to-cart interaction did not complete correctly.');
         }
+
+        // Clear the cart and revisit the same category: no previously selected
+        // quantities (including the current SKU) may return.
+        page.once('dialog', async (dialog) => { await dialog.accept(); });
+        await page.locator('form[action$="/sepet/temizle"] button').click();
+        await page.waitForLoadState('domcontentloaded');
+        entry.interactions.cartEmptyAfterClear = await page.locator('.cart-empty').isVisible();
+        await page.goto(new URL('/urun/demo-renkli-surf-125-gr', origin).href, {
+          waitUntil: 'domcontentloaded', timeout: 60000,
+        });
+        entry.interactions.pickerQuantitiesAfterClear = await page.locator('[data-order-quantity]').evaluateAll(
+          (nodes) => nodes.map((element) => Number(element.value))
+        );
+        entry.interactions.quickQuantityAfterClear = await page.locator('[data-quick-qty]').innerText();
+        entry.interactions.addDisabledAfterClear = await page.locator('.pdp-sticky-add').isDisabled();
+        await page.locator('[data-sheet-open]').click();
+        await page.screenshot({ path: `${outputDir}/mobile-picker-after-cart-clear.png`, fullPage: false });
+        if (!entry.interactions.cartEmptyAfterClear ||
+            entry.interactions.pickerQuantitiesAfterClear.some((quantity) => quantity !== 0) ||
+            entry.interactions.quickQuantityAfterClear.trim() !== '0' ||
+            !entry.interactions.addDisabledAfterClear) {
+          throw new Error('Cart clear did not reset product picker: ' + JSON.stringify(entry.interactions));
+        }
+
       }
     } catch (error) {
       entry.error = String(error).slice(0, 600);

@@ -46,7 +46,11 @@ class CatalogController extends Controller
             ->where('is_active', true)
             ->orderBy('name')->get();
 
-        return view('store.product', compact('product', 'categoryProducts'));
+        // A new visitor starts with one selected SKU; any completed cart mutation
+        // clears the picker draft so it never appears to contain ghost items.
+        $pickerReset = (bool) $request->session()->get('product_picker_reset', false);
+
+        return view('store.product', compact('product', 'categoryProducts', 'pickerReset'));
     }
 
     public function search(Request $request): View

@@ -85,7 +85,7 @@
   </div>
 
   {{-- The category products remain independent SKUs; both buttons submit the same secure form. --}}
-  <form id="pdp-cart-form" method="POST" action="{{ route('cart.add') }}">@csrf</form>
+  <form id="pdp-cart-form" method="POST" action="{{ route('cart.add') }}" autocomplete="off">@csrf</form>
   @if($errors->has('items'))<div class="cart-flash is-error" role="alert">{{ $errors->first('items') }}</div>@endif
   {{-- The same category order list is a regular section on desktop and a bottom sheet on mobile. --}}
   <section id="pdp-picker" class="category-order pdp-picker" data-category-id="{{ $product->primary_category_id }}" data-product-sheet aria-labelledby="category-order-title">
@@ -103,7 +103,7 @@
       @foreach($categoryProducts as $categoryProduct)
         @php
           $current = $categoryProduct->is($product);
-          $initialQty = $current && $categoryProduct->stock_quantity > 0 ? 1 : 0;
+          $initialQty = $current && $categoryProduct->stock_quantity > 0 && !$pickerReset ? 1 : 0;
         @endphp
         <div class="order-item pdp-order-item {{ $current ? 'is-current' : '' }}">
           <span class="order-item-image">
@@ -120,7 +120,7 @@
             <button type="button" data-step-minus aria-label="{{ $categoryProduct->name }} azalt">−</button>
             <label class="quantity-field">
               <span class="sr-only">{{ $categoryProduct->name }} adedi</span>
-              <input type="number" form="pdp-cart-form" name="items[{{ $categoryProduct->id }}]" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->stock_quantity }}" value="{{ $initialQty }}" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
+              <input type="number" form="pdp-cart-form" name="items[{{ $categoryProduct->id }}]" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->stock_quantity }}" value="{{ $initialQty }}" autocomplete="off" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
             </label>
             <button type="button" data-step-plus aria-label="{{ $categoryProduct->name }} arttır" @disabled($categoryProduct->stock_quantity === 0)>+</button>
           </div>
@@ -165,7 +165,7 @@
       <small class="pdp-sticky-quick-name">{{ $product->name }}</small>
       <div class="pdp-sticky-stepper" aria-label="Görüntülenen ürünün adedi">
         <button type="button" data-quick-minus aria-label="{{ $product->name }} azalt">−</button>
-        <output data-quick-qty>1</output>
+        <output data-quick-qty>{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
         <button type="button" data-quick-plus aria-label="{{ $product->name }} arttır" @disabled($product->stock_quantity === 0)>+</button>
       </div>
     </div>

@@ -29,32 +29,17 @@ if (pdpSheet) {
       : 0;
   };
 
-  let saved = null;
-  try {
-    const raw = sessionStorage.getItem(sessionKey);
-    if (raw) {
-      const candidate = JSON.parse(raw);
-      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) saved = candidate;
-    }
-  } catch { /* Browser blocks storage; selectors still work normally. */ }
-
-  if (saved) {
-    orderInputs.forEach((field) => {
-      const key = field.dataset.productId;
-      if (Object.prototype.hasOwnProperty.call(saved, key)) {
-        field.value = clamp(field, saved[key]);
-      }
-    });
-  }
+  // Picker quantities are only a draft. The cart is the sole durable source of
+  // truth, so old values must not outlive add/remove/clear actions.
+  try { sessionStorage.removeItem(sessionKey); }
+  catch { /* Optional browser storage may be unavailable. */ }
 
   const update = () => {
     let quantity = 0;
     let cents = 0;
-    const quantities = {};
     orderInputs.forEach((field) => {
       const number = clamp(field, field.value);
       if (field.value !== String(number)) field.value = String(number);
-      quantities[field.dataset.productId] = number;
       quantity += number;
       cents += Math.round(Number(field.dataset.price || 0) * 100) * number;
       const controls = field.closest('.pdp-stepper');
@@ -74,8 +59,6 @@ if (pdpSheet) {
       if (quickMinus) quickMinus.disabled = value <= 0;
       if (quickPlus) quickPlus.disabled = value >= Number(currentInput.max);
     }
-    try { sessionStorage.setItem(sessionKey, JSON.stringify(quantities)); }
-    catch { /* Optional local session persistence. */ }
   };
 
   const adjust = (field, amount) => {
@@ -96,6 +79,20 @@ if (pdpSheet) {
   quickMinus?.addEventListener('click', () => adjust(currentInput, -1));
   quickPlus?.addEventListener('click', () => adjust(currentInput, 1));
   update();
+
+  // Browser back/forward cache can restore the old form DOM after a cart
+  // mutation. Always zero the temporary draft on history traversal.
+  window.addEventListener('pageshow', (event) => {
+    const navigation = performance.getEntriesByType('navigation')[0];
+    if (event.persisted || navigation?.type === 'back_forward') {
+      orderInputs.forEach((field) => { field.value = '0'; });
+      update();
+      document.body.classList.remove('pdp-sheet-open');
+      pdpSheet.removeAttribute('role');
+      pdpSheet.removeAttribute('aria-modal');
+      opens.forEach((element) => element.setAttribute('aria-expanded', 'false'));
+    }
+  });
 
   const close = () => {
     document.body.classList.remove('pdp-sheet-open');
