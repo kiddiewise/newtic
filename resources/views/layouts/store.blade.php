@@ -10,7 +10,7 @@
   <meta name="description" content="@yield('description', 'Polaris Kurşun balıkçılık ekipmanları. Yeni mağaza tasarımı hazırlanmaktadır.')">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : (request()->routeIs('cart.index') ? 'is-cart-page' : '')) }}">
+<body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : (request()->routeIs('cart.index') ? 'is-cart-page' : (request()->routeIs('checkout.*') ? 'is-checkout' : ''))) }}">
 @php
   $headerCartCount = \App\Support\ShoppingCart::itemCount();
   $activeCategorySlugs = request()->routeIs('category.show') && isset($breadcrumbs)
@@ -44,7 +44,7 @@
       <a class="icon-link header-search-shortcut" href="{{ route('search') }}" aria-label="Ürün arama">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
       </a>
-      <a class="icon-link" href="{{ route('home') }}" aria-label="Ana sayfa">
+      <a class="icon-link" href="{{ route('account.index') }}" aria-label="Hesabım">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></svg>
       </a>
       <a class="icon-link header-cart-link" href="{{ route('cart.index') }}" aria-label="Sepetim, {{ $headerCartCount }} adet">
@@ -151,9 +151,9 @@
       <span class="mobile-brand-name">POLARIS</span>
     </a>
     <div class="mobile-top-actions">
-      <span aria-label="Hesabım, geliştirme aşamasında" title="Hesabım geliştirme aşamasında" class="mobile-icon-disabled">
+      <a href="{{ route('account.index') }}" aria-label="Hesabım" title="Hesabım" class="mobile-account-link">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/></svg>
-      </span>
+      </a>
       <a class="mobile-cart-link header-cart-link" href="{{ route('cart.index') }}" aria-label="Sepetim, {{ $headerCartCount }} adet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l2.5 12h13L22 7H5"/></svg>
         @if($headerCartCount > 0)<span class="cart-icon-badge">{{ $headerCartCount }}</span>@endif
@@ -182,7 +182,7 @@
       <p>Balıkçılık tutkusuna eşlik eden, her detayı özenle düşünülmüş ekipmanlar.</p>
     </div>
     <div><strong>Keşfet</strong><a href="{{ route('home') }}">Ana sayfa</a><a href="{{ route('search') }}">Ürünler</a></div>
-    <div><strong>Bilgilendirme</strong><p>Yeni e-ticaret mağazamız test aşamasındadır. Bu ortamda sipariş alınmamaktadır.</p></div>
+    <div><strong>Bilgilendirme</strong><p>Test ortamında yalnızca deneme sipariş kayıtları oluşturulur. Gerçek ödeme alınmaz.</p></div>
   </div>
   <div class="container footer-bottom">© {{ date('Y') }} Polaris Kurşun · Yeni mağaza önizlemesi</div>
 </footer>

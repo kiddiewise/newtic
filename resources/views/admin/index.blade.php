@@ -8,6 +8,7 @@
     <a href="{{ route('admin.products.create') }}"><strong>+ Ürün ekle</strong><small>Fotoğraf, fiyat ve stok</small></a>
     <a href="{{ route('admin.categories.create') }}"><strong>+ Kategori ekle</strong><small>Kategori adı ve görseli</small></a>
     <a href="{{ route('admin.store-settings.edit') }}"><strong>Kargo ayarları ↗</strong><small>Ücretsiz kargo ve teslimat ücreti</small></a>
+    <a href="{{ route('admin.orders.index') }}"><strong>Siparişleri yönet ↗</strong><small>Müşteri, sipariş ve teslimat durumları</small></a>
   </div>
   <div class="admin-panel">
     <div class="admin-panel-title"><h2>Yayındaki bloklar</h2><span>{{ $sections->count() }} blok</span></div>

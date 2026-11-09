@@ -11,7 +11,7 @@ Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('ca
 Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
-// Session-backed shopping cart; no checkout or payment endpoint at this stage.
+// Session-backed shopping cart; order checkout uses the same authoritative cart.
 Route::get('/favoriler', [WishlistController::class, 'index'])->name('wishlist.index');
 Route::post('/favoriler/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/sepet', [CartController::class, 'index'])->name('cart.index');
@@ -20,8 +20,33 @@ Route::patch('/sepet/urun/{product}', [CartController::class, 'update'])->name('
 Route::delete('/sepet/urun/{product}', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/sepet/temizle', [CartController::class, 'clear'])->name('cart.clear');
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CustomerAddressController;
+use App\Http\Controllers\CheckoutController;
+
+Route::get('/giris', [AccountController::class, 'loginPage'])->name('account.login');
+Route::post('/giris', [AccountController::class, 'login'])->middleware('throttle:6,1')->name('account.login.submit');
+Route::get('/uye-ol', [AccountController::class, 'registerPage'])->name('account.register');
+Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('throttle:5,1')->name('account.register.submit');
+Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
+
+Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
+Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+
+Route::prefix('hesabim')->name('account.')->middleware('auth')->group(function () {
+    Route::get('/', [AccountController::class, 'index'])->name('index');
+    Route::get('/adresler', [CustomerAddressController::class, 'index'])->name('addresses.index');
+    Route::get('/adresler/yeni', [CustomerAddressController::class, 'create'])->name('addresses.create');
+    Route::post('/adresler', [CustomerAddressController::class, 'store'])->name('addresses.store');
+    Route::get('/adresler/{address}/duzenle', [CustomerAddressController::class, 'edit'])->name('addresses.edit');
+    Route::patch('/adresler/{address}', [CustomerAddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/adresler/{address}', [CustomerAddressController::class, 'destroy'])->name('addresses.destroy');
+});
+
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CategoryBannerController;
 use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
@@ -38,6 +63,9 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
     Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
 

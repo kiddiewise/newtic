@@ -25,6 +25,7 @@
       <a class="{{ request()->routeIs('admin.index', 'admin.sections.*') ? 'is-active' : '' }}" href="{{ route('admin.index') }}">Vitrin</a>
       <a class="{{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}" href="{{ route('admin.categories.index') }}">Kategoriler</a>
       <a class="{{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}" href="{{ route('admin.products.index') }}">Ürünler</a>
+      <a class="{{ request()->routeIs('admin.orders.*') ? 'is-active' : '' }}" href="{{ route('admin.orders.index') }}">Siparişler</a>
       <a class="{{ request()->routeIs('admin.store-settings.*') ? 'is-active' : '' }}" href="{{ route('admin.store-settings.edit') }}">Kargo ayarları</a>
     </nav>
     @endif

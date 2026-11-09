@@ -120,7 +120,8 @@
       <aside class="cart-summary" aria-labelledby="cart-summary-title">
         <h2 id="cart-summary-title">Sepet özeti</h2>
         @include('store.partials.cart-summary-details', ['cart' => $cart])
-        <p class="cart-checkout-note">Ödeme ve sipariş oluşturma henüz aktif değil. Bu mağaza test aşamasındadır.</p>
+        <a class="cart-checkout-action" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
+        <p class="cart-checkout-note">Test ortamında ödeme alınmaz; deneme siparişi oluşturulabilir.</p>
       </aside>
     </div>
   @endif
@@ -136,10 +137,10 @@
     </div>
     <div class="cart-sheet-scroll">
       @include('store.partials.cart-summary-details', ['cart' => $cart])
-      <p class="cart-checkout-note">Sipariş ve ödeme henüz aktif değil. Bu ekran şu anda sepet kontrolü içindir.</p>
+      <p class="cart-checkout-note">Teslimat adresini girerek deneme siparişi oluşturabilirsin.</p>
     </div>
     <div class="cart-sheet-footer">
-      <a class="cart-sheet-continue" href="{{ route('search') }}">Alışverişe devam et</a>
+      <a class="cart-sheet-continue" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
     </div>
   </section>
   <div class="cart-mobile-bottom" aria-label="Sepet toplamı ve özeti">
@@ -148,7 +149,7 @@
       <span class="cart-mobile-shipping">{{ $cart['shipping_cents'] === 0 ? 'Kargo bedava' : 'Kargo dahil' }}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
     </button>
-    <button class="cart-mobile-summary-open" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">Sepet Özeti <span aria-hidden="true">⌃</span></button>
+    <a class="cart-mobile-summary-open" href="{{ route('checkout.index') }}">Siparişi Tamamla <span aria-hidden="true">›</span></a>
   </div>
 @endif
 @endsection

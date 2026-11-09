@@ -66,3 +66,5 @@ import './category-navigation.js';
 import './mega-menu.js';
 
 import './quick-cart.js';
+
+import './checkout.js';
