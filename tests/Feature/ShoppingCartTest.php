@@ -233,6 +233,6 @@ class ShoppingCartTest extends TestCase
         $this->get('/sepet/ekle')->assertStatus(405);
         $this->get('/sepet/temizle')->assertStatus(405);
         $this->get('/sepet')->assertOk()->assertSee('Sepetin henüz boş');
-        $this->get('/odeme')->assertNotFound();
+        $this->get('/odeme')->assertRedirect(route('cart.index'));
     }
 }
