@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,8 @@ Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
 // Session-backed shopping cart; no checkout or payment endpoint at this stage.
+Route::get('/favoriler', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::post('/favoriler/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/sepet', [CartController::class, 'index'])->name('cart.index');
 Route::post('/sepet/ekle', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/sepet/urun/{product}', [CartController::class, 'update'])->name('cart.update');

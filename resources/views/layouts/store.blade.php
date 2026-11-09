@@ -9,7 +9,7 @@
   <meta name="description" content="@yield('description', 'Polaris Kurşun balıkçılık ekipmanları. Yeni mağaza tasarımı hazırlanmaktadır.')">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : '') }}">
+<body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : (request()->routeIs('cart.index') ? 'is-cart-page' : '')) }}">
 @php
   $headerCartCount = \App\Support\ShoppingCart::itemCount();
   // Shared once by desktop navigation, mobile drawer and mobile category chips.

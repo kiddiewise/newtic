@@ -33,6 +33,7 @@ class ShoppingCart
         $lines = [];
         $subtotalCents = 0;
         $quantityCount = 0;
+        $savingsCents = 0;
         foreach ($raw as $id => $rawQuantity) {
             $product = ctype_digit((string) $id) ? $products->get((int) $id) : null;
             if (! $product || ! is_numeric($rawQuantity) || (int) $rawQuantity < 1) {
@@ -45,6 +46,9 @@ class ShoppingCart
 
             $unitCents = (int) round((float) $product->price * 100);
             $lineCents = $unitCents * $quantity;
+            $regularCents = max($unitCents, (int) round((float) ($product->compare_at_price ?? $product->price) * 100));
+            $lineSavingsCents = ($regularCents - $unitCents) * $quantity;
+            $savingsCents += $lineSavingsCents;
             $subtotalCents += $lineCents;
             $quantityCount += $quantity;
             $normalized[$product->id] = $quantity;
@@ -53,6 +57,8 @@ class ShoppingCart
                 'quantity' => $quantity,
                 'unit_cents' => $unitCents,
                 'line_cents' => $lineCents,
+                'regular_cents' => $regularCents,
+                'savings_cents' => $lineSavingsCents,
             ];
         }
 
@@ -70,6 +76,8 @@ class ShoppingCart
             'lines' => $lines,
             'count' => $quantityCount,
             'subtotal_cents' => $subtotalCents,
+            'savings_cents' => $savingsCents,
+            'regular_subtotal_cents' => $subtotalCents + $savingsCents,
             'shipping_cents' => $shippingCents,
             'total_cents' => $subtotalCents + $shippingCents,
             'threshold_cents' => $thresholdCents,

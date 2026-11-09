@@ -61,3 +61,5 @@ document.addEventListener('keydown', (event) => {
 import './catalog-extras.js';
 
 import './product-detail.js';
+
+import './cart-mobile.js';

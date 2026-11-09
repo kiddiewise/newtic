@@ -15,7 +15,9 @@ class CartController extends Controller
     {
         $cart = ShoppingCart::snapshot($request);
 
-        return view('store.cart', compact('cart'));
+        $wishlistIds = WishlistController::ids($request);
+
+        return view('store.cart', compact('cart', 'wishlistIds'));
     }
 
     public function add(Request $request): RedirectResponse
