@@ -53,6 +53,8 @@ use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StoreSettingController;
+use App\Http\Controllers\Admin\AppearanceController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
@@ -68,6 +70,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
     Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
+    Route::get('/logo-ayarlari', [AppearanceController::class, 'edit'])->name('appearance.edit');
+    Route::patch('/logo-ayarlari', [AppearanceController::class, 'update'])->name('appearance.update');
+    Route::get('/duyurular', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/duyurular', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::patch('/duyurular/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('/duyurular/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');

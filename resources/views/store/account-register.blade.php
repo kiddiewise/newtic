@@ -5,6 +5,7 @@
   <div class="checkout-top"><a href="{{ route('account.login') }}" aria-label="Geri dön">‹</a><strong>Üyelik Oluştur</strong><span></span></div>
   <div class="checkout-card">
     <h1>Polaris hesabını oluştur</h1><p>Birden fazla adres kaydet, geçmiş siparişlerini takip et.</p>
+    @include('store.partials.social-auth')
     <form method="POST" action="{{ route('account.register.submit') }}" class="checkout-form">
       @csrf
       <input type="hidden" name="next" value="{{ request('next') === 'checkout' ? 'checkout' : '' }}">

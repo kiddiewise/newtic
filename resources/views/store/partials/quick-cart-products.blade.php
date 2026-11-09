@@ -23,12 +23,12 @@
 
 @if($cart['free_shipping'])
   <div class="quick-cart-shipping is-free">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h12v10H2zM14 10h4l4 4v3h-8z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    <x-store-icon name="truck" />
     <span><strong>Kargo ücretsiz!</strong><small>Ücretsiz kargo limitine ulaştın.</small></span>
   </div>
 @elseif($cart['count'] > 0)
   <div class="quick-cart-shipping">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h12v10H2zM14 10h4l4 4v3h-8z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    <x-store-icon name="truck" />
     <span><strong>{{ number_format($cart['remaining_cents'] / 100, 2, ',', '.') }} ₺ daha ekle, kargo ücretsiz!</strong><small>Kargo koşulları sepet tutarına göre güncellenir.</small></span>
     @if($cart['threshold_cents'] > 0)
       <span class="quick-cart-progress"><span style="width:{{ min(100, round(100 * $cart['subtotal_cents'] / $cart['threshold_cents'])) }}%"></span></span>

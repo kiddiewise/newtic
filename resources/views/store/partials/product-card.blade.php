@@ -14,11 +14,7 @@
         @csrf
         <input type="hidden" name="items[{{ $product->id }}]" value="1">
         <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" title="{{ $product->stock_quantity > 0 ? 'Sepete ekle' : 'Stokta yok' }}" @disabled($product->stock_quantity <= 0)>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 4h2l2.4 10.5h12l2-7H6"/>
-            <circle cx="10" cy="19.5" r="1.15"/><circle cx="19" cy="19.5" r="1.15"/>
-            <path d="M15.5 2.5v6M12.5 5.5h6"/>
-          </svg>
+          <x-store-icon name="shopping-cart-plus" />
         </button>
       </form>
     </div>

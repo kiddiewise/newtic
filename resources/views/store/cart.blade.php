@@ -4,11 +4,11 @@
 
 <header class="cart-mobile-header" aria-label="Sepet üst menüsü">
   <a href="{{ route('home') }}" class="cart-mobile-back" data-cart-back aria-label="Alışverişe geri dön">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    <x-store-icon name="chevron-left" />
   </a>
   <strong>Sepetim</strong>
   <a href="{{ route('wishlist.index') }}" class="cart-mobile-favorites" aria-label="Favorilerim">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
+    <x-store-icon name="heart" />
   </a>
 </header>
 
@@ -31,7 +31,7 @@
   @if($cart['lines'] === [])
     <div class="cart-empty">
       <div class="cart-empty-art" aria-hidden="true">
-        <svg viewBox="0 0 64 64"><path d="M10 13h7l6 28h28l6-19H20M28 52h1M48 52h1"/></svg>
+        <x-store-icon name="shopping-bag" />
       </div>
       <h2>Sepetin henüz boş</h2>
       <p>Farklı gramajları ve ürünleri aynı sepette birleştirebilirsin.</p>
@@ -40,7 +40,7 @@
   @else
     <div class="cart-shipping-highlight {{ $cart['free_shipping'] ? 'is-free' : '' }}">
       <span class="cart-shipping-highlight-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M3 6h12v11H3zM15 10h4l3 4v3h-7z"/><circle cx="7.5" cy="18.5" r="1.7"/><circle cx="18" cy="18.5" r="1.7"/><path d="M6 10h6M6 13h4"/></svg>
+        <x-store-icon name="truck" />
       </span>
       <div>
         @if($cart['free_shipping'])
@@ -109,7 +109,7 @@
               <form class="cart-favorite-form" method="POST" action="{{ route('wishlist.toggle', $item) }}">
                 @csrf
                 <button type="submit" class="cart-favorite-button {{ $faved ? 'is-favorite' : '' }}" aria-pressed="{{ $faved ? 'true' : 'false' }}" aria-label="{{ $item->name }} {{ $faved ? 'favorilerden çıkar' : 'favorilere ekle' }}" title="{{ $faved ? 'Favorilerden çıkar' : 'Favorilere ekle' }}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
+                  <x-store-icon name="heart" />
                 </button>
               </form>
             </div>
@@ -147,7 +147,7 @@
     <button class="cart-mobile-total" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">
       <span class="cart-mobile-price">{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</span>
       <span class="cart-mobile-shipping">{{ $cart['shipping_cents'] === 0 ? 'Kargo bedava' : 'Kargo dahil' }}</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+      <x-store-icon name="chevron-up" />
     </button>
     <a class="cart-mobile-summary-open" href="{{ route('checkout.index') }}">Siparişi Tamamla <span aria-hidden="true">›</span></a>
   </div>

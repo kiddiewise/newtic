@@ -5,18 +5,18 @@
 {{-- Mobile-only product toolbar replaces the full catalogue navigation on this page. --}}
 <header class="pdp-mobile-header" aria-label="Ürün detay menüsü">
   <a class="pdp-head-icon" href="{{ route('category.show', $product->category->slug) }}" data-product-back aria-label="Geri dön">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    <x-store-icon name="chevron-left" />
   </a>
   <span class="pdp-mobile-heading">{{ $product->name }}</span>
   <div class="pdp-head-actions">
     <a class="pdp-head-icon" href="{{ route('search') }}" aria-label="Ürün ara">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.2"/><path d="m16.3 16.3 4.5 4.5"/></svg>
+      <x-store-icon name="search" />
     </a>
     <button class="pdp-head-icon pdp-future-icon" type="button" disabled title="Favoriler yakında" aria-label="Favoriler yakında">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
+      <x-store-icon name="heart" />
     </button>
     <a class="pdp-head-icon pdp-cart-link header-cart-link" href="{{ route('cart.index') }}" title="Sepetim" aria-label="Sepetim">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.3 11.4h12.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
+      <x-store-icon name="shopping-cart" />
       @if(\App\Support\ShoppingCart::itemCount() > 0)<span class="cart-icon-badge">{{ \App\Support\ShoppingCart::itemCount() }}</span>@endif
     </a>
   </div>

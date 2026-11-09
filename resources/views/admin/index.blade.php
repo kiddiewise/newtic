@@ -9,6 +9,8 @@
     <a href="{{ route('admin.categories.create') }}"><strong>+ Kategori ekle</strong><small>Kategori adı ve görseli</small></a>
     <a href="{{ route('admin.store-settings.edit') }}"><strong>Kargo ayarları ↗</strong><small>Ücretsiz kargo ve teslimat ücreti</small></a>
     <a href="{{ route('admin.orders.index') }}"><strong>Siparişleri yönet ↗</strong><small>Müşteri, sipariş ve teslimat durumları</small></a>
+    <a href="{{ route('admin.appearance.edit') }}"><strong>Mobil / masaüstü logoları ↗</strong><small>Marka görsellerini yönet</small></a>
+    <a href="{{ route('admin.announcements.index') }}"><strong>Kayan duyurular ↗</strong><small>Zamanlı kampanya mesajları oluştur</small></a>
   </div>
   <div class="admin-panel">
     <div class="admin-panel-title"><h2>Yayındaki bloklar</h2><span>{{ $sections->count() }} blok</span></div>

@@ -5,6 +5,7 @@
   <div class="checkout-top"><a href="{{ route('checkout.index') }}" aria-label="Geri dön">‹</a><strong>Üye Girişi</strong><span></span></div>
   <div class="checkout-card">
     <h1>Tekrar hoş geldin</h1><p>Siparişlerini ve kayıtlı adreslerini hesabından yönet.</p>
+    @include('store.partials.social-auth')
     <form method="POST" action="{{ route('account.login.submit') }}" class="checkout-form">
       @csrf
       <input type="hidden" name="next" value="{{ request('next') === 'checkout' ? 'checkout' : '' }}">
