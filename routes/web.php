@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -9,12 +10,20 @@ Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('ca
 Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
+// Session-backed shopping cart; no checkout or payment endpoint at this stage.
+Route::get('/sepet', [CartController::class, 'index'])->name('cart.index');
+Route::post('/sepet/ekle', [CartController::class, 'add'])->name('cart.add');
+Route::patch('/sepet/urun/{product}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/sepet/urun/{product}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/sepet/temizle', [CartController::class, 'clear'])->name('cart.clear');
+
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
@@ -25,6 +34,8 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
+    Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
+    Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');

@@ -11,6 +11,7 @@
 </head>
 <body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : '') }}">
 @php
+  $headerCartCount = \App\Support\ShoppingCart::itemCount();
   // Shared once by desktop navigation, mobile drawer and mobile category chips.
   $navigationCategories = \App\Models\Category::query()
       ->where('is_active', true)
@@ -40,9 +41,10 @@
       <a class="icon-link" href="{{ route('home') }}" aria-label="Ana sayfa">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></svg>
       </a>
-      <span class="icon-link cart-coming-soon" aria-label="Sepet geliştirme aşamasında" title="Sepet geliştirme aşamasında">
+      <a class="icon-link header-cart-link" href="{{ route('cart.index') }}" aria-label="Sepetim, {{ $headerCartCount }} adet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h8.7a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="19" cy="21" r="1"/></svg>
-      </span>
+        @if($headerCartCount > 0)<span class="cart-icon-badge">{{ $headerCartCount }}</span>@endif
+      </a>
     </div>
   </div>
   <nav class="desktop-nav" aria-label="Ana gezinme">
@@ -76,9 +78,10 @@
       <span aria-label="Hesabım, geliştirme aşamasında" title="Hesabım geliştirme aşamasında" class="mobile-icon-disabled">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/></svg>
       </span>
-      <span aria-label="Sepet, geliştirme aşamasında" title="Sepet geliştirme aşamasında" class="mobile-icon-disabled">
+      <a class="mobile-cart-link header-cart-link" href="{{ route('cart.index') }}" aria-label="Sepetim, {{ $headerCartCount }} adet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l2.5 12h13L22 7H5"/></svg>
-      </span>
+        @if($headerCartCount > 0)<span class="cart-icon-badge">{{ $headerCartCount }}</span>@endif
+      </a>
     </div>
   </div>
   <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search">
@@ -110,7 +113,7 @@
   <a href="{{ route('home') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></svg><span>Ana sayfa</span></a>
   <a href="{{ route('search') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Ürünler</span></a>
   <a href="{{ route('search') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><span>Ara</span></a>
-  <span class="mobile-nav-disabled" aria-label="Sepet geliştirme aşamasında"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h8.7a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="19" cy="21" r="1"/></svg><span>Sepet</span></span>
+  <a href="{{ route('cart.index') }}" class="mobile-nav-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h8.7a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="19" cy="21" r="1"/></svg><span>Sepet @if($headerCartCount > 0)({{ $headerCartCount }})@endif</span></a>
 </nav>
 </body>
 </html>

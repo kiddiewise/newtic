@@ -15,9 +15,10 @@
     <button class="pdp-head-icon pdp-future-icon" type="button" disabled title="Favoriler yakında" aria-label="Favoriler yakında">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
     </button>
-    <button class="pdp-head-icon pdp-future-icon" type="button" disabled title="Sepet yakında" aria-label="Sepet yakında">
+    <a class="pdp-head-icon pdp-cart-link header-cart-link" href="{{ route('cart.index') }}" title="Sepetim" aria-label="Sepetim">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.3 11.4h12.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
-    </button>
+      @if(\App\Support\ShoppingCart::itemCount() > 0)<span class="cart-icon-badge">{{ \App\Support\ShoppingCart::itemCount() }}</span>@endif
+    </a>
   </div>
 </header>
 
@@ -83,6 +84,9 @@
     </div>
   </div>
 
+  {{-- The category products remain independent SKUs; both buttons submit the same secure form. --}}
+  <form id="pdp-cart-form" method="POST" action="{{ route('cart.add') }}">@csrf</form>
+  @if($errors->has('items'))<div class="cart-flash is-error" role="alert">{{ $errors->first('items') }}</div>@endif
   {{-- The same category order list is a regular section on desktop and a bottom sheet on mobile. --}}
   <section id="pdp-picker" class="category-order pdp-picker" data-category-id="{{ $product->primary_category_id }}" data-product-sheet aria-labelledby="category-order-title">
     <div class="pdp-sheet-handle" aria-hidden="true"></div>
@@ -116,7 +120,7 @@
             <button type="button" data-step-minus aria-label="{{ $categoryProduct->name }} azalt">−</button>
             <label class="quantity-field">
               <span class="sr-only">{{ $categoryProduct->name }} adedi</span>
-              <input type="number" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->stock_quantity }}" value="{{ $initialQty }}" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
+              <input type="number" form="pdp-cart-form" name="items[{{ $categoryProduct->id }}]" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->stock_quantity }}" value="{{ $initialQty }}" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
             </label>
             <button type="button" data-step-plus aria-label="{{ $categoryProduct->name }} arttır" @disabled($categoryProduct->stock_quantity === 0)>+</button>
           </div>
@@ -126,10 +130,10 @@
 
     <div class="order-summary pdp-sheet-footer">
       <div>
-        <small>Seçiminiz · Sepet entegrasyonu hazırlanıyor</small>
+        <small>Seçilen ürünler</small>
         <strong data-order-summary>Seçim hesaplanıyor</strong>
       </div>
-      <button type="button" data-sheet-close>Seçimi tamamla</button>
+      <button type="submit" form="pdp-cart-form" data-cart-add>Sepete ekle</button>
     </div>
   </section>
 
@@ -147,7 +151,7 @@
       <div><span>Kategori</span><a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a></div>
     </div>
   </section>
-  <p class="pdp-order-notice">Bu test mağazasında henüz sipariş ve ödeme alınmamaktadır. Ürün ve adet seçimi şimdilik sipariş önizlemesidir.</p>
+  <p class="pdp-order-notice">Bu test mağazasında henüz sipariş ve ödeme alınmamaktadır. Sepet kullanılabilir; sipariş ve ödeme henüz aktif değildir.</p>
 </main>
 
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>
@@ -169,6 +173,7 @@
       <span>Tüm ürünleri seç <span aria-hidden="true">⌃</span></span>
       <strong data-sticky-total>Hesaplanıyor</strong>
     </button>
+    <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add>Sepete ekle</button>
   </div>
 </div>
 @endsection

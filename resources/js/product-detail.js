@@ -1,8 +1,9 @@
-// Product-only mobile interaction layer; no checkout requests are issued.
+// Product-only mobile interaction; the POST /sepet/ekle endpoint validates price, stock and product IDs.
 const pdpSheet = document.querySelector('[data-product-sheet]');
 if (pdpSheet) {
   const orderInputs = [...pdpSheet.querySelectorAll('[data-order-quantity]')];
   const orderSummary = pdpSheet.querySelector('[data-order-summary]');
+  const addButtons = [...document.querySelectorAll('[data-cart-add]')];
   const sticky = document.querySelector('[data-sticky-bar]');
   const backdrop = document.querySelector('[data-sheet-backdrop]');
   const stickySelection = sticky?.querySelector('[data-sticky-selection]');
@@ -64,6 +65,7 @@ if (pdpSheet) {
     });
     const amount = fmt.format(cents / 100);
     if (orderSummary) orderSummary.textContent = quantity + ' adet · ' + amount;
+    addButtons.forEach((button) => { button.disabled = quantity === 0; });
     if (stickySelection) stickySelection.textContent = quantity + ' adet seçildi';
     if (stickyTotal) stickyTotal.textContent = amount;
     if (currentInput) {
