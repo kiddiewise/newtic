@@ -1,0 +1,80 @@
+name: Deploy NEWTIC staging
+
+on:
+  push:
+    branches:
+      - feat/phase-01-foundation-homepage
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: vars.NEWTIC_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Configure isolated test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+      - name: Install and compile frontend
+        run: |
+          npm install --ignore-scripts
+          npm run build
+          test -f public/build/manifest.json
+          tar -czf newtic-build.tar.gz -C public build
+      - name: Verify migrations and run PHP tests before deployment
+        run: |
+          php artisan migrate --env=testing --force
+          php artisan test
+      - name: Prepare SSH credentials and validate configuration
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || { echo "NEWTIC_SSH_PRIVATE_KEY secret missing"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "NEWTIC_SSH_KNOWN_HOSTS secret missing"; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Upload asset bundle and deploy
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
+          SCP=(scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
+          REMOTE="u880685189@147.79.123.121"
+          "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
+          "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
+          "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify public staging homepage
+        run: |
+          set -euo pipefail
+          URL=https://powderblue-dinosaur-538060.hostingersite.com/
+          curl --fail --show-error --silent --location --retry 3 "$URL" -o homepage.html
+          grep -Fqi "POLARIS" homepage.html
+          echo "NEWTIC staging homepage verified"
