@@ -1,0 +1,48 @@
+
+.cart-mobile-header,.cart-mobile-backdrop,.cart-mobile-summary-sheet,.cart-mobile-bottom{display:none}
+.cart-shipping-highlight{display:flex;gap:13px;align-items:center;background:#ecf9f4;border:1px solid #cce7d9;color:#0d6b56;padding:17px;border-radius:13px;margin-bottom:18px}
+.cart-shipping-highlight-icon{flex:none;display:grid;place-items:center;width:43px;height:43px;background:#d8efe4;border-radius:10px}
+.cart-shipping-highlight-icon svg{width:26px;height:26px;fill:none;stroke:#197956;stroke-width:1.8;stroke-linejoin:round}
+.cart-shipping-highlight strong{display:block;font-size:.93rem;line-height:1.3}
+.cart-shipping-highlight small{display:block;font-size:.72rem;color:#628579;margin-top:5px}
+.cart-shipping-highlight .cart-progress{height:5px;margin-top:9px}
+.cart-box-heading h2 span{font-size:.9em;color:#97a0a6;font-weight:500}
+.cart-item-price-group{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:9px}
+.cart-item-price-group strong{font-size:1.05rem;color:#116e53}
+.cart-item-price-group s{color:#9ca6ab;font-size:.78rem}
+.cart-item-discount .cart-savings-tag{display:inline-block;background:#e8f8ee;border:1px solid #cee9d8;border-radius:22px;color:#197954;font-size:.7rem;font-weight:750;padding:4px 8px}
+.cart-item-discount .cart-discount-percent{background:none;color:#788c94;font-weight:500;font-size:.7rem}
+.cart-item-unit{font-size:.72rem;color:#778e97;margin:7px 0}
+.cart-quantity-stepper{display:flex;align-items:center;gap:0;border:1px solid #dde7e9;border-radius:24px;overflow:hidden}
+.cart-quantity-stepper>button[data-cart-minus],.cart-quantity-stepper>button[data-cart-plus]{height:40px;width:38px;border:0;background:white;padding:0;border-radius:0;color:#0a858b;font-size:24px}
+.cart-quantity-stepper>button[data-cart-minus]{color:#c74451}
+.cart-quantity-stepper>button:disabled{opacity:.3}
+.cart-quantity-stepper input{width:39px!important;text-align:center;border:0!important;border-radius:0!important;appearance:textfield;-moz-appearance:textfield;font-weight:800}
+.cart-quantity-stepper input::-webkit-inner-spin-button,.cart-quantity-stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.cart-js-ready .cart-quantity-stepper .cart-quantity-save{display:none}
+.cart-remove-button{border:1px solid #dde5e7;border-radius:24px;color:#53656d;background:white;width:47px;height:39px;font-size:.75rem;padding:0}
+.cart-favorite-form{margin-left:auto}
+.cart-favorite-button{height:42px;width:42px;display:grid;place-items:center;border:1px solid #dee6e8;border-radius:50%;background:white;color:#7f9299}
+.cart-favorite-button svg{height:23px;width:23px;fill:none;stroke:currentColor;stroke-width:1.8}
+.cart-favorite-button.is-favorite{color:#c73353;border-color:#f2b8c4;background:#fff2f4}
+.cart-favorite-button.is-favorite svg{fill:#f8cdd5}
+.cart-summary-savings dt,.cart-summary-savings dd{color:#15805b;font-weight:750}
+.cart-shipping-old{font-size:.8em;color:#98a8ab;margin-right:5px}
+.cart-total-savings{background:#eefaef;border:1px solid #d2ead8;color:#15754d;border-radius:11px;padding:12px;font-size:.76rem;font-weight:730;margin-top:13px}
+.wishlist-page{padding-block:30px 65px;min-height:60vh}
+.wishlist-heading{display:flex;align-items:center;gap:15px}.wishlist-heading h1{flex:1;font-size:1.6rem;margin:0}
+.wishlist-heading>a:first-child{font-size:26px}.wishlist-to-search{font-size:.78rem;color:#087b80}
+.wishlist-info{font-size:.8rem;color:#73858d}
+.wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:13px;margin-top:22px}
+.wishlist-card{border:1px solid #e2ecee;border-radius:12px;padding:12px}
+.wishlist-card img{width:100%;aspect-ratio:1;object-fit:contain;background:#f6f8f9}
+.wishlist-card h2{font-size:.84rem;line-height:1.4}.wishlist-card strong{color:#087e7d}
+.wishlist-remove{border:1px solid #e3e5e6;border-radius:9px;padding:10px;background:white;color:#a74456;margin-top:11px}
+
+/* Keep cart cards readable at desktop widths after action controls became siblings. */
+@media(min-width:761px){
+  .cart-redesign .cart-item{display:grid;grid-template-columns:115px minmax(0,1fr);gap:10px 16px}
+  .cart-redesign .cart-item-image{grid-column:1;grid-row:1/3}
+  .cart-redesign .cart-item-main{grid-column:2}
+  .cart-redesign .cart-item-actions{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:13px}
+}

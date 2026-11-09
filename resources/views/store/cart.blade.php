@@ -1,0 +1,154 @@
+@extends('layouts.store')
+@section('title', 'Sepetim | Polaris Kurşun')
+@section('content')
+
+<header class="cart-mobile-header" aria-label="Sepet üst menüsü">
+  <a href="{{ route('home') }}" class="cart-mobile-back" data-cart-back aria-label="Alışverişe geri dön">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  </a>
+  <strong>Sepetim</strong>
+  <a href="{{ route('wishlist.index') }}" class="cart-mobile-favorites" aria-label="Favorilerim">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
+  </a>
+</header>
+
+<main class="container cart-page cart-redesign" id="content">
+  <nav class="breadcrumbs cart-breadcrumbs" aria-label="İçerik yolu"><a href="{{ route('home') }}">Ana sayfa</a><span>/</span><span>Sepetim</span></nav>
+
+  <div class="cart-page-heading">
+    <div><p class="eyebrow">POLARIS KURŞUN</p><h1>Sepetim <span>({{ $cart['count'] }} Ürün)</span></h1></div>
+    <a href="{{ route('search') }}">Alışverişe devam et <span aria-hidden="true">›</span></a>
+  </div>
+
+  @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
+  @if(session('error'))<div class="cart-flash is-error" role="alert">{{ session('error') }}</div>@endif
+  @if($errors->any())
+    <div class="cart-flash is-error" role="alert"><strong>Sepet güncellenemedi:</strong>
+      @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
+    </div>
+  @endif
+
+  @if($cart['lines'] === [])
+    <div class="cart-empty">
+      <div class="cart-empty-art" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><path d="M10 13h7l6 28h28l6-19H20M28 52h1M48 52h1"/></svg>
+      </div>
+      <h2>Sepetin henüz boş</h2>
+      <p>Farklı gramajları ve ürünleri aynı sepette birleştirebilirsin.</p>
+      <a class="cart-primary" href="{{ route('search') }}">Ürünleri keşfet</a>
+    </div>
+  @else
+    <div class="cart-shipping-highlight {{ $cart['free_shipping'] ? 'is-free' : '' }}">
+      <span class="cart-shipping-highlight-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 6h12v11H3zM15 10h4l3 4v3h-7z"/><circle cx="7.5" cy="18.5" r="1.7"/><circle cx="18" cy="18.5" r="1.7"/><path d="M6 10h6M6 13h4"/></svg>
+      </span>
+      <div>
+        @if($cart['free_shipping'])
+          <strong>Bu alışverişinde kargo ücretsiz!</strong>
+          <small>Ücretsiz kargo limitine ulaştın.</small>
+        @else
+          <strong>{{ number_format($cart['remaining_cents'] / 100, 2, ',', '.') }} ₺ daha ekle, kargo ücretsiz olsun.</strong>
+          <small>{{ number_format($cart['threshold_cents'] / 100, 2, ',', '.') }} ₺ ve üzeri alışverişte ücretsiz kargo.</small>
+          @if($cart['threshold_cents'] > 0)
+            <div class="cart-progress" role="progressbar" aria-label="Ücretsiz kargo ilerlemesi" aria-valuemin="0" aria-valuemax="{{ $cart['threshold_cents'] }}" aria-valuenow="{{ min($cart['subtotal_cents'], $cart['threshold_cents']) }}">
+              <span style="width:{{ min(100, round($cart['subtotal_cents'] / $cart['threshold_cents'] * 100)) }}%"></span>
+            </div>
+          @endif
+        @endif
+      </div>
+    </div>
+
+    <div class="cart-columns">
+      <div class="cart-items">
+        <div class="cart-box-heading">
+          <h2>Sepetim <span>({{ $cart['count'] }} Ürün)</span></h2>
+          <form method="POST" action="{{ route('cart.clear') }}" onsubmit="return confirm('Sepetteki tüm ürünler kaldırılsın mı?')">
+            @csrf <button type="submit" class="cart-text-action">Sepeti boşalt</button>
+          </form>
+        </div>
+
+        @foreach($cart['lines'] as $line)
+          @php
+            $item = $line['product'];
+            $faved = in_array($item->id, $wishlistIds, true);
+          @endphp
+          <article class="cart-item" data-cart-item="{{ $item->id }}">
+            <a class="cart-item-image" href="{{ route('product.show', $item->slug) }}" aria-label="{{ $item->name }} detayına git">
+              <img src="{{ asset($item->image_path ?: 'assets/products/demo-sinker.svg') }}" alt="{{ $item->name }}" width="105" height="105" loading="lazy">
+            </a>
+            <div class="cart-item-main">
+              <a class="cart-item-name" href="{{ route('product.show', $item->slug) }}">{{ $item->name }}</a>
+              <div class="cart-item-meta">{{ $item->category->name }} · SKU: {{ $item->sku }}</div>
+              <div class="cart-item-price-group">
+                <strong class="cart-item-line-total">{{ number_format($line['line_cents'] / 100, 2, ',', '.') }} ₺</strong>
+                @if($line['savings_cents'] > 0)
+                  <s>{{ number_format($line['regular_cents'] * $line['quantity'] / 100, 2, ',', '.') }} ₺</s>
+                @endif
+              </div>
+              @if($line['savings_cents'] > 0)
+                <div class="cart-item-discount">
+                  <span class="cart-savings-tag">✓ Kazancın {{ number_format($line['savings_cents'] / 100, 2, ',', '.') }} ₺</span>
+                  <span class="cart-discount-percent">-%{{ $item->discount_percent }} indirim</span>
+                </div>
+              @endif
+              <span class="cart-item-unit">{{ number_format($line['unit_cents'] / 100, 2, ',', '.') }} ₺ / adet</span>
+            </div>
+            <div class="cart-item-actions">
+              <form class="cart-update-form cart-quantity-stepper" method="POST" action="{{ route('cart.update', $item) }}" data-cart-update-form>
+                @csrf @method('PATCH')
+                <button type="button" data-cart-minus aria-label="{{ $item->name }} adedini azalt" @disabled($line['quantity'] <= 1)>−</button>
+                <label class="sr-only" for="cart-quantity-{{ $item->id }}">Ürün adedi: {{ $item->name }}</label>
+                <input id="cart-quantity-{{ $item->id }}" name="quantity" type="number" value="{{ $line['quantity'] }}" min="1" max="{{ min(999, $item->stock_quantity) }}" step="1" inputmode="numeric" required>
+                <button type="button" data-cart-plus aria-label="{{ $item->name }} adedini artır" @disabled($line['quantity'] >= min(999, $item->stock_quantity))>+</button>
+                <button class="cart-quantity-save" type="submit">Güncelle</button>
+              </form>
+              <form method="POST" action="{{ route('cart.remove', $item) }}">
+                @csrf @method('DELETE')
+                <button class="cart-remove-button" type="submit" aria-label="{{ $item->name }} ürününü sepetten sil">Sil</button>
+              </form>
+              <form class="cart-favorite-form" method="POST" action="{{ route('wishlist.toggle', $item) }}">
+                @csrf
+                <button type="submit" class="cart-favorite-button {{ $faved ? 'is-favorite' : '' }}" aria-pressed="{{ $faved ? 'true' : 'false' }}" aria-label="{{ $item->name }} {{ $faved ? 'favorilerden çıkar' : 'favorilere ekle' }}" title="{{ $faved ? 'Favorilerden çıkar' : 'Favorilere ekle' }}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.2c0 4.6-8.8 10.5-8.8 10.5S3.2 12.8 3.2 8.2a4.7 4.7 0 0 1 8.8-2.1 4.7 4.7 0 0 1 8.8 2.1Z"/></svg>
+                </button>
+              </form>
+            </div>
+          </article>
+        @endforeach
+      </div>
+
+      <aside class="cart-summary" aria-labelledby="cart-summary-title">
+        <h2 id="cart-summary-title">Sepet özeti</h2>
+        @include('store.partials.cart-summary-details', ['cart' => $cart])
+        <p class="cart-checkout-note">Ödeme ve sipariş oluşturma henüz aktif değil. Bu mağaza test aşamasındadır.</p>
+      </aside>
+    </div>
+  @endif
+</main>
+
+@if($cart['lines'] !== [])
+  <div class="cart-mobile-backdrop" data-cart-summary-backdrop aria-hidden="true"></div>
+  <section class="cart-mobile-summary-sheet" id="mobile-cart-summary" data-cart-summary-sheet aria-labelledby="mobile-cart-summary-heading" aria-hidden="true">
+    <div class="cart-sheet-handle" aria-hidden="true"></div>
+    <div class="cart-sheet-heading">
+      <h2 id="mobile-cart-summary-heading">Sepet Özeti</h2>
+      <button type="button" class="cart-sheet-close" data-cart-summary-close aria-label="Sepet özetini kapat">✕</button>
+    </div>
+    <div class="cart-sheet-scroll">
+      @include('store.partials.cart-summary-details', ['cart' => $cart])
+      <p class="cart-checkout-note">Sipariş ve ödeme henüz aktif değil. Bu ekran şu anda sepet kontrolü içindir.</p>
+    </div>
+    <div class="cart-sheet-footer">
+      <a class="cart-sheet-continue" href="{{ route('search') }}">Alışverişe devam et</a>
+    </div>
+  </section>
+  <div class="cart-mobile-bottom" aria-label="Sepet toplamı ve özeti">
+    <button class="cart-mobile-total" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">
+      <span class="cart-mobile-price">{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</span>
+      <span class="cart-mobile-shipping">{{ $cart['shipping_cents'] === 0 ? 'Kargo bedava' : 'Kargo dahil' }}</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+    </button>
+    <button class="cart-mobile-summary-open" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">Sepet Özeti <span aria-hidden="true">⌃</span></button>
+  </div>
+@endif
+@endsection
