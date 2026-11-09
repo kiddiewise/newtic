@@ -85,12 +85,10 @@ if (pdpSheet) {
   window.addEventListener('pageshow', (event) => {
     const navigation = performance.getEntriesByType('navigation')[0];
     if (event.persisted || navigation?.type === 'back_forward') {
-      orderInputs.forEach((field) => { field.value = '0'; });
-      update();
-      document.body.classList.remove('pdp-sheet-open');
-      pdpSheet.removeAttribute('role');
-      pdpSheet.removeAttribute('aria-modal');
-      opens.forEach((element) => element.setAttribute('aria-expanded', 'false'));
+      try { sessionStorage.removeItem(sessionKey); } catch { /* optional */ }
+      // Re-fetch the page from Laravel: previous selections, cart badge and
+      // stock may all be stale after returning via browser history.
+      window.location.reload();
     }
   });
 
