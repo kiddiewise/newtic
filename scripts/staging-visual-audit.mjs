@@ -116,7 +116,7 @@ try {
         const beforePlus = await page.locator('.cart-quantity-stepper input[name="quantity"]').first().inputValue();
         await page.locator('[data-cart-plus]').first().click();
         await page.waitForLoadState('domcontentloaded');
-        const afterPlus = await page.locator('.cart-quantity-stepper input').first().inputValue();
+        const afterPlus = await page.locator('.cart-quantity-stepper input[name="quantity"]').first().inputValue();
         entry.interactions.stepperBeforePlus = beforePlus;
         entry.interactions.stepperAfterPlus = afterPlus;
         await page.locator('.cart-favorite-form button').first().click();
