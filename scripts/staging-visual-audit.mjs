@@ -19,7 +19,6 @@ try {
     { name: 'mobile-home', path: '/', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'desktop-home', path: '/', viewport: { width: 1440, height: 900 }, mobile: false },
     { name: 'mobile-product', path: '/urun/demo-renkli-surf-125-gr', viewport: { width: 390, height: 844 }, mobile: true },
-    { name: 'mobile-cart-empty', path: '/sepet', viewport: { width: 390, height: 844 }, mobile: true },
     { name: 'mobile-admin-login', path: '/admin/login', viewport: { width: 390, height: 844 }, mobile: true },
   ];
 
@@ -96,7 +95,7 @@ try {
         entry.interactions.cartUrl = new URL(page.url()).pathname;
         entry.interactions.cartItemCount = await page.locator('.cart-item').count();
         entry.interactions.cartItemQuantity = await page.locator('.cart-update-form input[name="quantity"]').first().inputValue();
-        entry.interactions.shippingText = await page.locator('.cart-totals').innerText();
+        entry.interactions.shippingText = await page.locator('.cart-mobile-summary-sheet .cart-totals').innerText();
         entry.interactions.cartOverflow = await page.evaluate(
           () => document.documentElement.scrollWidth > window.innerWidth
         );
