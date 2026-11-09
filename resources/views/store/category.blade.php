@@ -3,18 +3,6 @@
 @section('description', $category->description ?: $category->name.' ürün çeşitleri, gramaj seçenekleri ve güncel fiyatları.')
 @section('content')
 <main class="container inner-page category-landing" id="content">
-  <nav class="breadcrumbs category-breadcrumbs" aria-label="İçerik yolu">
-    <a href="{{ route('home') }}">Ana sayfa</a>
-    @foreach($breadcrumbs as $crumb)
-      <span aria-hidden="true">/</span>
-      @if(!$loop->last)
-        <a href="{{ route('category.show', $crumb->slug) }}">{{ $crumb->name }}</a>
-      @else
-        <span aria-current="page">{{ $crumb->name }}</span>
-      @endif
-    @endforeach
-  </nav>
-
   @if($banners->isNotEmpty())
     <section class="category-banner-carousel" aria-label="{{ $category->name }} kampanyaları" data-category-carousel>
       <div class="category-banner-track" data-category-track>
@@ -37,21 +25,15 @@
     </section>
   @endif
 
-  <div class="category-page-header">
-    <p class="eyebrow">POLARIS KURŞUN / KATEGORİLER</p>
+  <header class="category-page-header">
     <h1>{{ $category->name }}</h1>
-    @if($category->description)
-      <p>{{ $category->description }}</p>
-    @else
-      <p>Çeşitleri ve gramaj seçeneklerini keşfedin.</p>
+    @if(filled($category->description))
+      <p class="category-description">{{ $category->description }}</p>
     @endif
-  </div>
+  </header>
 
   @if($subcategories->isNotEmpty())
-    <section class="category-children-section" aria-labelledby="subcategory-title">
-      <div class="section-heading category-section-heading">
-        <div><p class="eyebrow">KATEGORİ SEÇİMİ</p><h2 id="subcategory-title">{{ $category->name }} çeşitleri</h2></div>
-      </div>
+    <nav class="category-children-section" aria-label="{{ $category->name }} alt kategorileri">
       <div class="category-children-grid">
         @foreach($subcategories as $subcategory)
           <a href="{{ route('category.show', $subcategory->slug) }}" class="category-child-card">
@@ -63,22 +45,19 @@
           </a>
         @endforeach
       </div>
-    </section>
+    </nav>
   @endif
 
   <section class="category-products-section" aria-labelledby="category-products-heading">
     <div class="section-heading category-section-heading">
-      <div>
-        <p class="eyebrow">ÜRÜNLERİ KEŞFET</p>
-        <h2 id="category-products-heading">{{ $subcategories->isNotEmpty() ? 'Tüm alt kategori ürünleri' : $category->name.' ürünleri' }}</h2>
-      </div>
+      <h2 id="category-products-heading">Ürünler</h2>
       <span class="category-product-count">{{ $products->total() }} ürün</span>
     </div>
     <div class="product-grid">
       @forelse($products as $product)
         @include('store.partials.product-card', ['product' => $product])
       @empty
-        <p class="nothing-found">Bu kategoride henüz ürün bulunmuyor. @if($subcategories->isNotEmpty())Yukarıdan bir alt kategori seçebilirsiniz.@endif</p>
+        <p class="nothing-found">Bu kategoride henüz ürün bulunmuyor.</p>
       @endforelse
     </div>
     <div class="pagination-wrap">{{ $products->links() }}</div>
