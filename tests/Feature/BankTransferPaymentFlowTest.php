@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class BankTransferPaymentFlowTest extends TestCase
@@ -251,5 +252,49 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertSee('Banka hesapları henüz tanımlanmadı')
             ->assertDontSee($bank->iban);
+    }
+
+    public function test_signed_guest_order_link_allows_payment_after_original_session_expires(): void
+    {
+        $bank = $this->bank();
+        $order = $this->order();
+        $link = URL::temporarySignedRoute('checkout.success', now()->addDays(14), [
+            'order' => $order->id,
+        ], absolute: false);
+        $notify = URL::temporarySignedRoute('checkout.payment-notify', now()->addDays(14), [
+            'order' => $order->id,
+        ], absolute: false);
+
+        $this->withSession(['confirmed_order_ids' => [], 'checkout_last_order' => null]);
+        $this->get(route('checkout.success', $order))->assertNotFound();
+        $this->get($link)->assertOk()
+            ->assertSee('Sipariş bağlantını sakla')
+            ->assertSee('Ödeme Yaptım (Test Bildirimi)');
+
+        $this->post($notify, ['bank_account_id' => $bank->id])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('payment_notifications', [
+            'order_id' => $order->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_expired_or_modified_signed_link_does_not_grant_order_access(): void
+    {
+        $order = $this->order();
+        $this->withSession(['confirmed_order_ids' => [], 'checkout_last_order' => null]);
+
+        $expired = URL::temporarySignedRoute('checkout.success', now()->subDay(), [
+            'order' => $order->id,
+        ], absolute: false);
+        $this->get($expired)->assertNotFound();
+
+        $valid = URL::temporarySignedRoute('checkout.success', now()->addDays(2), [
+            'order' => $order->id,
+        ], absolute: false);
+        $modified = preg_replace('/signature=[a-f0-9]{64}/', 'signature='.str_repeat('0', 64), $valid);
+        $this->get($modified)->assertNotFound();
+
+        $this->get(route('checkout.success', $order))->assertNotFound();
     }
 }
