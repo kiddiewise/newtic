@@ -21,11 +21,14 @@
   </header>
   @auth
     @if(auth()->user()->is_admin)
+    @php $pendingPaymentCount = \App\Models\PaymentNotification::query()->where('status', 'pending')->count(); @endphp
     <nav class="admin-main-nav" aria-label="Yönetim menüsü">
       <a class="{{ request()->routeIs('admin.index', 'admin.sections.*') ? 'is-active' : '' }}" href="{{ route('admin.index') }}">Vitrin</a>
       <a class="{{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}" href="{{ route('admin.categories.index') }}">Kategoriler</a>
       <a class="{{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}" href="{{ route('admin.products.index') }}">Ürünler</a>
       <a class="{{ request()->routeIs('admin.orders.*') ? 'is-active' : '' }}" href="{{ route('admin.orders.index') }}">Siparişler</a>
+      <a class="{{ request()->routeIs('admin.payment-notifications.*') ? 'is-active' : '' }}" href="{{ route('admin.payment-notifications.index') }}">Ödeme Bildirimleri @if($pendingPaymentCount > 0)<span class="admin-bank-nav-count">{{ $pendingPaymentCount }}</span>@endif</a>
+      <a class="{{ request()->routeIs('admin.bank-accounts.*') ? 'is-active' : '' }}" href="{{ route('admin.bank-accounts.index') }}">Banka Hesapları</a>
       <a class="{{ request()->routeIs('admin.store-settings.*') ? 'is-active' : '' }}" href="{{ route('admin.store-settings.edit') }}">Kargo ayarları</a>
       <a class="{{ request()->routeIs('admin.appearance.*') ? 'is-active' : '' }}" href="{{ route('admin.appearance.edit') }}">Logolar</a>
       <a class="{{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}" href="{{ route('admin.announcements.index') }}">Duyurular</a>
