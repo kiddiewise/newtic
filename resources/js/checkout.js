@@ -50,15 +50,45 @@ document.querySelectorAll('[data-create-account]').forEach((checkbox) => {
 
 const checkoutForm = document.getElementById('checkout-form');
 if (checkoutForm) {
-  checkoutForm.addEventListener('submit', () => {
-    if (!checkoutForm.checkValidity()) return;
-    checkoutForm.querySelectorAll('button[type="submit"]').forEach((button) => {
-      button.disabled = true;
-      button.textContent = 'Sipariş oluşturuluyor…';
+  const submitButtons = [
+    ...checkoutForm.querySelectorAll('button[type="submit"]'),
+    ...document.querySelectorAll('button[form="checkout-form"]'),
+  ];
+  const buttonLabels = submitButtons.map(button => button.textContent);
+  let submitting = false;
+
+  // Server-side errors are displayed beside their matching fields; bring the
+  // first one into view so mobile customers don't have to hunt for it.
+  const firstInvalid = checkoutForm.querySelector('[aria-invalid="true"]');
+  if (firstInvalid) {
+    requestAnimationFrame(() => {
+      firstInvalid.scrollIntoView({ block: 'center', behavior: 'instant' });
+      firstInvalid.focus({ preventScroll: true });
     });
-    document.querySelectorAll('button[form="checkout-form"]').forEach((button) => {
+  }
+
+  checkoutForm.addEventListener('submit', (event) => {
+    if (submitting) {
+      event.preventDefault();
+      return;
+    }
+    if (!checkoutForm.checkValidity()) return;
+    submitting = true;
+    checkoutForm.setAttribute('aria-busy', 'true');
+    submitButtons.forEach(button => {
       button.disabled = true;
-      button.textContent = 'Kaydediliyor…';
+      button.textContent = 'Sipariş kaydediliyor…';
+    });
+  });
+
+  // Browsers can restore disabled buttons from the back/forward cache.
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    submitting = false;
+    checkoutForm.removeAttribute('aria-busy');
+    submitButtons.forEach((button, index) => {
+      button.disabled = false;
+      button.textContent = buttonLabels[index];
     });
   });
 }
