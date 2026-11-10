@@ -10,7 +10,7 @@ class Product extends Model
 {
     protected $fillable = [
         'primary_category_id', 'sku', 'name', 'slug', 'description',
-        'price', 'compare_at_price', 'stock_quantity', 'image_path', 'is_active', 'is_demo',
+        'price', 'compare_at_price', 'stock_quantity', 'image_path', 'is_active', 'is_demo', 'option_label',
     ];
 
     protected $casts = [
@@ -25,6 +25,11 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'primary_category_id');
+    }
+
+    public function options(): HasMany
+    {
+        return $this->hasMany(ProductOption::class)->orderBy('id');
     }
 
     public function images(): HasMany
