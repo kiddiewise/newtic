@@ -210,7 +210,10 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->assertSame('pending_payment', $order->fresh()->status);
         $this->assertSame($admin->id, $notice->fresh()->reviewed_by);
 
-        $this->post(route('account.logout'))->assertRedirect();
+        // Simulate the same guest checkout session after an admin review.
+        // Logging out through the UI invalidates the session by design.
+        \Illuminate\Support\Facades\Auth::logout();
+        $this->assertGuest();
         $this->post(route('checkout.payment-notify', $order), [
             'bank_account_id' => $bank->id,
         ])->assertRedirect(route('checkout.success', $order));
