@@ -42,9 +42,7 @@
         <span class="payment-eyebrow">SİPARİŞ TAKİBİ</span>
         <h2 id="order-tracking-title">Siparişinizin yolculuğu</h2>
       </div>
-      <form method="GET" action="{{ request()->fullUrl() }}">
-        <button type="submit" class="order-tracking-refresh" aria-label="Sipariş durumunu yenile"><x-store-icon name="clock-3" /> Yenile</button>
-      </form>
+      <a href="{{ request()->fullUrl() }}" class="order-tracking-refresh" aria-label="Sipariş durumunu yenile"><x-store-icon name="clock-3" /> Yenile</a>
     </div>
     <ol class="order-tracking-steps">
       @foreach($tracking['stages'] as $index => $stage)
