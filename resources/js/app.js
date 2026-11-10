@@ -72,3 +72,5 @@ import './checkout.js';
 import './payment-instructions.js';
 
 import './order-celebration.js';
+
+import './admin-2026.js';
