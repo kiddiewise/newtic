@@ -440,3 +440,105 @@
     transform:none!important;
   }
 }
+
+
+/* Final compact dock: hide ancillary selection/price copy visually.
+   Live region remains available to assistive technology; only hook-size
+   has a visible field title. */
+@media(max-width:760px){
+  .pdp-sticky-bar .pdp-sticky-meta.pdp-sticky-meta-a11y{
+    position:absolute!important;
+    top:0!important;
+    left:0!important;
+    display:block!important;
+    width:1px!important;
+    height:1px!important;
+    min-height:0!important;
+    max-height:1px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    clip-path:inset(50%)!important;
+    white-space:nowrap!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions,
+  .pdp-sticky-bar .pdp-sticky-actions.has-variant{
+    grid-template-rows:64px!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-quick{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:6px 5px!important;
+    gap:0!important;
+    overflow:visible!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-stepper{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    width:100%;
+    height:100%;
+    margin:0!important;
+    overflow:visible!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    gap:3px!important;
+    min-height:0!important;
+    height:64px!important;
+    max-height:64px!important;
+    margin:0!important;
+    padding:4px 7px!important;
+    overflow:visible!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant-title{
+    display:block!important;
+    flex:0 0 auto!important;
+    font-size:12px!important;
+    line-height:1.2!important;
+    font-weight:840!important;
+    min-height:15px!important;
+    margin:0!important;
+    padding:0!important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:#203f47!important;
+    opacity:1!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+    display:block!important;
+    flex:0 0 35px!important;
+    height:35px!important;
+    min-height:35px!important;
+    max-height:35px!important;
+    box-sizing:border-box!important;
+    margin:0!important;
+    padding:5px 17px 5px 7px!important;
+    font-size:13px!important;
+    line-height:1.1!important;
+    font-weight:780!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-add{
+    height:64px!important;
+    min-height:64px!important;
+    max-height:64px!important;
+    margin:0!important;
+  }
+}
+@media(max-width:370px){
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant-title{
+    font-size:11px!important;
+  }
+  .pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant{
+    padding:4px 5px!important;
+  }
+}
