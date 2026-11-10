@@ -20,6 +20,7 @@
 @import './admin-2026.css';
 @import './admin-2026-modules.css';
 @import './admin-2026-polish.css';
+@import './product-options.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
