@@ -25,6 +25,9 @@ if (pdpSheet) {
   const currentInput = orderInputs.find((field) =>
     field.closest('.pdp-order-item')?.classList.contains('is-current')
   );
+  const currentOptionLabel = currentInput?.closest('.pdp-order-item')
+    ?.querySelector('.pdp-variant-field>span')?.firstChild?.textContent?.trim() || 'Ürün seçeneği';
+  if (sticky?.querySelector('.has-variant')) document.body.classList.add('pdp-has-variant');
   const fmt = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' });
   let lastTrigger = null;
   const mobileQuery = matchMedia('(max-width: 760px)');
@@ -110,16 +113,19 @@ if (pdpSheet) {
       const selected = currentOption?.selectedOptions?.[0]?.textContent?.trim();
       const currentMissing = currentInput && Number(currentInput.value) > 0 && currentOption && !currentOption.value;
       if (currentMissing) {
-        help.textContent = 'Zorunlu seçim: Sepete eklemek için iğne kalınlığını seçin.';
+        help.textContent = 'Zorunlu: Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' seçin.';
         help.dataset.state = 'required';
+      } else if (quantity === 0 && currentInput && Number(currentInput.max) === 0) {
+        help.textContent = 'Bu ürün stokta yok. Diğer gramajları inceleyin.';
+        help.dataset.state = 'neutral';
       } else if (optionMissing) {
-        help.textContent = 'Diğer seçilen ürün için iğne kalınlığını belirleyin.';
+        help.textContent = 'Diğer ürünün seçeneğini Tüm ürünler bölümünden belirleyin.';
         help.dataset.state = 'required';
       } else if (selected && currentOption?.value) {
         help.textContent = selected + ' seçildi · Sepete eklemeye hazır';
         help.dataset.state = 'ready';
       } else {
-        help.textContent = 'İğne kalınlığını seçerek alışverişe devam edin.';
+        help.textContent = 'Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' belirleyin.';
         help.dataset.state = 'neutral';
       }
     });
@@ -256,7 +262,7 @@ if (pdpSheet) {
     target?.focus({ preventScroll: mobileQuery.matches });
     target?.classList.add('is-required-choice');
     target?.setAttribute('aria-invalid', 'true');
-    if (optionHint) optionHint.textContent = 'Sepete eklemek için seçili ürünün iğne kalınlığını belirleyin.';
+    if (optionHint) optionHint.textContent = 'Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' belirleyin.';
   }, true);
 
   const price = document.querySelector('[data-detail-price-anchor]');
