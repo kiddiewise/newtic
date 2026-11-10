@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductReview;
+use App\Support\ProductReviewEligibility;
 use App\Support\CategoryHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -60,9 +62,35 @@ class CatalogController extends Controller
             ->where('is_active', true)
             ->orderBy('name')->get();
 
+        // Public ratings include only approved, non-test purchase reviews.
+        $publicReviewQuery = $product->reviews()
+            ->where('status', 'approved')->where('is_test', false);
+        $ratingCounts = (clone $publicReviewQuery)
+            ->selectRaw('rating, COUNT(*) as total')
+            ->groupBy('rating')->pluck('total', 'rating');
+        $reviewCount = (int) $ratingCounts->sum();
+        $reviewAverage = $reviewCount
+            ? round($ratingCounts->sum(fn ($total, $rating) => $rating * $total) / $reviewCount, 1)
+            : 0;
+        $reviews = (clone $publicReviewQuery)->with('user:id,name')
+            ->latest('id')->paginate(5, ['*'], 'yorum_sayfa')
+            ->withFragment('urun-yorumlari');
+
+        $canReview = $request->user()
+            ? ProductReviewEligibility::order($request->user(), $product) !== null
+            : false;
+        $myReview = $request->user()
+            ? ProductReview::query()->where('product_id', $product->id)
+                ->where('user_id', $request->user()->id)->first()
+            : null;
+
         $pickerReset = (bool) $request->session()->get('product_picker_reset', false);
 
-        return view('store.product', compact('product', 'categoryProducts', 'pickerReset'));
+        return view('store.product', compact(
+            'product', 'categoryProducts', 'pickerReset',
+            'ratingCounts', 'reviewCount', 'reviewAverage', 'reviews',
+            'canReview', 'myReview'
+        ));
     }
 
     public function search(Request $request): View
