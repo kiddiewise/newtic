@@ -111,7 +111,7 @@
         <section class="checkout-payment-method">
           <div class="checkout-section-title"><span>ÖDEME</span><h2>Ödeme yöntemi</h2></div>
 <div class="checkout-payment-option"><span class="checkout-payment-dot"></span>
-            <div><strong>Havale / EFT</strong><small>Henüz banka hesabı tanımlı değil. Banka bilgileri sağlanana kadar ödeme yapmayın.</small></div>
+            <div><strong>Havale / EFT</strong><small>{{ $bankAccountsAvailable ? 'IBAN bilgileri sipariş sonrasında gösterilir. Açıklamaya sipariş numaranı yazıp “Ödeme Yaptım” bildirimi gönderebilirsin.' : 'Banka hesapları henüz tanımlanmadı. Hesap bilgileri aktifleşene kadar ödeme yapmayın.' }}</small></div>
           </div>
           <p class="checkout-testing-note"><strong>{{ $checkoutIsTest ? 'Deneme ortamı:' : 'Önemli:' }}</strong> {{ $checkoutIsTest ? 'Siparişiniz yalnızca test kaydı olarak oluşturulur; gerçek ödeme alınmaz.' : 'Ödeme altyapısı henüz etkin değil. Sipariş kaydı oluşturmanız ödeme yapıldığı anlamına gelmez.' }}</p>
         </section>
