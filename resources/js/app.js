@@ -70,3 +70,5 @@ import './quick-cart.js';
 import './checkout.js';
 
 import './payment-instructions.js';
+
+import './order-celebration.js';
