@@ -7,7 +7,7 @@
     <x-store-icon name="chevron-left" />
   </a>
   <strong>Sepetim</strong>
-  <a href="{{ route('wishlist.index') }}" class="cart-mobile-favorites" aria-label="Favorilerim">
+  <a href="{{ auth()->check() ? route('wishlist.index') : route('account.login', ['next' => 'wishlist']) }}" class="cart-mobile-favorites" aria-label="{{ auth()->check() ? 'Favorilerim' : 'Favorilerim için üye girişi yap' }}">
     <x-store-icon name="heart" />
   </a>
 </header>
@@ -106,12 +106,18 @@
                 @csrf @method('DELETE')
                 <button class="cart-remove-button" type="submit" aria-label="{{ $item->name }} ürününü sepetten sil">Sil</button>
               </form>
+              @auth
               <form class="cart-favorite-form" method="POST" action="{{ route('wishlist.toggle', $item) }}">
                 @csrf
                 <button type="submit" class="cart-favorite-button {{ $faved ? 'is-favorite' : '' }}" aria-pressed="{{ $faved ? 'true' : 'false' }}" aria-label="{{ $item->name }} {{ $faved ? 'favorilerden çıkar' : 'favorilere ekle' }}" title="{{ $faved ? 'Favorilerden çıkar' : 'Favorilere ekle' }}">
                   <x-store-icon name="heart" />
                 </button>
               </form>
+              @else
+              <a class="cart-favorite-button cart-favorite-link" href="{{ route('account.login', ['next' => 'cart', 'favorite' => $item->id]) }}" aria-label="{{ $item->name }} favorilere eklemek için üye girişi yap" title="Favorilere eklemek için üye girişi yap">
+                <x-store-icon name="heart" />
+              </a>
+              @endauth
             </div>
           </article>
         @endforeach
@@ -147,9 +153,9 @@
     <button class="cart-mobile-total" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">
       <span class="cart-mobile-price">{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</span>
       <span class="cart-mobile-shipping">{{ $cart['shipping_cents'] === 0 ? 'Kargo bedava' : 'Kargo dahil' }}</span>
-      <x-store-icon name="chevron-up" />
+      <span class="cart-mobile-summary-trigger"><span>Özet</span><x-store-icon name="chevron-up" /></span>
     </button>
-    <a class="cart-mobile-summary-open" href="{{ route('checkout.index') }}">Siparişi Tamamla <span aria-hidden="true">›</span></a>
+    <a class="cart-mobile-summary-open" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
   </div>
 @endif
 @endsection
