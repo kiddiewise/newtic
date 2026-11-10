@@ -55,6 +55,13 @@ class OrderController extends Controller
             }
 
             if ($next === 'cancelled') {
+                // A verified bank transfer requires a separate refund procedure.
+                // Never silently mark a paid order cancelled and leave funds unrefunded.
+                if ($locked->paymentNotifications()->where('status', 'verified')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Ödemesi doğrulanan siparişi iptal etmek için önce iade işlemi ve kaydı gereklidir.',
+                    ]);
+                }
                 // Restore reserved stock exactly once; cancelled orders are terminal.
                 foreach ($locked->items()->orderBy('product_id')->get() as $item) {
                     if ($item->product_id) {
