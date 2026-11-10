@@ -120,7 +120,7 @@
   <section class="admin-panel admin-dashboard-status">
     <div class="admin-panel-title"><h2>Sipariş dağılımı</h2></div>
     @php
-      $dashboardStates = ['pending_payment' => ['Ödeme bekliyor', '#f4a746'], 'preparing' => ['Hazırlanıyor', '#438cd1'], 'shipped' => ['Kargoda', '#9570d7'], 'completed' => ['Tamamlandı', '#17a780'], 'cancelled' => ['İptal', '#d97478']];
+      $dashboardStates = ['pending_payment' => ['Ödeme bekliyor', '#f4a746'], 'preparing' => ['Hazırlanıyor', '#438cd1'], 'shipped' => ['Kargoda', '#9570d7'], 'out_for_delivery' => ['Dağıtımda', '#397abb'], 'completed' => ['Tamamlandı', '#17a780'], 'cancelled' => ['İptal', '#d97478']];
     @endphp
     @foreach($dashboardStates as $key => $stateInfo)
       @php [$label, $color] = $stateInfo; @endphp
