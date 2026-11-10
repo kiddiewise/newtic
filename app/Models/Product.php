@@ -27,6 +27,11 @@ class Product extends Model
         return $this->belongsTo(Category::class, 'primary_category_id');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function options(): HasMany
     {
         return $this->hasMany(ProductOption::class)->orderBy('id');
