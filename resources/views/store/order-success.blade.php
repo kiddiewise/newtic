@@ -176,6 +176,11 @@
     @foreach($order->items as $line)
       <div class="checkout-order-item"><span>{{ $line->product_name }} @if($line->option_value)<small>· {{ $line->option_label }}: {{ $line->option_value }}</small>@endif <small>× {{ $line->quantity }}</small></span>
         <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
+      @if($order->status === 'completed' && auth()->check() && $order->user_id === auth()->id() && $line->product?->is_active)
+        <a class="order-review-link" href="{{ route('product.show', $line->product->slug) }}#urun-yorumlari">
+          <x-store-icon name="sparkles" /> Ürünü değerlendir <x-store-icon name="arrow-right" />
+        </a>
+      @endif
     @endforeach
     <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
     <div class="checkout-price-line"><span>Kargo</span><strong>{{ $order->shipping_cents === 0 ? 'Ücretsiz' : number_format($order->shipping_cents / 100, 2, ',', '.').' ₺' }}</strong></div>
