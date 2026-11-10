@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentNotificationController;
+use App\Http\Controllers\ProductReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -17,6 +18,8 @@ Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 Route::middleware('auth')->group(function () {
     Route::get('/favoriler', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/favoriler/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/urun/{product:slug}/yorum', [ProductReviewController::class, 'store'])
+        ->middleware('throttle:4,1')->name('product.reviews.store');
 });
 Route::get('/sepet', [CartController::class, 'index'])->name('cart.index');
 Route::post('/sepet/ekle', [CartController::class, 'add'])->name('cart.add');
@@ -68,6 +71,7 @@ use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNotificationController;
+use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
@@ -82,6 +86,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/search', SearchController::class)->name('search');
     Route::get('/stock', StockController::class)->name('stock');
     Route::get('/customers', CustomerController::class)->name('customers');
+    Route::get('/reviews', [AdminProductReviewController::class, 'index'])->name('reviews.index');
+    Route::post('/reviews/{review}/moderate', [AdminProductReviewController::class, 'moderate'])->name('reviews.moderate');
     Route::get('/reports', ReportController::class)->name('reports');
     Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
     Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
