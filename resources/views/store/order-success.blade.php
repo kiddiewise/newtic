@@ -3,8 +3,8 @@
 @section('content')
 <main class="checkout-shell checkout-success-page" id="content">
   <div class="checkout-top"><a href="{{ route('home') }}" aria-label="Ana sayfa">‹</a><strong>Sipariş Bilgileri</strong><span></span></div>
-  <div class="checkout-card checkout-success-hero">
-    <div class="checkout-success-mark">✓</div>
+  <div class="checkout-card checkout-success-hero" data-order-celebration="{{ $order->id }}">
+    <div class="checkout-success-mark" role="img" aria-label="Sipariş kutlaması">🎉</div>
     <h1>Siparişin oluşturuldu!</h1>
     <p>Sipariş numaran: <strong>{{ $order->order_number }}</strong></p>
     <span class="checkout-status">{{ $order->statusLabel() }}</span>
