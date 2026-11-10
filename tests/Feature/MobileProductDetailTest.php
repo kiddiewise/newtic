@@ -37,6 +37,9 @@ class MobileProductDetailTest extends TestCase
         $html = $response->getContent();
         $this->assertSame(6, substr_count($html, 'data-order-quantity'));
         $this->assertSame(1, substr_count($html, 'data-sticky-bar'));
+        $this->assertStringContainsString('pdp-sticky-meta pdp-sticky-meta-a11y', $html);
+        $this->assertStringNotContainsString('pdp-sticky-quick-name', $html);
+        $this->assertStringNotContainsString('pdp-sticky-variant-title', $html);
         $this->assertTrue(strpos($html, 'pdp-mobile-header') < strpos($html, 'pdp-art'));
     }
 
