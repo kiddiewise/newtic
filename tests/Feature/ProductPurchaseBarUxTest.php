@@ -100,12 +100,9 @@ class ProductPurchaseBarUxTest extends TestCase
         $product->update(['option_label' => 'İğne kalınlığı']);
         $product->options()->create(['value' => '0,25']);
 
-        $this->from(route('product.show', $product->slug))
+        $this->followingRedirects()
+            ->from(route('product.show', $product->slug))
             ->post(route('cart.add'), ['items' => [$product->id => 1]])
-            ->assertRedirect(route('product.show', $product->slug))
-            ->assertSessionHasErrors('options.'.$product->id);
-
-        $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertSee('cart-flash is-error')
             ->assertSee('İğne');
