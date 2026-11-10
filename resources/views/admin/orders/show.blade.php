@@ -31,7 +31,7 @@
     <section class="admin-panel">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="package" /></span><div><h2>Ürünler ve sipariş özeti</h2><p>Ürün ve toplam tutar değiştirilemez sipariş kaydından alınır.</p></div></div>
       @foreach($order->items as $line)
-        <div class="admin-order-row"><span><strong>{{ $line->product_name }}</strong><small>SKU: {{ $line->sku }} · {{ $line->quantity }} adet · Birim {{ number_format($line->unit_price_cents / 100, 2, ',', '.') }} ₺</small></span>
+        <div class="admin-order-row"><span><strong>{{ $line->product_name }}</strong><small>SKU: {{ $line->sku }} @if($line->option_value)· {{ $line->option_label }}: {{ $line->option_value }} @endif · {{ $line->quantity }} adet · Birim {{ number_format($line->unit_price_cents / 100, 2, ',', '.') }} ₺</small></span>
           <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
       @endforeach
       <div class="checkout-price-line"><span>Ara toplam</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
