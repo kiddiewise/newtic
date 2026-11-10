@@ -3,7 +3,7 @@
 @section('content')
   <div class="admin-login-shell">
     <div class="admin-panel admin-login-panel">
-      <div class="admin-eyebrow">POLARIS KURŞUN</div>
+      <div class="admin-login-brand"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="bag" /></span><div><div class="admin-eyebrow">NEWTIC · POLARIS KURŞUN</div><strong>Yönetim Paneli</strong></div></div>
       <h1>Yönetim paneli</h1>
       <p class="admin-description">Vitrin bannerlarını, kategorileri ve ürünleri yönetin.</p>
       <form action="{{ route('admin.login.submit') }}" method="POST" class="admin-form">
