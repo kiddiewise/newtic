@@ -2,6 +2,8 @@
 const pdpSheet = document.querySelector('[data-product-sheet]');
 if (pdpSheet) {
   const orderInputs = [...pdpSheet.querySelectorAll('[data-order-quantity]')];
+  const optionSelects = [...pdpSheet.querySelectorAll('[data-product-option]')];
+  const optionHint = pdpSheet.querySelector('[data-variant-hint]');
   const orderSummary = pdpSheet.querySelector('[data-order-summary]');
   const addButtons = [...document.querySelectorAll('[data-cart-add]')];
   const sticky = document.querySelector('[data-sticky-bar]');
@@ -41,8 +43,18 @@ if (pdpSheet) {
   const update = () => {
     let quantity = 0;
     let cents = 0;
+    let optionMissing = false;
+    let missingProduct = '';
     orderInputs.forEach((field) => {
       const number = clamp(field, field.value);
+      const option = optionSelects.find(select => select.dataset.productId === field.dataset.productId);
+      if (number > 0 && option && !option.value) {
+        optionMissing = true;
+        if (!missingProduct) missingProduct = field.closest('.pdp-order-item')?.querySelector('.order-item-info a')?.textContent?.trim() || 'Seçili ürün';
+        option.classList.add('is-required-choice');
+      } else if (option) {
+        option.classList.remove('is-required-choice');
+      }
       if (field.value !== String(number)) field.value = String(number);
       quantity += number;
       cents += Math.round(Number(field.dataset.price || 0) * 100) * number;
@@ -55,7 +67,10 @@ if (pdpSheet) {
     const amount = fmt.format(cents / 100);
     if (orderSummary) orderSummary.textContent = quantity + ' adet · ' + amount;
     if (desktopSummary) desktopSummary.textContent = 'Seçilen toplam: ' + quantity + ' adet · ' + amount;
-    addButtons.forEach((button) => { button.disabled = quantity === 0; });
+    addButtons.forEach((button) => { button.disabled = quantity === 0 || optionMissing; });
+    if (optionHint) optionHint.textContent = optionMissing
+      ? missingProduct + ' için iğne kalınlığını seçin.'
+      : '';
     if (stickySelection) stickySelection.textContent = quantity + ' adet seçildi';
     if (stickyTotal) stickyTotal.textContent = amount;
     if (currentInput) {
@@ -78,6 +93,7 @@ if (pdpSheet) {
     field.addEventListener('input', update);
     field.addEventListener('change', update);
   });
+  optionSelects.forEach((select) => select.addEventListener('change', update));
   pdpSheet.querySelectorAll('[data-step-minus],[data-step-plus]').forEach((button) => {
     button.addEventListener('click', () => {
       const field = button.closest('.pdp-stepper')?.querySelector('[data-order-quantity]');
