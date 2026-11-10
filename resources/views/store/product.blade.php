@@ -69,6 +69,12 @@
         {{ number_format((float) $product->price, 2, ',', '.') }} ₺
         @if($product->is_demo)<span>DEMO FİYAT</span>@endif
       </div>
+      <a class="pdp-rating-link" href="#urun-yorumlari" aria-label="Ürün yorumlarına ve değerlendirmelere git">
+        <span class="pdp-rating-stars" aria-hidden="true">★★★★★</span>
+        <strong>{{ $reviewCount ? number_format($reviewAverage, 1, ',', '.') : 'Yeni' }}</strong>
+        <span>{{ $reviewCount ? $reviewCount.' doğrulanmış yorum' : 'İlk yorumunuzu bırakın' }}</span>
+        <x-store-icon name="chevron-right" />
+      </a>
       <div class="pdp-availability">
         @if($product->stock_quantity > 0)
           <span class="pdp-in-stock">● Stokta</span>
@@ -200,6 +206,7 @@
       <div><span>Kategori</span><a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a></div>
     </div>
   </section>
+  @include('store.partials.product-reviews')
   <p class="pdp-order-notice">Bu test mağazasında henüz sipariş ve ödeme alınmamaktadır. Sepet kullanılabilir; sipariş ve ödeme henüz aktif değildir.</p>
 </main>
 
