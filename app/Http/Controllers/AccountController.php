@@ -22,14 +22,15 @@ class AccountController extends Controller
         $data = $request->validate([
             'email' => ['required','email','max:255'],
             'password' => ['required','string'],
-            'next' => ['nullable','in:checkout'],
+            'next' => ['nullable','in:checkout,wishlist,cart'],
+            'favorite' => ['nullable','integer','min:1'],
         ]);
         if (!Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
             return back()->withErrors(['email' => 'E-posta veya şifre hatalı.'])->onlyInput('email');
         }
         $request->session()->regenerate();
 
-        return redirect()->route(($data['next'] ?? '') === 'checkout' ? 'checkout.index' : 'account.index');
+        return $this->afterAuthentication($request, $data);
     }
 
     public function registerPage(Request $request): View|RedirectResponse
@@ -44,7 +45,8 @@ class AccountController extends Controller
             'name' => ['required','string','min:3','max:160'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed',Password::min(8)],
-            'next' => ['nullable','in:checkout'],
+            'next' => ['nullable','in:checkout,wishlist,cart'],
+            'favorite' => ['nullable','integer','min:1'],
         ]);
         $user = User::create([
             'name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'],
@@ -52,7 +54,32 @@ class AccountController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route(($data['next'] ?? '') === 'checkout' ? 'checkout.index' : 'account.index');
+        return $this->afterAuthentication($request, $data);
+    }
+
+    /**
+     * Keep the customer's requested destination after sign-in or sign-up.
+     * Favoriting while logged out adds the requested product only after auth.
+     */
+    private function afterAuthentication(Request $request, array $data): RedirectResponse
+    {
+        $next = $data['next'] ?? '';
+
+        if ($next === 'cart' && isset($data['favorite'])) {
+            $added = WishlistController::addForUser($request->user(), (int) $data['favorite']);
+
+            return redirect()->route('cart.index')->with(
+                $added ? 'success' : 'error',
+                $added ? 'Ürün favorilere eklendi.' : 'Ürün favorilere eklenemedi.'
+            );
+        }
+
+        return redirect()->route(match ($next) {
+            'checkout' => 'checkout.index',
+            'wishlist' => 'wishlist.index',
+            'cart' => 'cart.index',
+            default => 'account.index',
+        });
     }
 
     public function index(Request $request): View
