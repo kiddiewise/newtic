@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#102f3a">
   <title>@yield('title', 'NEWTIC Yönetim Paneli')</title>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @include('admin.partials.critical-styles')
 </head>
 @php
   $adminAuthenticated = auth()->check() && auth()->user()->is_admin;
