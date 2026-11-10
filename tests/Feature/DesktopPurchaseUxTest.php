@@ -81,4 +81,43 @@ class DesktopPurchaseUxTest extends TestCase
         $this->assertSame(2, session('shopping_cart')[$product->id]);
         $this->assertSame(3, session('shopping_cart')[$sibling->id]);
     }
+
+    public function test_product_cards_share_header_cart_icon_and_product_detail_uses_ajax_form(): void
+    {
+        $product = $this->demo();
+
+        $cards = $this->get(route('category.show', $product->category->slug))->assertOk()->getContent();
+        $this->assertStringContainsString('<use href="#ui-shopping-cart"', $cards);
+        $this->assertStringNotContainsString('<use href="#ui-shopping-cart-plus"', $cards);
+
+        $detail = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
+        $this->assertStringContainsString(
+            'id="pdp-cart-form" data-quick-add data-quick-product="'.$product->id.'"',
+            $detail
+        );
+        $this->assertStringContainsString('data-cart-toast', $detail);
+
+        $script = file_get_contents(resource_path('js/quick-cart.js'));
+        $this->assertStringContainsString("showToast('Sepete eklendi')", $script);
+        $this->assertStringNotContainsString('open(button);', $script);
+    }
+
+    public function test_ajax_cart_add_keeps_the_page_and_updates_the_cart_count(): void
+    {
+        $product = $this->demo();
+
+        for ($count = 1; $count <= 2; $count++) {
+            $this->withHeaders([
+                'Accept' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])->post(route('cart.add'), [
+                'items' => [$product->id => 1],
+                'quick_anchor_id' => $product->id,
+            ])->assertOk()
+                ->assertJsonPath('ok', true)
+                ->assertJsonPath('count', $count);
+        }
+
+        $this->assertSame(2, session('shopping_cart')[$product->id]);
+    }
 }
