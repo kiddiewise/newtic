@@ -111,21 +111,33 @@ if (pdpSheet) {
     });
     optionHelp.forEach((help) => {
       const selected = currentOption?.selectedOptions?.[0]?.textContent?.trim();
+      const isStickyHelp = help.dataset.optionHelp === 'sticky';
       const currentMissing = currentInput && Number(currentInput.value) > 0 && currentOption && !currentOption.value;
       if (currentMissing) {
-        help.textContent = 'Zorunlu: Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' seçin.';
+        help.textContent = isStickyHelp
+          ? currentOptionLabel + ' seçin'
+          : 'Zorunlu: Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' seçin.';
         help.dataset.state = 'required';
       } else if (quantity === 0 && currentInput && Number(currentInput.max) === 0) {
-        help.textContent = 'Bu ürün stokta yok. Diğer gramajları inceleyin.';
+        help.textContent = isStickyHelp ? 'Ürün stokta yok' : 'Bu ürün stokta yok. Diğer gramajları inceleyin.';
+        help.dataset.state = 'neutral';
+      } else if (quantity === 0) {
+        help.textContent = isStickyHelp ? 'Adet seçin' : 'Sepete eklemek için ürün adedini seçin.';
         help.dataset.state = 'neutral';
       } else if (optionMissing) {
-        help.textContent = 'Diğer ürünün seçeneğini Tüm ürünler bölümünden belirleyin.';
+        help.textContent = isStickyHelp
+          ? 'Diğer ürünün seçeneği eksik'
+          : 'Diğer ürünün seçeneğini Seçenekler bölümünden belirleyin.';
         help.dataset.state = 'required';
       } else if (selected && currentOption?.value) {
-        help.textContent = selected + ' seçildi · Sepete eklemeye hazır';
+        help.textContent = isStickyHelp
+          ? selected + ' seçildi'
+          : selected + ' seçildi · Sepete eklemeye hazır';
         help.dataset.state = 'ready';
       } else {
-        help.textContent = 'Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' belirleyin.';
+        help.textContent = isStickyHelp
+          ? currentOptionLabel + ' seçin'
+          : 'Sepete eklemek için ' + currentOptionLabel.toLocaleLowerCase('tr-TR') + ' belirleyin.';
         help.dataset.state = 'neutral';
       }
     });
