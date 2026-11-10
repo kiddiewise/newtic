@@ -44,6 +44,7 @@ class CheckoutController extends Controller
             'addresses' => $addresses,
             'selectedAddress' => $selectedAddress,
             'provinces' => TurkeyProvinces::ALL,
+            'bankAccountsAvailable' => BankAccount::query()->where('is_active', true)->exists(),
         ]);
     }
 
