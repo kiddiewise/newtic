@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\AddressValidation;
 use App\Support\CategoryHierarchy;
 use App\Support\ShoppingCart;
+use App\Support\OrderTracking;
 use App\Support\TurkeyProvinces;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -247,6 +248,7 @@ class CheckoutController extends Controller
                 ->orderBy('sort_order')->orderBy('id')->get()
             : collect();
         $latestPaymentNotification = $order->paymentNotifications->first();
+        $tracking = OrderTracking::for($order, $latestPaymentNotification);
 
         // A capability-style guest link permits returning after the browser
         // session expires. Sign the relative URL to survive reverse proxies.
@@ -260,7 +262,7 @@ class CheckoutController extends Controller
 
         return view('store.order-success', compact(
             'order', 'bankAccounts', 'latestPaymentNotification',
-            'paymentReturnUrl', 'paymentNotificationAction'
+            'paymentReturnUrl', 'paymentNotificationAction', 'tracking'
         ));
     }
 }
