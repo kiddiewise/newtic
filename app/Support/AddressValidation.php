@@ -8,13 +8,13 @@ final class AddressValidation
 {
     /**
      * Normalize common Turkish mobile entry formats to 05XXXXXXXXX.
-     * Invalid numbers are deliberately left for the validation rule to reject.
+     * Invalid numbers remain invalid and are rejected by validation.
      */
     public static function normalizePhone(string $phone): string
     {
-        $phone = preg_replace('/[\\s().-]+/u', '', trim($phone)) ?? trim($phone);
+        $phone = preg_replace('/[\s().-]+/u', '', trim($phone)) ?? trim($phone);
 
-        if (preg_match('/^\\+?905[0-9]{9}$/', $phone)) {
+        if (preg_match('/^\+?905[0-9]{9}$/', $phone)) {
             return '0'.substr($phone, -10);
         }
 
@@ -25,7 +25,7 @@ final class AddressValidation
         return $phone;
     }
 
-    public static function normalizePhoneInput(\\Illuminate\\Http\\Request $request): void
+    public static function normalizePhoneInput(\Illuminate\Http\Request $request): void
     {
         $phone = $request->input('phone');
         if (is_string($phone)) {
