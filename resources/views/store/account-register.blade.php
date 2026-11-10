@@ -6,6 +6,7 @@
   $favoriteId = ctype_digit((string) request('favorite', '')) ? request('favorite') : '';
 @endphp
 <main class="checkout-shell account-auth-shell" id="content">
+  @include('store.partials.mobile-auth-navigation')
   <div class="checkout-top"><a href="{{ route('account.login', array_filter(['next' => $authNext, 'favorite' => $authNext === 'cart' ? $favoriteId : ''])) }}" aria-label="Geri dön">‹</a><strong>Üyelik Oluştur</strong><span></span></div>
   <div class="checkout-card">
     <h1>Polaris hesabını oluştur</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Ücretsiz hesap oluştur, seçtiğin ürünü favorilerine ekleyelim.' : 'Birden fazla adres kaydet, geçmiş siparişlerini takip et.' }}</p>
