@@ -5,41 +5,48 @@
 <div class="checkout-field-grid">
   <label class="checkout-field">
     <span>Adres adı *</span>
-    <select name="address_label" required>
+    <select name="address_label" aria-invalid="{{ $errors->has('address_label') ? 'true' : 'false' }}" @error('address_label') aria-describedby="checkout-error-address_label" @enderror required>
       @foreach(['Ev','İş','Diğer'] as $label)
         <option value="{{ $label }}" @selected(old('address_label', $prefill?->label ?? 'Ev') === $label)>{{ $label }}</option>
       @endforeach
     </select>
-  </label>
+  @error('address_label')<small class="checkout-field-error" id="checkout-error-address_label">{{ $message }}</small>@enderror
+    </label>
   <label class="checkout-field">
     <span>Ad Soyad *</span>
-    <input name="full_name" type="text" maxlength="160" minlength="3" autocomplete="name" required placeholder="Ad Soyad"
+    <input name="full_name" aria-invalid="{{ $errors->has('full_name') ? 'true' : 'false' }}" @error('full_name') aria-describedby="checkout-error-full_name" @enderror type="text" maxlength="160" minlength="3" autocomplete="name" required placeholder="Ad Soyad"
       value="{{ old('full_name', $prefill?->full_name ?? (auth()->user()?->name ?? '')) }}">
-  </label>
+  @error('full_name')<small class="checkout-field-error" id="checkout-error-full_name">{{ $message }}</small>@enderror
+    </label>
   <label class="checkout-field">
     <span>Cep telefonu *</span>
-    <input name="phone" type="tel" maxlength="20" inputmode="tel" autocomplete="tel" required placeholder="05XXXXXXXXX"
+    <input name="phone" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}" @error('phone') aria-describedby="checkout-error-phone" @enderror type="tel" maxlength="20" inputmode="tel" autocomplete="tel-national" required placeholder="05XX XXX XX XX veya +90 5XX..."
       value="{{ old('phone', $prefill?->phone) }}">
-  </label>
+  <small class="checkout-field-hint">Kargo görevlisinin gerektiğinde sana ulaşabilmesi için.</small>
+    @error('phone')<small class="checkout-field-error" id="checkout-error-phone">{{ $message }}</small>@enderror
+    </label>
   <label class="checkout-field">
     <span>İl *</span>
-    <select name="city" required autocomplete="address-level1">
+    <select name="city" aria-invalid="{{ $errors->has('city') ? 'true' : 'false' }}" @error('city') aria-describedby="checkout-error-city" @enderror required autocomplete="address-level1">
       <option value="">İl seçin</option>
       @foreach($provinces as $province)
         <option value="{{ $province }}" @selected(old('city', $prefill?->city) === $province)>{{ $province }}</option>
       @endforeach
     </select>
-  </label>
+  @error('city')<small class="checkout-field-error" id="checkout-error-city">{{ $message }}</small>@enderror
+    </label>
   <label class="checkout-field">
     <span>İlçe *</span>
-    <input name="district" type="text" required maxlength="100" autocomplete="address-level2" placeholder="İlçe"
+    <input name="district" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}" @error('district') aria-describedby="checkout-error-district" @enderror type="text" required maxlength="100" autocomplete="address-level2" placeholder="İlçe"
       value="{{ old('district', $prefill?->district) }}">
-  </label>
+  @error('district')<small class="checkout-field-error" id="checkout-error-district">{{ $message }}</small>@enderror
+    </label>
   <label class="checkout-field is-full">
     <span>Açık adres *</span>
-    <textarea name="street_address" rows="4" minlength="10" maxlength="1200" autocomplete="street-address" required
+    <textarea name="street_address" aria-invalid="{{ $errors->has('street_address') ? 'true' : 'false' }}" @error('street_address') aria-describedby="checkout-error-street_address" @enderror rows="4" minlength="10" maxlength="1200" autocomplete="street-address" required
       placeholder="Mahalle, cadde, sokak, bina ve daire numarası">{{ old('street_address', $prefill?->street_address) }}</textarea>
-  </label>
+  @error('street_address')<small class="checkout-field-error" id="checkout-error-street_address">{{ $message }}</small>@enderror
+    </label>
 </div>
 <div class="checkout-invoice" data-checkout-invoice>
   <h3>Fatura bilgileri</h3>
@@ -49,13 +56,16 @@
   </div>
   <div class="checkout-field-grid checkout-corporate-fields" data-corporate-fields @if($currentType !== 'corporate') hidden @endif>
     <label class="checkout-field is-full"><span>Şirket ünvanı *</span>
-      <input type="text" name="company_title" maxlength="200" placeholder="Şirketin ticari ünvanı" value="{{ old('company_title', $prefill?->company_title) }}">
+      <input type="text" name="company_title" aria-invalid="{{ $errors->has('company_title') ? 'true' : 'false' }}" @error('company_title') aria-describedby="checkout-error-company_title" @enderror maxlength="200" placeholder="Şirketin ticari ünvanı" value="{{ old('company_title', $prefill?->company_title) }}">
+    @error('company_title')<small class="checkout-field-error" id="checkout-error-company_title">{{ $message }}</small>@enderror
     </label>
     <label class="checkout-field"><span>Vergi dairesi *</span>
-      <input type="text" name="tax_office" maxlength="100" placeholder="Vergi dairesi" value="{{ old('tax_office', $prefill?->tax_office) }}">
+      <input type="text" name="tax_office" aria-invalid="{{ $errors->has('tax_office') ? 'true' : 'false' }}" @error('tax_office') aria-describedby="checkout-error-tax_office" @enderror maxlength="100" placeholder="Vergi dairesi" value="{{ old('tax_office', $prefill?->tax_office) }}">
+    @error('tax_office')<small class="checkout-field-error" id="checkout-error-tax_office">{{ $message }}</small>@enderror
     </label>
     <label class="checkout-field"><span>Vergi numarası / T.C. kimlik no *</span>
-      <input type="text" name="tax_number" minlength="10" maxlength="11" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="10 veya 11 hane" value="{{ old('tax_number', $prefill?->tax_number) }}">
+      <input type="text" name="tax_number" aria-invalid="{{ $errors->has('tax_number') ? 'true' : 'false' }}" @error('tax_number') aria-describedby="checkout-error-tax_number" @enderror minlength="10" maxlength="11" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="10 veya 11 hane" value="{{ old('tax_number', $prefill?->tax_number) }}">
+    @error('tax_number')<small class="checkout-field-error" id="checkout-error-tax_number">{{ $message }}</small>@enderror
     </label>
   </div>
 </div>
