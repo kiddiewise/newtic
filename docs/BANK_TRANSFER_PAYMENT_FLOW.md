@@ -32,7 +32,7 @@ Production `polariskursun.com` kapsam dışıdır.
 5. Bir bildirim `pending` ise tekrar gönderim yerine "Kontrol ediliyor" görür.
 6. Yönetici reddederse sebebiyle yeniden bildirim yapabilir; doğrularsa "Hazırlanıyor" görür.
 
-Misafir bildirimleri, mevcut checkout oturumunda siparişe erişim yetkisi olan kullanıcılar için açılır.
+Misafir müşteriler için 14 gün geçerli ve HMAC imzalı, bağlantısı kopyalanabilir sipariş erişimi de bulunur. Bu bağlantı sipariş bilgilerini görüntüleme ve bildirim gönderme yetkisi taşıdığından üçüncü kişilerle paylaşılmamalıdır. İmza süresi dolduğunda veya değiştirildiğinde erişim reddedilir. Bağlantının referrer üzerinden sızmasını önlemek için sipariş ekranında `no-referrer` kullanılır.
 Üye müşteriler kendi siparişlerini hesap sayfasından yeniden görüntüleyebilir.
 
 ## Test modu
