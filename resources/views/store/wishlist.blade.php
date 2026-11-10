@@ -9,7 +9,7 @@
   </div>
   @if(session('success'))<p class="cart-flash is-success" role="status">{{ session('success') }}</p>@endif
   @if(session('error'))<p class="cart-flash is-error" role="alert">{{ session('error') }}</p>@endif
-  <p class="wishlist-info">Favoriler bu tarayıcıdaki oturumda saklanır. Üyelikle eşitleme henüz aktif değil.</p>
+  <p class="wishlist-info">Favori ürünlerin hesabına kaydedilir. Giriş yaptığında favorilerine yeniden ulaşabilirsin.</p>
   @if($products->isEmpty())
     <div class="cart-empty"><h2>Henüz favori ürünün yok</h2><p>Sepetten kalp simgesine dokunarak ürünleri favorilere ekleyebilirsin.</p>
       <a class="cart-primary" href="{{ route('search') }}">Ürünleri keşfet</a>
