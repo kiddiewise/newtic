@@ -10,6 +10,12 @@
     @if($product->discount_percent > 0)<s class="product-card-old-price">{{ number_format((float) $product->compare_at_price, 2, ',', '.') }} ₺</s>@endif
     <div class="product-card-bottom">
       <strong>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
+      @if($product->options->isNotEmpty())
+      <a class="product-card-action product-card-option-link" href="{{ route('product.show', $product->slug) }}" aria-label="{{ $product->name }} için ürün seçeneği belirle">
+        <x-store-icon name="shopping-cart" />
+        <span class="product-card-action-label">{{ $product->stock_quantity > 0 ? 'Seçenek Seç' : 'Stokta Yok' }}</span>
+      </a>
+      @else
       <form class="product-card-add-form" method="POST" action="{{ route('cart.add') }}" data-quick-add data-quick-product="{{ $product->id }}">
         @csrf
         <input type="hidden" name="items[{{ $product->id }}]" value="1">
@@ -18,6 +24,7 @@
           <span class="product-card-action-label">{{ $product->stock_quantity > 0 ? 'Sepete Ekle' : 'Stokta Yok' }}</span>
         </button>
       </form>
+      @endif
     </div>
     @if($product->view_count > 0)<small class="product-card-views">◉ {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</small>@endif
   </div>
