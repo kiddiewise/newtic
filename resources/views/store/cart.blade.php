@@ -72,13 +72,16 @@
             $item = $line['product'];
             $faved = in_array($item->id, $wishlistIds, true);
           @endphp
-          <article class="cart-item" data-cart-item="{{ $item->id }}">
+          <article class="cart-item" data-cart-item="{{ $line['key'] }}">
             <a class="cart-item-image" href="{{ route('product.show', $item->slug) }}" aria-label="{{ $item->name }} detayına git">
               <img src="{{ asset($item->image_path ?: 'assets/products/demo-sinker.svg') }}" alt="{{ $item->name }}" width="105" height="105" loading="lazy">
             </a>
             <div class="cart-item-main">
               <a class="cart-item-name" href="{{ route('product.show', $item->slug) }}">{{ $item->name }}</a>
               <div class="cart-item-meta">{{ $item->category->name }} · SKU: {{ $item->sku }}</div>
+              @if($line['option_value'])
+                <div class="cart-item-option"><strong>{{ $line['option_label'] }}:</strong> {{ $line['option_value'] }}</div>
+              @endif
               <div class="cart-item-price-group">
                 <strong class="cart-item-line-total">{{ number_format($line['line_cents'] / 100, 2, ',', '.') }} ₺</strong>
                 @if($line['savings_cents'] > 0)
@@ -96,14 +99,16 @@
             <div class="cart-item-actions">
               <form class="cart-update-form cart-quantity-stepper" method="POST" action="{{ route('cart.update', $item) }}" data-cart-update-form>
                 @csrf @method('PATCH')
+                @if($line['option_id'])<input type="hidden" name="option_id" value="{{ $line['option_id'] }}">@endif
                 <button type="button" data-cart-minus aria-label="{{ $item->name }} adedini azalt" @disabled($line['quantity'] <= 1)>−</button>
-                <label class="sr-only" for="cart-quantity-{{ $item->id }}">Ürün adedi: {{ $item->name }}</label>
-                <input id="cart-quantity-{{ $item->id }}" name="quantity" type="number" value="{{ $line['quantity'] }}" min="1" max="{{ min(999, $item->stock_quantity) }}" step="1" inputmode="numeric" required>
-                <button type="button" data-cart-plus aria-label="{{ $item->name }} adedini artır" @disabled($line['quantity'] >= min(999, $item->stock_quantity))>+</button>
+                <label class="sr-only" for="cart-quantity-{{ $line['key'] }}">Ürün adedi: {{ $item->name }}</label>
+                <input id="cart-quantity-{{ $line['key'] }}" name="quantity" type="number" value="{{ $line['quantity'] }}" min="1" max="{{ $line['max_quantity'] }}" step="1" inputmode="numeric" required>
+                <button type="button" data-cart-plus aria-label="{{ $item->name }} adedini artır" @disabled($line['quantity'] >= $line['max_quantity'])>+</button>
                 <button class="cart-quantity-save" type="submit">Güncelle</button>
               </form>
               <form method="POST" action="{{ route('cart.remove', $item) }}">
                 @csrf @method('DELETE')
+                @if($line['option_id'])<input type="hidden" name="option_id" value="{{ $line['option_id'] }}">@endif
                 <button class="cart-remove-button" type="submit" aria-label="{{ $item->name }} ürününü sepetten sil">Sil</button>
               </form>
               @auth
