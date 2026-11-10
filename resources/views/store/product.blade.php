@@ -81,6 +81,26 @@
         <strong>Seçili ürün:</strong> {{ $product->name }}
         <button type="button" data-sheet-open-inline>Tüm kategori ürünlerini seç <span aria-hidden="true">›</span></button>
       </div>
+      {{-- Desktop: the primary purchase action is immediately visible beside the product. --}}
+      <div class="pdp-desktop-purchase" aria-label="Ürün satın alma seçenekleri">
+        <div class="pdp-desktop-purchase-head">
+          <strong>Adet seçin</strong>
+          <span>Stok: {{ $product->stock_quantity }} adet</span>
+        </div>
+        <div class="pdp-desktop-purchase-row">
+          <div class="pdp-desktop-stepper" aria-label="{{ $product->name }} adedi">
+            <button type="button" data-desktop-minus aria-label="{{ $product->name }} azalt">−</button>
+            <output data-desktop-qty aria-label="Seçili adet">{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
+            <button type="button" data-desktop-plus aria-label="{{ $product->name }} artır" @disabled($product->stock_quantity <= 0)>+</button>
+          </div>
+          <button type="submit" form="pdp-cart-form" class="pdp-desktop-add" data-cart-add @disabled($product->stock_quantity <= 0)>
+            <x-store-icon name="shopping-cart-plus" />
+            Sepete Ekle
+          </button>
+        </div>
+        <p class="pdp-desktop-purchase-summary" data-desktop-summary aria-live="polite">Seçimler hesaplanıyor</p>
+        <a href="#pdp-picker" class="pdp-desktop-more">Diğer gramaj ve ürünleri birlikte seç <span aria-hidden="true">↓</span></a>
+      </div>
     </div>
   </div>
 
@@ -133,7 +153,7 @@
         <small>Seçilen ürünler</small>
         <strong data-order-summary>Seçim hesaplanıyor</strong>
       </div>
-      <button type="submit" form="pdp-cart-form" data-cart-add>Sepete ekle</button>
+      <button type="submit" form="pdp-cart-form" data-cart-add>Seçilenleri Sepete Ekle</button>
     </div>
   </section>
 
