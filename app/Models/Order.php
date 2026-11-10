@@ -13,6 +13,7 @@ class Order extends Model
         'phone','address_label','city','district','street_address','invoice_type',
         'company_title','tax_office','tax_number','order_note','payment_method','status',
         'subtotal_cents','shipping_cents','total_cents','currency','is_test','placed_at',
+        'carrier_name','tracking_number','tracking_url',
     ];
 
     protected $casts = [
@@ -49,6 +50,7 @@ class Order extends Model
             'pending_payment' => 'Ödeme bekleniyor',
             'preparing' => 'Hazırlanıyor',
             'shipped' => 'Kargolandı',
+            'out_for_delivery' => 'Dağıtıma çıktı',
             'completed' => 'Tamamlandı',
             'cancelled' => 'İptal edildi',
             default => 'Bilinmiyor',
