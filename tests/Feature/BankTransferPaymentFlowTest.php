@@ -297,4 +297,29 @@ class BankTransferPaymentFlowTest extends TestCase
 
         $this->get(route('checkout.success', $order))->assertNotFound();
     }
+
+    public function test_order_cannot_be_cancelled_while_payment_claim_is_unreviewed(): void
+    {
+        $bank = $this->bank();
+        $order = $this->order();
+        $this->post(route('checkout.payment-notify', $order), [
+            'bank_account_id' => $bank->id,
+        ])->assertRedirect();
+        $notice = PaymentNotification::firstOrFail();
+
+        $this->actingAs($this->administrator());
+        $this->patch(route('admin.orders.update', $order), [
+            'status' => 'cancelled',
+        ])->assertSessionHasErrors('status');
+        $this->assertSame('pending_payment', $order->fresh()->status);
+
+        $this->post(route('admin.payment-notifications.reject', $notice), [
+            'admin_note' => 'Ödeme banka hareketlerinde bulunamadı.',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->patch(route('admin.orders.update', $order), [
+            'status' => 'cancelled',
+        ])->assertRedirect(route('admin.orders.show', $order))->assertSessionHasNoErrors();
+        $this->assertSame('cancelled', $order->fresh()->status);
+    }
 }
