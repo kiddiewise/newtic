@@ -54,6 +54,9 @@ class ProductPurchaseBarUxTest extends TestCase
         $response->assertSee('Diğer gramaj seçenekleri')
             ->assertSee('aria-label="Seçilen ürünleri sepete ekle"', false)
             ->assertSee('href="#ui-shopping-cart"', false)
+            ->assertSee('href="#ui-chevron-up"', false)
+            ->assertSee('data-scroll-ribbon', false)
+            ->assertSee('aria-hidden="true" inert', false)
             ->assertSee('aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle"', false);
         // The slim options ribbon sits ABOVE the purchase row.
         // The row contains ONLY variant (if configured), quantity and cart add.
