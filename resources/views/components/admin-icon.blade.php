@@ -5,6 +5,7 @@
 @case('grid')<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>@break
 @case('layout')<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>@break
 @case('bag')<rect x="4" y="8" width="16" height="13" rx="2"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/>@break
+@case('star')<path d="m12 3 2.9 5.8 6.4.9-4.6 4.5 1.1 6.4L12 17.6l-5.8 3 1.1-6.4L2.7 9.7l6.4-.9L12 3Z"/>@break
 @case('package')<path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/>@break
 @case('chart')<path d="M3 21h18M6 17v-6M11 17V6M16 17v-9M21 17V3"/>@break
 @case('clock')<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>@break
