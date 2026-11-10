@@ -3,6 +3,9 @@ const pdpSheet = document.querySelector('[data-product-sheet]');
 if (pdpSheet) {
   const orderInputs = [...pdpSheet.querySelectorAll('[data-order-quantity]')];
   const optionSelects = [...pdpSheet.querySelectorAll('[data-product-option]')];
+  const mirrorSelects = [...document.querySelectorAll('[data-option-mirror]')];
+  const optionHelp = [...document.querySelectorAll('[data-option-help]')];
+  const cartForm = document.getElementById('pdp-cart-form');
   const optionHint = pdpSheet.querySelector('[data-variant-hint]');
   const orderSummary = pdpSheet.querySelector('[data-order-summary]');
   const addButtons = [...document.querySelectorAll('[data-cart-add]')];
@@ -45,15 +48,19 @@ if (pdpSheet) {
     let cents = 0;
     let optionMissing = false;
     let missingProduct = '';
+    let firstMissingOption = null;
     orderInputs.forEach((field) => {
       const number = clamp(field, field.value);
       const option = optionSelects.find(select => select.dataset.productId === field.dataset.productId);
       if (number > 0 && option && !option.value) {
         optionMissing = true;
         if (!missingProduct) missingProduct = field.closest('.pdp-order-item')?.querySelector('.order-item-info a')?.textContent?.trim() || 'Seçili ürün';
+        firstMissingOption ||= option;
         option.classList.add('is-required-choice');
+        option.setAttribute('aria-invalid', 'true');
       } else if (option) {
         option.classList.remove('is-required-choice');
+        option.removeAttribute('aria-invalid');
       }
       if (field.value !== String(number)) field.value = String(number);
       quantity += number;
@@ -67,11 +74,55 @@ if (pdpSheet) {
     const amount = fmt.format(cents / 100);
     if (orderSummary) orderSummary.textContent = quantity + ' adet · ' + amount;
     if (desktopSummary) desktopSummary.textContent = 'Seçilen toplam: ' + quantity + ' adet · ' + amount;
-    addButtons.forEach((button) => { button.disabled = quantity === 0 || optionMissing; });
+    // The add button stays actionable when a size is missing: tapping it
+    // takes the customer to the exact selector instead of silently failing.
+    addButtons.forEach((button) => {
+      button.disabled = quantity === 0;
+      if (optionMissing && quantity > 0) {
+        button.setAttribute('aria-disabled', 'true');
+        button.dataset.needsOption = 'true';
+      } else {
+        button.removeAttribute('aria-disabled');
+        delete button.dataset.needsOption;
+      }
+    });
     if (optionHint) optionHint.textContent = optionMissing
       ? missingProduct + ' için iğne kalınlığını seçin.'
       : '';
-    if (stickySelection) stickySelection.textContent = quantity + ' adet seçildi';
+    if (stickySelection) stickySelection.textContent = optionMissing
+      ? 'Seçim gerekli · ' + quantity + ' adet'
+      : quantity + ' adet seçildi';
+
+    const currentOption = currentInput
+      ? optionSelects.find((select) => select.dataset.productId === currentInput.dataset.productId)
+      : null;
+    mirrorSelects.forEach((mirror) => {
+      const source = optionSelects.find((select) => select.dataset.productId === mirror.dataset.productId);
+      if (!source) return;
+      if (mirror.value !== source.value) mirror.value = source.value;
+      const missing = Boolean(source === firstMissingOption || (currentInput && source === currentOption
+        && Number(currentInput.value) > 0 && !source.value));
+      mirror.classList.toggle('is-required-choice', missing);
+      if (missing) mirror.setAttribute('aria-invalid', 'true');
+      else mirror.removeAttribute('aria-invalid');
+    });
+    optionHelp.forEach((help) => {
+      const selected = currentOption?.selectedOptions?.[0]?.textContent?.trim();
+      const currentMissing = currentInput && Number(currentInput.value) > 0 && currentOption && !currentOption.value;
+      if (currentMissing) {
+        help.textContent = 'Zorunlu seçim: Sepete eklemek için iğne kalınlığını seçin.';
+        help.dataset.state = 'required';
+      } else if (optionMissing) {
+        help.textContent = 'Diğer seçilen ürün için iğne kalınlığını belirleyin.';
+        help.dataset.state = 'required';
+      } else if (selected && currentOption?.value) {
+        help.textContent = selected + ' seçildi · Sepete eklemeye hazır';
+        help.dataset.state = 'ready';
+      } else {
+        help.textContent = 'İğne kalınlığını seçerek alışverişe devam edin.';
+        help.dataset.state = 'neutral';
+      }
+    });
     if (stickyTotal) stickyTotal.textContent = amount;
     if (currentInput) {
       const value = Number(currentInput.value);
@@ -94,6 +145,13 @@ if (pdpSheet) {
     field.addEventListener('change', update);
   });
   optionSelects.forEach((select) => select.addEventListener('change', update));
+  mirrorSelects.forEach((mirror) => {
+    mirror.addEventListener('change', () => {
+      const source = optionSelects.find((select) => select.dataset.productId === mirror.dataset.productId);
+      if (source) source.value = mirror.value;
+      update();
+    });
+  });
   pdpSheet.querySelectorAll('[data-step-minus],[data-step-plus]').forEach((button) => {
     button.addEventListener('click', () => {
       const field = button.closest('.pdp-stepper')?.querySelector('[data-order-quantity]');
@@ -170,6 +228,36 @@ if (pdpSheet) {
   mobileQuery.addEventListener('change', () => {
     if (!mobileQuery.matches && document.body.classList.contains('pdp-sheet-open')) close();
   });
+
+  // A missing option must never submit an ambiguous item to the server.
+  // The actual form select inside the category sheet remains the only named
+  // value; the desktop and sticky selectors mirror that single source.
+  cartForm?.addEventListener('submit', (event) => {
+    const missing = orderInputs.find((field) => {
+      const select = optionSelects.find((item) => item.dataset.productId === field.dataset.productId);
+      return Number(field.value) > 0 && select && !select.value;
+    });
+    if (!missing) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const source = optionSelects.find((item) => item.dataset.productId === missing.dataset.productId);
+    const isCurrent = currentInput && currentInput.dataset.productId === missing.dataset.productId;
+    let target = null;
+
+    if (isCurrent) {
+      const location = mobileQuery.matches ? 'sticky' : 'desktop';
+      target = mirrorSelects.find((item) => item.dataset.optionLocation === location);
+    }
+    if (!target) {
+      open(event.submitter || document.querySelector('[data-sheet-open]'));
+      target = source;
+      if (mobileQuery.matches) source?.closest('.pdp-order-item')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    target?.focus({ preventScroll: mobileQuery.matches });
+    target?.classList.add('is-required-choice');
+    target?.setAttribute('aria-invalid', 'true');
+    if (optionHint) optionHint.textContent = 'Sepete eklemek için seçili ürünün iğne kalınlığını belirleyin.';
+  }, true);
 
   const price = document.querySelector('[data-detail-price-anchor]');
   const updatePricePosition = () => {
