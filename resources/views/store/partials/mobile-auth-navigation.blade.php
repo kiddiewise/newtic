@@ -1,5 +1,5 @@
 @php
-  $authParams = array_filter(['next' => $authNext, 'favorite' => $authNext === 'cart' ? $favoriteId : '']);
+  $authParams = array_filter(['next' => $authNext, 'favorite' => $authNext === 'cart' ? $favoriteId : '', 'review_product' => $authNext === 'review' ? $reviewProduct : '']);
   // The child auth view renders before the parent layout initializes its
   // own variables, so resolve the current logo here independently.
   $authAppearance = \App\Models\ShopAppearance::current();
