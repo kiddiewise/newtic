@@ -27,7 +27,8 @@ class MobileProductDetailTest extends TestCase
             ->assertSee('data-quick-minus')
             ->assertSee('data-sheet-open')
             ->assertSee('data-sheet-close')
-            ->assertSee('Tüm ürünleri seç')
+            ->assertSee('Diğer gramaj seçenekleri')
+            ->assertSee('href="#ui-shopping-cart"', false)
             ->assertSee('Görüntülenen ürün')
             ->assertSee('value="1"', false);
 
