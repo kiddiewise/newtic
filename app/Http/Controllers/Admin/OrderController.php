@@ -62,6 +62,11 @@ class OrderController extends Controller
                         'status' => 'Ödemesi doğrulanan siparişi iptal etmek için önce iade işlemi ve kaydı gereklidir.',
                     ]);
                 }
+                if ($locked->paymentNotifications()->where('status', 'pending')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'İptalden önce bekleyen ödeme bildirimini kontrol edip sonuçlandırın.',
+                    ]);
+                }
                 // Restore reserved stock exactly once; cancelled orders are terminal.
                 foreach ($locked->items()->orderBy('product_id')->get() as $item) {
                     if ($item->product_id) {
