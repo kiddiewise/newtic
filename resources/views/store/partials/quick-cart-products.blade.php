@@ -13,11 +13,18 @@
         @if($anchor->discount_percent > 0)<span>-%{{ $anchor->discount_percent }}</span>@endif
       </div>
     </div>
+    @if($anchor->options->isNotEmpty())
+      <div class="quick-cart-variant-choice">
+        <small>Sepette {{ $anchorQuantity }} adet · {{ $anchor->option_label }} seçimi gerekli</small>
+        <a href="{{ route('product.show', $anchor->slug) }}">Seçenekleri görüntüle</a>
+      </div>
+    @else
     <div class="quick-cart-stepper" aria-label="{{ $anchor->name }} adedi">
       <button type="button" data-quick-minus aria-label="{{ $anchor->name }} azalt" @disabled($anchorQuantity <= 0)>−</button>
       <output data-quick-quantity aria-label="Sepetteki adet">{{ $anchorQuantity }}</output>
       <button type="button" data-quick-plus aria-label="{{ $anchor->name }} artır" @disabled($anchorQuantity >= min(999, $anchor->stock_quantity))>+</button>
     </div>
+    @endif
   </div>
 </div>
 
@@ -56,11 +63,18 @@
           <div class="quick-cart-price-line"><strong>{{ number_format((float) $related->price, 2, ',', '.') }} ₺</strong>
           @if($related->discount_percent > 0)<span>-%{{ $related->discount_percent }}</span>@endif</div>
         </div>
-        <div class="quick-cart-stepper" aria-label="{{ $related->name }} adedi">
+        @if($related->options->isNotEmpty())
+      <div class="quick-cart-variant-choice">
+        <small>{{ $quantity }} adet · {{ $related->option_label }} seçimi gerekli</small>
+        <a href="{{ route('product.show', $related->slug) }}">Seçenekleri görüntüle</a>
+      </div>
+    @else
+    <div class="quick-cart-stepper" aria-label="{{ $related->name }} adedi">
           <button type="button" data-quick-minus aria-label="{{ $related->name }} azalt" @disabled($quantity <= 0)>−</button>
           <output data-quick-quantity aria-label="Sepetteki adet">{{ $quantity }}</output>
           <button type="button" data-quick-plus aria-label="{{ $related->name }} artır" @disabled($quantity >= min(999, $related->stock_quantity))>+</button>
         </div>
+    @endif
       </div>
     @endforeach
   </div>
