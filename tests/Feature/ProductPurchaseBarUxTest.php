@@ -63,6 +63,9 @@ class ProductPurchaseBarUxTest extends TestCase
         $this->assertSame(1, substr_count($html, 'class="pdp-sticky-option-help"'));
         $this->assertSame(1, substr_count($html, 'class="pdp-sticky-variant-total"'));
         $this->assertSame(1, substr_count($html, 'class="pdp-sticky-add"'));
+        $this->assertStringContainsString('pdp-sticky-meta pdp-sticky-meta-a11y', $html);
+        $this->assertStringNotContainsString('pdp-sticky-quick-name', $html);
+        $this->assertSame(1, substr_count($html, 'pdp-sticky-variant-title'));
         $this->assertSame(1, substr_count($html, 'data-sticky-total'));
         $ribbon = strpos($html, 'pdp-sticky-choose pdp-sticky-gramages');
         $row = strpos($html, "pdp-sticky-actions");
