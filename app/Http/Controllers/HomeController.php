@@ -15,7 +15,7 @@ class HomeController extends Controller
             ->with([
                 'slides' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
                 'categories' => fn ($q) => $q->where('is_active', true),
-                'products' => fn ($q) => $q->where('is_active', true),
+                'products' => fn ($q) => $q->with('options')->where('is_active', true),
             ])
             ->get();
 
