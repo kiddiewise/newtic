@@ -34,6 +34,11 @@ fi
 mkdir -p "$APP/public/build" "$WEB/build" "$APP/storage/app/public"
 tar -xzf "$ARCHIVE" -C "$APP/public"
 test -f "$APP/public/build/manifest.json" || { echo "Missing Vite manifest"; exit 1; }
+# Refuse to publish PHP templates unless the matching admin UI CSS is in the built bundle.
+grep -RFlq --include='*.css' '.admin-app-shell' "$APP/public/build/assets" \
+  || { echo "Admin styles absent from staged bundle - refusing to deploy"; exit 1; }
+grep -RFlq --include='*.css' '.admin-icon' "$APP/public/build/assets" \
+  || { echo "Admin icon sizing absent from staged bundle - refusing to deploy"; exit 1; }
 cp -a "$APP/public/build/." "$WEB/build/"
 
 cd "$APP"
