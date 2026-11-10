@@ -131,6 +131,7 @@ a.admin-kpi:hover{transform:translateY(-2px);box-shadow:0 12px 28px #1a536418}
 .admin-state-pill.state-pending_payment{color:#a86c20;background:#fff3e3}
 .admin-state-pill.state-preparing{color:#297ac6;background:#eaf2ff}
 .admin-state-pill.state-shipped{color:#7655be;background:#f0eaff}
+.admin-state-pill.state-out_for_delivery{color:#246f9d;background:#e7f3fd}
 .admin-state-pill.state-completed{color:#168764;background:#e2f9ed}
 .admin-state-pill.state-cancelled{color:#b3484a;background:#fff0ef}
 .admin-table-alert{display:block;color:#b77b26;font-size:9px;margin-top:3px}
