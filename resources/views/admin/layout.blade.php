@@ -47,7 +47,7 @@
       <div class="admin-menu-caption">ANA MENÜ</div>
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
         @foreach($menu as $item)
-          @if($loop->index === 10)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
+          @if($loop->index === 11)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
           <a href="{{ route($item['name']) }}"
             @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
             @if(request()->routeIs($item['active'])) aria-current="page" @endif>
