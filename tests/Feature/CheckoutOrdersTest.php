@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\CustomerAddress;
 use App\Models\Order;
+use App\Models\PaymentNotification;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\User;
@@ -279,7 +280,17 @@ class CheckoutOrdersTest extends TestCase
         $this->purchase($product)->assertRedirect();
         $order = Order::firstOrFail();
         $this->actingAs($this->admin());
-        $this->patch(route('admin.orders.update', $order), ['status' => 'preparing'])->assertSessionHasNoErrors();
+        $this->patch(route('admin.orders.update', $order), ['status' => 'preparing'])
+            ->assertSessionHasErrors('status');
+        $notice = PaymentNotification::create([
+            'order_id' => $order->id,
+            'bank_name_snapshot' => 'Test Bankası',
+            'iban_snapshot' => 'TR330006100519786457841326',
+            'status' => 'pending',
+        ]);
+        $this->post(route('admin.payment-notifications.verify', $notice), ['bank_verified' => 1])
+            ->assertRedirect(route('admin.orders.show', $order))->assertSessionHasNoErrors();
+        $this->assertSame('preparing', $order->fresh()->status);
         $this->patch(route('admin.orders.update', $order), ['status' => 'shipped'])->assertSessionHasNoErrors();
         $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])->assertSessionHasErrors('status');
         $this->patch(route('admin.orders.update', $order), ['status' => 'completed'])->assertSessionHasNoErrors();
