@@ -33,7 +33,7 @@ class CatalogController extends Controller
 
     public function product(Request $request, string $slug): View
     {
-        $product = Product::query()->with(['category', 'images'])->where('slug', $slug)
+        $product = Product::query()->with(['category', 'images', 'options'])->where('slug', $slug)
             ->where('is_active', true)
             ->whereHas('category', fn ($q) => $q->where('is_active', true))
             ->firstOrFail();
@@ -55,6 +55,7 @@ class CatalogController extends Controller
 
         // The multi-grammage picker stays scoped to this specific subcategory.
         $categoryProducts = Product::query()
+            ->with('options')
             ->where('primary_category_id', $product->primary_category_id)
             ->where('is_active', true)
             ->orderBy('name')->get();
