@@ -86,6 +86,7 @@
       <p class="payment-review-status is-verified">Siparişinizin durumu: {{ $order->statusLabel() }}.</p>
     @endif
     <span class="payment-copy-live sr-only" role="status" aria-live="polite" data-payment-copy-status></span>
+    <div class="payment-copy-toast" data-payment-copy-toast hidden aria-hidden="true"></div>
   </section>
   <div class="checkout-card">
     <h2>Sipariş detayları</h2>
