@@ -159,7 +159,7 @@ class CheckoutController extends Controller
                 'shipping_cents' => $shipping,
                 'total_cents' => $subtotal + $shipping,
                 'currency' => 'TRY',
-                'is_test' => str_contains((string) config('app.url'), 'hostingersite.com'),
+                'is_test' => (bool) config('newtic.checkout_test_mode', true),
                 'placed_at' => now(),
             ]);
 
