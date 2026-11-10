@@ -22,4 +22,7 @@
   <symbol id="ui-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ui-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3ZM19 18l.8 2.2L22 21l-2.2.8L19 24l-.8-2.2L16 21l2.2-.8L19 18Z"/></symbol>
   <symbol id="ui-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+  <symbol id="ui-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="ui-landmark" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M4 10h16M5 21h14M7 10v11M12 10v11M17 10v11"/></symbol>
+  <symbol id="ui-clock-3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5h5"/></symbol>
 </svg>
