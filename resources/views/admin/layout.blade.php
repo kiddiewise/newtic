@@ -18,8 +18,11 @@
     ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
     ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
     ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
+    ['label' => 'Stok Yönetimi', 'name' => 'admin.stock', 'active' => 'admin.stock', 'icon' => 'package'],
     ['label' => 'Ödeme Bildirimleri', 'name' => 'admin.payment-notifications.index', 'active' => 'admin.payment-notifications.*', 'icon' => 'landmark', 'count' => $pendingPaymentCount],
     ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
+    ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
+    ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
     ['label' => 'Vitrin Yönetimi', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
     ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
     ['label' => 'Logolar', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
@@ -39,7 +42,7 @@
       <div class="admin-menu-caption">ANA MENÜ</div>
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
         @foreach($menu as $item)
-          @if($loop->index === 6)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
+          @if($loop->index === 9)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
           <a href="{{ route($item['name']) }}"
             @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
             @if(request()->routeIs($item['active'])) aria-current="page" @endif>
