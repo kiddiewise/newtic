@@ -9,6 +9,7 @@ class OrderItem extends Model
 {
     protected $fillable = [
         'product_id','sku','product_name','quantity','unit_price_cents','line_total_cents',
+        'option_label','option_value',
     ];
 
     protected $casts = [
