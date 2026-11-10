@@ -92,6 +92,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+    Route::patch('/orders/{order}/shipping', [AdminOrderController::class, 'shipping'])->name('orders.shipping');
     Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
     Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
     Route::get('/logo-ayarlari', [AppearanceController::class, 'edit'])->name('appearance.edit');
