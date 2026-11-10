@@ -75,7 +75,7 @@
     <section class="admin-panel">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-purple"><x-admin-icon name="clock" /></span><div><h2>Sipariş süreci</h2><p>Siparişin hangi aşamada olduğunu takip et</p></div></div>
       @php
-        $step = match($order->status){'preparing'=>2,'shipped'=>3,'completed'=>4,default=>0};
+        $step = match($order->status){'preparing'=>2,'shipped'=>3,'out_for_delivery'=>3,'completed'=>4,default=>0};
         $timeline = ['Sipariş oluşturuldu','Ödeme doğrulandı','Sipariş hazırlanıyor','Kargoya verildi','Tamamlandı'];
       @endphp
       <div class="admin-detail-timeline">
@@ -103,7 +103,7 @@
               @foreach($allowed as $state)
                 <option value="{{ $state }}">{{ match($state) {
                   'preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı',
-                  'completed' => 'Tamamlandı', 'cancelled' => 'İptal edildi', default => $state
+                  'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı', 'cancelled' => 'İptal edildi', default => $state
                 } }}</option>
               @endforeach
             </select>
@@ -115,6 +115,27 @@
       @endif
       <p class="admin-description">Ödeme onaylanmadan “Hazırlanıyor” seçilemez. Onaylanmış ödeme iade kaydı olmadan iptal edilemez.</p>
     </section>
+    @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true))
+    <section class="admin-panel admin-shipping-editor">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="truck" /></span>
+        <div><h2>Kargo ve takip bilgileri</h2><p>Bu bilgiler müşterinin sipariş takip ekranında görüntülenir.</p></div>
+      </div>
+      <form class="admin-form admin-shipping-fields" method="POST" action="{{ route('admin.orders.shipping', $order) }}">
+        @csrf @method('PATCH')
+        <label>Kargo firması
+          <input name="carrier_name" maxlength="120" value="{{ old('carrier_name', $order->carrier_name) }}" placeholder="Örn. Yurtiçi Kargo">
+        </label>
+        <label>Kargo takip numarası
+          <input name="tracking_number" maxlength="120" value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="Örn. 123456789">
+        </label>
+        <label>Resmi takip bağlantısı (isteğe bağlı)
+          <input type="url" name="tracking_url" maxlength="2000" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://..." pattern="https://.*">
+        </label>
+        <p class="admin-description">Bağlantı eklenmediyse müşteri yalnızca kaydedilmiş firma ve takip numarasını görür; çalışmayan kargo linki gösterilmez.</p>
+        <button class="admin-primary" type="submit"><x-admin-icon name="check" /> Kargo bilgilerini kaydet</button>
+      </form>
+    </section>
+    @endif
     <section class="admin-panel">
       <h2>Operasyon bilgileri</h2>
       <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>Havale / EFT</strong></div>
