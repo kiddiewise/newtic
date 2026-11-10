@@ -120,4 +120,14 @@ class DesktopPurchaseUxTest extends TestCase
 
         $this->assertSame(2, session('shopping_cart')[$product->id]);
     }
+
+    public function test_standard_cart_add_returns_to_the_shopping_page_with_a_confirmation(): void
+    {
+        $product = $this->demo();
+        $productUrl = route('product.show', $product->slug);
+
+        $this->from($productUrl)->post(route('cart.add'), [
+            'items' => [$product->id => 1],
+        ])->assertRedirect($productUrl)->assertSessionHas('success', 'Sepete eklendi.');
+    }
 }
