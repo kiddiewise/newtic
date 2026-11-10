@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,8 @@ class AccountController extends Controller
         $data = $request->validate([
             'email' => ['required','email','max:255'],
             'password' => ['required','string'],
-            'next' => ['nullable','in:checkout,wishlist,cart'],
+            'next' => ['nullable','in:checkout,wishlist,cart,review'],
+            'review_product' => ['nullable','string','max:200'],
             'favorite' => ['nullable','integer','min:1'],
         ]);
         if (!Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
@@ -45,7 +47,8 @@ class AccountController extends Controller
             'name' => ['required','string','min:3','max:160'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed',Password::min(8)],
-            'next' => ['nullable','in:checkout,wishlist,cart'],
+            'next' => ['nullable','in:checkout,wishlist,cart,review'],
+            'review_product' => ['nullable','string','max:200'],
             'favorite' => ['nullable','integer','min:1'],
         ]);
         $user = User::create([
@@ -64,6 +67,13 @@ class AccountController extends Controller
     private function afterAuthentication(Request $request, array $data): RedirectResponse
     {
         $next = $data['next'] ?? '';
+
+        if ($next === 'review' && isset($data['review_product'])) {
+            $product = Product::query()->where('slug', $data['review_product'])->where('is_active', true)->first();
+            if ($product) {
+                return redirect()->route('product.show', $product->slug)->withFragment('urun-yorumlari');
+            }
+        }
 
         if ($next === 'cart' && isset($data['favorite'])) {
             $added = WishlistController::addForUser($request->user(), (int) $data['favorite']);
