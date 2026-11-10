@@ -45,7 +45,8 @@
           @csrf
           <div class="payment-bank-list">
             @foreach($bankAccounts as $bank)
-              <label class="payment-bank-card">
+              <div class="payment-bank-card">
+                <label class="payment-bank-select">
                 <input type="radio" name="bank_account_id" value="{{ $bank->id }}" @checked(old('bank_account_id', $bankAccounts->first()->id) == $bank->id) required>
                 <span class="payment-bank-logo">
                   @if($bank->logo_path)<img src="{{ asset($bank->logo_path) }}" width="56" height="56" alt="{{ $bank->bank_name }} logosu" loading="lazy">
@@ -56,8 +57,9 @@
                   <small>{{ $bank->account_holder }}</small>
                   <span class="payment-bank-iban">{{ trim(chunk_split($bank->iban, 4, ' ')) }}</span>
                 </span>
+                </label>
                 <button class="payment-copy-button" type="button" data-copy-value="{{ $bank->iban }}" data-copy-label="{{ $bank->bank_name }} IBAN" aria-label="{{ $bank->bank_name }} IBAN numarasını kopyala" title="IBAN'ı kopyala"><x-store-icon name="copy" /></button>
-              </label>
+              </div>
             @endforeach
           </div>
           @if($latestPaymentNotification?->status === 'pending')
