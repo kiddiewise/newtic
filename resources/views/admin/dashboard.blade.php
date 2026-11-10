@@ -122,7 +122,8 @@
     @php
       $dashboardStates = ['pending_payment' => ['Ödeme bekliyor', '#f4a746'], 'preparing' => ['Hazırlanıyor', '#438cd1'], 'shipped' => ['Kargoda', '#9570d7'], 'completed' => ['Tamamlandı', '#17a780'], 'cancelled' => ['İptal', '#d97478']];
     @endphp
-    @foreach($dashboardStates as $key => [$label, $color])
+    @foreach($dashboardStates as $key => $stateInfo)
+      @php [$label, $color] = $stateInfo; @endphp
       @php $count = (int) ($statusCounts[$key] ?? 0); @endphp
       <div class="admin-distribution-row">
         <span><i style="background:{{ $color }}"></i>{{ $label }}</span><strong>{{ $count }}</strong>
