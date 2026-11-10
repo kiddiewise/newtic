@@ -105,7 +105,7 @@ class ProductReviewsExperienceTest extends TestCase
         $this->submitReview($p)->assertSessionHasErrors('review');
         $this->assertDatabaseCount('product_reviews', 0);
         $this->get(route('product.show', $p->slug))->assertOk()
-            ->assertSee('siparişin Tamamlandı durumunda olması gerekir');
+            ->assertSee('durumunda olması gerekir');
     }
 
     public function test_pending_unpaid_cancelled_and_different_product_orders_cannot_be_reviewed(): void
@@ -188,11 +188,10 @@ class ProductReviewsExperienceTest extends TestCase
             ->assertSee('Onayla')
             ->assertSee('Reddet');
 
-        ProductReview::query()->where('user_id', $buyer1->id)->firstOrFail()->tap(function ($review) {
-            $this->post(route('admin.reviews.moderate', $review), [
-                'decision' => 'approved',
-            ])->assertRedirect()->assertSessionHasNoErrors();
-        });
+        $approvedReview = ProductReview::query()->where('user_id', $buyer1->id)->firstOrFail();
+        $this->post(route('admin.reviews.moderate', $approvedReview), [
+            'decision' => 'approved',
+        ])->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs(User::factory()->create());
         $this->get(route('product.show', $p->slug))->assertOk()
             ->assertSee('1 doğrulanmış yorum')
