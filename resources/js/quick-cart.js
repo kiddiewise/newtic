@@ -1,5 +1,5 @@
-// Progressive enhancement: without JavaScript the product card POST still opens
-// the normal cart. JSON responses share the existing server-side cart rules.
+// Progressive enhancement: product card and detail add-to-cart use JSON and
+// display a non-modal toast. Server-side cart validation remains authoritative.
 const quickSheet = document.querySelector('[data-quick-sheet]');
 if (quickSheet) {
   const backdrop = document.querySelector('[data-quick-backdrop]');
@@ -13,6 +13,20 @@ if (quickSheet) {
   let lastTrigger = null;
   let activeProductId = null;
   let busy = false;
+  let toastTimer = null;
+
+  const showToast = (message, kind = 'success') => {
+    const toast = document.querySelector('[data-cart-toast]');
+    if (!toast) return;
+    const text = toast.querySelector('[data-cart-toast-message]');
+    if (text) text.textContent = message;
+    toast.dataset.kind = kind;
+    toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 3000);
+  };
 
   const errorMessage = (body, fallback) => {
     const firstError = body?.errors && Object.values(body.errors)[0];
@@ -114,19 +128,26 @@ if (quickSheet) {
     event.preventDefault();
     if (busy) return;
     busy = true;
-    const button = form.querySelector('[type="submit"]');
-    button.disabled = true;
-    button.classList.add('is-loading');
+    // PDP submit buttons are outside their <form>, linked by the form attribute.
+    const button = event.submitter || form.querySelector('[type="submit"]');
+    const wasDisabled = button?.disabled ?? false;
+    if (button) {
+      button.disabled = true;
+      button.classList.add('is-loading');
+    }
     const data = new FormData(form);
     activeProductId = Number(form.dataset.quickProduct);
     data.set('quick_anchor_id', String(activeProductId));
     try {
       const response = await requestCart(form.action, data);
       render(response);
-      open(button);
+      form.closest('.product-card')?.querySelector('.quick-cart-card-error')?.remove();
+      showToast('Sepete eklendi');
+      // Do not open the quick-cart drawer or navigate away after adding.
     } catch (error) {
       const text = error instanceof Error ? error.message : 'İşlem tamamlanamadı.';
-      button.setAttribute('title', text);
+      button?.setAttribute('title', text);
+      showToast(text, 'error');
       // Error is visible even if the sheet was never opened.
       let errorNode = form.closest('.product-card')?.querySelector('.quick-cart-card-error');
       if (!errorNode) {
@@ -138,8 +159,10 @@ if (quickSheet) {
       if (errorNode) errorNode.textContent = text;
     } finally {
       busy = false;
-      button.disabled = false;
-      button.classList.remove('is-loading');
+      if (button) {
+        button.disabled = wasDisabled;
+        button.classList.remove('is-loading');
+      }
     }
   });
 
