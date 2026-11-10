@@ -8,6 +8,7 @@ use App\Models\PaymentNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 class PaymentNotificationController extends Controller
@@ -21,7 +22,7 @@ class PaymentNotificationController extends Controller
         $isOwner = $request->user() && $order->user_id === $request->user()->id;
         $isSessionOrder = in_array($order->id,
             array_map('intval', (array) $request->session()->get('confirmed_order_ids', [])), true);
-        abort_unless($isOwner || $isSessionOrder, 404);
+        abort_unless($isOwner || $isSessionOrder || $request->hasValidSignature(false), 404);
 
         $data = $request->validate([
             'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
@@ -70,7 +71,10 @@ class PaymentNotificationController extends Controller
             return true;
         }, 3);
 
-        return redirect()->route('checkout.success', $order)->with('success',
+        $returnUrl = URL::temporarySignedRoute(
+            'checkout.success', now()->addDays(14), ['order' => $order->id], absolute: false
+        );
+        return redirect()->to($returnUrl)->with('success',
             $created
                 ? 'Ödeme bildiriminiz alındı. Banka hareketleri kontrol edildikten sonra siparişiniz güncellenecek.'
                 : 'Ödeme bildiriminiz zaten kontrol sırasındadır.'
