@@ -48,6 +48,7 @@ class CheckoutController extends Controller
 
     public function place(Request $request): RedirectResponse
     {
+        AddressValidation::normalizePhoneInput($request);
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
             'email' => ['required','email','max:255'],
             'order_note' => ['nullable','string','max:2000'],
