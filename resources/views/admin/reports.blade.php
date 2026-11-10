@@ -26,7 +26,7 @@
   </section>
   <section class="admin-panel">
     <div class="admin-panel-title"><h2>Sipariş durumları</h2></div>
-    @foreach(['pending_payment'=>'Ödeme bekliyor','preparing'=>'Hazırlanıyor','shipped'=>'Kargoda','completed'=>'Tamamlandı','cancelled'=>'İptal'] as $key=>$label)
+    @foreach(['pending_payment'=>'Ödeme bekliyor','preparing'=>'Hazırlanıyor','shipped'=>'Kargoda','out_for_delivery'=>'Dağıtımda','completed'=>'Tamamlandı','cancelled'=>'İptal'] as $key=>$label)
       <div class="admin-detail-line"><span>{{ $label }}</span><strong>{{ $statusCounts[$key] ?? 0 }} sipariş</strong></div>
     @endforeach
     <a href="{{ route('admin.orders.index') }}" class="admin-primary admin-block-action">Siparişleri görüntüle <x-admin-icon name="arrow-right" /></a>
