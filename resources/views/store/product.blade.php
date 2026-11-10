@@ -205,10 +205,10 @@
 
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>
 <div class="pdp-sticky-bar" data-sticky-bar aria-label="Hızlı ürün seçimi">
-  <button class="pdp-sticky-choose pdp-sticky-gramages" type="button" data-sheet-open
-    aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle">
+  <button class="pdp-sticky-choose pdp-sticky-gramages" type="button" data-sheet-open data-scroll-ribbon
+    aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle" aria-hidden="true" inert>
     <span>Diğer gramaj seçenekleri</span>
-    <x-store-icon name="chevron-right" />
+    <x-store-icon name="chevron-up" />
   </button>
   <div class="pdp-sticky-meta">
     @if($product->options->isNotEmpty())
