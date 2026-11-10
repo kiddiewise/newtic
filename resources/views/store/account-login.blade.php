@@ -10,7 +10,7 @@
   @include('store.partials.mobile-auth-navigation')
   <div class="checkout-top"><a href="{{ $authNext === 'cart' ? route('cart.index') : ($authNext === 'wishlist' ? route('cart.index') : route('checkout.index')) }}" aria-label="Geri dön">‹</a><strong>Üye Girişi</strong><span></span></div>
   <div class="checkout-card">
-    <h1>Tekrar hoş geldin</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Bu ürünü favorilerine eklemek için üye girişi yap.' : ($authNext === 'wishlist' ? 'Favorilerini görmek için üye girişi yap.' : $authNext === 'review' ? 'Ürün deneyimini paylaşmak için giriş yap.' : 'Siparişlerini ve kayıtlı adreslerini hesabından yönet.') }}</p>
+    <h1>Tekrar hoş geldin</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Bu ürünü favorilerine eklemek için üye girişi yap.' : ($authNext === 'wishlist' ? 'Favorilerini görmek için üye girişi yap.' : ($authNext === 'review' ? 'Ürün deneyimini paylaşmak için giriş yap.' : 'Siparişlerini ve kayıtlı adreslerini hesabından yönet.')) }}</p>
     @include('store.partials.social-auth')
     <form method="POST" action="{{ route('account.login.submit') }}" class="checkout-form">
       @csrf
