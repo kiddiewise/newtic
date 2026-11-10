@@ -39,6 +39,14 @@ jobs:
         run: |
           npm install --ignore-scripts
           npm run build
+      - name: Verify admin CSS is present in compiled Vite assets
+        run: |
+          set -euo pipefail
+          test -f public/build/manifest.json
+          find public/build/assets -maxdepth 1 -name '*.css' -print -quit | grep -q . || { echo "No built CSS assets"; exit 1; }
+          grep -RFlq --include='*.css' '.admin-app-shell' public/build/assets || { echo "Admin layout CSS missing from build"; exit 1; }
+          grep -RFlq --include='*.css' '.admin-icon' public/build/assets || { echo "Admin icon size CSS missing from build"; exit 1; }
+          echo "Admin styles successfully bundled"
       - name: Save prebuilt Vite assets for Hostinger (no Node required on server)
         uses: actions/upload-artifact@v4
         with:
