@@ -88,6 +88,19 @@
           <strong>Adet seçin</strong>
           <span>Stok: {{ $product->stock_quantity }} adet</span>
         </div>
+        @if($product->options->isNotEmpty())
+          <div class="pdp-desktop-variant">
+            <label for="pdp-desktop-option">{{ $product->option_label }} <span class="pdp-required-star" aria-hidden="true">*</span></label>
+            <select id="pdp-desktop-option" data-option-mirror data-product-id="{{ $product->id }}" data-option-location="desktop"
+              aria-describedby="pdp-desktop-option-help">
+              <option value="">İğne kalınlığını seçin</option>
+              @foreach($product->options as $option)
+                <option value="{{ $option->id }}">{{ $option->value }}</option>
+              @endforeach
+            </select>
+            <small id="pdp-desktop-option-help" class="pdp-option-help" data-option-help="desktop" role="status">Sepete eklemek için önce {{ mb_strtolower($product->option_label) }} seçin.</small>
+          </div>
+        @endif
         <div class="pdp-desktop-purchase-row">
           <div class="pdp-desktop-stepper" aria-label="{{ $product->name }} adedi">
             <button type="button" data-desktop-minus aria-label="{{ $product->name }} azalt">−</button>
@@ -107,7 +120,9 @@
 
   {{-- The category products remain independent SKUs; both buttons submit the same secure form. --}}
   <form id="pdp-cart-form" data-quick-add data-quick-product="{{ $product->id }}" method="POST" action="{{ route('cart.add') }}" autocomplete="off">@csrf</form>
-  @if($errors->has('items'))<div class="cart-flash is-error" role="alert">{{ $errors->first('items') }}</div>@endif
+  @if($errors->has('items') || count($errors->get('options.*')) > 0)
+    <div class="cart-flash is-error" role="alert">{{ $errors->first('items') ?: collect($errors->get('options.*'))->flatten()->first() }}</div>
+  @endif
   {{-- The same category order list is a regular section on desktop and a bottom sheet on mobile. --}}
   <section id="pdp-picker" class="category-order pdp-picker" data-category-id="{{ $product->primary_category_id }}" data-product-sheet aria-labelledby="category-order-title">
     <div class="pdp-sheet-handle" aria-hidden="true"></div>
@@ -194,7 +209,19 @@
     <span class="pdp-sticky-price" data-sticky-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</span>
     <span class="pdp-sticky-selection" data-sticky-selection aria-live="polite">Seçimler hazırlanıyor</span>
   </div>
-  <div class="pdp-sticky-actions">
+  <div @class(['pdp-sticky-actions', 'has-variant' => $product->options->isNotEmpty()])>
+    @if($product->options->isNotEmpty())
+      <label class="pdp-sticky-variant" for="pdp-sticky-option">
+        <span class="pdp-sticky-variant-title">{{ $product->option_label }} <em aria-hidden="true">*</em></span>
+        <select id="pdp-sticky-option" data-option-mirror data-product-id="{{ $product->id }}" data-option-location="sticky"
+          aria-describedby="pdp-sticky-option-help">
+          <option value="">İğne kalınlığını seçin</option>
+          @foreach($product->options as $option)
+            <option value="{{ $option->id }}">{{ $option->value }}</option>
+          @endforeach
+        </select>
+      </label>
+    @endif
     <div class="pdp-sticky-quick">
       <small class="pdp-sticky-quick-name">{{ $product->name }}</small>
       <div class="pdp-sticky-stepper" aria-label="Görüntülenen ürünün adedi">
@@ -208,6 +235,9 @@
       <strong data-sticky-total>Hesaplanıyor</strong>
     </button>
     <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add>Sepete ekle</button>
+    @if($product->options->isNotEmpty())
+      <span class="pdp-sticky-option-help" id="pdp-sticky-option-help" data-option-help="sticky" role="status" aria-live="polite">Önce {{ mb_strtolower($product->option_label) }} seçin, ardından sepete ekleyin.</span>
+    @endif
   </div>
 </div>
 @endsection
