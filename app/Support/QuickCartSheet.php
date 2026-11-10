@@ -14,9 +14,8 @@ class QuickCartSheet
     public static function response(Request $request, Product $anchor): array
     {
         $cart = ShoppingCart::snapshot($request);
-        $cartQuantities = collect($cart['lines'])->mapWithKeys(
-            fn (array $line) => [$line['product']->id => (int) $line['quantity']]
-        )->all();
+        $cartQuantities = collect($cart['lines'])->groupBy(fn (array $line) => $line['product']->id)
+            ->map(fn ($lines) => $lines->sum('quantity'))->all();
 
         $all = CategoryHierarchy::all();
         $ancestors = CategoryHierarchy::ancestors($anchor->category, $all);
@@ -30,14 +29,14 @@ class QuickCartSheet
         // Keep the drawer fast even with large catalogues; always include the
         // clicked item and then offer up to 32 related variants from the family.
         $related = Product::query()
-            ->with('category')
+            ->with(['category', 'options'])
             ->whereIn('primary_category_id', $visibleCategoryIds)
             ->where('is_active', true)
             ->where('id', '!=', $anchor->id)
             ->orderBy('name')
             ->limit(32)
             ->get();
-        $products = collect([$anchor->loadMissing('category')])->concat($related);
+        $products = collect([$anchor->loadMissing(['category', 'options'])])->concat($related);
 
         return [
             'ok' => true,
