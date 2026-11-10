@@ -33,6 +33,74 @@ if (pdpSheet) {
   const mobileQuery = matchMedia('(max-width: 760px)');
   const sessionKey = 'newtic-pdp-quantities:' + pdpSheet.dataset.categoryId;
 
+  // Reveal only the gram-selection ribbon on downward scrolling; hide it on
+  // upward scrolling. Never slide away the quantity/variant/cart controls.
+  // RAF + a distance threshold prevent micro-scroll and browser UI jitter.
+  const gramRibbon = sticky?.querySelector('[data-scroll-ribbon]');
+  if (gramRibbon) {
+    let lastScrollY = Math.max(0, window.scrollY);
+    let directionDistance = 0;
+    let lastDirection = 0;
+    let framePending = false;
+    let ribbonIsVisible = false;
+
+    const setRibbonVisibility = (visible) => {
+      if (ribbonIsVisible === visible) return;
+      ribbonIsVisible = visible;
+      gramRibbon.classList.toggle('is-scroll-visible', visible);
+      gramRibbon.setAttribute('aria-hidden', String(!visible));
+      gramRibbon.inert = !visible;
+    };
+
+    gramRibbon.inert = true;
+    gramRibbon.setAttribute('aria-hidden', 'true');
+
+    const processRibbonScroll = () => {
+      framePending = false;
+      const scrollY = Math.max(0, window.scrollY);
+      const distance = scrollY - lastScrollY;
+      lastScrollY = scrollY;
+
+      if (!mobileQuery.matches || scrollY < 85 || document.body.classList.contains('pdp-sheet-open')) {
+        directionDistance = 0;
+        lastDirection = 0;
+        setRibbonVisibility(false);
+        return;
+      }
+      if (Math.abs(distance) < 1) return;
+      const direction = Math.sign(distance);
+      if (direction !== lastDirection) directionDistance = 0;
+      lastDirection = direction;
+      directionDistance += distance;
+      if (directionDistance >= 16) {
+        setRibbonVisibility(true);
+        directionDistance = 0;
+      } else if (directionDistance <= -16) {
+        setRibbonVisibility(false);
+        directionDistance = 0;
+      }
+    };
+
+    const scheduleRibbonScroll = () => {
+      if (framePending) return;
+      framePending = true;
+      window.requestAnimationFrame(processRibbonScroll);
+    };
+    window.addEventListener('scroll', scheduleRibbonScroll, { passive: true });
+    window.addEventListener('pageshow', () => {
+      lastScrollY = Math.max(0, window.scrollY);
+      lastDirection = 0;
+      directionDistance = 0;
+      setRibbonVisibility(false);
+    });
+    mobileQuery.addEventListener('change', () => {
+      lastScrollY = Math.max(0, window.scrollY);
+      lastDirection = 0;
+      directionDistance = 0;
+      if (!mobileQuery.matches) setRibbonVisibility(false);
+    });
+  }
+
   const clamp = (field, raw) => {
     const max = Number(field.max);
     const qty = Number(raw);
