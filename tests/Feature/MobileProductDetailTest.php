@@ -28,6 +28,8 @@ class MobileProductDetailTest extends TestCase
             ->assertSee('data-sheet-open')
             ->assertSee('data-sheet-close')
             ->assertSee('Diğer gramaj seçenekleri')
+            ->assertSee('data-scroll-ribbon', false)
+            ->assertSee('href="#ui-chevron-up"', false)
             ->assertSee('href="#ui-shopping-cart"', false)
             ->assertSee('Görüntülenen ürün')
             ->assertSee('value="1"', false);
