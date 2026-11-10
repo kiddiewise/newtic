@@ -206,8 +206,14 @@
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>
 <div class="pdp-sticky-bar" data-sticky-bar aria-label="Hızlı ürün seçimi">
   <div class="pdp-sticky-meta">
-    <span class="pdp-sticky-price" data-sticky-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</span>
-    <span class="pdp-sticky-selection" data-sticky-selection aria-live="polite">Seçimler hazırlanıyor</span>
+    @if($product->options->isNotEmpty())
+      <span class="pdp-sticky-option-help" id="pdp-sticky-option-help" data-option-help="sticky" role="status" aria-live="polite">Önce {{ mb_strtolower($product->option_label) }} seçin.</span>
+      <span class="pdp-sticky-variant-total" data-sticky-total aria-label="Seçilen toplam tutar">Hesaplanıyor</span>
+      <span class="sr-only" data-sticky-selection aria-live="polite">Seçimler hazırlanıyor</span>
+    @else
+      <span class="pdp-sticky-price" data-sticky-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</span>
+      <span class="pdp-sticky-selection" data-sticky-selection aria-live="polite">Seçimler hazırlanıyor</span>
+    @endif
   </div>
   <div @class(['pdp-sticky-actions', 'has-variant' => $product->options->isNotEmpty()])>
     @if($product->options->isNotEmpty())
@@ -230,14 +236,19 @@
         <button type="button" data-quick-plus aria-label="{{ $product->name }} arttır" @disabled($product->stock_quantity === 0)>+</button>
       </div>
     </div>
-    <button class="pdp-sticky-choose" type="button" data-sheet-open>
-      <span>Tüm ürünleri seç <span aria-hidden="true">⌃</span></span>
-      <strong data-sticky-total>Hesaplanıyor</strong>
+    <button class="pdp-sticky-choose" type="button" data-sheet-open @if($product->options->isNotEmpty()) aria-label="Diğer gramajları ve ürün seçeneklerini aç" @endif>
+      <span>{{ $product->options->isNotEmpty() ? 'Seçenekler' : 'Tüm ürünleri seç' }} <span aria-hidden="true">⌃</span></span>
+      @if($product->options->isEmpty())<strong data-sticky-total>Hesaplanıyor</strong>@endif
     </button>
-    <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add>Sepete ekle</button>
-    @if($product->options->isNotEmpty())
-      <span class="pdp-sticky-option-help" id="pdp-sticky-option-help" data-option-help="sticky" role="status" aria-live="polite">Önce {{ mb_strtolower($product->option_label) }} seçin, ardından sepete ekleyin.</span>
-    @endif
+    <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add
+      @if($product->options->isNotEmpty()) aria-label="Seçili ürünü sepete ekle" title="Sepete ekle" @endif>
+      @if($product->options->isNotEmpty())
+        <x-store-icon name="shopping-cart-plus" />
+        <span class="sr-only">Sepete ekle</span>
+      @else
+        Sepete ekle
+      @endif
+    </button>
   </div>
 </div>
 @endsection
