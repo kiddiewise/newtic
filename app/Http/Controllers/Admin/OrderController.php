@@ -26,11 +26,18 @@ class OrderController extends Controller
     {
         $status = (string) $request->query('status', '');
         abort_if($status !== '' && !array_key_exists($status, self::TRANSITIONS), 422);
+        $term = trim((string) $request->query('q', ''));
+        abort_if(mb_strlen($term) > 100, 422);
         $orders = Order::query()->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
             ->when($status !== '', fn ($q) => $q->where('status', $status))
+            ->when($term !== '', fn ($q) => $q->where(function ($q) use ($term) {
+                $safe = '%'.addcslashes($term, '%_\\').'%';
+                $q->where('order_number', 'like', $safe)->orWhere('customer_name', 'like', $safe)
+                    ->orWhere('customer_email', 'like', $safe);
+            }))
             ->latest('id')->paginate(20)->withQueryString();
 
-        return view('admin.orders.index', compact('orders','status'));
+        return view('admin.orders.index', compact('orders','status','term'));
     }
 
     public function show(Order $order): View
