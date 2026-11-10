@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\StoreSetting;
@@ -217,7 +218,13 @@ class CheckoutController extends Controller
         $isSessionOrder = in_array($order->id, (array) $request->session()->get('confirmed_order_ids', []), true);
         abort_unless($isOwner || $isSessionOrder, 404);
 
-        $order->load('items');
-        return view('store.order-success', compact('order'));
+        $order->load(['items', 'paymentNotifications']);
+        $bankAccounts = $order->status === 'pending_payment'
+            ? BankAccount::query()->where('is_active', true)
+                ->orderBy('sort_order')->orderBy('id')->get()
+            : collect();
+        $latestPaymentNotification = $order->paymentNotifications->first();
+
+        return view('store.order-success', compact('order', 'bankAccounts', 'latestPaymentNotification'));
     }
 }
