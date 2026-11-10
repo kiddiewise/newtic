@@ -1,7 +1,7 @@
 @extends('layouts.store')
 @section('title', 'Siparişi Tamamla | Polaris Kurşun')
 @section('content')
-@php $checkoutIsTest = str_contains((string) config('app.url'), 'hostingersite.com'); @endphp
+@php $checkoutIsTest = (bool) config('newtic.checkout_test_mode', true); @endphp
 <main class="checkout-shell checkout-page" id="content">
   <div class="checkout-top"><a href="{{ route('cart.index') }}" aria-label="Sepete dön">‹</a><strong>Siparişi Tamamla</strong><span class="checkout-stage-label">2 / 3</span></div>
   <nav class="checkout-steps" aria-label="Sipariş aşamaları">
