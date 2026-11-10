@@ -15,7 +15,7 @@ use Illuminate\View\View;
 class OrderController extends Controller
 {
     private const TRANSITIONS = [
-        'pending_payment' => ['preparing','cancelled'],
+        'pending_payment' => ['cancelled'], // Preparing requires bank verification via payment inbox.
         'preparing' => ['shipped','cancelled'],
         'shipped' => ['completed'],
         'completed' => [],
@@ -26,7 +26,7 @@ class OrderController extends Controller
     {
         $status = (string) $request->query('status', '');
         abort_if($status !== '' && !array_key_exists($status, self::TRANSITIONS), 422);
-        $orders = Order::query()
+        $orders = Order::query()->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
             ->when($status !== '', fn ($q) => $q->where('status', $status))
             ->latest('id')->paginate(20)->withQueryString();
 
@@ -35,7 +35,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load('items');
+        $order->load(['items', 'paymentNotifications.reviewer']);
         $allowed = self::TRANSITIONS[$order->status] ?? [];
         return view('admin.orders.show', compact('order','allowed'));
     }
