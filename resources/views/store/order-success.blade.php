@@ -11,6 +11,12 @@
     @if($order->is_test)
       <p class="checkout-testing-note"><strong>Test siparişi:</strong> Bu mağaza henüz test aşamasında. Gerçek banka ödemesi yapmayın; bu ekran ödeme alındığını göstermez.</p>
     @endif
+    @guest
+      <div class="payment-guest-link">
+        <div><strong>Sipariş bağlantını sakla</strong><small>14 gün boyunca ödeme talimatlarına ve sipariş durumuna buradan dönebilirsin. Bu özel bağlantıyı başkalarıyla paylaşma.</small></div>
+        <button type="button" class="payment-copy-button" data-copy-value="{{ $paymentReturnUrl }}" data-copy-label="Sipariş takip bağlantısı" aria-label="Sipariş bağlantısını kopyala"><x-store-icon name="copy" /></button>
+      </div>
+    @endguest
   </div>
   @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
   @if($errors->any())<div class="cart-flash is-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -43,7 +49,7 @@
         <p class="payment-awaiting-bank">Banka hesapları henüz tanımlanmadı. Hesap bilgileri aktif hale gelene kadar ödeme göndermeyin.</p>
       @else
         <h3 class="payment-bank-title">Banka hesabını seç</h3>
-        <form id="payment-notification-form" method="POST" action="{{ route('checkout.payment-notify', $order) }}">
+        <form id="payment-notification-form" method="POST" action="{{ $paymentNotificationAction }}">
           @csrf
           <div class="payment-bank-list">
             @foreach($bankAccounts as $bank)
