@@ -14,7 +14,7 @@
         @csrf
         <input type="hidden" name="items[{{ $product->id }}]" value="1">
         <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" title="{{ $product->stock_quantity > 0 ? 'Sepete ekle' : 'Stokta yok' }}" @disabled($product->stock_quantity <= 0)>
-          <x-store-icon name="shopping-cart-plus" />
+          <x-store-icon name="shopping-cart" />
           <span class="product-card-action-label">{{ $product->stock_quantity > 0 ? 'Sepete Ekle' : 'Stokta Yok' }}</span>
         </button>
       </form>
