@@ -80,7 +80,7 @@
           <input type="email" name="email" maxlength="255" autocomplete="email" id="checkout-email"
             placeholder="ornek@eposta.com" required aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @if($errors->has('email')) aria-describedby="checkout-error-email" @endif value="{{ old('email', auth()->user()?->email) }}">
           @error('email')<small class="checkout-field-error" id="checkout-error-email">{{ $message }}</small>@enderror
-          <small class="checkout-field-hint">Sipariş numaranı ve durumunu bildirmek için kullanılır.</small>
+          <small class="checkout-field-hint">Siparişinle ilgili iletişim için kaydedilir. Test ortamında otomatik e-posta gönderilmez.</small>
         </label>
 
         @php $prefill = $selectedAddress; @endphp
