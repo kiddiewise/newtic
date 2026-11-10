@@ -55,7 +55,7 @@
 .review-star-picker label{display:inline-flex;align-items:center;justify-content:center;width:43px;height:43px;cursor:pointer;font-size:32px;color:#d8e0e0;line-height:1;user-select:none;transition:color .13s ease,transform .15s ease}
 .review-star-picker input:checked ~ label{color:#efa82f}
 .review-star-picker label:hover,.review-star-picker label:hover ~ label{color:#efb44d}
-.review-star-picker:has(label:hover) input:checked ~ label:not(:hover):not(:hover ~ label){color:#d8e0e0}
+
 .review-star-picker input:focus-visible + label{outline:2px solid #0c9887;outline-offset:1px;border-radius:9px}
 .review-star-picker input:checked + label{animation:review-star-pop .27s ease both}
 @keyframes review-star-pop{0%{transform:scale(.83)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
@@ -130,3 +130,9 @@
 @media(prefers-reduced-motion:reduce){
  .review-star-picker label,.review-primary-action,.pdp-rating-link{transition:none!important;animation:none!important}
 }
+
+.order-review-link{display:inline-flex;align-items:center;gap:6px;margin:5px 0 12px;padding:7px 10px;border-radius:9px;background:#f1faf6;color:#0b7e6d;text-decoration:none;font-size:11.5px;font-weight:800}
+.order-review-link .ui-icon{width:15px;height:15px;stroke:currentColor;fill:none}
+.order-review-link:hover{background:#e1f5ec}
+.review-rating-caption[data-selected="true"]{color:#0c8f79;font-weight:760}
+@media(max-width:760px){.order-review-link{margin:3px 0 11px}}
