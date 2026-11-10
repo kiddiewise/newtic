@@ -5,7 +5,30 @@
 .pdp-sheet-heading h2{font-size:clamp(1.25rem,2vw,1.6rem);letter-spacing:-.03em;margin:0}
 .pdp-picker{margin-bottom:32px}
 .pdp-picker .order-list{max-height:none}
-@media(min-width:761px){.pdp-sheet-footer>button{display:none}}
+.pdp-desktop-purchase{display:none}
+@media(min-width:761px){
+  .pdp-desktop-purchase{display:block;margin-top:24px;padding:20px;border:1px solid #d8e8e8;border-radius:18px;background:linear-gradient(150deg,#f8fcfb,#fff);box-shadow:0 10px 30px #1539430a}
+  .pdp-desktop-purchase-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;font-size:.88rem}
+  .pdp-desktop-purchase-head strong{color:#183c46;font-weight:790}
+  .pdp-desktop-purchase-head span{color:#648187;font-size:.75rem}
+  .pdp-desktop-purchase-row{display:grid;grid-template-columns:116px minmax(0,1fr);gap:12px}
+  .pdp-desktop-stepper{display:flex;align-items:center;justify-content:space-between;overflow:hidden;border:1px solid #d5e5e6;background:white;border-radius:12px;min-height:52px}
+  .pdp-desktop-stepper button{border:0;min-width:35px;align-self:stretch;background:#eef7f6;color:#087e80;font-size:23px;font-weight:750;cursor:pointer}
+  .pdp-desktop-stepper button:disabled{color:#a7b8b9;background:#f3f5f5;cursor:not-allowed}
+  .pdp-desktop-stepper output{font-weight:850;font-size:.97rem;font-variant-numeric:tabular-nums}
+  .pdp-desktop-add{display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:12px;background:#087f84;color:#fff;font-size:.92rem;font-weight:850;min-height:52px;cursor:pointer;box-shadow:0 7px 20px #087f8429;transition:background .18s,transform .18s}
+  .pdp-desktop-add svg{width:21px;height:21px}
+  .pdp-desktop-add:hover:not(:disabled){background:#076a71;transform:translateY(-1px)}
+  .pdp-desktop-add:disabled{background:#dfe7e8;color:#8c9da0;cursor:not-allowed;box-shadow:none}
+  .pdp-desktop-purchase-summary{font-size:.78rem;color:#486a72;margin:12px 0 11px!important}
+  .pdp-desktop-more{display:inline-flex;align-items:center;gap:7px;color:#087d81;font-size:.8rem;font-weight:780;text-decoration:underline;text-underline-offset:3px}
+  .pdp-picker{scroll-margin-top:24px}
+  .pdp-sheet-footer{position:sticky;bottom:0;z-index:2;background:#fff;padding:18px 0 4px;margin-top:24px}
+  .pdp-sheet-footer>button{display:inline-flex;align-items:center;justify-content:center;min-height:49px;padding:13px 24px;background:#087f84;color:#fff;border:0;border-radius:11px;cursor:pointer;font-size:.85rem;font-weight:800}
+  .pdp-sheet-footer>button:hover:not(:disabled){background:#076a71}
+  .pdp-sheet-footer>button:disabled{background:#dfe7e8;color:#85989c;cursor:not-allowed}
+}
+@media(min-width:761px) and (max-width:900px){.pdp-desktop-purchase{padding:15px}.pdp-desktop-purchase-row{grid-template-columns:105px minmax(0,1fr);gap:8px}.pdp-desktop-add{font-size:.81rem}}
 .pdp-order-item .quantity-field input{width:52px;padding:9px 3px;border:none;box-shadow:none;font-weight:800;appearance:textfield}
 .pdp-order-item .quantity-field input::-webkit-inner-spin-button,
 .pdp-order-item .quantity-field input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}

@@ -60,6 +60,7 @@
       </a>
       <a class="icon-link header-cart-link" href="{{ route('cart.index') }}" aria-label="Sepetim, {{ $headerCartCount }} adet">
         <x-store-icon name="shopping-cart" />
+        <span class="desktop-cart-label">Sepetim</span>
         @if($headerCartCount > 0)<span class="cart-icon-badge">{{ $headerCartCount }}</span>@endif
       </a>
     </div>

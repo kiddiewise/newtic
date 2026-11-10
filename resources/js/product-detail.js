@@ -11,6 +11,10 @@ if (pdpSheet) {
   const quickMinus = sticky?.querySelector('[data-quick-minus]');
   const quickPlus = sticky?.querySelector('[data-quick-plus]');
   const quickValue = sticky?.querySelector('[data-quick-qty]');
+  const desktopMinus = document.querySelector('[data-desktop-minus]');
+  const desktopPlus = document.querySelector('[data-desktop-plus]');
+  const desktopValue = document.querySelector('[data-desktop-qty]');
+  const desktopSummary = document.querySelector('[data-desktop-summary]');
   const opens = [...document.querySelectorAll('[data-sheet-open],[data-sheet-open-inline]')];
   const closes = [...pdpSheet.querySelectorAll('[data-sheet-close]')];
   const currentInput = orderInputs.find((field) =>
@@ -50,12 +54,16 @@ if (pdpSheet) {
     });
     const amount = fmt.format(cents / 100);
     if (orderSummary) orderSummary.textContent = quantity + ' adet · ' + amount;
+    if (desktopSummary) desktopSummary.textContent = 'Seçilen toplam: ' + quantity + ' adet · ' + amount;
     addButtons.forEach((button) => { button.disabled = quantity === 0; });
     if (stickySelection) stickySelection.textContent = quantity + ' adet seçildi';
     if (stickyTotal) stickyTotal.textContent = amount;
     if (currentInput) {
       const value = Number(currentInput.value);
       if (quickValue) quickValue.textContent = String(value);
+      if (desktopValue) desktopValue.textContent = String(value);
+      if (desktopMinus) desktopMinus.disabled = value <= 0;
+      if (desktopPlus) desktopPlus.disabled = value >= Number(currentInput.max);
       if (quickMinus) quickMinus.disabled = value <= 0;
       if (quickPlus) quickPlus.disabled = value >= Number(currentInput.max);
     }
@@ -78,6 +86,8 @@ if (pdpSheet) {
   });
   quickMinus?.addEventListener('click', () => adjust(currentInput, -1));
   quickPlus?.addEventListener('click', () => adjust(currentInput, 1));
+  desktopMinus?.addEventListener('click', () => adjust(currentInput, -1));
+  desktopPlus?.addEventListener('click', () => adjust(currentInput, 1));
   update();
 
   // Browser back/forward cache can restore the old form DOM after a cart
