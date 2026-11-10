@@ -95,7 +95,7 @@
   <div class="checkout-card">
     <h2>Sipariş detayları</h2>
     @foreach($order->items as $line)
-      <div class="checkout-order-item"><span>{{ $line->product_name }} <small>× {{ $line->quantity }}</small></span>
+      <div class="checkout-order-item"><span>{{ $line->product_name }} @if($line->option_value)<small>· {{ $line->option_label }}: {{ $line->option_value }}</small>@endif <small>× {{ $line->quantity }}</small></span>
         <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
     @endforeach
     <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
