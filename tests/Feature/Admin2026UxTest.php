@@ -189,7 +189,7 @@ class Admin2026UxTest extends TestCase
             ->assertSee('name="primary_category_id"', false)
             ->assertSee('name="images[]"', false)
             ->assertSee('name="is_active"', false)
-            ->assertSee('Değişiklikleri kaydet', false);
+            ->assertSee('Ürünü oluştur');
     }
 
     public function test_authorized_admin_login_lands_on_new_dashboard(): void
