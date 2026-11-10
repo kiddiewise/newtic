@@ -20,7 +20,7 @@
   </div>
   <nav class="admin-order-filters" aria-label="Sipariş durumuna göre filtrele">
     <a href="{{ route('admin.orders.index', array_filter(['q' => $term])) }}" @class(['is-active' => $status === '']) @if(!$status) aria-current="page" @endif>Tümü</a>
-    @foreach(['pending_payment' => 'Ödeme bekleyen', 'preparing' => 'Hazırlanıyor', 'shipped' => 'Kargoda', 'completed' => 'Tamamlanan', 'cancelled' => 'İptal'] as $value => $label)
+    @foreach(['pending_payment' => 'Ödeme bekleyen', 'preparing' => 'Hazırlanıyor', 'shipped' => 'Kargoda', 'out_for_delivery' => 'Dağıtımda', 'completed' => 'Tamamlanan', 'cancelled' => 'İptal'] as $value => $label)
       <a href="{{ route('admin.orders.index', array_filter(['status' => $value, 'q' => $term])) }}"
         @class(['is-active' => $status === $value]) @if($status === $value) aria-current="page" @endif>{{ $label }}</a>
     @endforeach
