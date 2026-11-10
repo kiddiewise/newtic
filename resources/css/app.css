@@ -21,6 +21,7 @@
 @import './admin-2026-modules.css';
 @import './admin-2026-polish.css';
 @import './product-options.css';
+@import './pdp-variant-purchase.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
