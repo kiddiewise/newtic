@@ -18,6 +18,7 @@ final class ProductReviewEligibility
             ->where('user_id', $user->id)
             ->where('status', 'completed')
             ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->orderBy('is_test')
             ->latest('id')
             ->first();
     }
