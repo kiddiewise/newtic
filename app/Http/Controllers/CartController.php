@@ -78,7 +78,7 @@ class CartController extends Controller
             return $this->quickResponse($request, $first);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Ürünler sepetinize eklendi.');
+        return redirect()->back()->with('success', 'Sepete eklendi.');
     }
 
     public function update(Request $request, Product $product): RedirectResponse|JsonResponse
