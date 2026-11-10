@@ -4,6 +4,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\PaymentNotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -36,6 +37,8 @@ Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')-
 Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
 Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/siparis/onay/{order}/odeme-bildir', [PaymentNotificationController::class, 'store'])
+    ->middleware('throttle:5,1')->name('checkout.payment-notify');
 
 Route::prefix('hesabim')->name('account.')->middleware('auth')->group(function () {
     Route::get('/', [AccountController::class, 'index'])->name('index');
@@ -58,6 +61,8 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\BankAccountController;
+use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNotificationController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
@@ -68,6 +73,12 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
+    Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
+    Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
+    Route::patch('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
+    Route::get('/payment-notifications', [AdminPaymentNotificationController::class, 'index'])->name('payment-notifications.index');
+    Route::post('/payment-notifications/{paymentNotification}/verify', [AdminPaymentNotificationController::class, 'verify'])->name('payment-notifications.verify');
+    Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
