@@ -89,7 +89,7 @@
 @endif
 @if($product->exists)
 <section class="admin-panel admin-editor-existing-media">
-  <div class="admin-panel-title"><h2>Mevcut fotoğrafları yönet</h2><span>{{ $product->images->count() }} fotoğraf</span></div>
+  <div class="admin-panel-title"><h2>Ürün fotoğraf galerisi</h2><span>{{ $product->images->count() }} fotoğraf</span></div>
   @if($product->images->isEmpty())
     <p class="admin-description">Henüz fotoğraf yüklenmedi. Üstteki alandan fotoğraf ekleyebilirsin.</p>
   @else
