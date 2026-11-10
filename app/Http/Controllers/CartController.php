@@ -78,7 +78,18 @@ class CartController extends Controller
             return $this->quickResponse($request, $first);
         }
 
-        return redirect()->back()->with('success', 'Sepete eklendi.');
+        // Preserve the shopping page for normal browser form submissions.
+        // Requests without a same-origin Referrer (e.g. APIs/tests) fall back to cart.
+        $referrer = $request->headers->get('referer');
+        $origin = $request->getSchemeAndHttpHost();
+
+        if (is_string($referrer) && (
+            $referrer === $origin || str_starts_with($referrer, $origin.'/')
+        )) {
+            return redirect()->to($referrer)->with('success', 'Sepete eklendi.');
+        }
+
+        return redirect()->route('cart.index')->with('success', 'Sepete eklendi.');
     }
 
     public function update(Request $request, Product $product): RedirectResponse|JsonResponse
