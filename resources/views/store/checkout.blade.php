@@ -15,7 +15,7 @@
         <summary><span>Sipariş özetini gör <small>{{ $cart['count'] }} ürün · Kargo dahil</small></span><strong>{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</strong><x-store-icon name="chevron-down" /></summary>
         <div class="checkout-mobile-review-body">
           @foreach($cart['lines'] as $line)
-            <div class="checkout-order-item"><span>{{ $line['product']->name }} <small>× {{ $line['quantity'] }}</small></span><strong>{{ number_format($line['line_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+            <div class="checkout-order-item"><span>{{ $line['product']->name }} @if($line['option_value'])<small>· {{ $line['option_label'] }}: {{ $line['option_value'] }}</small>@endif <small>× {{ $line['quantity'] }}</small></span><strong>{{ number_format($line['line_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
           @endforeach
           <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($cart['subtotal_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
           <div class="checkout-price-line"><span>Kargo</span><strong>{{ $cart['shipping_cents'] === 0 ? 'Ücretsiz' : number_format($cart['shipping_cents'] / 100, 2, ',', '.').' ₺' }}</strong></div>
@@ -124,7 +124,7 @@
 <div class="checkout-summary-heading"><h2>Sipariş Özeti</h2><a href="{{ route('cart.index') }}">Sepeti düzenle</a></div>
       @foreach($cart['lines'] as $line)
         <div class="checkout-order-item">
-          <span>{{ $line['product']->name }} <small>× {{ $line['quantity'] }}</small></span>
+          <span>{{ $line['product']->name }} @if($line['option_value'])<small>· {{ $line['option_label'] }}: {{ $line['option_value'] }}</small>@endif <small>× {{ $line['quantity'] }}</small></span>
           <strong>{{ number_format($line['line_cents'] / 100, 2, ',', '.') }} ₺</strong>
         </div>
       @endforeach
