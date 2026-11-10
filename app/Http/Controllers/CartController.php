@@ -28,6 +28,8 @@ class CartController extends Controller
         $validated = $request->validate([
             'items' => ['required', 'array', 'min:1', 'max:100'],
             'items.*' => ['required', 'integer', 'min:0', 'max:999'],
+            'options' => ['sometimes', 'array', 'max:100'],
+            'options.*' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $requested = [];
@@ -47,25 +49,46 @@ class CartController extends Controller
         // Normalize stale items first; all changes are written only after full validation.
         ShoppingCart::snapshot($request);
         $existing = ShoppingCart::raw($request);
-        $products = Product::query()->whereIn('id', array_keys($requested))
+        $products = Product::query()->with('options')->whereIn('id', array_keys($requested))
             ->where('is_active', true)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->get()->keyBy('id');
 
+        $keys = [];
         foreach ($requested as $id => $qty) {
             $product = $products->get($id);
             if (! $product || ! CategoryHierarchy::visible($product->category)) {
                 throw ValidationException::withMessages(['items' => 'Seçilen ürünlerden biri satışta değil.']);
             }
-            if ($qty + (int) ($existing[$id] ?? 0) > min(999, $product->stock_quantity)) {
+
+            $optionId = (int) ($validated['options'][$id] ?? 0);
+            $option = $optionId ? $product->options->firstWhere('id', $optionId) : null;
+            if (($product->options->isNotEmpty() && ! $option)
+                || ($product->options->isEmpty() && $optionId)) {
                 throw ValidationException::withMessages([
-                    'items' => $product->name.' için stok miktarı yeterli değil.',
+                    'options.'.$id => $product->name.' için geçerli '.($product->option_label ?: 'ürün').' seçeneğini belirleyin.',
+                ]);
+            }
+
+            $key = ShoppingCart::key($id, $option?->id);
+            $keys[$id] = $key;
+            $inCart = 0;
+            foreach ($existing as $storedKey => $storedQty) {
+                $parts = ShoppingCart::parseKey($storedKey);
+                if ($parts && $parts[0] === $id) {
+                    $inCart += (int) $storedQty;
+                }
+            }
+            if ($qty + $inCart > min(999, $product->stock_quantity)) {
+                throw ValidationException::withMessages([
+                    'items' => $product->name.' için toplam stok miktarı yeterli değil.',
                 ]);
             }
         }
 
         foreach ($requested as $id => $qty) {
-            $existing[$id] = (int) ($existing[$id] ?? 0) + $qty;
+            $key = $keys[$id];
+            $existing[$key] = (int) ($existing[$key] ?? 0) + $qty;
         }
         if (count($existing) > 100) {
             throw ValidationException::withMessages(['items' => 'Sepette en fazla 100 farklı ürün bulunabilir.']);
@@ -94,11 +117,15 @@ class CartController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:999']]);
+        $data = $request->validate([
+            'quantity' => ['required', 'integer', 'min:0', 'max:999'],
+            'option_id' => ['nullable', 'integer', 'min:1'],
+        ]);
         ShoppingCart::snapshot($request);
         $items = ShoppingCart::raw($request);
+        $key = ShoppingCart::key($product->id, isset($data['option_id']) ? (int) $data['option_id'] : null);
 
-        if (! array_key_exists($product->id, $items)) {
+        if (! array_key_exists($key, $items)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Ürün sepetinizde bulunamadı. Sepeti yenileyin.'], 409);
             }
@@ -107,12 +134,20 @@ class CartController extends Controller
 
         $qty = (int) $data['quantity'];
         if ($qty === 0) {
-            unset($items[$product->id]);
+            unset($items[$key]);
         } else {
-            if (! $product->is_active || ! $product->category?->is_active || $qty > $product->stock_quantity) {
+            $otherQty = 0;
+            foreach ($items as $storedKey => $storedQty) {
+                $parts = ShoppingCart::parseKey($storedKey);
+                if ($storedKey !== $key && $parts && $parts[0] === $product->id) {
+                    $otherQty += (int) $storedQty;
+                }
+            }
+            if (! $product->is_active || ! $product->category?->is_active
+                || ($qty + $otherQty) > min(999, $product->stock_quantity)) {
                 throw ValidationException::withMessages(['quantity' => 'Seçilen adet stokta bulunmuyor.']);
             }
-            $items[$product->id] = $qty;
+            $items[$key] = $qty;
         }
 
         ShoppingCart::put($request, $items);
@@ -126,8 +161,10 @@ class CartController extends Controller
 
     public function remove(Request $request, Product $product): RedirectResponse
     {
+        $data = $request->validate(['option_id' => ['nullable', 'integer', 'min:1']]);
         $items = ShoppingCart::raw($request);
-        unset($items[$product->id]);
+        $key = ShoppingCart::key($product->id, isset($data['option_id']) ? (int) $data['option_id'] : null);
+        unset($items[$key]);
         ShoppingCart::put($request, $items);
 
         return redirect()->route('cart.index')->with('success', 'Ürün sepetten çıkarıldı.');
