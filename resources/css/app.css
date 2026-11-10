@@ -4,34 +4,22 @@
 @import './site-pages.css';
 @import './petlebi-mobile.css';
 @import './admin.css';
-@source '../views/**/*.blade.php';
-@source '../js/**/*.js';
-
 @import './catalog-extras.css';
-
 @import './product-detail-mobile.css';
 @import './cart.css';
-
 @import './cart-overrides.css';
 @import './cart-mobile-redesign.css';
-
 @import './category-hierarchy.css';
-
 @import './mega-menu.css';
-
 @import './quick-cart.css';
-
 @import './checkout.css';
-
 @import './polaris-brand-icons.css';
-
 @import './desktop-commerce.css';
-
 @import './payment-flow.css';
-
 @import './order-celebration.css';
-
 @import './admin-2026.css';
 @import './admin-2026-modules.css';
-
 @import './admin-2026-polish.css';
+
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
