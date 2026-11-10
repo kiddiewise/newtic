@@ -1,0 +1,83 @@
+
+/* NEWTIC: bank transfer instructions and administrator payment review */
+.payment-instructions{border-color:#c9e4df}
+.payment-instructions-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.payment-instructions-heading h2{margin:2px 0 8px}
+.payment-eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0a8682}
+.payment-status-pill{font-size:11px;border-radius:30px;padding:8px 10px;font-weight:800;color:#856018;background:#fff4dc}
+.payment-status-pill.is-verified{background:#e5f7eb;color:#167b52}
+.payment-guide{font-size:13px!important;color:#526c73!important;line-height:1.7!important;margin:10px 0 16px!important}
+.payment-guide strong{color:#194249}
+.payment-copy-grid{display:grid;grid-template-columns:1fr 1.25fr;gap:12px;margin:15px 0 20px}
+.payment-copy-item{display:flex;flex-direction:column;gap:9px;padding:14px 15px;background:#f4faf9;border:1px solid #d7e9e5;border-radius:13px;min-width:0}
+.payment-copy-item>span{color:#6e858b;font-size:11px;font-weight:680}
+.payment-copy-item>strong{color:#087c65;font-size:22px;letter-spacing:-.04em;white-space:nowrap}
+.payment-copy-line{display:flex;align-items:center;justify-content:space-between;min-width:0;gap:8px}
+.payment-copy-line>strong{color:#153b46;font-size:14px;overflow-wrap:anywhere}
+.payment-copy-button{display:grid;place-items:center;flex:none;width:43px;height:43px;border:1px solid #bcdcd8;border-radius:11px;background:#e6f5f2;color:#0b7e7c;cursor:pointer}
+.payment-copy-button:hover{background:#d6eeea}
+.payment-copy-button:focus-visible{outline:3px solid #087e87;outline-offset:2px}
+.payment-copy-button svg{height:20px;width:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.payment-bank-title{font-size:15px;font-weight:830;margin:12px 0 11px;color:#183b43}
+.payment-bank-list{display:grid;gap:11px;margin-bottom:16px}
+.payment-bank-card{display:flex;align-items:center;gap:10px;border:1px solid #dde8e8;border-radius:14px;background:#fff;padding:11px 12px}
+.payment-bank-card:has(input:checked){border-color:#0c8c85;box-shadow:0 0 0 2px #11877b16;background:#f7fdfb}
+.payment-bank-select{display:flex;align-items:center;gap:11px;min-width:0;flex:1;cursor:pointer}
+.payment-bank-select>input{appearance:auto;accent-color:#0b8485;width:19px;height:19px;flex:none}
+.payment-bank-logo{display:grid;place-items:center;flex:none;width:51px;height:51px;background:#f1f6f7;border-radius:12px;overflow:hidden}
+.payment-bank-logo img{width:100%;height:100%;object-fit:contain;padding:5px}
+.payment-bank-logo svg{height:28px;width:28px;fill:none;stroke:#0a8382;stroke-width:1.7}
+.payment-bank-information{display:flex;flex-direction:column;gap:4px;min-width:0}
+.payment-bank-information>strong{font-size:13px;color:#153a43;font-weight:790}
+.payment-bank-information>small{font-size:11px;color:#6c828b;overflow-wrap:anywhere}
+.payment-bank-iban{font-size:11.5px;font-weight:810;letter-spacing:.02em;color:#164a55;overflow-wrap:anywhere}
+.payment-awaiting-bank{padding:13px;border-radius:12px;background:#fff7e8;color:#775724;font-size:13px!important}
+.payment-note-label{margin:11px 0 14px}
+.payment-notify-button{width:100%;min-height:52px}
+.payment-verify-note{display:block;font-size:11px;color:#71868d;line-height:1.5;text-align:center;margin-top:10px}
+.payment-review-status,.payment-rejected{display:flex;align-items:center;gap:9px;border-radius:12px;padding:14px;background:#ebf7f6;color:#14666a;font-size:12px!important;line-height:1.6!important}
+.payment-review-status strong{color:#145a61}
+.payment-review-status svg{width:22px;height:22px;stroke:currentColor;fill:none;flex:none}
+.payment-review-status.is-verified{background:#e9f8ee;color:#176b45}
+.payment-rejected{display:block;background:#fff1ef;color:#9e3c3f}
+.payment-copy-toast[hidden]{display:none!important}
+.payment-copy-toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:500;max-width:calc(100vw - 30px);width:max-content;padding:13px 19px;border-radius:12px;background:#164f50;color:white;font-size:13px;font-weight:790;text-align:center;box-shadow:0 10px 35px #092e3540;pointer-events:none}
+.payment-copy-toast[data-kind=error]{background:#9f3648}
+.admin-bank-nav-count{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 5px;background:#c84052;color:#fff;border-radius:50%;font-size:11px;margin-left:2px}
+.bank-admin-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.bank-admin-form .bank-admin-wide{grid-column:1/-1}
+.bank-admin-entry{padding:19px 0;border-bottom:1px solid #e7efef}
+.bank-admin-entry:last-child{border-bottom:0}
+.bank-admin-title{display:flex;align-items:center;gap:12px;margin-bottom:15px}
+.bank-admin-title>img,.bank-admin-placeholder{width:64px;height:48px;background:#f2f8f7;object-fit:contain;padding:5px;border-radius:9px}
+.bank-admin-placeholder{display:grid;place-items:center;font-size:11px;color:#50767c}
+.bank-admin-title>div{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.bank-admin-title strong{font-size:16px}
+.bank-admin-title small{font-size:12px;color:#789099}
+.admin-payment-record{padding:19px 0;border-top:1px solid #e4edef;overflow-wrap:anywhere}
+.admin-payment-record-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.admin-payment-record-head>div{display:flex;flex-direction:column;gap:4px}
+.admin-payment-record-head a{color:#087e84}
+.admin-payment-record-head small{color:#6f8790;font-size:12px}
+.admin-payment-record-head>strong{font-size:15px;color:#0d6f60;white-space:nowrap}
+.admin-payment-record p{font-size:12px;color:#506c74;line-height:1.5;margin:7px 0}
+.bank-mono{font-variant-numeric:tabular-nums;letter-spacing:.015em}
+.admin-payment-actions{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px;padding:15px;border-radius:12px;background:#f5f9f9}
+.admin-payment-actions .admin-check{align-items:flex-start!important;line-height:1.5}
+.admin-payment-actions textarea{border:1px solid #d5e1e5;border-radius:10px;width:100%;padding:10px;font:inherit;resize:vertical}
+.admin-payment-actions .admin-form button{white-space:normal;min-height:43px}
+.admin-payment-history{padding:12px 0;border-top:1px solid #e8eff0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.admin-payment-history>small{color:#667f85;font-size:12px}
+.admin-payment-history p{font-size:13px;margin:3px 0}
+@media(max-width:760px){
+ .payment-copy-grid{grid-template-columns:1fr}
+ .payment-bank-card{padding:9px 8px}
+ .payment-bank-select{gap:7px}
+ .payment-bank-logo{height:42px;width:42px}
+ .payment-bank-information>strong{font-size:12px}
+ .payment-bank-iban{font-size:10px}
+ .payment-copy-button{width:42px;height:42px}
+ .payment-copy-toast{top:75px}
+ .bank-admin-form,.admin-payment-actions{grid-template-columns:1fr}
+ .bank-admin-form .bank-admin-wide{grid-column:auto}
+}
