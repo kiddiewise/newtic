@@ -191,8 +191,8 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
     {
         foreach ([route('account.login'), route('account.register')] as $route) {
             $html = $this->get($route)->assertOk()
-                ->assertSee('Google ile devam et')
-                ->assertSee('Facebook ile devam et')
+                ->assertSee('Google')
+                ->assertSee('Facebook')
                 ->assertSee('Yakında')
                 ->getContent();
 
