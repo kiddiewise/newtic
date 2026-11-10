@@ -6,6 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#102f3e">
   <meta name="robots" content="noindex,nofollow,noarchive">
+  @if(request()->routeIs('checkout.success'))<meta name="referrer" content="no-referrer">@endif
   <title>@yield('title', 'Polaris Kurşun | Balıkçılık Ekipmanları')</title>
   <meta name="description" content="@yield('description', 'Polaris Kurşun balıkçılık ekipmanları. Yeni mağaza tasarımı hazırlanmaktadır.')">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
