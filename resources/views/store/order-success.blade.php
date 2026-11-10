@@ -90,6 +90,11 @@
           </div>
         </div>
       </div>
+      @if($latestPaymentNotification?->status === 'rejected')
+        <p class="payment-rejected"><strong>Önceki bildiriminiz doğrulanamadı.</strong>
+          @if($latestPaymentNotification->admin_note) {{ $latestPaymentNotification->admin_note }} @endif
+          Banka hareketini kontrol edip tekrar bildirebilirsiniz.</p>
+      @endif
       @if($latestPaymentNotification?->status === 'pending')
         <p class="payment-review-status"><x-store-icon name="clock-3" /> <strong>Ödeme bildiriminiz alındı.</strong> Banka hareketleri kontrol ediliyor. Tekrar bildirim göndermeniz gerekmez.</p>
       @elseif($bankAccounts->isEmpty())
@@ -117,11 +122,7 @@
               </div>
             @endforeach
           </div>
-          @if($latestPaymentNotification?->status === 'rejected')
-              <p class="payment-rejected"><strong>Önceki bildiriminiz doğrulanamadı.</strong>
-                @if($latestPaymentNotification->admin_note) {{ $latestPaymentNotification->admin_note }} @endif
-                Banka hareketini kontrol edip tekrar bildirebilirsiniz.</p>
-            @endif
+
             <label class="checkout-field payment-note-label"><span>Ödeme yapan kişi / not (isteğe bağlı)</span>
               <input name="customer_note" maxlength="500" value="{{ old('customer_note') }}" placeholder="Örn. Havale farklı bir isimden yapıldı">
             </label>
