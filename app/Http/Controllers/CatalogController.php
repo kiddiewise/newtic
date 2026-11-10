@@ -21,7 +21,7 @@ class CatalogController extends Controller
         $subcategories = $category->activeChildren()->get();
         $banners = $category->banners()->visible()->get();
 
-        $products = Product::query()
+        $products = Product::query()->with('options')
             ->whereIn('primary_category_id', $categoryIds)
             ->where('is_active', true)
             ->orderBy('name')->paginate(24);
@@ -70,7 +70,7 @@ class CatalogController extends Controller
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
 
-        $products = Product::query()->with('category')->where('is_active', true)
+        $products = Product::query()->with(['category', 'options'])->where('is_active', true)
             ->when($term !== '', fn ($q) => $q->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
             ->orderBy('name')->paginate(24)->withQueryString();
 
