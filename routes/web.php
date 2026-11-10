@@ -58,6 +58,8 @@ use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AnnouncementController;
@@ -73,6 +75,8 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/search', SearchController::class)->name('search');
     Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
     Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
     Route::patch('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
