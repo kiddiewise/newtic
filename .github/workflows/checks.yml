@@ -131,10 +131,18 @@ jobs:
             fi
             sleep 7
           done
-      - name: Verify staging homepage
+      - name: Verify storefront, admin login and compiled admin stylesheet
         if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent --location --retry 3 https://powderblue-dinosaur-538060.hostingersite.com/ -o homepage.html
+          SITE="https://powderblue-dinosaur-538060.hostingersite.com"
+          curl --fail --show-error --silent --location --retry 3 "$SITE/" -o homepage.html
           grep -Fqi "POLARIS" homepage.html
-          echo "Staging homepage verified"
+          curl --fail --show-error --silent --location --retry 3 "$SITE/admin/login" -o admin-login.html
+          grep -Fq "NEWTIC" admin-login.html
+          ASSET=$(node -e "const m=require('./public/build/manifest.json'); process.stdout.write(m['resources/css/app.css'].file)")
+          test -n "$ASSET"
+          curl --fail --show-error --silent --location --retry 3 "$SITE/build/$ASSET" -o deployed-admin.css
+          grep -Fq '.admin-app-shell' deployed-admin.css
+          grep -Fq '.admin-icon' deployed-admin.css
+          echo "Staging storefront, admin login and published admin stylesheet verified"
