@@ -1,0 +1,54 @@
+/* Independent gram products can optionally require a hook-size choice. */
+.pdp-order-item .pdp-variant-field{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:stretch;
+  gap:5px;
+  min-width:110px;
+  max-width:160px;
+  flex:0 1 155px;
+  color:#16444b;
+  font-size:12px;
+  font-weight:780;
+}
+.pdp-variant-field>span small{font-size:10px;color:#829ba0;font-weight:550}
+.pdp-variant-field select{
+  display:block;
+  width:100%;
+  min-height:42px;
+  padding:9px 29px 9px 11px;
+  border:1px solid #cbdfe1;
+  border-radius:10px;
+  background:#fff;
+  color:#244751;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.pdp-variant-field select:focus-visible{outline:3px solid #18ad9b;outline-offset:1px}
+.pdp-variant-field select.is-required-choice{border-color:#e0a54b;background:#fffbf3}
+.pdp-variant-hint{display:block;font-size:11px;line-height:1.4;color:#b07126;font-weight:700;margin-top:5px}
+.pdp-variant-hint:empty{display:none}
+.pdp-current-product-note small{font-size:11px;color:#936f31}
+.product-card-option-link{display:flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;color:inherit}
+.product-card-option-link:focus-visible{outline:3px solid #19a997;outline-offset:2px}
+.cart-item-option{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap;margin:9px 0 5px;padding:7px 10px;background:#eaf8f4;border:1px solid #d7ebe3;border-radius:9px;color:#0a756a;font-size:12px;line-height:1.4}
+.cart-item-option strong{font-weight:850}
+.quick-cart-variant-choice{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:115px;margin-left:auto}
+.quick-cart-variant-choice small{color:#718b91;font-size:10px;text-align:right}
+.quick-cart-variant-choice a{display:inline-flex;justify-content:center;align-items:center;min-height:36px;padding:8px 10px;border:1px solid #afe0d3;border-radius:9px;background:#e7f9f2;color:#0c776a;font-size:11px;font-weight:780;text-align:center;text-decoration:none}
+.quick-cart-variant-choice a:hover{background:#d9f3ea}
+@media(max-width:760px){
+  .pdp-order-item{flex-wrap:wrap}
+  .pdp-order-item .pdp-variant-field{flex:1 0 125px;max-width:none;min-width:120px}
+  .pdp-order-item .pdp-stepper{flex:none}
+  .pdp-variant-field select{min-height:44px}
+  .quick-cart-variant-choice{min-width:96px}
+}
+@media(max-width:410px){
+  .pdp-order-item .pdp-variant-field{order:2;flex-basis:100%;margin:8px 0 0}
+  .pdp-order-item .pdp-stepper{order:3;margin-left:auto}
+  .quick-cart-variant-choice{flex-basis:100%;align-items:flex-start}
+}
