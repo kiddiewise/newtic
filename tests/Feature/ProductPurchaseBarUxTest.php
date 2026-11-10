@@ -55,7 +55,7 @@ class ProductPurchaseBarUxTest extends TestCase
         $this->assertSame(1, substr_count($html, 'name="options['.$product->id.']"'));
         $this->assertSame(1, substr_count($html, 'form="pdp-cart-form" name="options['.$product->id.']"'));
         $this->assertSame(2, substr_count($html, 'data-option-location="'));
-        $this->assertSame(2, substr_count($html, 'form="pdp-cart-form"') > 0 ? 2 : 0); // purchase buttons remain external to the form.
+        $this->assertGreaterThanOrEqual(3, substr_count($html, 'data-cart-add')); // Desktop, mobile and multi-picker share one form.
         $this->assertSame($first->id, $product->options()->first()->id);
     }
 
@@ -108,6 +108,6 @@ class ProductPurchaseBarUxTest extends TestCase
         $this->get(route('product.show', $product->slug))
             ->assertOk()
             ->assertSee('cart-flash is-error')
-            ->assertSee('iğne', false);
+            ->assertSee('İğne');
     }
 }
