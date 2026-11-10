@@ -205,6 +205,11 @@
 
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>
 <div class="pdp-sticky-bar" data-sticky-bar aria-label="Hızlı ürün seçimi">
+  <button class="pdp-sticky-choose pdp-sticky-gramages" type="button" data-sheet-open
+    aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle">
+    <span>Diğer gramaj seçenekleri</span>
+    <x-store-icon name="chevron-right" />
+  </button>
   <div class="pdp-sticky-meta">
     @if($product->options->isNotEmpty())
       <span class="pdp-sticky-option-help" id="pdp-sticky-option-help" data-option-help="sticky" role="status" aria-live="polite">Önce {{ mb_strtolower($product->option_label) }} seçin.</span>
@@ -213,6 +218,7 @@
     @else
       <span class="pdp-sticky-price" data-sticky-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</span>
       <span class="pdp-sticky-selection" data-sticky-selection aria-live="polite">Seçimler hazırlanıyor</span>
+      <span class="sr-only" data-sticky-total>Hesaplanıyor</span>
     @endif
   </div>
   <div @class(['pdp-sticky-actions', 'has-variant' => $product->options->isNotEmpty()])>
@@ -236,18 +242,10 @@
         <button type="button" data-quick-plus aria-label="{{ $product->name }} arttır" @disabled($product->stock_quantity === 0)>+</button>
       </div>
     </div>
-    <button class="pdp-sticky-choose" type="button" data-sheet-open @if($product->options->isNotEmpty()) aria-label="Diğer gramajları ve ürün seçeneklerini aç" @endif>
-      <span>{{ $product->options->isNotEmpty() ? 'Seçenekler' : 'Tüm ürünleri seç' }} <span aria-hidden="true">⌃</span></span>
-      @if($product->options->isEmpty())<strong data-sticky-total>Hesaplanıyor</strong>@endif
-    </button>
     <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add
-      @if($product->options->isNotEmpty()) aria-label="Seçili ürünü sepete ekle" title="Sepete ekle" @endif>
-      @if($product->options->isNotEmpty())
-        <x-store-icon name="shopping-cart-plus" />
-        <span class="sr-only">Sepete ekle</span>
-      @else
-        Sepete ekle
-      @endif
+      aria-label="Seçilen ürünleri sepete ekle" title="Sepete ekle">
+      <x-store-icon name="shopping-cart" />
+      <span>Sepete ekle</span>
     </button>
   </div>
 </div>
