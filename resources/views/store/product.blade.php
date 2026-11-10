@@ -120,8 +120,8 @@
 
   {{-- The category products remain independent SKUs; both buttons submit the same secure form. --}}
   <form id="pdp-cart-form" data-quick-add data-quick-product="{{ $product->id }}" method="POST" action="{{ route('cart.add') }}" autocomplete="off">@csrf</form>
-  @if($errors->has('items') || count($errors->get('options.*')) > 0)
-    <div class="cart-flash is-error" role="alert">{{ $errors->first('items') ?: collect($errors->get('options.*'))->flatten()->first() }}</div>
+  @if($errors->any())
+    <div class="cart-flash is-error" role="alert">{{ $errors->first() }}</div>
   @endif
   {{-- The same category order list is a regular section on desktop and a bottom sheet on mobile. --}}
   <section id="pdp-picker" class="category-order pdp-picker" data-category-id="{{ $product->primary_category_id }}" data-product-sheet aria-labelledby="category-order-title">
