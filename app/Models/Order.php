@@ -28,6 +28,16 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function paymentNotifications(): HasMany
+    {
+        return $this->hasMany(PaymentNotification::class)->latest('id');
+    }
+
+    public function latestPaymentNotification(): ?PaymentNotification
+    {
+        return $this->paymentNotifications()->first();
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
