@@ -200,6 +200,12 @@
 
 @yield('content')
 @include('store.partials.quick-cart-sheet')
+@if(session('success'))
+<div class="cart-add-toast cart-add-fallback-toast" role="status">
+  <span class="cart-add-toast-icon" aria-hidden="true"><x-store-icon name="check" /></span>
+  <span>{{ session('success') }}</span>
+</div>
+@endif
 
 <footer class="site-footer">
   <div class="container footer-grid">
