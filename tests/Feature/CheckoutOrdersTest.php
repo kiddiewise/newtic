@@ -88,7 +88,11 @@ class CheckoutOrdersTest extends TestCase
         $this->assertDatabaseCount('users', 0);
 
         $this->get(route('checkout.success', $order))->assertOk()
-            ->assertSee($order->order_number)->assertSee('Ödeme bekleniyor');
+            ->assertSee($order->order_number)
+            ->assertSee('Ödeme bekleniyor')
+            ->assertSee('aria-label="Sipariş kutlaması">🎉</div>', false)
+            ->assertSee('data-order-celebration="'.$order->id.'"', false)
+            ->assertDontSee('checkout-success-mark">✓</div>', false);
     }
 
     public function test_empty_checkout_redirects_to_cart_and_cannot_place_order(): void
