@@ -83,6 +83,7 @@ class CheckoutExperience2026Test extends TestCase
 
         $order = Order::firstOrFail();
         $this->assertSame('05321234567', $order->phone);
+        $this->assertTrue($order->is_test, 'Unconfigured payment flow must remain in test mode.');
         $this->assertSame(1, $order->items()->count());
     }
 
@@ -109,7 +110,8 @@ class CheckoutExperience2026Test extends TestCase
         $product = $this->product();
         $token = $this->start($product);
 
-        $response = $this->followingRedirects()->post(route('checkout.place'), $this->payload($token, [
+        $response = $this->followingRedirects()->from(route('checkout.index'))
+            ->post(route('checkout.place'), $this->payload($token, [
             'email' => 'not-an-email',
             'phone' => '12345',
         ]));
