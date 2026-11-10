@@ -74,7 +74,7 @@ class CatalogController extends Controller
             : 0;
         $reviews = (clone $publicReviewQuery)->with('user:id,name')
             ->latest('id')->paginate(5, ['*'], 'yorum_sayfa')
-            ->withFragment('urun-yorumlari');
+            ->fragment('urun-yorumlari');
 
         $canReview = $request->user()
             ? ProductReviewEligibility::order($request->user(), $product) !== null
