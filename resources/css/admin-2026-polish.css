@@ -1,0 +1,67 @@
+/* Final admin polish for dense management pages, feedback and mobile forms. */
+.admin-login-brand{display:flex;align-items:center;gap:11px;margin-bottom:24px}
+.admin-login-brand>.admin-editor-heading-icon{width:52px;height:52px;border:1px solid #b4e9d3}
+.admin-login-brand>.admin-editor-heading-icon .admin-icon{width:28px;height:28px}
+.admin-login-brand .admin-eyebrow{margin:0 0 3px}
+.admin-login-brand strong{font-size:13px;color:#246257}
+.admin-login-panel{padding:34px}
+.admin-login-panel>h1{font-size:29px;margin:0 0 8px}
+.admin-login-panel>p{margin-bottom:10px}
+.admin-stock-badge{display:inline-flex;align-items:center;gap:5px;border-radius:7px;padding:5px 9px;background:#f0f7f8;color:#547780;font-size:11px;font-weight:760;white-space:nowrap}
+.admin-stock-badge.is-low{background:#fff1ef;color:#bc5550}
+.admin-catalog-stats>.admin-stock-badge.is-low{color:#bc5550}
+.admin-catalog-stats .admin-icon{width:13px;height:13px;margin-right:3px}
+.admin-body .admin-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:13px}
+.admin-body .admin-photo-tile{position:relative}
+.admin-body .admin-cover-label{background:#dbf5e9;color:#087962;padding:4px 8px;border-radius:8px;font-size:10px}
+.admin-body .admin-quick-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:19px}
+.admin-body .admin-quick-links a{display:flex;flex-direction:column;gap:6px;padding:17px;border:1px solid #e6eff0;background:#fff;box-shadow:0 8px 20px #12384508;border-radius:13px;text-decoration:none;color:#234955}
+.admin-body .admin-quick-links a:hover{border-color:#94d5c7;background:#fafffd}
+.admin-body .admin-quick-links a strong{font-size:13px}
+.admin-body .admin-quick-links a small{font-size:10px;color:#80969d}
+.admin-body .admin-image-update{gap:12px}
+.admin-body .admin-empty{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-radius:11px;background:#f8fafb;padding:19px;color:#78939c}
+.admin-body .admin-empty .admin-icon{width:20px;height:20px;color:#1f9d86}
+.admin-body .admin-empty p{width:100%;margin:0;font-size:11px}
+.admin-body .pagination-wrap{margin-top:22px}
+.admin-body .pagination-wrap a{color:#137e77}
+.admin-body .admin-order-filters{margin-bottom:18px}
+.admin-body .admin-order-filters a{border:1px solid #e4ecee;background:#fff}
+.admin-body .admin-order-filters a.is-active{background:#e0f5ef;border-color:#9ad2c4}
+.admin-body .admin-check{line-height:1.5}
+.admin-body .admin-check input{min-width:18px;min-height:18px;cursor:pointer}
+.admin-body textarea{font-family:inherit}
+.admin-body .admin-section-row{gap:13px}
+.admin-body .category-tree-admin-row{margin-bottom:6px}
+.admin-body .category-tree-actions{display:flex;gap:6px;flex-wrap:wrap}
+.admin-body .admin-photo-grid .admin-danger .admin-icon{width:14px;height:14px}
+.admin-body .admin-payment-actions textarea{min-height:83px}
+.admin-body .admin-payment-history .admin-payment-actions{width:100%}
+.admin-body .admin-payment-history .admin-form label{font-size:11px}
+.admin-body .admin-payment-record-head a{text-decoration:none}
+.admin-body .admin-payment-record-head a:hover{text-decoration:underline}
+.admin-body .admin-order-row{border-top:1px solid #edf0f2;padding:11px 6px}
+.admin-body .admin-order-row small{font-size:11px;color:#8a9ba1}
+.admin-body .admin-order-detail-sidebar{min-width:0}
+.admin-body .checkout-price-line.is-total strong{color:#0b8c73}
+.admin-body .admin-table-scroll::-webkit-scrollbar{height:7px}
+.admin-body .admin-table-scroll::-webkit-scrollbar-thumb{border-radius:20px;background:#d4e4e4}
+@media(max-width:760px){
+ .admin-body .admin-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-login-panel{padding:23px}
+ .admin-body .admin-catalog-row{padding:11px 3px}
+ .admin-body .admin-order-filters{gap:6px}
+ .admin-body .admin-order-filters a{font-size:10px;padding:8px}
+ .admin-body .admin-payment-actions{grid-template-columns:1fr}
+}
+@media(max-width:440px){
+ .admin-body .admin-quick-links{grid-template-columns:1fr}
+ .admin-body .admin-quick-links a{padding:12px}
+ .admin-body .admin-settings-grid{grid-template-columns:1fr}
+ .admin-body .admin-page-heading a.admin-primary{width:100%}
+ .admin-body .admin-catalog-filters{gap:5px}
+ .admin-body .admin-filter-pill{padding:8px;font-size:10px}
+ .admin-body .admin-search-result{flex-wrap:wrap}
+ .admin-body .admin-search-result>span:nth-child(2){flex-basis:calc(100% - 65px)}
+ .admin-body .admin-search-result>a{margin-left:auto}
+}
