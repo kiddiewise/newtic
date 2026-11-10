@@ -24,6 +24,7 @@
 @import './product-options.css';
 @import './pdp-variant-purchase.css';
 @import './mobile-auth.css';
+@import './product-reviews.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
