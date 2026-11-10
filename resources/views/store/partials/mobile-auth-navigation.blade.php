@@ -1,12 +1,15 @@
 @php
   $authParams = array_filter(['next' => $authNext, 'favorite' => $authNext === 'cart' ? $favoriteId : '']);
+  // The child auth view renders before the parent layout initializes its
+  // own variables, so resolve the current logo here independently.
+  $authAppearance = \App\Models\ShopAppearance::current();
 @endphp
 <header class="mobile-auth-header" aria-label="Üyelik ekranı üst menüsü">
   <a href="{{ route('home') }}" class="mobile-auth-brand" aria-label="Polaris Kurşun ana sayfa">
-    @if($shopAppearance->mobile_logo_path)
-      <img src="{{ asset($shopAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
-    @elseif($shopAppearance->desktop_logo_path)
-      <img src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
+    @if($authAppearance->mobile_logo_path)
+      <img src="{{ asset($authAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
+    @elseif($authAppearance->desktop_logo_path)
+      <img src="{{ asset($authAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
     @else
       <strong>POLARIS <span>KURŞUN</span></strong>
     @endif
