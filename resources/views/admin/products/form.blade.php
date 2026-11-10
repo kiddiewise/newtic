@@ -49,6 +49,21 @@
       </div>
     </section>
     <section class="admin-panel admin-editor-section">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="layers" /></span>
+        <div><h2>Ürün seçenekleri / varyasyon</h2><p>Gramaj ayrı ürün olarak kalır; iğne kalınlığı gibi ek seçimleri burada tanımlayabilirsin.</p></div>
+      </div>
+      <div class="admin-form admin-editor-fields">
+        <label class="admin-editor-wide">Seçenek başlığı
+          <input name="option_label" maxlength="80" value="{{ old('option_label', $product->option_label ?: 'İğne kalınlığı') }}" placeholder="Örn. İğne kalınlığı">
+        </label>
+        <label class="admin-editor-wide">Seçenek değerleri (her satıra bir tane)
+          <textarea name="options_text" rows="5" maxlength="3000" placeholder="0,25&#10;0,30&#10;0,35">{{ old('options_text', $product->options->pluck('value')->implode("\n")) }}</textarea>
+          <small>Örnek: 0,25 · 0,30 · 0,35. Boş bırakırsan bu ürün seçenek istemez. En fazla 30 seçenek; her seçeneğin en fazla 60 karakteri olabilir.</small>
+        </label>
+      </div>
+      <p class="admin-description">75 gr, 100 gr ve 125 gr ürünlerini yine ayrı SKU olarak açarsın. Her ürünün kendi iğne seçenekleri olabilir. Şu an bütün iğne seçenekleri ürünün ortak stok adedini ve fiyatını kullanır.</p>
+    </section>
+    <section class="admin-panel admin-editor-section">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="check" /></span><div><h2>Yayın durumu</h2><p>Ürünün mağazadaki görünürlüğünü belirle</p></div></div>
       <label class="admin-editor-toggle"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $product->exists ? $product->is_active : true))>
         <span class="admin-toggle-track" aria-hidden="true"></span><span><strong>Ürün mağazada yayınlansın</strong><small>Pasif ürünler müşteri kataloğunda görünmez.</small></span>
