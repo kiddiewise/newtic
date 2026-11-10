@@ -5,7 +5,7 @@
     <div class="admin-panel admin-login-panel">
       <div class="admin-login-brand"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="bag" /></span><div><div class="admin-eyebrow">NEWTIC · POLARIS KURŞUN</div><strong>Yönetim Paneli</strong></div></div>
       <h1>Yönetim paneli</h1>
-      <p class="admin-description">Vitrin bannerlarını, kategorileri ve ürünleri yönetin.</p>
+      <p class="admin-description">Sipariş, ödeme bildirimi, ürün, stok ve mağaza yönetimi tek kontrol panelinde.</p>
       <form action="{{ route('admin.login.submit') }}" method="POST" class="admin-form">
         @csrf
         <label>E-posta adresi<input name="email" type="email" value="{{ old('email') }}" autocomplete="username" required maxlength="255"></label>
