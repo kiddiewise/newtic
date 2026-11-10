@@ -79,6 +79,7 @@
       </div>
       <div class="pdp-current-product-note">
         <strong>Seçili ürün:</strong> {{ $product->name }}
+        @if($product->options->isNotEmpty())<small>· {{ $product->option_label }} seçimi gerekli</small>@endif
         <button type="button" data-sheet-open-inline>Tüm kategori ürünlerini seç <span aria-hidden="true">›</span></button>
       </div>
       {{-- Desktop: the primary purchase action is immediately visible beside the product. --}}
@@ -114,7 +115,7 @@
       <div>
         <p class="eyebrow">ÇOKLU ÜRÜN SEÇİMİ</p>
         <h2 id="category-order-title">{{ $product->category->name }} ürünleri</h2>
-        <p>Aynı kategorideki bütün ürünlerin adetlerini ayrı ayrı belirleyin.</p>
+        <p>Aynı kategorideki bütün ürünlerin adetlerini ayrı ayrı belirleyin. Seçenekli ürünlerde iğne kalınlığını da seçin.</p>
       </div>
       <button type="button" class="pdp-sheet-close" data-sheet-close aria-label="Seçim panelini kapat">✕</button>
     </div>
@@ -136,6 +137,18 @@
             @if($current)<span class="current-product-label">Görüntülenen ürün</span>@endif
             @if($categoryProduct->stock_quantity === 0)<span class="pdp-stock-note">Tükendi</span>@endif
           </span>
+          @if($categoryProduct->options->isNotEmpty())
+            <label class="pdp-variant-field">
+              <span>{{ $categoryProduct->option_label }} <small>· seçiniz</small></span>
+              <select form="pdp-cart-form" name="options[{{ $categoryProduct->id }}]" data-product-option data-product-id="{{ $categoryProduct->id }}"
+                aria-label="{{ $categoryProduct->name }} için {{ $categoryProduct->option_label }} seçimi">
+                <option value="">Seçiniz</option>
+                @foreach($categoryProduct->options as $option)
+                  <option value="{{ $option->id }}">{{ $option->value }}</option>
+                @endforeach
+              </select>
+            </label>
+          @endif
           <div class="pdp-stepper" aria-label="{{ $categoryProduct->name }} adedi">
             <button type="button" data-step-minus aria-label="{{ $categoryProduct->name }} azalt">−</button>
             <label class="quantity-field">
@@ -152,6 +165,7 @@
       <div>
         <small>Seçilen ürünler</small>
         <strong data-order-summary>Seçim hesaplanıyor</strong>
+        <small class="pdp-variant-hint" data-variant-hint role="status" aria-live="polite"></small>
       </div>
       <button type="submit" form="pdp-cart-form" data-cart-add>Seçilenleri Sepete Ekle</button>
     </div>
