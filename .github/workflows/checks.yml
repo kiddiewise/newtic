@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# Keep the most recent staging run queued while an ongoing release completes.
+# This avoids concurrent Hostinger deployments from rapid UI commits.
+concurrency:
+  group: newtic-staging-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -42,6 +48,8 @@ jobs:
           retention-days: 14
       - name: Run migrations
         run: php artisan migrate --env=testing --force
+      - name: Compile every Blade view
+        run: php artisan view:cache
       - name: Run tests
         run: php artisan test
       - name: Package verified frontend for staging
