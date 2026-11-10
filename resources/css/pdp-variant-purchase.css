@@ -341,3 +341,102 @@
 @media(prefers-reduced-motion:reduce){
   .pdp-sticky-actions.has-variant *{transition:none!important}
 }
+
+
+/* Scroll-direction responsive gram selection — full-bleed, square and neutral.
+   Collapsing its height instead of moving the full dock keeps quantity/cart
+   buttons visible at all times. The ribbon is not focusable while hidden. */
+@media (max-width:760px){
+  .pdp-sticky-bar > .pdp-sticky-gramages[data-scroll-ribbon]{
+    order:0;
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    width:calc(100% + 20px)!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    padding:0 17px!important;
+    margin:0 -10px!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#f0f1f3!important;
+    color:#244a51!important;
+    overflow:hidden!important;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(-10px) scaleY(.94);
+    transform-origin:bottom center;
+    transition:height .24s ease,max-height .24s ease,min-height .24s ease,
+      padding .24s ease,margin .24s ease,opacity .2s ease,transform .24s ease,
+      visibility 0s linear .24s!important;
+  }
+  .pdp-sticky-bar > .pdp-sticky-gramages[data-scroll-ribbon].is-scroll-visible{
+    height:40px!important;
+    min-height:40px!important;
+    max-height:40px!important;
+    padding:5px 17px!important;
+    margin:0 -10px 5px!important;
+    border-bottom:1px solid #d9dfe2!important;
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0) scaleY(1);
+    transition:height .24s ease,max-height .24s ease,min-height .24s ease,
+      padding .24s ease,margin .24s ease,opacity .2s ease,transform .24s ease,
+      visibility 0s!important;
+  }
+  .pdp-sticky-gramages[data-scroll-ribbon] > span{
+    font-size:13px!important;
+    color:#244a51!important;
+    font-weight:820!important;
+  }
+  .pdp-sticky-gramages[data-scroll-ribbon] > .ui-icon{
+    display:block;
+    width:19px!important;
+    height:19px!important;
+    stroke:#26565c!important;
+    stroke-width:2.1!important;
+    flex:none;
+  }
+  .pdp-sticky-actions .pdp-sticky-variant-title,
+  .pdp-sticky-actions .pdp-sticky-quick-name{
+    color:#21434b!important;
+    opacity:1!important;
+    font-size:12px!important;
+    font-weight:850!important;
+    line-height:1.25!important;
+    letter-spacing:0!important;
+  }
+  .pdp-sticky-actions .pdp-sticky-variant-title em{
+    color:#b66327!important;
+    font-size:12px!important;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+    color:#143f46!important;
+    font-size:13px!important;
+    font-weight:760!important;
+    opacity:1!important;
+  }
+  .pdp-sticky-actions .pdp-sticky-stepper output{
+    color:#153b45!important;
+    font-size:17px!important;
+    font-weight:870!important;
+  }
+}
+@media (max-width:370px){
+  .pdp-sticky-actions .pdp-sticky-variant-title,
+  .pdp-sticky-actions .pdp-sticky-quick-name{
+    font-size:11px!important;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .pdp-sticky-bar > .pdp-sticky-gramages[data-scroll-ribbon]{
+    transition:none!important;
+    transform:none!important;
+  }
+}
