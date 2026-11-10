@@ -6,6 +6,7 @@
   $favoriteId = ctype_digit((string) request('favorite', '')) ? request('favorite') : '';
 @endphp
 <main class="checkout-shell account-auth-shell" id="content">
+  @include('store.partials.mobile-auth-navigation')
   <div class="checkout-top"><a href="{{ $authNext === 'cart' ? route('cart.index') : ($authNext === 'wishlist' ? route('cart.index') : route('checkout.index')) }}" aria-label="Geri dön">‹</a><strong>Üye Girişi</strong><span></span></div>
   <div class="checkout-card">
     <h1>Tekrar hoş geldin</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Bu ürünü favorilerine eklemek için üye girişi yap.' : ($authNext === 'wishlist' ? 'Favorilerini görmek için üye girişi yap.' : 'Siparişlerini ve kayıtlı adreslerini hesabından yönet.') }}</p>
