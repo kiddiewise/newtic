@@ -93,12 +93,12 @@
             <label for="pdp-desktop-option">{{ $product->option_label }} <span class="pdp-required-star" aria-hidden="true">*</span></label>
             <select id="pdp-desktop-option" data-option-mirror data-product-id="{{ $product->id }}" data-option-location="desktop"
               aria-describedby="pdp-desktop-option-help">
-              <option value="">İğne kalınlığını seçin</option>
+              <option value="">Seçiniz</option>
               @foreach($product->options as $option)
                 <option value="{{ $option->id }}">{{ $option->value }}</option>
               @endforeach
             </select>
-            <small id="pdp-desktop-option-help" class="pdp-option-help" data-option-help="desktop" role="status">Sepete eklemek için önce {{ mb_strtolower($product->option_label) }} seçin.</small>
+            <small id="pdp-desktop-option-help" class="pdp-option-help" data-option-help="desktop" role="status" aria-live="polite">Sepete eklemek için önce {{ mb_strtolower($product->option_label) }} seçin.</small>
           </div>
         @endif
         <div class="pdp-desktop-purchase-row">
@@ -215,7 +215,7 @@
         <span class="pdp-sticky-variant-title">{{ $product->option_label }} <em aria-hidden="true">*</em></span>
         <select id="pdp-sticky-option" data-option-mirror data-product-id="{{ $product->id }}" data-option-location="sticky"
           aria-describedby="pdp-sticky-option-help">
-          <option value="">İğne kalınlığını seçin</option>
+          <option value="">Seçiniz</option>
           @foreach($product->options as $option)
             <option value="{{ $option->id }}">{{ $option->value }}</option>
           @endforeach
@@ -223,7 +223,7 @@
       </label>
     @endif
     <div class="pdp-sticky-quick">
-      <small class="pdp-sticky-quick-name">{{ $product->name }}</small>
+      <small class="pdp-sticky-quick-name">{{ $product->options->isNotEmpty() ? 'Adet' : $product->name }}</small>
       <div class="pdp-sticky-stepper" aria-label="Görüntülenen ürünün adedi">
         <button type="button" data-quick-minus aria-label="{{ $product->name }} azalt">−</button>
         <output data-quick-qty>{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
