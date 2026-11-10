@@ -21,7 +21,7 @@
 .cart-quantity-stepper input::-webkit-inner-spin-button,.cart-quantity-stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .cart-js-ready .cart-quantity-stepper .cart-quantity-save{display:none}
 .cart-remove-button{border:1px solid #dde5e7;border-radius:24px;color:#53656d;background:white;width:47px;height:39px;font-size:.75rem;padding:0}
-.cart-favorite-form{margin-left:auto}
+.cart-favorite-form,.cart-favorite-link{margin-left:auto}
 .cart-favorite-button{height:42px;width:42px;display:grid;place-items:center;border:1px solid #dee6e8;border-radius:50%;background:white;color:#7f9299}
 .cart-favorite-button svg{height:23px;width:23px;fill:none;stroke:currentColor;stroke-width:1.8}
 .cart-favorite-button.is-favorite{color:#c73353;border-color:#f2b8c4;background:#fff2f4}
