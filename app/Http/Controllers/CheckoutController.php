@@ -95,13 +95,19 @@ class CheckoutController extends Controller
                 throw ValidationException::withMessages(['cart' => 'Sepetiniz boş veya geçersiz.']);
             }
 
-            $ids = array_keys($raw);
-            foreach ($ids as $id) {
-                if (!ctype_digit((string) $id) || (int) $id < 1) {
+            $cartKeys = array_keys($raw);
+            $ids = [];
+            foreach ($cartKeys as $key) {
+                $parts = ShoppingCart::parseKey($key);
+                if (! $parts) {
                     throw ValidationException::withMessages(['cart' => 'Sepette geçersiz bir ürün var.']);
                 }
+                $ids[] = $parts[0];
             }
-            $products = Product::query()->with('category')->whereIn('id', $ids)
+            $ids = array_values(array_unique($ids));
+            // All gram-level stock rows are locked once, regardless of how many
+            // hook sizes of a single product the customer selected.
+            $products = Product::query()->with(['category', 'options'])->whereIn('id', $ids)
                 ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             if ($products->count() !== count($ids)) {
                 throw ValidationException::withMessages(['cart' => 'Ürünlerden biri artık mevcut değil.']);
@@ -109,20 +115,33 @@ class CheckoutController extends Controller
 
             $allCategories = CategoryHierarchy::all();
             $lines = [];
+            $reserved = [];
             $subtotal = 0;
-            foreach ($ids as $id) {
-                $qty = $raw[$id];
-                $product = $products->get((int) $id);
-                if (!is_numeric($qty) || (int) $qty != $qty || (int) $qty < 1 || (int) $qty > 999
-                    || !$product->is_active || !CategoryHierarchy::visible($product->category, $allCategories)
-                    || (int) $qty > $product->stock_quantity) {
+            foreach ($raw as $key => $rawQty) {
+                [$id, $optionId] = ShoppingCart::parseKey($key);
+                $product = $products->get($id);
+                $option = $optionId ? $product?->options->firstWhere('id', $optionId) : null;
+                $qty = (int) $rawQty;
+
+                if (! is_numeric($rawQty) || $qty != $rawQty || $qty < 1 || $qty > 999
+                    || ! $product?->is_active || ! CategoryHierarchy::visible($product->category, $allCategories)
+                    || ($product->options->isNotEmpty() && ! $option)
+                    || ($product->options->isEmpty() && $optionId !== null)) {
                     throw ValidationException::withMessages([
-                        'cart' => ($product?->name ?? 'Seçili ürün').' için stok veya adet değişti. Sepetinizi kontrol edin.',
+                        'cart' => ($product?->name ?? 'Seçili ürün').' için seçenek veya adet değişti. Sepetinizi kontrol edin.',
                     ]);
                 }
-                $qty = (int) $qty;
+
+                $reserved[$id] = (int) ($reserved[$id] ?? 0) + $qty;
+                if ($reserved[$id] > min(999, $product->stock_quantity)) {
+                    throw ValidationException::withMessages([
+                        'cart' => $product->name.' için toplam stok miktarı yeterli değil.',
+                    ]);
+                }
                 $unitCents = (int) round((float) $product->price * 100);
-                $lines[] = compact('product', 'qty', 'unitCents');
+                $optionLabel = $option ? $product->option_label : null;
+                $optionValue = $option?->value;
+                $lines[] = compact('product', 'qty', 'unitCents', 'optionLabel', 'optionValue');
                 $subtotal += $unitCents * $qty;
             }
             $settings = StoreSetting::current();
@@ -174,6 +193,8 @@ class CheckoutController extends Controller
                     'product_id' => $product->id,
                     'sku' => $product->sku,
                     'product_name' => $product->name,
+                    'option_label' => $line['optionLabel'],
+                    'option_value' => $line['optionValue'],
                     'quantity' => $quantity,
                     'unit_price_cents' => $unitCents,
                     'line_total_cents' => $unitCents * $quantity,
