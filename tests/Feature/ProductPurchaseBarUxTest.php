@@ -51,6 +51,15 @@ class ProductPurchaseBarUxTest extends TestCase
             ->assertSee('0,30')
             ->assertSee('data-variant-hint', false);
 
+        $response->assertSee('Seçenekler')
+            ->assertSee('aria-label="Seçili ürünü sepete ekle"', false)
+            ->assertSee('href="#ui-shopping-cart-plus"', false);
+        // The compact mobile row has exactly four controls: option, quantity,
+        // category options, and icon-only add. Guidance/total stay above it.
+        $this->assertSame(1, substr_count($html, 'class="pdp-sticky-option-help"'));
+        $this->assertSame(1, substr_count($html, 'class="pdp-sticky-variant-total"'));
+        $this->assertSame(1, substr_count($html, 'class="pdp-sticky-add"'));
+        $this->assertSame(1, substr_count($html, 'data-sticky-total')); // total is now in the small meta row.
         $this->assertSame(2, substr_count($html, 'data-option-mirror'));
         $this->assertSame(1, substr_count($html, 'name="options['.$product->id.']"'));
         $this->assertSame(1, substr_count($html, 'form="pdp-cart-form" name="options['.$product->id.']"'));
@@ -69,7 +78,8 @@ class ProductPurchaseBarUxTest extends TestCase
         $response->assertSee('data-desktop-plus', false)
             ->assertSee('data-quick-plus', false)
             ->assertSee('data-sheet-open', false)
-            ->assertSee('Sepete ekle');
+            ->assertSee('Sepete ekle')
+            ->assertSee('Tüm ürünleri seç');
         $this->assertStringNotContainsString('data-option-mirror', $html);
         $this->assertStringNotContainsString('pdp-sticky-option-help', $html);
         $this->assertStringNotContainsString('class="pdp-sticky-actions has-variant"', $html);
