@@ -210,7 +210,7 @@
     <span>Diğer gramaj seçenekleri</span>
     <x-store-icon name="chevron-up" />
   </button>
-  <div class="pdp-sticky-meta">
+  <div class="pdp-sticky-meta pdp-sticky-meta-a11y">
     @if($product->options->isNotEmpty())
       <span class="pdp-sticky-option-help" id="pdp-sticky-option-help" data-option-help="sticky" role="status" aria-live="polite">Önce {{ mb_strtolower($product->option_label) }} seçin.</span>
       <span class="pdp-sticky-variant-total" data-sticky-total aria-label="Seçilen toplam tutar">Hesaplanıyor</span>
@@ -235,7 +235,6 @@
       </label>
     @endif
     <div class="pdp-sticky-quick">
-      <small class="pdp-sticky-quick-name">{{ $product->options->isNotEmpty() ? 'Adet' : $product->name }}</small>
       <div class="pdp-sticky-stepper" aria-label="Görüntülenen ürünün adedi">
         <button type="button" data-quick-minus aria-label="{{ $product->name }} azalt">−</button>
         <output data-quick-qty>{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
