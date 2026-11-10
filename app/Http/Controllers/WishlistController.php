@@ -3,23 +3,60 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WishlistController extends Controller
 {
+    /** Favorites are owned by the logged-in account, never by an anonymous session. */
     public static function ids(Request $request): array
     {
-        $raw = $request->session()->get('wishlist_product_ids', []);
+        if (! $request->user()) {
+            return [];
+        }
 
-        return array_values(array_unique(array_map(
-            'intval',
-            array_filter(
-                is_array($raw) ? array_slice($raw, 0, 100) : [],
-                fn ($id) => (is_int($id) || ctype_digit((string) $id)) && (int) $id > 0
-            )
-        )));
+        return DB::table('wishlist_items')
+            ->where('user_id', $request->user()->id)
+            ->pluck('product_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /** Complete a favoriting action requested before the customer signed in. */
+    public static function addForUser(User $user, int $productId): bool
+    {
+        $product = Product::query()
+            ->whereKey($productId)
+            ->where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->first();
+
+        if (! $product) {
+            return false;
+        }
+
+        $query = DB::table('wishlist_items')->where('user_id', $user->id);
+        if ($query->where('product_id', $product->id)->exists()) {
+            return true;
+        }
+
+        if (DB::table('wishlist_items')->where('user_id', $user->id)->count() >= 100) {
+            return false;
+        }
+
+        $now = now();
+
+        DB::table('wishlist_items')->insertOrIgnore([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return true;
     }
 
     public function index(Request $request): View
@@ -37,19 +74,28 @@ class WishlistController extends Controller
     {
         abort_unless($product->is_active && $product->category?->is_active, 404);
 
-        $ids = self::ids($request);
-        if (in_array($product->id, $ids, true)) {
-            $ids = array_values(array_diff($ids, [$product->id]));
+        $userId = $request->user()->id;
+        $query = DB::table('wishlist_items')
+            ->where('user_id', $userId)
+            ->where('product_id', $product->id);
+
+        if ($query->exists()) {
+            $query->delete();
             $message = 'Ürün favorilerden çıkarıldı.';
         } else {
-            if (count($ids) >= 100) {
+            if (DB::table('wishlist_items')->where('user_id', $userId)->count() >= 100) {
                 return back()->with('error', 'En fazla 100 ürün favorilere eklenebilir.');
             }
-            $ids[] = $product->id;
+
+            $now = now();
+            DB::table('wishlist_items')->insertOrIgnore([
+                'user_id' => $userId,
+                'product_id' => $product->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
             $message = 'Ürün favorilere eklendi.';
         }
-
-        $request->session()->put('wishlist_product_ids', $ids);
 
         return back()->with('success', $message);
     }
