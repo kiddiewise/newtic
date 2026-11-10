@@ -62,7 +62,7 @@ if (checkoutForm) {
   const firstInvalid = checkoutForm.querySelector('[aria-invalid="true"]');
   if (firstInvalid) {
     requestAnimationFrame(() => {
-      firstInvalid.scrollIntoView({ block: 'center', behavior: 'instant' });
+      firstInvalid.scrollIntoView({ block: 'center', behavior: 'auto' });
       firstInvalid.focus({ preventScroll: true });
     });
   }
