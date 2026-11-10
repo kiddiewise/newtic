@@ -64,174 +64,248 @@
   outline:3px solid #0ca18e;
   outline-offset:2px;
 }
+/* Mobile: one compact horizontal purchase row with four true columns.
+   The explicit child placement prevents older grid/full-width styles from
+   turning a fixed checkout bar into a screen-covering vertical stack. */
 @media(max-width:760px){
-  body.is-product-detail:has(.pdp-sticky-actions.has-variant),
-  body.is-product-detail.pdp-has-variant{padding-bottom:calc(225px + env(safe-area-inset-bottom,0px))}
-  .pdp-sticky-bar:has(.has-variant){
-    padding:9px 13px calc(10px + env(safe-area-inset-bottom,0px));
+  body.is-product-detail.pdp-has-variant{
+    padding-bottom:calc(105px + env(safe-area-inset-bottom,0px))!important;
+  }
+  .pdp-sticky-bar:has(.pdp-sticky-actions.has-variant){
+    display:block!important;
+    padding:6px 10px calc(8px + env(safe-area-inset-bottom,0px));
     background:#fff;
     border-top:1px solid #dceae6;
-    box-shadow:0 -8px 34px #15353f1f;
+    box-shadow:0 -5px 22px #17384619;
   }
-  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-meta{
-    min-height:20px;
-    margin-bottom:7px;
+  .pdp-sticky-bar:has(.pdp-sticky-actions.has-variant) .pdp-sticky-meta{
+    display:flex!important;
+    flex-direction:row!important;
+    justify-content:space-between;
+    align-items:center;
+    gap:6px;
+    min-height:17px;
+    max-height:23px;
+    margin:0 0 5px;
   }
-  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-selection{
-    font-size:11px;
-    font-weight:690;
-    color:#56717b;
+  .pdp-sticky-bar:has(.pdp-sticky-actions.has-variant) .pdp-sticky-meta .pdp-sticky-selection{
+    position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);
+    white-space:nowrap;
   }
-  .pdp-sticky-actions.has-variant{
-    display:grid;
-    grid-template-columns:repeat(12,minmax(0,1fr));
-    gap:8px;
-    align-items:stretch;
-  }
-  .pdp-sticky-actions.has-variant .pdp-sticky-variant{
-    grid-column:span 7;
+  .pdp-sticky-bar:has(.pdp-sticky-actions.has-variant) .pdp-sticky-option-help{
+    flex:1 1 auto;
     min-width:0;
-    padding:8px 11px 10px;
-    border-radius:12px;
-    border:1px solid #d3e4e0;
-    background:#f3fbf8;
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-  }
-  .pdp-sticky-variant-title{
-    font-size:11px;
-    font-weight:820;
+    max-width:none;
+    padding:0 2px;
+    color:#ab6d27;
     line-height:1.3;
-    letter-spacing:.005em;
-    color:#155c57;
-  }
-  .pdp-sticky-variant-title em{font-style:normal;color:#b26a2d}
-  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
-    display:block;
-    width:100%;
-    min-width:0;
-    min-height:42px;
-    padding:7px 27px 7px 10px;
-    border:1px solid #a8d4c7;
-    border-radius:9px;
-    color:#174a4b;
-    font-family:inherit;
-    font-size:13px;
+    font-size:10px;
     font-weight:760;
-    background:#fff;
-    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
     text-overflow:ellipsis;
   }
-  .pdp-sticky-actions.has-variant .pdp-sticky-quick{
-    grid-column:span 5;
+  .pdp-sticky-option-help[data-state="ready"]{color:#0b8b70!important}
+  .pdp-sticky-variant-total{
+    display:block;
+    flex:none;
+    max-width:40%;
+    color:#0e6f68;
+    font-size:11px;
+    line-height:1.3;
+    font-weight:850;
+    font-variant-numeric:tabular-nums;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .pdp-sticky-actions.has-variant{
+    display:grid!important;
+    grid-template-columns:minmax(0,1.33fr) minmax(0,1.1fr) minmax(0,.86fr) 44px!important;
+    grid-template-rows:60px!important;
+    grid-auto-flow:row!important;
+    gap:5px!important;
+    align-items:stretch!important;
+    width:100%;
     min-width:0;
+    margin:0;
+  }
+  .pdp-sticky-actions.has-variant > *{
+    grid-row:1!important;
+    grid-column:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:0!important;
+    width:auto!important;
+    margin:0!important;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch;
     justify-content:center;
-    gap:5px;
-    padding:7px 6px;
-    background:#f7f9f9;
-    border-color:#e0ebeb;
-    border-radius:12px;
+    gap:3px;
+    padding:5px 6px!important;
+    border:1px solid #cee5df;
+    border-radius:10px;
+    background:#f0faf6;
+    overflow:hidden;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant-title{
+    display:block;
+    max-width:100%;
+    color:#175c56;
+    font-size:10px;
+    line-height:1.2;
+    font-weight:800;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .pdp-sticky-variant-title em{color:#ad6c2c;font-style:normal}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:36px!important;
+    height:36px!important;
+    padding:5px 15px 5px 5px!important;
+    font-family:inherit;
+    font-size:11px!important;
+    font-weight:750;
+    color:#174c4c;
+    background:#fff;
+    border:1px solid #b4d8cf;
+    border-radius:7px;
+    text-overflow:ellipsis;
+    cursor:pointer;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-quick{
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    gap:3px;
+    padding:4px 3px!important;
+    border:1px solid #deebeb;
+    border-radius:10px;
+    background:#f6f9f9;
+    overflow:hidden;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-quick-name{
-    color:#507881;
-    font-size:10px;
+    font-size:10px!important;
+    line-height:1.2;
+    color:#51747b;
     font-weight:790;
     text-align:center;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-stepper{
-    gap:3px;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:1px!important;
+    min-width:0;
+    width:100%;
   }
-  .pdp-sticky-actions.has-variant .pdp-sticky-stepper>button{
-    min-width:36px;
-    min-height:42px;
-    height:42px;
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper button{
+    flex:0 1 32px;
+    min-width:0!important;
+    max-width:34px;
+    width:32px;
+    height:36px!important;
+    min-height:36px;
+    border:0;
+    border-radius:7px;
+    background:#e8f3f1;
+    color:#087c78;
+    font-size:21px;
+    font-weight:750;
+    line-height:1;
     padding:0;
-    border-radius:8px;
-    color:#087e79;
-    background:#e5f2f0;
+    cursor:pointer;
   }
-  .pdp-sticky-actions.has-variant .pdp-sticky-stepper>output{
-    min-width:18px;
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper output{
+    display:block;
+    flex:1 1 16px;
+    min-width:13px!important;
+    font-size:14px!important;
+    font-weight:850;
+    color:#183f47;
+    font-variant-numeric:tabular-nums;
     text-align:center;
-    color:#16424b;
-    font-size:16px;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-choose{
-    grid-column:span 5;
-    min-height:52px;
-    padding:8px 10px;
-    background:#eaf5f3;
-    border:1px solid #d0e6e1;
-    color:#146c69;
-    border-radius:11px;
-    justify-content:center;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    gap:0;
+    padding:4px 3px!important;
+    min-height:60px!important;
+    border:1px solid #cce7e1;
+    border-radius:10px;
+    background:#edf8f5;
+    color:#0d726d;
+    white-space:normal;
+    overflow:hidden;
+    cursor:pointer;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-choose>span{
-    font-size:11.5px;
-    font-weight:830;
-    white-space:normal;
-    line-height:1.25;
-  }
-  .pdp-sticky-actions.has-variant .pdp-sticky-choose>strong{
-    font-size:11.5px;
-    color:#38746e;
+    display:block;
+    font-size:10.5px!important;
+    line-height:1.3;
+    font-weight:800;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-add{
-    grid-column:span 7;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:52px;
-    border-radius:11px;
-    background:#058887;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:44px!important;
+    min-height:60px!important;
+    height:60px!important;
+    padding:0!important;
+    border:0;
+    border-radius:10px;
+    background:#058c85;
     color:#fff;
-    padding:8px 12px;
-    font-size:15px;
-    font-weight:850;
-    text-align:center;
-    line-height:1.25;
+    box-shadow:none;
+    cursor:pointer;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-add svg{
+    display:block;
+    width:24px!important;
+    height:24px!important;
+    flex:none;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.9;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-add[data-needs-option="true"]{
-    color:#0b7566;
-    background:#d8eeea;
-    border:1px solid #b6dad1;
+    background:#dcf0eb;
+    color:#0f766b;
+    border:1px solid #abd9cc;
   }
   .pdp-sticky-actions.has-variant .pdp-sticky-add:disabled{
-    background:#e3eceb;
-    color:#92a4a5;
+    background:#e6eeee;
+    color:#a3b2b3;
+    cursor:not-allowed;
   }
-  .pdp-sticky-actions.has-variant .pdp-sticky-option-help{
-    grid-column:1/-1;
-    display:flex;
-    align-items:center;
-    font-size:10.5px;
-    line-height:1.35;
-    font-weight:730;
-    color:#a06a2f;
-    padding:0 3px;
-    min-height:14px;
-  }
-  .pdp-sticky-actions.has-variant .pdp-sticky-option-help[data-state="ready"]{
-    color:#128569;
-  }
-  .pdp-sticky-bar:has(.has-variant).is-price-visible .pdp-sticky-price{
-    font-size:13px;
-    font-weight:850;
-  }
-  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-selection{
-    flex:1;
-    text-align:right;
+  .pdp-sticky-actions.has-variant .pdp-sticky-quick button:disabled{
+    color:#acbdbd;
+    background:#eff4f3;
+    cursor:not-allowed;
   }
 }
 @media(max-width:355px){
-  .pdp-sticky-actions.has-variant{gap:6px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-stepper>button{min-width:29px;min-height:38px;height:38px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-variant{padding:7px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{font-size:12px;padding-left:6px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-choose{padding:6px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-choose>span{font-size:10.5px}
-  .pdp-sticky-actions.has-variant .pdp-sticky-add{font-size:13px}
+  .pdp-sticky-actions.has-variant{grid-template-columns:minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,.82fr) 41px!important;gap:4px!important}
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose>span{font-size:9.5px!important}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant-title{font-size:9px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{font-size:10px!important}
+  .pdp-sticky-actions.has-variant .pdp-sticky-add{width:41px!important}
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper button{font-size:19px;max-width:29px}
 }
 @media(prefers-reduced-motion:reduce){
   .pdp-sticky-actions.has-variant *{transition:none!important}
