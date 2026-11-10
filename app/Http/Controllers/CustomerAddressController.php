@@ -31,6 +31,7 @@ class CustomerAddressController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        AddressValidation::normalizePhoneInput($request);
         $data = AddressValidation::clean($request->validate(array_merge(AddressValidation::rules(), [
             'is_default' => ['nullable','boolean'],
         ])));
@@ -47,6 +48,7 @@ class CustomerAddressController extends Controller
     public function update(Request $request, CustomerAddress $address): RedirectResponse
     {
         $this->own($request, $address);
+        AddressValidation::normalizePhoneInput($request);
         $data = AddressValidation::clean($request->validate(array_merge(AddressValidation::rules(), [
             'is_default' => ['nullable','boolean'],
         ])));
