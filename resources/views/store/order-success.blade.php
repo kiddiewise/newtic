@@ -37,7 +37,9 @@
           </div>
         </div>
       </div>
-      @if($bankAccounts->isEmpty())
+      @if($latestPaymentNotification?->status === 'pending')
+        <p class="payment-review-status"><x-store-icon name="clock-3" /> <strong>Ödeme bildiriminiz alındı.</strong> Banka hareketleri kontrol ediliyor. Tekrar bildirim göndermeniz gerekmez.</p>
+      @elseif($bankAccounts->isEmpty())
         <p class="payment-awaiting-bank">Banka hesapları henüz tanımlanmadı. Hesap bilgileri aktif hale gelene kadar ödeme göndermeyin.</p>
       @else
         <h3 class="payment-bank-title">Banka hesabını seç</h3>
@@ -62,10 +64,7 @@
               </div>
             @endforeach
           </div>
-          @if($latestPaymentNotification?->status === 'pending')
-            <p class="payment-review-status"><x-store-icon name="clock-3" /> <strong>Ödeme bildiriminiz alındı.</strong> Banka hareketleri kontrol ediliyor. Tekrar bildirim göndermeniz gerekmez.</p>
-          @else
-            @if($latestPaymentNotification?->status === 'rejected')
+          @if($latestPaymentNotification?->status === 'rejected')
               <p class="payment-rejected"><strong>Önceki bildiriminiz doğrulanamadı.</strong>
                 @if($latestPaymentNotification->admin_note) {{ $latestPaymentNotification->admin_note }} @endif
                 Banka hareketini kontrol edip tekrar bildirebilirsiniz.</p>
@@ -75,7 +74,6 @@
             </label>
             <button type="submit" class="checkout-action payment-notify-button">{{ $order->is_test ? 'Ödeme Yaptım (Test Bildirimi)' : 'Ödeme Yaptım – Bildir' }}</button>
             <small class="payment-verify-note">Bildiriminiz ödeme onayı değildir. Sipariş, banka hareketleri doğrulanınca hazırlanmaya alınır.</small>
-          @endif
         </form>
       @endif
     @elseif($latestPaymentNotification?->status === 'verified')
