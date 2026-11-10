@@ -17,7 +17,8 @@ class OrderController extends Controller
     private const TRANSITIONS = [
         'pending_payment' => ['cancelled'], // Preparing requires bank verification via payment inbox.
         'preparing' => ['shipped','cancelled'],
-        'shipped' => ['completed'],
+        'shipped' => ['out_for_delivery','completed'],
+        'out_for_delivery' => ['completed'],
         'completed' => [],
         'cancelled' => [],
     ];
@@ -45,6 +46,35 @@ class OrderController extends Controller
         $order->load(['items', 'paymentNotifications.reviewer']);
         $allowed = self::TRANSITIONS[$order->status] ?? [];
         return view('admin.orders.show', compact('order','allowed'));
+    }
+
+    /**
+     * Separate editable shipping metadata from status changes. A tracking URL
+     * is shown to buyers only if an administrator actually provides HTTPS.
+     */
+    public function shipping(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'carrier_name' => ['nullable', 'string', 'max:120'],
+            'tracking_number' => ['nullable', 'string', 'max:120'],
+            'tracking_url' => ['nullable', 'string', 'url', 'starts_with:https://', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($order, $data) {
+            $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if (! in_array($locked->status, ['shipped', 'out_for_delivery', 'completed'], true)) {
+                throw ValidationException::withMessages([
+                    'shipping' => 'Kargo bilgileri ancak sipariş kargoya verildiğinde girilebilir.',
+                ]);
+            }
+            $locked->update([
+                'carrier_name' => trim((string) ($data['carrier_name'] ?? '')) ?: null,
+                'tracking_number' => trim((string) ($data['tracking_number'] ?? '')) ?: null,
+                'tracking_url' => trim((string) ($data['tracking_url'] ?? '')) ?: null,
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.orders.show', $order)->with('success', 'Kargo bilgileri kaydedildi.');
     }
 
     public function update(Request $request, Order $order): RedirectResponse
