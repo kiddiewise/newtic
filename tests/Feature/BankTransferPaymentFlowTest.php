@@ -181,6 +181,9 @@ class BankTransferPaymentFlowTest extends TestCase
 
         $this->assertSame('verified', $notice->fresh()->status);
         $this->assertSame('preparing', $order->fresh()->status);
+        $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
+            ->assertSessionHasErrors('status'); // No silent cancellation without a refund workflow.
+        $this->assertSame('preparing', $order->fresh()->status);
         $this->assertNotNull($notice->fresh()->reviewed_at);
         $this->assertNotNull($notice->fresh()->reviewed_by);
         $this->post(route('admin.payment-notifications.verify', $notice), [
