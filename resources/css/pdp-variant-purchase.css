@@ -1,0 +1,237 @@
+/* NEWTIC 2026 — a true one-step purchase flow for products with options.
+   The product picker owns the actual form value; sticky and desktop controls mirror it. */
+@media(min-width:761px){
+  .pdp-desktop-variant{
+    display:grid;
+    grid-template-columns:minmax(110px,.75fr) minmax(155px,1.25fr);
+    align-items:center;
+    column-gap:14px;
+    row-gap:5px;
+    padding:15px;
+    margin:0 0 13px;
+    border:1px solid #cde5df;
+    border-radius:14px;
+    background:linear-gradient(115deg,#eefaf6,#f9fdfc);
+  }
+  .pdp-desktop-variant>label{
+    color:#16464b;
+    font-size:13px;
+    font-weight:820;
+    line-height:1.35;
+  }
+  .pdp-required-star{color:#be673f}
+  .pdp-desktop-variant>select{
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    border:1px solid #b9d8d2;
+    border-radius:11px;
+    background:#fff;
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    color:#1a4c53;
+    cursor:pointer;
+  }
+  .pdp-desktop-variant>.pdp-option-help{
+    grid-column:1/-1;
+    color:#86662f;
+    font-size:12px;
+    font-weight:680;
+    line-height:1.5;
+    min-height:18px;
+    margin-top:2px;
+  }
+  .pdp-desktop-variant>.pdp-option-help[data-state="ready"]{color:#138266}
+  .pdp-desktop-purchase:has(.pdp-desktop-variant) .pdp-desktop-purchase-head{margin-bottom:12px}
+  .pdp-desktop-purchase:has(.pdp-desktop-variant) .pdp-desktop-add[data-needs-option="true"]{
+    background:#e7f1ef;
+    border:1px solid #a5d3c7;
+    color:#187665;
+    box-shadow:none;
+  }
+  .pdp-desktop-purchase:has(.pdp-desktop-variant) .pdp-desktop-add[data-needs-option="true"]:hover{background:#d7ebe6;transform:none}
+}
+.pdp-desktop-variant select.is-required-choice,
+.pdp-sticky-variant select.is-required-choice{
+  border-color:#d6a052!important;
+  background-color:#fffaf0!important;
+  box-shadow:0 0 0 2px #dfb2711c;
+}
+.pdp-desktop-variant select:focus-visible,
+.pdp-sticky-variant select:focus-visible{
+  outline:3px solid #0ca18e;
+  outline-offset:2px;
+}
+@media(max-width:760px){
+  body.is-product-detail:has(.pdp-sticky-actions.has-variant),
+  body.is-product-detail.pdp-has-variant{padding-bottom:calc(225px + env(safe-area-inset-bottom,0px))}
+  .pdp-sticky-bar:has(.has-variant){
+    padding:9px 13px calc(10px + env(safe-area-inset-bottom,0px));
+    background:#fff;
+    border-top:1px solid #dceae6;
+    box-shadow:0 -8px 34px #15353f1f;
+  }
+  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-meta{
+    min-height:20px;
+    margin-bottom:7px;
+  }
+  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-selection{
+    font-size:11px;
+    font-weight:690;
+    color:#56717b;
+  }
+  .pdp-sticky-actions.has-variant{
+    display:grid;
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    gap:8px;
+    align-items:stretch;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant{
+    grid-column:span 8;
+    min-width:0;
+    padding:8px 11px 10px;
+    border-radius:12px;
+    border:1px solid #d3e4e0;
+    background:#f3fbf8;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .pdp-sticky-variant-title{
+    font-size:11px;
+    font-weight:820;
+    line-height:1.3;
+    letter-spacing:.005em;
+    color:#155c57;
+  }
+  .pdp-sticky-variant-title em{font-style:normal;color:#b26a2d}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+    display:block;
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    padding:7px 27px 7px 10px;
+    border:1px solid #a8d4c7;
+    border-radius:9px;
+    color:#174a4b;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:760;
+    background:#fff;
+    cursor:pointer;
+    text-overflow:ellipsis;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-quick{
+    grid-column:span 4;
+    min-width:0;
+    justify-content:center;
+    gap:5px;
+    padding:7px 6px;
+    background:#f7f9f9;
+    border-color:#e0ebeb;
+    border-radius:12px;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-quick-name{
+    color:#507881;
+    font-size:10px;
+    font-weight:790;
+    text-align:center;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper{
+    gap:3px;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper>button{
+    min-width:27px;
+    min-height:34px;
+    height:34px;
+    padding:0;
+    border-radius:8px;
+    color:#087e79;
+    background:#e5f2f0;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-stepper>output{
+    min-width:18px;
+    text-align:center;
+    color:#16424b;
+    font-size:16px;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose{
+    grid-column:span 5;
+    min-height:52px;
+    padding:8px 10px;
+    background:#eaf5f3;
+    border:1px solid #d0e6e1;
+    color:#146c69;
+    border-radius:11px;
+    justify-content:center;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose>span{
+    font-size:11.5px;
+    font-weight:830;
+    white-space:normal;
+    line-height:1.25;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose>strong{
+    font-size:11.5px;
+    color:#38746e;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-add{
+    grid-column:span 7;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:52px;
+    border-radius:11px;
+    background:#058887;
+    color:#fff;
+    padding:8px 12px;
+    font-size:15px;
+    font-weight:850;
+    text-align:center;
+    line-height:1.25;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-add[data-needs-option="true"]{
+    color:#0b7566;
+    background:#d8eeea;
+    border:1px solid #b6dad1;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-add:disabled{
+    background:#e3eceb;
+    color:#92a4a5;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-option-help{
+    grid-column:1/-1;
+    display:flex;
+    align-items:center;
+    font-size:10.5px;
+    line-height:1.35;
+    font-weight:730;
+    color:#a06a2f;
+    padding:0 3px;
+    min-height:14px;
+  }
+  .pdp-sticky-actions.has-variant .pdp-sticky-option-help[data-state="ready"]{
+    color:#128569;
+  }
+  .pdp-sticky-bar:has(.has-variant).is-price-visible .pdp-sticky-price{
+    font-size:13px;
+    font-weight:850;
+  }
+  .pdp-sticky-bar:has(.has-variant) .pdp-sticky-selection{
+    flex:1;
+    text-align:right;
+  }
+}
+@media(max-width:355px){
+  .pdp-sticky-actions.has-variant{gap:6px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant{padding:7px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-variant select{font-size:12px;padding-left:6px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose{padding:6px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-choose>span{font-size:10.5px}
+  .pdp-sticky-actions.has-variant .pdp-sticky-add{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+  .pdp-sticky-actions.has-variant *{transition:none!important}
+}
