@@ -14,7 +14,7 @@
   @forelse($orders as $order)
     <a class="admin-order-row" href="{{ route('admin.orders.show', $order) }}">
       <span><strong>{{ $order->order_number }}</strong><small>{{ $order->created_at->format('d.m.Y H:i') }} · {{ $order->customer_name }} @if($order->is_test)· TEST @endif</small></span>
-      <span><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong><small>{{ $order->statusLabel() }}</small></span>
+      <span><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong><small>{{ $order->statusLabel() }} @if($order->pending_payment_notifications_count > 0) · <strong class="admin-payment-alert">Ödeme bildirimi ({{ $order->pending_payment_notifications_count }})</strong>@endif</small></span>
     </a>
   @empty<p class="admin-empty">Bu durumda henüz sipariş bulunmuyor.</p>@endforelse
   {{ $orders->links() }}
