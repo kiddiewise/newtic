@@ -21,14 +21,20 @@ class ProductController extends Controller
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
 
+        $status = (string) $request->query('status', 'all');
+        abort_unless(in_array($status, ['all', 'active', 'inactive', 'low_stock'], true), 422);
+
         $products = Product::query()->with('category')->withCount('images')
+            ->when($status === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->when($status === 'low_stock', fn ($query) => $query->where('is_active', true)->where('stock_quantity', '<=', 10))
             ->when($term !== '', fn ($query) => $query->where(function ($query) use ($term) {
                 $safe = addcslashes($term, '%_\\');
                 $query->where('name', 'like', '%'.$safe.'%')->orWhere('sku', 'like', '%'.$safe.'%');
             }))
             ->latest('id')->paginate(20)->withQueryString();
 
-        return view('admin.products.index', compact('products', 'term'));
+        return view('admin.products.index', compact('products', 'term', 'status'));
     }
 
     public function create(): View
