@@ -30,3 +30,8 @@
   </div>
   <div class="quick-cart-live sr-only" aria-live="polite" data-quick-live></div>
 </section>
+
+<div class="cart-add-toast" data-cart-toast role="status" aria-live="polite" aria-atomic="true" hidden>
+  <span class="cart-add-toast-icon" aria-hidden="true"><x-store-icon name="check" /></span>
+  <span data-cart-toast-message>Sepete eklendi</span>
+</div>
