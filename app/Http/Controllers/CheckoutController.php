@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -217,7 +218,7 @@ class CheckoutController extends Controller
     {
         $isOwner = $request->user() && $order->user_id === $request->user()->id;
         $isSessionOrder = in_array($order->id, (array) $request->session()->get('confirmed_order_ids', []), true);
-        abort_unless($isOwner || $isSessionOrder, 404);
+        abort_unless($isOwner || $isSessionOrder || $request->hasValidSignature(false), 404);
 
         $order->load(['items', 'paymentNotifications']);
         $bankAccounts = $order->status === 'pending_payment'
@@ -226,6 +227,19 @@ class CheckoutController extends Controller
             : collect();
         $latestPaymentNotification = $order->paymentNotifications->first();
 
-        return view('store.order-success', compact('order', 'bankAccounts', 'latestPaymentNotification'));
+        // A capability-style guest link permits returning after the browser
+        // session expires. Sign the relative URL to survive reverse proxies.
+        $expires = now()->addDays(14);
+        $paymentReturnUrl = url(URL::temporarySignedRoute(
+            'checkout.success', $expires, ['order' => $order->id], absolute: false
+        ));
+        $paymentNotificationAction = url(URL::temporarySignedRoute(
+            'checkout.payment-notify', $expires, ['order' => $order->id], absolute: false
+        ));
+
+        return view('store.order-success', compact(
+            'order', 'bankAccounts', 'latestPaymentNotification',
+            'paymentReturnUrl', 'paymentNotificationAction'
+        ));
     }
 }
