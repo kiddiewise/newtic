@@ -139,7 +139,7 @@ class CartController extends Controller
             $otherQty = 0;
             foreach ($items as $storedKey => $storedQty) {
                 $parts = ShoppingCart::parseKey($storedKey);
-                if ($storedKey !== $key && $parts && $parts[0] === $product->id) {
+                if ((string) $storedKey !== (string) $key && $parts && $parts[0] === $product->id) {
                     $otherQty += (int) $storedQty;
                 }
             }
