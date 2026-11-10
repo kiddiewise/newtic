@@ -60,8 +60,8 @@ class MobileAuthExperienceTest extends TestCase
         $signup = route('account.register', $params);
         $login = route('account.login', $params);
 
-        $this->get($login)->assertOk()->assertSee('href="'.$signup.'"', false);
-        $this->get($signup)->assertOk()->assertSee('href="'.$login.'"', false);
+        $this->get($login)->assertOk()->assertSee('href="'.e($signup).'"', false);
+        $this->get($signup)->assertOk()->assertSee('href="'.e($login).'"', false);
     }
 
     public function test_normal_store_and_account_navigation_are_unaffected(): void
