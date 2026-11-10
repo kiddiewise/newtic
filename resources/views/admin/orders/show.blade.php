@@ -7,6 +7,29 @@
   </div>
 </div>
 <div class="admin-panel">
+  <div class="admin-panel-title"><h2>Havale / EFT ödeme kontrolü</h2>
+    <a class="admin-secondary" href="{{ route('admin.payment-notifications.index') }}">Bildirim kutusu</a>
+  </div>
+  <p class="admin-description">Müşterinin ödeme bildirimi banka hareketini doğrulamaz. Tutarı ve açıklamadaki sipariş numarasını karşılaştırmadan onay vermeyin.</p>
+  @forelse($order->paymentNotifications as $notification)
+    <div class="admin-payment-history">
+      <strong>{{ $notification->statusLabel() }}</strong>
+      <small>{{ $notification->created_at->format('d.m.Y H:i') }} · {{ $notification->bank_name_snapshot }} · {{ $notification->iban_snapshot }}</small>
+      @if($notification->reviewer)<small>İnceleyen: {{ $notification->reviewer->name }} · {{ $notification->reviewed_at?->format('d.m.Y H:i') }}</small>@endif
+      @if($notification->customer_note)<p>Müşteri notu: {{ $notification->customer_note }}</p>@endif
+      @if($notification->admin_note)<p>Kontrol notu: {{ $notification->admin_note }}</p>@endif
+      @if($notification->status === 'pending')
+        <a class="admin-primary" href="{{ route('admin.payment-notifications.index') }}">Banka hareketini kontrol et ve karar ver</a>
+      @endif
+    </div>
+  @empty
+    <p class="admin-description">Bu sipariş için henüz müşteri ödeme bildirimi bulunmuyor.</p>
+  @endforelse
+  @if($order->status === 'pending_payment')
+    <p class="admin-description">Sipariş ancak bir bildirim yönetici tarafından doğrulanınca <strong>Hazırlanıyor</strong> aşamasına geçer.</p>
+  @endif
+</div>
+<div class="admin-panel">
   <h2>Durum yönetimi</h2><p class="admin-description">Ödeme doğrulaması otomatik yapılmaz. Havale/EFT işlemini ayrıca kontrol edin.</p>
   @if($allowed)
     <form class="admin-form admin-order-status" method="POST" action="{{ route('admin.orders.update', $order) }}">
