@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Support\ProductReviewEligibility;
+use App\Support\ProductReviewVisibility;
 use App\Support\CategoryHierarchy;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,7 +24,7 @@ class CatalogController extends Controller
         $subcategories = $category->activeChildren()->get();
         $banners = $category->banners()->visible()->get();
 
-        $products = Product::query()->with('options')
+        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with('options'))
             ->whereIn('primary_category_id', $categoryIds)
             ->where('is_active', true)
             ->orderBy('name')->paginate(24);
@@ -63,8 +64,12 @@ class CatalogController extends Controller
             ->orderBy('name')->get();
 
         // Public ratings include only approved, non-test purchase reviews.
-        $publicReviewQuery = $product->reviews()
-            ->where('status', 'approved')->where('is_test', false);
+        $publicReviewQuery = $product->reviews();
+        ProductReviewVisibility::constrain($publicReviewQuery);
+        $isReviewPreview = ProductReviewVisibility::showsTestReviews();
+        $testReviewCount = $isReviewPreview
+            ? (clone $publicReviewQuery)->where('is_test', true)->count()
+            : 0;
         $ratingCounts = (clone $publicReviewQuery)
             ->selectRaw('rating, COUNT(*) as total')
             ->groupBy('rating')->pluck('total', 'rating');
@@ -89,7 +94,7 @@ class CatalogController extends Controller
         return view('store.product', compact(
             'product', 'categoryProducts', 'pickerReset',
             'ratingCounts', 'reviewCount', 'reviewAverage', 'reviews',
-            'canReview', 'myReview'
+            'canReview', 'myReview', 'isReviewPreview', 'testReviewCount'
         ));
     }
 
@@ -98,7 +103,7 @@ class CatalogController extends Controller
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
 
-        $products = Product::query()->with(['category', 'options'])->where('is_active', true)
+        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['category', 'options']))->where('is_active', true)
             ->when($term !== '', fn ($q) => $q->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
             ->orderBy('name')->paginate(24)->withQueryString();
 
