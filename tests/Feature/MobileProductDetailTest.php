@@ -84,7 +84,7 @@ class MobileProductDetailTest extends TestCase
         $product->update(['stock_quantity' => 0]);
 
         $html = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
-        $this->assertStringContainsString('Stokta yok', $html);
+        $this->assertStringContainsString('Tükendi', $html);
         $this->assertStringContainsString('data-product-id="'.$product->id.'"', $html);
         $this->assertMatchesRegularExpression(
             '/data-product-id="'.$product->id.'"[^>]+value="0"/',

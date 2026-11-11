@@ -314,7 +314,7 @@ class ProductReviewsExperienceTest extends TestCase
         }
     }
 
-    public function test_staging_only_approved_test_review_is_visible_with_disclosure_and_not_in_production(): void
+    public function test_staging_sample_reviews_are_not_displayed_as_genuine_customer_ratings(): void
     {
         $p = $this->product();
         $buyer = User::factory()->create();
@@ -345,7 +345,7 @@ class ProductReviewsExperienceTest extends TestCase
             ->assertSee('Değerlendirmeniz kaydedildi')
             ->assertSee('Henüz yayınlanmış yorum yok')
             ->assertDontSee('TEST ÖNİZLEMESİ')
-            ->assertDontSee('Denizde kullandım, dengesi çok iyi');
+            ->assertDontSee('class="review-card"', false);
 
         // Do not use preview data under a different public hostname.
         $this->get('https://polariskursun.com/kategori/'.$p->category->slug)->assertOk()

@@ -63,7 +63,7 @@ class DesktopPurchaseUxTest extends TestCase
         $product->update(['stock_quantity' => 0]);
 
         $card = $this->get(route('category.show', $product->category->slug))->assertOk()->getContent();
-        $this->assertStringContainsString('Stokta Yok', $card);
+        $this->assertStringContainsString('Tükendi', $card);
 
         $detail = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
         $this->assertMatchesRegularExpression('/class="pdp-desktop-add" data-cart-add disabled/', $detail);

@@ -124,7 +124,7 @@ class CatalogManagementTest extends TestCase
             ->assertSee('-%25')->assertSee('200,00')->assertSee('150,00');
 
         $this->get(route('product.show', $product->slug))->assertOk()
-            ->assertSee('-%25')->assertSee('data-gallery-thumb')->assertSee('görüntülenme');
+            ->assertSee('-%25')->assertSee('data-gallery-thumb')->assertDontSee('görüntülenme');
     }
 
     public function test_home_product_card_shows_automatic_discount(): void
@@ -233,12 +233,12 @@ class CatalogManagementTest extends TestCase
         ]);
 
         $url = route('product.show', $product->slug);
-        $this->get($url)->assertOk()->assertSee('1 görüntülenme');
-        $this->get($url)->assertOk()->assertSee('1 görüntülenme');
+        $this->get($url)->assertOk()->assertDontSee('görüntülenme');
+        $this->get($url)->assertOk()->assertDontSee('görüntülenme');
         $this->assertSame(1, $product->fresh()->view_count);
 
         $this->travel(25)->hours();
-        $this->get($url)->assertOk()->assertSee('2 görüntülenme');
+        $this->get($url)->assertOk()->assertDontSee('görüntülenme');
         $this->assertSame(2, $product->fresh()->view_count);
 
         $this->actingAs($this->admin());
