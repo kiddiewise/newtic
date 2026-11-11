@@ -47,6 +47,7 @@ class ShoppingCart
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->get()->keyBy('id');
 
+        $categories = CategoryHierarchy::all();
         $normalized = [];
         $lines = [];
         $subtotalCents = 0;
@@ -57,7 +58,8 @@ class ShoppingCart
         foreach ($raw as $rawKey => $rawQuantity) {
             $parsed = self::parseKey($rawKey);
             $product = $parsed ? $products->get($parsed[0]) : null;
-            if (! $product || ! is_numeric($rawQuantity)
+            if (! $product || ! CategoryHierarchy::visible($product->category, $categories)
+                || ! is_numeric($rawQuantity)
                 || (int) $rawQuantity != $rawQuantity || (int) $rawQuantity < 1) {
                 continue;
             }

@@ -169,6 +169,10 @@ class BankTransferPaymentFlowTest extends TestCase
 
         $notice = PaymentNotification::firstOrFail();
         $this->actingAs($this->administrator());
+        $this->get(route('admin.orders.show', $order))->assertOk()
+            ->assertSee('Gerçek banka transferi yapılmadığını biliyorum.');
+        $this->get(route('admin.payment-notifications.index'))->assertOk()
+            ->assertSee('Gerçek banka transferi yapılmadığını biliyorum.');
         $this->patch(route('admin.orders.update', $order), [
             'status' => 'preparing',
         ])->assertSessionHasErrors('status');
@@ -296,6 +300,30 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->get($modified)->assertNotFound();
 
         $this->get(route('checkout.success', $order))->assertNotFound();
+    }
+
+    public function test_bank_notification_cannot_verify_or_reject_a_card_order(): void
+    {
+        $bank = $this->bank();
+        $order = $this->order();
+        $this->post(route('checkout.payment-notify', $order), [
+            'bank_account_id' => $bank->id,
+        ])->assertRedirect();
+        $notice = PaymentNotification::firstOrFail();
+
+        // Simulate inconsistent historical data: a bank notice must never
+        // move a card-payment order into the preparing state.
+        $order->update(['payment_method' => 'paytr']);
+        $this->actingAs($this->administrator());
+        $this->post(route('admin.payment-notifications.verify', $notice), [
+            'bank_verified' => 1,
+        ])->assertSessionHasErrors('payment');
+        $this->post(route('admin.payment-notifications.reject', $notice), [
+            'admin_note' => 'Bu kart siparişi için banka bildirimi geçersizdir.',
+        ])->assertSessionHasErrors('payment');
+
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertSame('pending', $notice->fresh()->status);
     }
 
     public function test_order_cannot_be_cancelled_while_payment_claim_is_unreviewed(): void

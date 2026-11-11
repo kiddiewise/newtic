@@ -228,6 +228,31 @@ class ShoppingCartTest extends TestCase
         $this->assertSame(6, substr_count($html, 'data-order-quantity'));
     }
 
+    public function test_cart_removes_items_when_a_parent_category_is_disabled(): void
+    {
+        $root = Category::create([
+            'name' => 'Üst kategori', 'slug' => 'ust-kategori', 'is_active' => true,
+        ]);
+        $child = Category::create([
+            'parent_id' => $root->id,
+            'name' => 'Alt kategori', 'slug' => 'alt-kategori', 'is_active' => true,
+        ]);
+        $product = Product::create([
+            'primary_category_id' => $child->id,
+            'sku' => 'HIDDEN-75', 'slug' => 'hidden-75', 'name' => '75 gr test ürünü',
+            'price' => '45.00', 'stock_quantity' => 10, 'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add'), ['items' => [$product->id => 2]])->assertRedirect();
+        $this->assertSame(2, session('shopping_cart')[$product->id]);
+        $root->update(['is_active' => false]);
+
+        $this->get(route('cart.index'))->assertOk()->assertSee('Sepetin henüz boş');
+        $this->assertSame([], session('shopping_cart'));
+        $this->get(route('checkout.index'))->assertRedirect(route('cart.index'));
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_cart_does_not_accept_non_post_mutations_or_start_checkout(): void
     {
         $this->get('/sepet/ekle')->assertStatus(405);

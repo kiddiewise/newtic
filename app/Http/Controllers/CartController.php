@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Product;
 use App\Support\ShoppingCart;
 use App\Support\QuickCartSheet;
@@ -14,8 +15,23 @@ use Illuminate\View\View;
 
 class CartController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        // A pending PAYTR order already reserved the original cart's stock.
+        // Do not normalize it against reduced stock on a return to /sepet:
+        // that would destroy the customer's cart before a failed payment retry.
+        $pendingOrderId = $request->session()->get('checkout_last_order');
+        $pendingCart = $request->session()->get('paytr_pending_cart');
+        if ($pendingOrderId && is_array($pendingCart)
+            && $pendingCart === ShoppingCart::raw($request)) {
+            $pendingOrder = Order::query()->find($pendingOrderId);
+            if ($pendingOrder?->payment_method === 'paytr'
+                && $pendingOrder->status === 'pending_payment'
+                && in_array($pendingOrder->id, (array) $request->session()->get('confirmed_order_ids', []), true)) {
+                return redirect()->route('checkout.paytr.frame', $pendingOrder);
+            }
+        }
+
         $cart = ShoppingCart::snapshot($request);
 
         $wishlistIds = WishlistController::ids($request);

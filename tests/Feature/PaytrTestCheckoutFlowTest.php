@@ -219,6 +219,11 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $order = $this->place($product);
         $attempt = $order->paytrAttempts()->firstOrFail();
 
+        // Returning to the cart must not erase items whose stock is reserved
+        // by this still-pending test payment.
+        $this->get(route('cart.index'))->assertRedirect(route('checkout.paytr.frame', $order));
+        $this->assertSame(2, session('shopping_cart')[$product->id]);
+
         $failed = $this->signedPayload($attempt, 'failed', '0');
         $failed['failed_reason_code'] = '6';
         $this->post(route('checkout.paytr.callback'), $failed)->assertOk()->assertSeeText('OK');

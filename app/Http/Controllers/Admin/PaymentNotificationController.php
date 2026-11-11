@@ -38,7 +38,9 @@ class PaymentNotificationController extends Controller
             // Lock in the same order as the customer endpoint to prevent deadlocks.
             $order = Order::query()->whereKey($paymentNotification->order_id)->lockForUpdate()->firstOrFail();
             $notice = PaymentNotification::query()->whereKey($paymentNotification->id)->lockForUpdate()->firstOrFail();
-            if ($order->status !== 'pending_payment' || $notice->status !== 'pending') {
+            if ($order->status !== 'pending_payment'
+                || $order->payment_method !== 'bank_transfer'
+                || $notice->order_id !== $order->id || $notice->status !== 'pending') {
                 throw ValidationException::withMessages([
                     'payment' => 'Bu bildirim artık doğrulanamaz. Sipariş ve bildirim durumunu yenileyin.',
                 ]);
@@ -68,7 +70,9 @@ class PaymentNotificationController extends Controller
         DB::transaction(function () use ($request, $data, $paymentNotification) {
             $order = Order::query()->whereKey($paymentNotification->order_id)->lockForUpdate()->firstOrFail();
             $notice = PaymentNotification::query()->whereKey($paymentNotification->id)->lockForUpdate()->firstOrFail();
-            if ($order->status !== 'pending_payment' || $notice->status !== 'pending') {
+            if ($order->status !== 'pending_payment'
+                || $order->payment_method !== 'bank_transfer'
+                || $notice->order_id !== $order->id || $notice->status !== 'pending') {
                 throw ValidationException::withMessages([
                     'payment' => 'Bu ödeme bildirimi artık reddedilemez.',
                 ]);

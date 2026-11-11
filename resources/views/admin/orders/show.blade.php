@@ -75,7 +75,12 @@
               <form class="admin-form" method="POST" action="{{ route('admin.payment-notifications.verify', $notification) }}">
                 @csrf
                 <label class="admin-check"><input type="checkbox" name="bank_verified" value="1" required>
-                  Tutarı ({{ number_format($order->total_cents/100, 2, ',', '.') }} ₺) ve açıklamadaki {{ $order->order_number }} numarasını banka hareketinde kontrol ettim.</label>
+                  @if($order->is_test)
+                    Gerçek banka transferi yapılmadığını biliyorum. {{ $order->order_number }} numaralı test bildirimini yalnızca deneme amacıyla onaylıyorum.
+                  @else
+                    Tutarı ({{ number_format($order->total_cents/100, 2, ',', '.') }} ₺) ve açıklamadaki {{ $order->order_number }} numarasını banka hareketinde kontrol ettim.
+                  @endif
+                </label>
                 <button class="admin-primary" type="submit"><x-admin-icon name="check" /> {{ $order->is_test ? 'TEST Ödemeyi doğrula' : 'Ödemeyi doğrula' }}</button>
               </form>
               <form class="admin-form" method="POST" action="{{ route('admin.payment-notifications.reject', $notification) }}">
