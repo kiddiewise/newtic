@@ -48,7 +48,7 @@ class PaytrSettingsSecurityTest extends TestCase
             ->assertSee('Mağaza No')
             ->assertSee('Mağaza Parola')
             ->assertSee('Mağaza Gizli Anahtar')
-            ->assertSee('admin.paytr-settings.update', false)
+            ->assertSee('action="'.route('admin.paytr-settings.update').'"', false)
             ->assertHeader('Cache-Control', 'private, no-store, max-age=0');
     }
 
