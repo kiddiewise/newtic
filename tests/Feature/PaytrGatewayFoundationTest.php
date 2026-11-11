@@ -21,6 +21,8 @@ class PaytrGatewayFoundationTest extends TestCase
     {
         parent::setUp();
         config()->set('app.url', 'https://powderblue-dinosaur-538060.hostingersite.com');
+        \Illuminate\Support\Facades\URL::forceRootUrl('https://powderblue-dinosaur-538060.hostingersite.com');
+        \Illuminate\Support\Facades\URL::forceScheme('https');
         $this->withServerVariables([
             'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
             'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
