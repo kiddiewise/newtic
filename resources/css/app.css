@@ -26,6 +26,7 @@
 @import './mobile-auth.css';
 @import './product-reviews.css';
 @import './polaris-corporate-theme.css';
+@import './polaris-typography.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
