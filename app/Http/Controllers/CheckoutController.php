@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
 use App\Models\Order;
+use App\Models\PaytrPaymentAttempt;
+use App\Support\PaytrTestAccess;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\User;
@@ -32,6 +34,18 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Önce sepetinize ürün ekleyin.');
         }
 
+        // Keep the customer on an existing, stock-reserved PAYTR attempt
+        // rather than creating a second order by returning to checkout.
+        $lastOrderId = $request->session()->get('checkout_last_order');
+        if ($lastOrderId && PaytrTestAccess::available()
+            && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
+            $pendingOrder = Order::query()->find($lastOrderId);
+            if ($pendingOrder?->payment_method === 'paytr'
+                && $pendingOrder->status === 'pending_payment') {
+                return redirect()->route('checkout.paytr.frame', $pendingOrder);
+            }
+        }
+
         if (!$request->session()->has('checkout_token')) {
             $request->session()->put('checkout_token', (string) Str::uuid());
         }
@@ -47,17 +61,19 @@ class CheckoutController extends Controller
             'selectedAddress' => $selectedAddress,
             'provinces' => TurkeyProvinces::ALL,
             'bankAccountsAvailable' => BankAccount::query()->where('is_active', true)->exists(),
+            'paytrAvailable' => PaytrTestAccess::available(),
         ]);
     }
 
     public function place(Request $request): RedirectResponse
     {
         AddressValidation::normalizePhoneInput($request);
+        $paytrAvailable = PaytrTestAccess::available();
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
             'email' => ['required','email','max:255'],
             'order_note' => ['nullable','string','max:2000'],
             'checkout_token' => ['required','uuid'],
-            'payment_method' => ['required',Rule::in(['bank_transfer'])],
+            'payment_method' => ['required', Rule::in($paytrAvailable ? ['bank_transfer', 'paytr'] : ['bank_transfer'])],
             'save_address' => ['nullable','boolean'],
             'create_account' => ['nullable','boolean'],
             'account_password' => ['required_if:create_account,1','nullable',Password::min(8)],
@@ -66,6 +82,13 @@ class CheckoutController extends Controller
         $token = $validated['checkout_token'];
         if (hash_equals((string) $request->session()->get('checkout_last_token', ''), $token)
             && $request->session()->has('checkout_last_order')) {
+            $previous = Order::query()->find($request->session()->get('checkout_last_order'));
+            if ($previous?->payment_method === 'paytr' && $previous->status === 'pending_payment') {
+                return redirect()->route('checkout.paytr.frame', $previous);
+            }
+            if ($previous?->payment_method === 'paytr' && $previous->status === 'cancelled') {
+                return redirect()->route('checkout.index')->with('error', 'Önceki test ödemeniz başarısız. Yeniden deneyebilirsiniz.');
+            }
             return redirect()->route('checkout.success', $request->session()->get('checkout_last_order'));
         }
         $expected = (string) $request->session()->get('checkout_token', '');
@@ -88,7 +111,9 @@ class CheckoutController extends Controller
         $address = AddressValidation::clean($validated);
         $user = $request->user();
         $newUser = null;
-        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, &$newUser) {
+        $method = $validated['payment_method'];
+        $cartSnapshot = ShoppingCart::raw($request);
+        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, &$newUser) {
             // Stock is rechecked under row locks and never derived from the client's
             // subtotal. Stable ID ordering prevents deadlocks between checkout requests.
             $raw = ShoppingCart::raw($request);
@@ -176,7 +201,7 @@ class CheckoutController extends Controller
                 'tax_office' => $address['tax_office'] ?? null,
                 'tax_number' => $address['tax_number'] ?? null,
                 'order_note' => $validated['order_note'] ?? null,
-                'payment_method' => 'bank_transfer',
+                'payment_method' => $method,
                 'status' => 'pending_payment',
                 'subtotal_cents' => $subtotal,
                 'shipping_cents' => $shipping,
@@ -201,6 +226,11 @@ class CheckoutController extends Controller
                     'line_total_cents' => $unitCents * $quantity,
                 ]);
                 $product->decrement('stock_quantity', $quantity);
+            }
+
+            if ($method === 'paytr') {
+                // Attempt is saved atomically with the order and stock reservation.
+                PaytrPaymentAttempt::createForOrder($order);
             }
 
             if ($customer && ($request->boolean('save_address') || $newUser)) {
@@ -231,6 +261,14 @@ class CheckoutController extends Controller
         $request->session()->forget('checkout_token');
         $request->session()->put('confirmed_order_ids',
             array_slice(array_merge((array) $request->session()->get('confirmed_order_ids', []), [$order->id]), -10));
+        if ($method === 'paytr') {
+            // Leave the cart intact if PayTR rejects the test transaction.
+            // A paid order clears only its unchanged original cart on return.
+            $request->session()->put('paytr_pending_cart', $cartSnapshot);
+
+            return redirect()->route('checkout.paytr.frame', $order);
+        }
+
         ShoppingCart::clear($request);
 
         return redirect()->route('checkout.success', $order);
@@ -242,13 +280,21 @@ class CheckoutController extends Controller
         $isSessionOrder = in_array($order->id, (array) $request->session()->get('confirmed_order_ids', []), true);
         abort_unless($isOwner || $isSessionOrder || $request->hasValidSignature(false), 404);
 
-        $order->load(['items', 'paymentNotifications']);
-        $bankAccounts = $order->status === 'pending_payment'
+        $order->load(['items', 'paymentNotifications', 'paytrAttempts']);
+        if ($order->payment_method === 'paytr'
+            && in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true)
+            && $isSessionOrder
+            && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
+            ShoppingCart::clear($request);
+            $request->session()->forget('paytr_pending_cart');
+        }
+        $bankAccounts = $order->payment_method === 'bank_transfer' && $order->status === 'pending_payment'
             ? BankAccount::query()->where('is_active', true)
                 ->orderBy('sort_order')->orderBy('id')->get()
             : collect();
         $latestPaymentNotification = $order->paymentNotifications->first();
         $tracking = OrderTracking::for($order, $latestPaymentNotification);
+        $paytrAttempt = $order->paytrAttempts->first();
 
         // A capability-style guest link permits returning after the browser
         // session expires. Sign the relative URL to survive reverse proxies.
@@ -262,7 +308,7 @@ class CheckoutController extends Controller
 
         return view('store.order-success', compact(
             'order', 'bankAccounts', 'latestPaymentNotification',
-            'paymentReturnUrl', 'paymentNotificationAction', 'tracking'
+            'paymentReturnUrl', 'paymentNotificationAction', 'tracking', 'paytrAttempt'
         ));
     }
 }
