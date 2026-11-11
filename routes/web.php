@@ -38,6 +38,10 @@ Route::get('/uye-ol', [AccountController::class, 'registerPage'])->name('account
 Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('throttle:5,1')->name('account.register.submit');
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
 
+// Separate, sessionless endpoint. Explicit server-side gate remains OFF by default.
+Route::post('/odeme/paytr/bildirim', PaytrCallbackController::class)
+    ->name('checkout.paytr.callback');
+
 Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
 Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
