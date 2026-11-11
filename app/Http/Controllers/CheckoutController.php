@@ -29,21 +29,21 @@ class CheckoutController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        $cart = ShoppingCart::snapshot($request);
-        if (!$cart['lines']) {
-            return redirect()->route('cart.index')->with('error', 'Önce sepetinize ürün ekleyin.');
-        }
-
-        // Keep the customer on an existing, stock-reserved PAYTR attempt
-        // rather than creating a second order by returning to checkout.
+        // Check the original cart before snapshot() clamps quantities because
+        // the pending PAYTR order has already reserved those same items.
         $lastOrderId = $request->session()->get('checkout_last_order');
-        if ($lastOrderId && PaytrTestAccess::available()
+        if ($lastOrderId
             && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
             $pendingOrder = Order::query()->find($lastOrderId);
             if ($pendingOrder?->payment_method === 'paytr'
                 && $pendingOrder->status === 'pending_payment') {
                 return redirect()->route('checkout.paytr.frame', $pendingOrder);
             }
+        }
+
+        $cart = ShoppingCart::snapshot($request);
+        if (!$cart['lines']) {
+            return redirect()->route('cart.index')->with('error', 'Önce sepetinize ürün ekleyin.');
         }
 
         if (!$request->session()->has('checkout_token')) {
