@@ -152,6 +152,7 @@ class PaytrGatewayFoundationTest extends TestCase
     public function test_enabled_in_memory_test_mode_sends_correct_signed_post_and_variation_basket(): void
     {
         config()->set('newtic.paytr_card_payments_enabled', true);
+        config()->set('newtic.paytr_webhooks_enabled', true);
         $setting = $this->credentials();
         $setting->forceFill(['is_enabled' => true])->save();
         $order = $this->order();
@@ -197,6 +198,7 @@ class PaytrGatewayFoundationTest extends TestCase
     public function test_paytr_rejected_or_malformed_token_response_is_never_treated_as_success(): void
     {
         config()->set('newtic.paytr_card_payments_enabled', true);
+        config()->set('newtic.paytr_webhooks_enabled', true);
         $setting = $this->credentials();
         $setting->forceFill(['is_enabled' => true])->save();
         $order = $this->order();
