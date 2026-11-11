@@ -189,6 +189,29 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('preparing', $order->fresh()->status);
     }
 
+    public function test_admin_cannot_cancel_paytr_order_while_callback_is_pending(): void
+    {
+        $this->merchant();
+        $product = $this->product();
+        $order = $this->place($product);
+        $attempt = $order->paytrAttempts()->firstOrFail();
+
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin);
+
+        $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
+            ->assertSessionHasErrors('status');
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+
+        // A subsequent signed success must still be able to settle the order.
+        $this->post(route('checkout.paytr.callback'), $this->signedPayload($attempt))
+            ->assertOk()->assertSeeText('OK');
+        $this->assertSame('preparing', $order->fresh()->status);
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+    }
+
     public function test_failed_payment_returns_stock_and_preserves_cart_for_another_try(): void
     {
         $this->merchant();
