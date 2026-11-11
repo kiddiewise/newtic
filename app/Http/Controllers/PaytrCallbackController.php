@@ -74,10 +74,10 @@ final class PaytrCallbackController extends Controller
             }
 
             $total = (int) $payload['total_amount'];
-            // Stage two is single-installment-only. PayTR documents that
-            // installment premiums can exceed the originally signed amount;
-            // we intentionally reject such a mismatch for this configuration.
-            if ($total <= 0 || $total !== $attempt->amount_cents) {
+            // Only successful single-installment payments must equal the
+            // amount sent in step one. Failed notifications may report zero.
+            if ($payload['status'] === 'success'
+                && ($total <= 0 || $total !== $attempt->amount_cents)) {
                 return 422;
             }
 
@@ -97,10 +97,18 @@ final class PaytrCallbackController extends Controller
                 'failed_reason_message' => mb_substr((string) ($payload['failed_reason_msg'] ?? ''), 0, 300),
             ]);
 
-            // A failed payment attempt does not imply that a different
-            // attempt can no longer succeed; order stays pending_payment.
-            // Inventory reservation / retry expiry will be finalized with
-            // customer-facing PAYTR checkout in the next stage.
+            // A failed test transaction closes this single-attempt order
+            // and releases the stock reserved during checkout exactly once.
+            // Row and attempt locks make repeated PAYTR callbacks idempotent.
+            $quantities = $order->items()->whereNotNull('product_id')
+                ->selectRaw('product_id, SUM(quantity) as qty')
+                ->groupBy('product_id')->pluck('qty', 'product_id');
+            $products = Product::query()->whereIn('id', $quantities->keys())
+                ->orderBy('id')->lockForUpdate()->get();
+            foreach ($products as $product) {
+                $product->increment('stock_quantity', (int) ($quantities[$product->id] ?? 0));
+            }
+            $order->update(['status' => 'cancelled']);
             return 200;
         }, 3);
 
