@@ -35,9 +35,16 @@
             </p>
           </div>
           <div class="admin-review-tags">
-            @if($review->is_test)<span class="admin-test-tag">TEST YORUMU</span>@endif
+            @if($review->is_test)<span class="admin-test-tag" title="Bu yorum gerçek mağaza ortalamasını etkilemez">TEST YORUMU</span>@endif
             <span @class(['admin-state-pill', 'state-pending_payment' => $review->status === 'pending', 'state-completed' => $review->status === 'approved', 'state-cancelled' => $review->status === 'rejected'])>
-              {{ match($review->status) {'pending'=>'Onay bekliyor','approved'=>'Yayında','rejected'=>'Reddedildi',default=>'Bilinmiyor'} }}
+              {{ match($review->status) {
+                'pending' => 'Onay bekliyor',
+                'approved' => $review->is_test
+                    ? (\App\Support\ProductReviewVisibility::showsTestReviews() ? 'Test önizlemesinde' : 'Gerçek mağazada gizli')
+                    : 'Yayında',
+                'rejected' => 'Reddedildi',
+                default => 'Bilinmiyor'
+              } }}
             </span>
           </div>
         </div>
