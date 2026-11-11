@@ -27,7 +27,7 @@
     <p class="order-stage-number">Sipariş numaran: <strong>{{ $order->order_number }}</strong></p>
     <span class="checkout-status order-stage-status">{{ $tracking['badge'] }}</span>
     @if($order->is_test)
-      <p class="checkout-testing-note"><strong>Test siparişi:</strong> Bu sipariş yalnızca deneme amaçlıdır. Gerçek havale/EFT göndermeyin; durum etiketleri gerçek banka tahsilatı yapıldığını göstermez.</p>
+      <p class="checkout-testing-note"><strong>Test siparişi:</strong> Bu sipariş yalnızca deneme amaçlıdır. PAYTR test ödemelerinde gerçek kart tahsilatı yapılmaz; ödeme yalnızca sunucu bildirimiyle doğrulanır.</p>
     @endif
     @guest
       <div class="payment-guest-link">
@@ -66,6 +66,9 @@
   @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
   @if($errors->any())<div class="cart-flash is-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
+  @if($order->payment_method === 'paytr')
+    @include('store.partials.paytr-order-status')
+  @else
   <section class="checkout-card payment-instructions" aria-labelledby="payment-instructions-title">
     <div class="payment-instructions-heading">
       <div><span class="payment-eyebrow">HAVALE / EFT</span><h2 id="payment-instructions-title">{{ $order->status === 'pending_payment' ? 'Ödeme bilgileri' : 'Ödeme durumu' }}</h2></div>
@@ -146,6 +149,7 @@
     <span class="payment-copy-live sr-only" role="status" aria-live="polite" data-payment-copy-status></span>
     <div class="payment-copy-toast" data-payment-copy-toast hidden aria-hidden="true"></div>
   </section>
+  @endif
   @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true))
   <section class="checkout-card order-shipping-card" id="shipment-status" aria-labelledby="shipment-title">
     <div class="order-tracking-heading"><div><span class="payment-eyebrow">KARGO TAKİBİ</span><h2 id="shipment-title">Kargo bilgileri</h2></div><x-store-icon name="truck" /></div>
@@ -190,11 +194,11 @@
     <p>{{ $order->customer_name }} · {{ $order->phone }}</p><p>{{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</p>
     @if($order->invoice_type === 'corporate')<p>Kurumsal fatura: {{ $order->company_title }}</p>@endif
     @if($order->order_note)<p><strong>Sipariş notu:</strong> {{ $order->order_note }}</p>@endif
-    <div class="checkout-payment-option"><strong>Havale / EFT · {{ $tracking['payment'] }}</strong></div>
-    <p class="checkout-muted">{{ $order->status === 'pending_payment' ? 'Banka kontrolü tamamlanana kadar ödeme onaylanmış sayılmaz.' : 'Güncel ödeme ve sipariş durumunu yukarıdaki takip alanından görebilirsiniz.' }}</p>
+    <div class="checkout-payment-option"><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart (Test)' : 'Havale / EFT' }} · {{ $tracking['payment'] }}</strong></div>
+    <p class="checkout-muted">{{ $order->status === 'pending_payment' ? ($order->payment_method === 'paytr' ? 'PAYTR bildirimi tamamlanana kadar ödeme onaylanmış sayılmaz.' : 'Banka kontrolü tamamlanana kadar ödeme onaylanmış sayılmaz.') : 'Güncel ödeme ve sipariş durumunu yukarıdaki takip alanından görebilirsiniz.' }}</p>
   </div>
   @if($order->status === 'pending_payment')
-    <a class="checkout-action order-tracking-cta" href="#payment-instructions-title">{{ $tracking['key'] === 'payment_review' ? 'Ödeme kontrol durumunu gör' : 'Ödeme bilgilerine git' }}</a>
+    <a class="checkout-action order-tracking-cta" href="#payment-instructions-title">{{ $order->payment_method === 'paytr' ? 'Kart ödeme durumunu görüntüle' : ($tracking['key'] === 'payment_review' ? 'Ödeme kontrol durumunu gör' : 'Ödeme bilgilerine git') }}</a>
   @elseif(in_array($order->status, ['shipped','out_for_delivery'], true))
     @if($order->tracking_url && str_starts_with($order->tracking_url, 'https://'))
       <a class="checkout-action order-tracking-cta" href="{{ $order->tracking_url }}" target="_blank" rel="noopener noreferrer nofollow">Kargoyu takip et <x-store-icon name="truck" /></a>
