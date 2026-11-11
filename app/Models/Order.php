@@ -29,6 +29,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function paytrAttempts(): HasMany
+    {
+        return $this->hasMany(PaytrPaymentAttempt::class)->latest('id');
+    }
+
     public function paymentNotifications(): HasMany
     {
         return $this->hasMany(PaymentNotification::class)->latest('id');
