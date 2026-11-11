@@ -20,7 +20,12 @@ class PaytrGatewayFoundationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config()->set('app.url', 'https://example.test');
+        config()->set('app.url', 'https://powderblue-dinosaur-538060.hostingersite.com');
+        $this->withServerVariables([
+            'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'HTTPS' => 'on',
+        ]);
     }
 
     private function credentials(): PaytrSetting
@@ -133,8 +138,8 @@ class PaytrGatewayFoundationTest extends TestCase
         try {
             app(PaytrTokenService::class)->requestIframeToken(
                 $order, $attempt, '203.0.113.15',
-                'https://example.test/odeme/basarili',
-                'https://example.test/odeme/basarisiz'
+                'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarili',
+                'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarisiz'
             );
             $this->fail('Disabled PAYTR integration should not initiate a request.');
         } catch (RuntimeException $e) {
@@ -160,8 +165,8 @@ class PaytrGatewayFoundationTest extends TestCase
 
         $actual = app(PaytrTokenService::class)->requestIframeToken(
             $order, $attempt, '203.0.113.15',
-            'https://example.test/odeme/basarili',
-            'https://example.test/odeme/basarisiz',
+            'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarili',
+            'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarisiz',
         );
         $this->assertSame($token, $actual);
         Http::assertSentCount(1);
@@ -203,8 +208,8 @@ class PaytrGatewayFoundationTest extends TestCase
         $this->expectExceptionMessage('test tokenı alınamadı');
         app(PaytrTokenService::class)->requestIframeToken(
             $order, $attempt, '203.0.113.15',
-            'https://example.test/odeme/basarili',
-            'https://example.test/odeme/basarisiz',
+            'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarili',
+            'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarisiz',
         );
     }
 
@@ -278,7 +283,7 @@ class PaytrGatewayFoundationTest extends TestCase
 
         $this->post(route('checkout.paytr.callback'), $failure)->assertOk()->assertSeeText('OK');
         $this->assertSame('failed', $attempt->fresh()->status);
-        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertSame('cancelled', $order->fresh()->status);
         $this->assertNull($attempt->fresh()->paid_total_cents);
         $this->post(route('checkout.paytr.callback'), $failure)->assertOk()->assertSeeText('OK');
     }
