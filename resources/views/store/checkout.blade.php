@@ -62,7 +62,7 @@
       <form id="checkout-form" method="POST" action="{{ route('checkout.place') }}" class="checkout-form checkout-card">
         @csrf
         <input type="hidden" name="checkout_token" value="{{ $checkoutToken }}">
-        <input type="hidden" name="payment_method" value="bank_transfer">
+
         <div class="checkout-form-intro">
           <span>TESLİMAT BİLGİLERİ</span>
 <h1>Teslimat bilgilerin</h1>
@@ -110,13 +110,27 @@
 
         <section class="checkout-payment-method">
           <div class="checkout-section-title"><span>ÖDEME</span><h2>Ödeme yöntemi</h2></div>
-<div class="checkout-payment-option"><span class="checkout-payment-dot"></span>
-            <div><strong>Havale / EFT</strong><small>{{ $bankAccountsAvailable ? 'IBAN bilgileri sipariş sonrasında gösterilir. Açıklamaya sipariş numaranı yazıp “Ödeme Yaptım” bildirimi gönderebilirsin.' : 'Banka hesapları henüz tanımlanmadı. Hesap bilgileri aktifleşene kadar ödeme yapmayın.' }}</small></div>
+<div class="paytr-payment-choices" role="radiogroup" aria-label="Ödeme yöntemi">
+            @if($paytrAvailable)
+              <label class="paytr-method-option">
+                <input type="radio" name="payment_method" value="paytr" @checked(old('payment_method', 'paytr') === 'paytr') required>
+                <span class="paytr-method-icon"><x-store-icon name="shopping-cart" /></span>
+                <span class="paytr-method-copy"><strong>Kredi / Banka Kartı</strong><small>PAYTR güvenli ödeme ekranı · Test modu</small></span>
+                <span class="paytr-method-check" aria-hidden="true"><x-store-icon name="check" /></span>
+              </label>
+            @endif
+            <label class="paytr-method-option">
+              <input type="radio" name="payment_method" value="bank_transfer" @checked(old('payment_method', $paytrAvailable ? 'paytr' : 'bank_transfer') === 'bank_transfer') required>
+              <span class="paytr-method-icon"><x-store-icon name="landmark" /></span>
+              <span class="paytr-method-copy"><strong>Havale / EFT</strong><small>{{ $bankAccountsAvailable ? 'IBAN bilgileri siparişten sonra gösterilir; ödeme bildirimi gönderebilirsiniz.' : 'Banka hesapları henüz tanımlanmadı.' }}</small></span>
+              <span class="paytr-method-check" aria-hidden="true"><x-store-icon name="check" /></span>
+            </label>
           </div>
-          <p class="checkout-testing-note"><strong>{{ $checkoutIsTest ? 'Deneme ortamı:' : 'Önemli:' }}</strong> {{ $checkoutIsTest ? 'Siparişiniz yalnızca test kaydı olarak oluşturulur; gerçek ödeme alınmaz.' : 'Ödeme altyapısı henüz etkin değil. Sipariş kaydı oluşturmanız ödeme yapıldığı anlamına gelmez.' }}</p>
+          <p class="checkout-testing-note"><strong>{{ $checkoutIsTest ? 'Deneme ortamı:' : 'Önemli:' }}</strong>
+          {{ $paytrAvailable ? 'Kartla ödeme seçilirse yalnızca PAYTR test modu kullanılır; gerçek tahsilat yapılmaz. Havale/EFT gerçek banka ödemesi gerektirmez.' : ($checkoutIsTest ? 'Siparişiniz yalnızca test kaydı olarak oluşturulur; gerçek ödeme alınmaz.' : 'Ödeme altyapısı henüz etkin değil.') }}</p>
         </section>
         <p class="checkout-privacy">Sipariş bilgileri yalnızca teslimat, faturalama ve sipariş yönetimi amacıyla alınır. Pazarlama izni otomatik verilmez.</p>
-<button class="checkout-action checkout-desktop-submit" type="submit" data-checkout-submit>{{ $checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur' }}</button>
+<button class="checkout-action checkout-desktop-submit" type="submit" data-checkout-submit>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button>
       </form>
     </div>
 
@@ -136,6 +150,6 @@
 </main>
 <div class="checkout-bottom-bar" aria-label="Siparişi tamamla">
   <div><strong>{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</strong><span>{{ $cart['shipping_cents'] === 0 ? 'Kargo ücretsiz' : 'Kargo dahil' }}</span></div>
-<button type="submit" form="checkout-form" data-checkout-submit>{{ $checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur' }}</button>
+<button type="submit" form="checkout-form" data-checkout-submit>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button>
 </div>
 @endsection
