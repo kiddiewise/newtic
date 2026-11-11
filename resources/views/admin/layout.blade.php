@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta name="theme-color" content="#102f3a">
+  <meta name="theme-color" content="#092037">
   <title>@yield('title', 'NEWTIC Yönetim Paneli')</title>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   @include('admin.partials.critical-styles')
