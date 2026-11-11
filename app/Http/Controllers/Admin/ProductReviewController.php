@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProductReview;
+use App\Support\ProductReviewVisibility;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,7 @@ class ProductReviewController extends Controller
             ->pluck('total', 'status');
 
         return view('admin.reviews.index', compact('reviews', 'status', 'counts'));
+
     }
 
     public function moderate(Request $request, ProductReview $review): RedirectResponse
@@ -49,7 +51,9 @@ class ProductReviewController extends Controller
         }, 3);
 
         return back()->with('success', $data['decision'] === 'approved'
-            ? 'Yorum onaylandı. Gerçek sipariş yorumları mağazada yayınlanır.'
+            ? (ProductReviewVisibility::showsTestReviews()
+                ? 'Yorum onaylandı. Test yorumları test mağazasında TEST etiketiyle gösterilir.'
+                : 'Yorum onaylandı. Yalnızca gerçek sipariş yorumları müşterilere yayınlanır.')
             : 'Yorum reddedildi.');
     }
 }
