@@ -1,0 +1,357 @@
+/*
+ * Polaris Kurşun • corporate color system, 2026.
+ * Import LAST: tune the established customer experience instead of replacing
+ * layouts or altering order, stock, payments and accessible states.
+ *
+ * Brand: navy #092037 | orange #f68220 | slate #424769
+ * Contrast: buttons deliberately use NAVY text on ORANGE surfaces.
+ */
+:root{
+  --polaris-navy:#092037;
+  --polaris-orange:#f68220;
+  --polaris-orange-hover:#ec7412;
+  --polaris-slate:#424769;
+  --polaris-paper:#ffffff;
+  --polaris-canvas:#f7f8fa;
+  --polaris-line:#e4e8ee;
+  --polaris-ink-soft:#4f6073;
+  --polaris-orange-soft:#fff1e4;
+  --polaris-navy-soft:#eff3f7;
+  --polaris-focus:#d96810;
+  --ink:var(--polaris-navy);
+  --teal:var(--polaris-navy);
+  --muted:#67768b;
+  --line:var(--polaris-line);
+  color-scheme:light;
+}
+body{background:var(--polaris-paper);color:var(--polaris-navy)}
+:focus-visible{outline-color:var(--polaris-focus)}
+::selection{background:#ffe0c3;color:var(--polaris-navy)}
+:is(button,a,input,select,textarea):focus-visible{outline-color:var(--polaris-focus)}
+:is(input[type="checkbox"],input[type="radio"]){accent-color:var(--polaris-orange)}
+
+/* --- Brand-bearing navigation and hero surfaces --- */
+.utility-bar,
+.site-footer{
+  background:var(--polaris-navy);
+}
+.site-footer{color:#e0e6ee}
+.site-footer a:hover{color:#ffbd82}
+.brand-symbol{background:var(--polaris-navy);color:#fff}
+.brand-words,.section-heading h2,.page-intro h1,.category-name,
+.product-card-name,.detail-intro h1,.pdp-product-name,
+.checkout-shell h1,.checkout-shell h2,.checkout-shell h3{
+  color:var(--polaris-navy);
+}
+.header-search{background:#f5f6f9;border-color:#e5e8ef}
+.header-search:focus-within{border-color:#b1b5ce;box-shadow:0 0 0 3px #42476914}
+.icon-link:hover{background:var(--polaris-navy-soft)}
+.header-search button,.search-inline button{
+  background:var(--polaris-navy);
+  color:#fff;
+}
+.header-search button:hover,.search-inline button:hover{background:var(--polaris-slate)}
+.eyebrow,.section-all span{color:var(--polaris-slate)}
+.section-all:hover,.breadcrumbs a:hover{color:var(--polaris-orange-hover)}
+.visual-slider{background:var(--polaris-navy)}
+.slider-dots button[aria-current=true]{background:var(--polaris-orange)}
+.category-card{border-color:var(--polaris-line);background:#f6f8fb}
+.category-card:nth-child(4n+2){background:#f6f5fa}
+.category-card:nth-child(4n+3){background:#fff8f0}
+.category-art{background:#eaedf6;color:var(--polaris-slate)}
+.category-card:hover,.category-child-card:hover{
+  border-color:#b6bbd2;
+  box-shadow:0 8px 20px #0920370c;
+}
+.mobile-menu-heading,.mobile-menu-panel a,.mobile-category-pills{color:var(--polaris-navy)}
+.mobile-brand-mark,.mobile-menu-panel .mobile-menu-all{color:var(--polaris-orange-hover)}
+.mobile-category-pills .mobile-pill.is-active,
+.mobile-category-pills .mobile-pill-home.is-active{
+  background:var(--polaris-navy-soft)!important;
+  color:var(--polaris-navy)!important;
+  border-color:#adb5d0!important;
+  box-shadow:none!important;
+}
+.mobile-category-pills .mobile-pill.is-active::before{background:var(--polaris-orange)}
+.mobile-nav-cart.is-active,.mobile-bottom-nav a[aria-current="page"],.mobile-bottom-nav .is-active{
+  color:var(--polaris-orange-hover)!important;
+}
+.mega-brand-icon,.mega-chevron-icon{color:var(--polaris-slate)}
+.mega-chevron-icon{background:#f0f2f9}
+.mega-hero h2 em{color:#ffb774}
+.mega-hero-dot{background:var(--polaris-orange);box-shadow:0 0 0 4px #f6822022}
+.mega-leaf-arrow{color:var(--polaris-orange-hover)}
+
+/* --- Products: navy prices, orange promotions and purchase actions --- */
+.product-card{
+  border-color:var(--polaris-line);
+  box-shadow:0 2px 12px #09203707;
+}
+.product-card:hover{box-shadow:0 13px 34px #09203713;border-color:#cbd0dd}
+.product-card:focus-within{
+  border-color:#aeb3cc;
+  box-shadow:0 8px 28px #42476914;
+}
+.product-card-name:hover,.product-card-rating:hover{color:var(--polaris-navy)}
+.product-card-bottom>strong,
+.product-card-price,.product-price,.detail-price,.pdp-price,
+.pdp-sticky-price,.cart-grand-total dd,.cart-mobile-price{
+  color:var(--polaris-navy);
+}
+.product-discount-pill,.detail-discount-pill,.pdp-discount-pill,.pdp-discount-badge,
+.product-card-discount,.pdp-gallery-discount{
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+}
+.detail-original-price + .detail-price{color:var(--polaris-navy)}
+.product-card-rating{background:#fff6ed;color:var(--polaris-slate)}
+.product-card-rating:hover{background:#ffecd8}
+.product-card-rating-star,.pdp-rating-stars>span.is-lit,
+.review-stars .is-lit,.review-card-stars .is-lit,
+.review-distribution-row>span span,.review-test-label + .review-card-stars .is-lit{
+  color:var(--polaris-orange);
+}
+.product-card-rating strong,.review-score>strong{color:var(--polaris-navy)}
+.product-card-rating-test,.pdp-rating-test-tag,.review-test-label{background:#fff1e3;border-color:#ffd2a7;color:#90500e}
+
+.product-card-action:not(:disabled):not([aria-disabled="true"]),
+.pdp-desktop-add:not(:disabled):not([data-needs-option="true"]),
+.pdp-sheet-footer>button:not(:disabled),
+.pdp-sticky-actions .pdp-sticky-add:not(:disabled):not([data-needs-option="true"]),
+.cart-primary:not(:disabled),.cart-checkout-action:not(:disabled),
+.checkout-action:not(:disabled),.checkout-login-link:not(:disabled),
+.quick-cart-view-cart:not(:disabled),.review-primary-action:not(:disabled){
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+  border-color:transparent;
+  box-shadow:0 5px 17px #f6822025;
+}
+.product-card-action:hover:not(:disabled),
+.pdp-desktop-add:hover:not(:disabled):not([data-needs-option="true"]),
+.pdp-sheet-footer>button:hover:not(:disabled),
+.pdp-sticky-actions .pdp-sticky-add:hover:not(:disabled):not([data-needs-option="true"]),
+.cart-primary:hover:not(:disabled),.cart-checkout-action:hover:not(:disabled),
+.checkout-action:hover,.checkout-login-link:hover,
+.quick-cart-view-cart:hover,.review-primary-action:hover{
+  background:var(--polaris-orange-hover);
+  color:var(--polaris-navy);
+  box-shadow:0 7px 18px #f682202e;
+}
+.product-card-action:disabled,.pdp-desktop-add:disabled,
+.pdp-sticky-actions .pdp-sticky-add:disabled,
+.cart-primary:disabled,.checkout-action:disabled{
+  background:#e8ebef;
+  color:#83909e;
+  box-shadow:none;
+}
+
+/* Choice controls remain clearly separate from orange checkout actions. */
+.pdp-desktop-purchase{background:linear-gradient(150deg,#f7f8fc,#fff);border-color:#dce0eb}
+.pdp-desktop-purchase-head strong,.pdp-desktop-variant>label{color:var(--polaris-navy)}
+.pdp-desktop-variant{background:linear-gradient(115deg,#f2f4fa,#fff);border-color:#dce0eb}
+.pdp-desktop-variant>select{color:var(--polaris-navy);border-color:#cdd2e2}
+.pdp-desktop-stepper button,.pdp-stepper button:not(:disabled),
+.pdp-sticky-actions .pdp-sticky-stepper button:not(:disabled),
+.quick-cart-stepper button:not(:disabled){
+  background:#eef0f7;
+  color:var(--polaris-slate);
+}
+.pdp-desktop-more,.pdp-specifications a,.current-product-label,
+.pdp-current-product-note button{color:var(--polaris-slate)}
+.pdp-picker .order-item.is-current,.order-item.is-current{
+  background:#f5f6fa;
+  border-color:#adb3cf;
+}
+.pdp-sticky-bar{background:#fff}
+.pdp-sticky-bar>.pdp-sticky-gramages[data-scroll-ribbon],
+.pdp-sticky-bar>.pdp-sticky-gramages[data-scroll-ribbon].is-scroll-visible{
+  background:#eef0f3!important;
+  color:var(--polaris-navy)!important;
+  border-radius:0!important;
+}
+.pdp-sticky-gramages[data-scroll-ribbon]>span,
+.pdp-sticky-gramages[data-scroll-ribbon]>.ui-icon{
+  color:var(--polaris-navy)!important;
+  stroke:currentColor!important;
+}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant{background:#f4f5fa;border-color:#d6d9e7}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant-title{color:var(--polaris-navy)!important}
+.pdp-sticky-bar .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+  border-color:#c6ccdc;
+  color:var(--polaris-navy)!important;
+}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-quick{background:#f6f7fb;border-color:#e1e4ee}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-stepper output{color:var(--polaris-navy)!important}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-stepper button:not(:disabled){
+  background:#e8ebf5!important;
+  color:var(--polaris-slate)!important;
+}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-add:not(:disabled):not([data-needs-option="true"]){
+  background:var(--polaris-orange)!important;
+  color:var(--polaris-navy)!important;
+}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-add[data-needs-option="true"]{
+  background:#fff3e7!important;
+  border:1px solid #f5c796!important;
+  color:#85480f!important;
+}
+.pdp-sticky-actions .pdp-sticky-add:disabled{
+  background:#e8ebef!important;
+  color:#98a2b1!important;
+}
+.pdp-variant-field select:focus-visible,.pdp-sticky-variant select:focus-visible{
+  outline-color:var(--polaris-focus);
+}
+.quick-cart-variant-choice a{background:var(--polaris-navy-soft);border-color:#d2d8e7;color:var(--polaris-slate)}
+
+/* --- Cart, checkout, payment: accents without hiding meaningful states --- */
+.cart-progress>span,.quick-cart-progress>span{background:var(--polaris-orange)}
+.cart-quantity-stepper>button:not(:disabled),.cart-update-form button:not(:disabled){
+  color:var(--polaris-slate);
+}
+.cart-mobile-summary-open:not(:disabled),.checkout-bottom-bar>button:not(:disabled),
+.quick-cart-view-cart:not(:disabled){
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+}
+.cart-mobile-summary-open:hover:not(:disabled),
+.checkout-bottom-bar>button:hover:not(:disabled){
+  background:var(--polaris-orange-hover);
+  color:var(--polaris-navy);
+}
+.quick-cart-section-kicker,.quick-cart-related-head>a,
+.checkout-form-intro>span,.checkout-section-title>span{
+  color:var(--polaris-slate);
+}
+.checkout-steps>[aria-current="step"]{
+  color:var(--polaris-navy);
+  border-color:#f1bb8d;
+  background:#fff4e9;
+}
+.checkout-steps>[aria-current="step"] span{
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+}
+.checkout-steps>a span{background:var(--polaris-slate)}
+.checkout-progress .is-done,.checkout-progress .is-active{background:var(--polaris-orange)}
+.checkout-field input:focus,.checkout-field select:focus,
+.checkout-field textarea:focus,.checkout-extra-section textarea:focus{
+  border-color:#c58b5c;
+  box-shadow:0 0 0 3px #f682201a;
+}
+.checkout-payment-option{background:#f5f6fb;border-color:#d4d9e8}
+.checkout-outline-action,.payment-copy-button{
+  background:#f5f6fb;
+  border-color:#d4dae8;
+  color:var(--polaris-slate);
+}
+.checkout-outline-action:hover,.payment-copy-button:hover{
+  background:#eef0f8;
+  color:var(--polaris-navy);
+}
+.checkout-price-line.is-total strong,.checkout-bottom-bar>div strong,
+.quick-cart-footer-total strong{color:var(--polaris-navy)}
+.checkout-login-link,.checkout-secondary a,.checkout-inline-link{color:var(--polaris-slate)}
+.checkout-login-link:not(:disabled){color:var(--polaris-navy)}
+.checkout-success-hero h1,.order-tracking-hero h1{color:var(--polaris-navy)}
+.order-tracking-refresh{background:#f3f5fa;border-color:#d7dbe9;color:var(--polaris-slate)}
+.order-tracking-step.is-current .order-step-point{border-color:var(--polaris-orange);color:var(--polaris-navy);background:#fff2e4;box-shadow:0 0 0 4px #f6822026}
+.order-tracking-step.is-current .order-step-text{color:var(--polaris-navy)}
+.order-shipping-card{border-color:#d5dbe7}
+.payment-bank-iban{color:var(--polaris-navy)}
+body.is-auth .mobile-auth-tabs a.is-active{
+  color:var(--polaris-navy);
+  border-color:#e4cab1;
+  border-bottom-color:#fff;
+}
+body.is-auth .mobile-auth-brand{color:var(--polaris-navy)}
+
+/* --- Reviews: deep-navy text and orange selection highlights --- */
+.review-eyebrow,.review-form-bottom>span{color:var(--polaris-slate)}
+.review-write-card{background:linear-gradient(150deg,#f8f8fc,#fff 72%);border-color:#dfe1ec}
+.review-write-icon{background:var(--polaris-orange-soft);color:var(--polaris-navy)}
+.review-count-pill{background:var(--polaris-navy-soft);color:var(--polaris-slate)}
+.review-star-picker input:checked~label,
+.review-star-picker label:hover,.review-star-picker label:hover~label{
+  color:var(--polaris-orange);
+}
+.review-star-picker input:focus-visible+label{outline-color:var(--polaris-focus)}
+.review-rating-caption[data-selected="true"]{color:var(--polaris-slate)}
+.review-meter span{background:linear-gradient(90deg,#ffb36b,var(--polaris-orange))}
+.review-outline-action{background:#f9f9fc;border-color:#d6d9e8;color:var(--polaris-navy)}
+.review-own-status,.review-feedback.is-success{ /* verified success retains green */ }
+
+/* --- Admin: same brand, still a clear productivity-first light UI --- */
+.admin-body{
+  --admin-ink:var(--polaris-navy);
+  --admin-muted:#69768a;
+  --admin-line:#e2e7ed;
+  --admin-mint:var(--polaris-orange);
+  --admin-deep:var(--polaris-navy);
+  --admin-bg:#f6f8fb;
+  background:var(--admin-bg);
+  color:var(--admin-ink);
+}
+.admin-sidebar{
+  background:linear-gradient(165deg,var(--polaris-navy) 0%,#122d47 62%,var(--polaris-slate) 135%);
+  color:#edf0f8;
+}
+.admin-sidebar-symbol{background:#ffffff13;border-color:#ffffff42;color:#ffae68}
+.admin-side-link{color:#d7deec}
+.admin-side-link:hover,.admin-side-link:focus-visible{background:#ffffff1d;color:#fff}
+.admin-side-link.is-active{
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+  box-shadow:0 6px 18px #f6822023;
+}
+.admin-side-link.is-active .admin-icon{opacity:1}
+.admin-side-count{background:var(--polaris-navy);color:#fff}
+.admin-menu-caption{color:#b3c2da}
+.admin-help-card{background:linear-gradient(135deg,#424769b8,#243954);border-color:#ffffff29}
+.admin-topbar{border-color:#e5e8f0}
+.admin-page-heading h1,.admin-kpi strong,.admin-catalog-info>strong,
+.admin-review-product{color:var(--polaris-navy)}
+.admin-eyebrow{color:var(--polaris-slate)}
+.admin-primary:not(:disabled){
+  background:var(--polaris-orange);
+  color:var(--polaris-navy);
+  box-shadow:0 5px 14px #f6822020;
+}
+.admin-primary:hover:not(:disabled){
+  background:var(--polaris-orange-hover);
+  color:var(--polaris-navy);
+}
+.admin-top-icon-link:hover,.admin-text-link:hover{color:var(--polaris-orange-hover);border-color:#f5c093}
+.admin-filter-pill.is-active,.admin-order-filters a.is-active{
+  background:#fff1e5;
+  border-color:#f0ba87;
+  color:var(--polaris-navy);
+}
+.admin-editor-toggle>input:checked+.admin-toggle-track{background:var(--polaris-orange)}
+.admin-media-upload{background:#fff8f0;border-color:#f1c69d;color:#854d18}
+.admin-media-thumbnails img:first-child{border-color:var(--polaris-orange)}
+.admin-chart-bar{background:linear-gradient(180deg,var(--polaris-orange),#d76b17)}
+.admin-chart-legend i{background:var(--polaris-orange)}
+.admin-metric strong,.admin-catalog-stats strong{color:var(--polaris-navy)}
+.admin-user-avatar,.admin-top-avatar{background:var(--polaris-slate);color:#fff}
+.admin-body input:focus-visible,.admin-body select:focus-visible,
+.admin-body textarea:focus-visible{outline-color:var(--polaris-focus)}
+.admin-body .admin-form input:focus,.admin-body .admin-form select:focus,
+.admin-body .admin-form textarea:focus{
+  border-color:#e6aa74;
+  box-shadow:0 0 0 3px #f682201a;
+}
+
+/* Keep test, failure, payment verification and stock warnings semantic. */
+@media(max-width:760px){
+  .mobile-site-header .mobile-top-actions svg{stroke:var(--polaris-navy)}
+  .mobile-bottom-nav{background:#fff}
+  .pdp-sticky-bar{border-top-color:#e4e8ed}
+  .pdp-sticky-bar>.pdp-sticky-gramages[data-scroll-ribbon].is-scroll-visible{
+    background:#eff0f2!important;
+  }
+  .checkout-bottom-bar>button:not(:disabled){background:var(--polaris-orange)!important;color:var(--polaris-navy)!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .product-card-action,.pdp-desktop-add,.review-primary-action{transition:none!important}
+}
