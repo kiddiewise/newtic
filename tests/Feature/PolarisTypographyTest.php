@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PolarisTypographyTest extends TestCase
 {
+    use RefreshDatabase;
+
     private function css(): string
     {
         return (string) file_get_contents(resource_path('css/polaris-typography.css'));
