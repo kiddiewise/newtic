@@ -29,7 +29,7 @@ final class ProductReviewVisibility
     }
 
     /** Two aggregate subqueries, rather than one query per product card. */
-    public static function withRatingSummary(Builder $query): Builder
+    public static function withRatingSummary(Builder|Relation $query): Builder|Relation
     {
         $query->withCount([
             'reviews as review_count' => fn (Builder $reviewQuery) => self::constrain($reviewQuery),
