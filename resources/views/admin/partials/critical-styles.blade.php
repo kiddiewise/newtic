@@ -4,19 +4,19 @@
  * If an old or missing Vite build is served, navigation and icons stay usable.
  * Rich visuals remain in the versioned frontend stylesheet.
  */
-.admin-body{margin:0;background:#f6f8fb;color:#092037;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.admin-body{margin:0;background:#f6f8fb;color:#092037;font-family:"Montserrat",sans-serif;font-weight:400}
 .admin-body *{box-sizing:border-box}
 .admin-body svg.admin-icon{display:inline-block;width:20px;height:20px;flex:none;vertical-align:middle}
 .admin-app-shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
 .admin-sidebar{position:sticky;top:0;display:flex;flex-direction:column;height:100dvh;min-width:0;background:#092037;color:#e6ebf4;z-index:80}
-.admin-sidebar-brand{display:flex;align-items:center;gap:12px;min-height:82px;padding:18px;color:#fff;text-decoration:none;font-size:19px;font-weight:800}
+.admin-sidebar-brand{display:flex;align-items:center;gap:12px;min-height:82px;padding:18px;color:#fff;text-decoration:none;font-size:19px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700}
 .admin-sidebar-brand small{display:block;color:#b4cfd0;font-size:11px;font-weight:500}
 .admin-sidebar-symbol{display:grid;place-items:center;flex:none;width:42px;height:42px;background:#424769;border-radius:12px}
 .admin-sidebar-scroll{padding:9px 13px 22px;flex:1;min-height:0;overflow-y:auto}
-.admin-menu-caption{margin:8px 10px 12px;font-size:10px;font-weight:800;letter-spacing:.09em;color:#9cbbc2}
+.admin-menu-caption{margin:8px 10px 12px;font-size:10px;font-weight:500;letter-spacing:.09em;color:#9cbbc2}
 .admin-menu-section{padding-top:18px;margin-top:14px;border-top:1px solid #ffffff25}
 .admin-sidebar-nav{display:flex;flex-direction:column;gap:4px}
-.admin-side-link{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:650;text-decoration:none;color:#c9dedd}
+.admin-side-link{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:500;text-decoration:none;color:#c9dedd}
 .admin-side-link span{flex:1}
 .admin-side-link.is-active{background:#f68220;color:#092037}
 .admin-side-link:hover{background:#ffffff20;color:#fff}
@@ -49,7 +49,7 @@
 .admin-main{width:100%;max-width:1550px;flex:1;padding:28px 24px 65px;margin:0 auto}
 .admin-footer{font-size:11px;text-align:center;color:#849ba1;padding:12px}
 .admin-page-heading{display:flex;justify-content:space-between;gap:13px;align-items:center;margin-bottom:22px}
-.admin-page-heading h1{font-size:clamp(24px,3vw,34px);line-height:1.2;margin:3px 0 8px}
+.admin-page-heading h1{font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:clamp(24px,3vw,34px);line-height:1.2;margin:3px 0 8px}
 .admin-page-heading p{font-size:13px;margin:0}
  .admin-eyebrow{color:#424769;font-size:10px;letter-spacing:.1em;font-weight:750}
 .admin-panel,.admin-kpi{background:#fff;border:1px solid #e3ebee;border-radius:16px;padding:19px;margin-bottom:16px;box-shadow:0 8px 25px #284e5a0c}
@@ -58,7 +58,7 @@
 .admin-panel-title h2{margin:0}
 .admin-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:17px}
 .admin-kpi{display:flex;flex-direction:column;gap:8px;min-width:0;text-decoration:none;color:inherit}
-.admin-kpi strong{font-size:26px}
+.admin-kpi strong{font-family:"Plus Jakarta Sans",sans-serif;font-size:26px;font-weight:700}
 .admin-kpi-label,.admin-kpi small,.admin-description{font-size:12px;color:#798d95}
 .admin-kpi-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:11px;background:#fff1e4;color:#9e4d0f}
 .admin-dashboard-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:14px}
@@ -66,7 +66,7 @@
 .admin-action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .admin-action-grid a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #e5eef0;border-radius:12px;padding:14px 6px;text-align:center;text-decoration:none;color:#22545d;font-size:11px}
 .admin-action-grid a span{display:grid;place-items:center}
-.admin-primary,.admin-secondary,.admin-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 14px;border:0;border-radius:10px;font-size:12px;font-weight:720;cursor:pointer;text-decoration:none}
+.admin-primary,.admin-secondary,.admin-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 14px;border:0;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none}
 .admin-primary{background:#f68220;color:#092037}.admin-secondary{background:#f0f1f8;color:#424769}.admin-danger{background:#fff0ee;color:#b45247}
 .admin-alert{padding:14px;margin-bottom:15px;border-radius:10px;font-size:13px}.admin-alert-success{background:#e2f5ec;color:#096a51}.admin-alert-error{background:#fff1ef;color:#ab4848}
 .admin-state-pill{display:inline-block;border-radius:8px;background:#eef4f5;padding:5px 8px;font-size:11px}
