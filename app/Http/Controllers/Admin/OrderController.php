@@ -92,6 +92,14 @@ class OrderController extends Controller
             }
 
             if ($next === 'cancelled') {
+                // PAYTR may still report a successful payment asynchronously.
+                // Never release reserved stock while its signed callback is pending.
+                if ($locked->payment_method === 'paytr'
+                    && $locked->paytrAttempts()->where('status', 'pending')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'PAYTR ödeme sonucu bekleniyor. Bildirim doğrulanmadan bu sipariş iptal edilemez.',
+                    ]);
+                }
                 // A verified bank transfer requires a separate refund procedure.
                 // Never silently mark a paid order cancelled and leave funds unrefunded.
                 if ($locked->payment_method === 'paytr'
