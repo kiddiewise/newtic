@@ -338,21 +338,20 @@ class ProductReviewsExperienceTest extends TestCase
         config()->set('app.url', 'https://'.$host);
         $this->withServerVariables(['HTTP_HOST' => $host, 'SERVER_NAME' => $host]);
 
-        $this->get(route('category.show', $p->category->slug))->assertOk()
+        $this->get('https://'.$host.'/kategori/'.$p->category->slug)->assertOk()
             ->assertSee('class="product-card-rating"', false)
             ->assertSee('5,0')->assertSee('1 yorum')
             ->assertSee('product-card-rating-test', false)
             ->assertSee('TEST');
         $this->actingAs($buyer);
-        $this->get(route('product.show', $p->slug))->assertOk()
+        $this->get('https://'.$host.'/urun/'.$p->slug)->assertOk()
             ->assertSee('Test değerlendirmeniz önizlemede yayınlandı')
             ->assertSee('TEST ÖNİZLEMESİ')
             ->assertSee('TEST DEĞERLENDİRMESİ')
             ->assertSee('Denizde kullandım, dengesi çok iyi');
 
         // Do not use preview data under a different public hostname.
-        $this->withServerVariables(['HTTP_HOST' => 'polariskursun.com', 'SERVER_NAME' => 'polariskursun.com']);
-        $this->get(route('category.show', $p->category->slug))->assertOk()
+        $this->get('https://polariskursun.com/kategori/'.$p->category->slug)->assertOk()
             ->assertDontSee('class="product-card-rating"', false);
     }
 
