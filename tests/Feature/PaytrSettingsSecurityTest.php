@@ -158,7 +158,10 @@ class PaytrSettingsSecurityTest extends TestCase
         $this->assertFalse(PaytrSetting::findOrFail(1)->is_enabled);
         $checkout = (string) file_get_contents(resource_path('views/store/checkout.blade.php'));
         $this->assertStringContainsString('value="bank_transfer"', $checkout);
-        $this->assertStringNotContainsString('value="paytr"', $checkout);
+        // Card control exists in the template but is only rendered when
+        // the merchant explicitly enables test mode on staging.
+        $this->assertStringContainsString('value="paytr"', $checkout);
+        $this->assertFalse(PaytrSetting::findOrFail(1)->is_enabled);
 
         $this->assertTrue(\Illuminate\Support\Facades\Route::has('checkout.paytr.callback'));
         $this->post(route('checkout.paytr.callback'), [
