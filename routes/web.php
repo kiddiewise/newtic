@@ -6,6 +6,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentNotificationController;
 use App\Http\Controllers\PaytrCallbackController;
+use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,7 @@ Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')-
 Route::post('/odeme/paytr/bildirim', PaytrCallbackController::class)
     ->name('checkout.paytr.callback');
 
+Route::get('/odeme/paytr/{order}', [PaytrCheckoutController::class, 'show'])->middleware('throttle:8,1')->name('checkout.paytr.frame');
 Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
 Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
