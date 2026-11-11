@@ -21,6 +21,8 @@ class PaytrTestCheckoutFlowTest extends TestCase
     {
         parent::setUp();
         config()->set('app.url', 'https://powderblue-dinosaur-538060.hostingersite.com');
+        \Illuminate\Support\Facades\URL::forceRootUrl('https://powderblue-dinosaur-538060.hostingersite.com');
+        \Illuminate\Support\Facades\URL::forceScheme('https');
         config()->set('newtic.checkout_test_mode', true);
         config()->set('newtic.paytr_card_payments_enabled', true);
         config()->set('newtic.paytr_webhooks_enabled', true);
