@@ -70,6 +70,7 @@ use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\BankAccountController;
+use App\Http\Controllers\Admin\PaytrSettingsController;
 use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNotificationController;
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Middleware\EnsureUserIsAdmin;
