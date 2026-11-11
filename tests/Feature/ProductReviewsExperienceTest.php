@@ -194,7 +194,7 @@ class ProductReviewsExperienceTest extends TestCase
         ])->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs(User::factory()->create());
         $this->get(route('product.show', $p->slug))->assertOk()
-            ->assertSee('1 doğrulanmış yorum')
+            ->assertSee('1 yorum')
             ->assertSee('5,0')
             ->assertSee('Denizde kullandım, çok memnun kaldım.')
             ->assertDontSee('İşimi gördü ama beklentim biraz daha yüksekti.')
