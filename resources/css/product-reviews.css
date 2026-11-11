@@ -136,3 +136,78 @@
 .order-review-link:hover{background:#e1f5ec}
 .review-rating-caption[data-selected="true"]{color:#0c8f79;font-weight:760}
 @media(max-width:760px){.order-review-link{margin:3px 0 11px}}
+
+
+/* Average rating on homepage, category and search cards.
+   Only visible when an approved review is available. */
+.product-card-rating{
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:5px;
+  max-width:100%;
+  margin:7px 0 3px;
+  padding:4px 7px 4px 5px;
+  border-radius:8px;
+  background:#f5faf7;
+  color:#375c5f;
+  font-size:11px;
+  line-height:1.35;
+  text-decoration:none;
+  font-variant-numeric:tabular-nums;
+  transition:background .16s ease,transform .16s ease;
+}
+.product-card-rating:hover{background:#e9f6ef;transform:translateY(-1px)}
+.product-card-rating:focus-visible{outline:3px solid #098e7e;outline-offset:2px}
+.product-card-rating-star{font-size:17px;line-height:1;color:#e9a32f;flex:none}
+.product-card-rating strong{font-size:12px;line-height:1.2;font-weight:880;color:#1b494e}
+.product-card-rating-count{font-size:10px;color:#68848a;white-space:nowrap}
+.product-card-rating-test,.pdp-rating-test-tag,.review-test-label{
+  background:#fff1d8;
+  border:1px solid #f0d5a4;
+  color:#956623;
+  font-size:9px;
+  font-weight:840;
+  letter-spacing:.035em;
+  padding:2px 5px;
+  border-radius:5px;
+  white-space:nowrap;
+}
+.pdp-rating-stars{display:inline-flex;gap:1px;color:#dfe5e5}
+.pdp-rating-stars>span{color:#dfe5e5;line-height:1}
+.pdp-rating-stars>span.is-lit{color:#e9a32b}
+.pdp-rating-test-tag{margin-left:2px}
+.review-preview-note{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:8px 0 0!important;
+  color:#8c632b!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+}
+.review-preview-note span{
+  background:#fff0d7;
+  border-radius:5px;
+  color:#976a29;
+  padding:4px 7px;
+  font-size:9px;
+  line-height:1.2;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.review-test-label{display:inline-flex;align-self:flex-start;margin-top:1px}
+@media(max-width:760px){
+  .product-card-rating{gap:4px;margin:5px 0 2px;padding:3px 5px;font-size:10px}
+  .product-card-rating-star{font-size:15px}
+  .product-card-rating strong{font-size:11px}
+  .product-card-rating-count{font-size:9px}
+  .product-card-rating-test{font-size:8px;padding:2px 4px}
+  .pdp-rating-link{gap:5px;flex-wrap:wrap}
+  .pdp-rating-stars{font-size:12px;letter-spacing:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .product-card-rating{transition:none!important;transform:none!important}
+}
