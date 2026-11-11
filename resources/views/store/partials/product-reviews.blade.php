@@ -4,6 +4,9 @@
       <p class="review-eyebrow">GERÇEK MÜŞTERİ DENEYİMLERİ</p>
       <h2 id="product-reviews-title">Ürün yorumları</h2>
       <p>Bu gramaja özel, satın almış müşterilerin değerlendirmeleri.</p>
+      @if($testReviewCount > 0)
+        <p class="review-preview-note"><span>TEST ÖNİZLEMESİ</span> Bu test mağazasında {{ $testReviewCount }} onaylı test yorumu örnek olarak gösterilir. Gerçek mağaza puanlarına dahil değildir.</p>
+      @endif
     </div>
     <span class="review-count-pill">{{ $reviewCount }} yorum</span>
   </div>
@@ -16,7 +19,7 @@
           <span @class(['is-lit' => $reviewCount && $reviewAverage >= $star - .5]) aria-hidden="true">★</span>
         @endfor
       </span>
-      <small>{{ $reviewCount ? '5 üzerinden ortalama puan' : 'İlk yorumu siz yapabilirsiniz' }}</small>
+      <small>{{ $reviewCount ? ($testReviewCount > 0 ? 'Test yorumları dahil önizleme puanı' : '5 üzerinden ortalama puan') : 'İlk yorumu siz yapabilirsiniz' }}</small>
     </div>
     <div class="review-distribution" aria-label="Yıldız dağılımı">
       @for($star = 5; $star >= 1; $star--)
@@ -54,8 +57,8 @@
         <div class="review-own-status">
           <x-store-icon name="check" />
           <span>
-            <strong>{{ $myReview->status === 'approved' && !$myReview->is_test ? 'Yorumunuz yayınlandı' : ($myReview->status === 'rejected' ? 'Yorumunuz yayınlanmadı' : 'Yorumunuz inceleme aşamasında') }}</strong>
-            <small>{{ $myReview->is_test ? 'Test siparişi: bu değerlendirme herkese açık puanlara katılmaz.' : 'Değişiklik yaptığınızda yorum yeniden onaya gönderilir.' }}</small>
+            <strong>{{ $myReview->status === 'rejected' ? 'Yorumunuz yayınlanmadı' : ($myReview->status === 'approved' ? ($myReview->is_test ? ($isReviewPreview ? 'Test değerlendirmeniz önizlemede yayınlandı' : 'Test değerlendirmeniz gerçek mağazada gizli') : 'Yorumunuz yayınlandı') : 'Yorumunuz inceleme aşamasında') }}</strong>
+            <small>{{ $myReview->is_test ? 'Test siparişi: gerçek mağazanın puanlarına dahil edilmez.' : 'Değişiklik yaptığınızda yorum yeniden onaya gönderilir.' }}</small>
           </span>
         </div>
       @endif
@@ -97,7 +100,8 @@
         <span class="review-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($review->public_name, 0, 1)) }}</span>
         <div class="review-card-person">
           <strong>{{ $review->public_name }}</strong>
-          <small><x-store-icon name="check" /> Satın alma doğrulandı</small>
+          @if($review->is_test)<span class="review-test-label">TEST DEĞERLENDİRMESİ</span>@endif
+          <small><x-store-icon name="check" /> {{ $review->is_test ? 'Test siparişi' : 'Satın alma doğrulandı' }}</small>
         </div>
         <time datetime="{{ $review->created_at->toDateString() }}">{{ $review->created_at->format('d.m.Y') }}</time>
       </div>
