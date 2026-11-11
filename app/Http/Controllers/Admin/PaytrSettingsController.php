@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaytrSetting;
+use App\Support\PaytrTestAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
@@ -21,11 +22,41 @@ final class PaytrSettingsController extends Controller
         $hasKey = $settings && filled($settings->getRawOriginal('merchant_key'));
         $hasSalt = $settings && filled($settings->getRawOriginal('merchant_salt'));
         $configured = $settings?->hasCredentials() ?? false;
+        $testAllowed = PaytrTestAccess::onStaging() && config('newtic.paytr_card_payments_enabled', false)
+            && config('newtic.paytr_webhooks_enabled', false);
+        $testEnabled = $configured && $testAllowed && $settings->is_enabled;
 
         return response()->view('admin.paytr-settings', compact(
-            'merchantId', 'hasKey', 'hasSalt', 'configured'
+            'merchantId', 'hasKey', 'hasSalt', 'configured', 'testAllowed', 'testEnabled'
         ))->header('Cache-Control', 'private, no-store, max-age=0')
           ->header('Pragma', 'no-cache');
+    }
+
+    public function testMode(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['enabled' => ['required', 'boolean']]);
+        if (! PaytrTestAccess::onStaging()
+            || ! config('newtic.paytr_card_payments_enabled', false)
+            || ! config('newtic.paytr_webhooks_enabled', false)) {
+            abort(403, 'PAYTR test modu yalnızca NEWTIC test mağazasında kullanılabilir.');
+        }
+
+        DB::transaction(function () use ($data): void {
+            $settings = PaytrSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
+            if (! $settings->hasCredentials()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'paytr' => 'Önce PAYTR mağaza bilgilerini kaydedin.',
+                ]);
+            }
+            $settings->forceFill([
+                'is_enabled' => (bool) $data['enabled'],
+                'test_mode' => true,
+            ])->save();
+        }, 3);
+
+        return back()->with('success', (bool) $data['enabled']
+            ? 'PAYTR test modu açıldı. Sadece test mağazasında test kart işlemleri yapılabilir.'
+            : 'PAYTR test modu kapatıldı.');
     }
 
     public function update(Request $request): RedirectResponse
@@ -86,7 +117,13 @@ final class PaytrSettingsController extends Controller
 
             // Stage one only: NEVER auto-activate real card collection by
             // accepting keys. Webhooks/token validation are not wired yet.
-            $settings->is_enabled = false;
+            // Changing either secret invalidates any previous opt-in. Keeping
+            // identical credentials does not silently switch test mode off.
+            if (filled($validated['merchant_key'] ?? null)
+                || filled($validated['merchant_salt'] ?? null)
+                || $settings->isDirty('merchant_id')) {
+                $settings->is_enabled = false;
+            }
             $settings->test_mode = true;
             $settings->save();
         }, 3);
