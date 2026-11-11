@@ -43,7 +43,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['items', 'paymentNotifications.reviewer']);
+        $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts']);
         $allowed = self::TRANSITIONS[$order->status] ?? [];
         return view('admin.orders.show', compact('order','allowed'));
     }
@@ -94,6 +94,12 @@ class OrderController extends Controller
             if ($next === 'cancelled') {
                 // A verified bank transfer requires a separate refund procedure.
                 // Never silently mark a paid order cancelled and leave funds unrefunded.
+                if ($locked->payment_method === 'paytr'
+                    && $locked->paytrAttempts()->where('status', 'success')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Doğrulanmış PAYTR kart işlemi iade kaydı olmadan iptal edilemez.',
+                    ]);
+                }
                 if ($locked->paymentNotifications()->where('status', 'verified')->exists()) {
                     throw ValidationException::withMessages([
                         'status' => 'Ödemesi doğrulanan siparişi iptal etmek için önce iade işlemi ve kaydı gereklidir.',
