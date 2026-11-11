@@ -54,6 +54,16 @@ if (checkoutForm) {
     ...checkoutForm.querySelectorAll('button[type="submit"]'),
     ...document.querySelectorAll('button[form="checkout-form"]'),
   ];
+  const paymentChoices = [...checkoutForm.querySelectorAll('input[name="payment_method"]')];
+  const buttonLabelFor = () => checkoutForm.querySelector('input[name="payment_method"]:checked')?.value === 'paytr'
+    ? 'Güvenli Test Ödemesine Geç'
+    : 'Deneme Siparişini Oluştur';
+  const syncPayButton = () => {
+    if (!paymentChoices.length || checkoutForm.getAttribute('aria-busy') === 'true') return;
+    submitButtons.forEach((button) => { button.textContent = buttonLabelFor(); });
+  };
+  paymentChoices.forEach((radio) => radio.addEventListener('change', syncPayButton));
+  syncPayButton();
   const buttonLabels = submitButtons.map(button => button.textContent);
   let submitting = false;
 
