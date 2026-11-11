@@ -6,6 +6,7 @@ use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
 use App\Models\Product;
 use App\Support\PaytrSignature;
+use App\Support\PaytrTestAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ final class PaytrCallbackController extends Controller
     {
         // Stage two is installed but DISABLED until the order/checkout workflow
         // and verified PAYTR test transaction have passed acceptance testing.
-        if (! config('newtic.paytr_webhooks_enabled', false)) {
+        if (! PaytrTestAccess::onStaging() || ! config('newtic.paytr_webhooks_enabled', false)) {
             return response('PAYTR callback is not active', 503)
                 ->header('Content-Type', 'text/plain; charset=UTF-8');
         }
