@@ -176,6 +176,17 @@ class PaytrTestCheckoutFlowTest extends TestCase
             ->assertSee('PAYTR test ödemeniz doğrulandı')
             ->assertDontSee('Banka hesabını seç');
         $this->assertSame([], session('shopping_cart', []));
+
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin);
+        $this->get(route('admin.orders.show', $order))->assertOk()
+            ->assertSee('PAYTR kart ödeme geçmişi')
+            ->assertSee('Test ödemesi doğrulandı')
+            ->assertSee('PAYTR Kart (Test)');
+        $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
+            ->assertSessionHasErrors('status');
+        $this->assertSame('preparing', $order->fresh()->status);
     }
 
     public function test_failed_payment_returns_stock_and_preserves_cart_for_another_try(): void
