@@ -5,17 +5,17 @@
   <div class="checkout-top">
     <a href="{{ route('checkout.success', $order) }}" aria-label="Sipariş bilgilerine dön">‹</a>
     <strong>Güvenli Test Ödemesi</strong>
-    <span><x-store-icon name="lock-keyhole" /></span>
+    <span><x-store-icon name="landmark" /></span>
   </div>
   <div class="paytr-checkout-heading">
-    <div class="paytr-test-tag"><x-store-icon name="shield-check" /> PAYTR TEST MODU</div>
+    <div class="paytr-test-tag"><x-store-icon name="check" /> PAYTR TEST MODU</div>
     <h1>Kartla test ödemesi</h1>
     <p>Ödeme işlemi PAYTR'nin güvenli ödeme penceresinde tamamlanır. Kart bilgileri NEWTIC'e kaydedilmez.</p>
   </div>
   <div class="checkout-main-grid paytr-checkout-grid">
     <section class="checkout-card paytr-iframe-panel" aria-labelledby="paytr-form-title">
       <div class="paytr-iframe-top">
-        <span><x-store-icon name="shield-check" /> PAYTR Güvenli Ödeme</span>
+        <span><x-store-icon name="check" /> PAYTR Güvenli Ödeme</span>
         <span class="paytr-test-indicator">Test · Gerçek tahsilat yok</span>
       </div>
       <h2 id="paytr-form-title">Ödeme ekranı</h2>
@@ -34,10 +34,10 @@
             }
           });
         </script>
-        <p class="paytr-secure-note"><x-store-icon name="lock-keyhole" /> Kart bilgilerinizi yalnızca PAYTR ekranına girin.</p>
+        <p class="paytr-secure-note"><x-store-icon name="landmark" /> Kart bilgilerinizi yalnızca PAYTR ekranına girin.</p>
       @else
         <div class="paytr-token-error" role="alert">
-          <x-store-icon name="alert-circle" />
+          <x-store-icon name="x" />
           <div><strong>Ödeme formu açılamadı</strong><p>{{ $message }}</p></div>
         </div>
         @if($order->status === 'pending_payment')
