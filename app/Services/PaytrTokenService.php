@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
 use App\Support\PaytrSignature;
+use App\Support\PaytrTestAccess;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -26,10 +27,7 @@ final class PaytrTokenService
     ): string {
         $settings = PaytrSetting::query()->find(1);
 
-        if (! config('newtic.paytr_card_payments_enabled', false)
-            || ! $settings?->is_enabled
-            || ! $settings->test_mode
-            || ! $settings->hasCredentials()
+        if (! PaytrTestAccess::available($settings)
             || $attempt->order_id !== $order->id
             || $order->payment_method !== 'paytr'
             || $order->status !== 'pending_payment'
