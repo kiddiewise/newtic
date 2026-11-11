@@ -274,6 +274,118 @@ class ProductReviewsExperienceTest extends TestCase
         $this->assertDatabaseCount('product_reviews', 0);
     }
 
+    public function test_approved_rating_appears_on_home_category_and_search_cards_and_links_to_reviews(): void
+    {
+        $p75 = $this->product('SURF-75');
+        $p100 = $this->product('SURF-100');
+        $buyer = User::factory()->create();
+        $this->purchase($buyer, $p75);
+        $this->actingAs($buyer);
+        $this->submitReview($p75, 4, 'Güzel bir kurşun, denizde kullandım ve dengesi oldukça başarılı.');
+        $review = ProductReview::firstOrFail();
+        $this->actingAs($this->admin());
+        $this->post(route('admin.reviews.moderate', $review), ['decision' => 'approved'])
+            ->assertSessionHasNoErrors();
+
+        $section = \App\Models\HomeSection::create([
+            'type' => \App\Models\HomeSection::TYPE_PRODUCTS,
+            'title' => 'Öne çıkan ürünler',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $section->products()->attach([$p75->id, $p100->id]);
+
+        foreach ([
+            route('home'),
+            route('category.show', $p75->category->slug),
+            route('search', ['q' => 'SURF']),
+        ] as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+            $this->assertStringContainsString(
+                'href="'.route('product.show', $p75->slug).'#urun-yorumlari"', $html
+            );
+            $this->assertStringContainsString('class="product-card-rating"', $html);
+            $this->assertStringContainsString('4,0', $html);
+            $this->assertStringContainsString('1 yorum', $html);
+            $this->assertSame(1, substr_count($html, 'class="product-card-rating"'));
+            $this->assertStringNotContainsString(
+                'href="'.route('product.show', $p100->slug).'#urun-yorumlari"', $html
+            );
+        }
+    }
+
+    public function test_staging_only_approved_test_review_is_visible_with_disclosure_and_not_in_production(): void
+    {
+        $p = $this->product();
+        $buyer = User::factory()->create();
+        $this->purchase($buyer, $p, 'completed', true);
+        $this->actingAs($buyer);
+        $this->submitReview($p)->assertSessionHasNoErrors();
+        $review = ProductReview::firstOrFail();
+        $this->actingAs($this->admin());
+        $this->post(route('admin.reviews.moderate', $review), ['decision' => 'approved'])
+            ->assertSessionHasNoErrors();
+
+        // Normal domain: no rating cards and no demo comments in the public score.
+        $this->get(route('category.show', $p->category->slug))->assertOk()
+            ->assertDontSee('class="product-card-rating"', false);
+        $this->get(route('product.show', $p->slug))->assertOk()
+            ->assertSee('Henüz yayınlanmış yorum yok')
+            ->assertDontSee('TEST ÖNİZLEMESİ');
+
+        // Preview requires BOTH the canonical staging APP_URL and the request host.
+        $host = 'powderblue-dinosaur-538060.hostingersite.com';
+        config()->set('app.url', 'https://'.$host);
+        $this->withServerVariables(['HTTP_HOST' => $host, 'SERVER_NAME' => $host]);
+
+        $this->get(route('category.show', $p->category->slug))->assertOk()
+            ->assertSee('class="product-card-rating"', false)
+            ->assertSee('5,0')->assertSee('1 yorum')
+            ->assertSee('product-card-rating-test', false)
+            ->assertSee('TEST');
+        $this->get(route('product.show', $p->slug))->assertOk()
+            ->assertSee('Test değerlendirmeniz önizlemede yayınlandı')
+            ->assertSee('TEST ÖNİZLEMESİ')
+            ->assertSee('TEST DEĞERLENDİRMESİ')
+            ->assertSee('Denizde kullandım, dengesi çok iyi');
+
+        // Do not use preview data under a different public hostname.
+        $this->withServerVariables(['HTTP_HOST' => 'polariskursun.com', 'SERVER_NAME' => 'polariskursun.com']);
+        $this->get(route('category.show', $p->category->slug))->assertOk()
+            ->assertDontSee('class="product-card-rating"', false);
+    }
+
+    public function test_product_card_rating_counts_only_approved_comments(): void
+    {
+        $p = $this->product();
+        $buyers = User::factory()->count(2)->create();
+        foreach ($buyers as $buyer) {
+            $this->purchase($buyer, $p);
+            $this->actingAs($buyer);
+            $this->submitReview($p, $buyer->is($buyers[0]) ? 2 : 4,
+                'Satın aldığım ürünü denedim, dengesi güzel ve kullanımı kolay.');
+        }
+        $reviews = ProductReview::orderBy('id')->get();
+        $this->actingAs($this->admin());
+        $this->post(route('admin.reviews.moderate', $reviews[0]), [
+            'decision' => 'approved',
+        ])->assertSessionHasNoErrors();
+
+        $html = $this->get(route('category.show', $p->category->slug))->assertOk()->getContent();
+        $this->assertStringContainsString('2,0', $html);
+        $this->assertStringContainsString('1 yorum', $html);
+        $this->assertStringNotContainsString('3,0', $html);
+
+        $this->post(route('admin.reviews.moderate', $reviews[1]), [
+            'decision' => 'approved',
+        ])->assertSessionHasNoErrors();
+        $this->get(route('category.show', $p->category->slug))->assertOk()
+            ->assertSee('3,0')->assertSee('2 yorum');
+
+        $this->get(route('product.show', $p->slug))->assertOk()
+            ->assertSee('3,0')->assertSee('2 yorum');
+    }
+
     public function test_review_intent_login_returns_customer_to_product(): void
     {
         $p = $this->product();
