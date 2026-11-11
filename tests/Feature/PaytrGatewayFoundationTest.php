@@ -17,6 +17,12 @@ class PaytrGatewayFoundationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('app.url', 'https://example.test');
+    }
+
     private function credentials(): PaytrSetting
     {
         $setting = PaytrSetting::query()->create([
