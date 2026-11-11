@@ -19,14 +19,39 @@
     <div>
       <h2>{{ $configured ? 'Mağaza bilgileri kayıtlı' : 'PAYTR bağlantı bilgileri bekleniyor' }}</h2>
       <p>{{ $configured
-          ? 'Bilgiler şifrelenmiş olarak saklandı. PAYTR bağlantısı ve ödeme doğrulaması henüz test edilmedi.'
+          ? 'Kimlik bilgileri kayıtlı. Test ödeme seçeneği açılarak yalnızca sandbox işlemleri denenebilir.'
           : 'İlk adımda Mağaza No, Mağaza Parola ve Mağaza Gizli Anahtar bilgilerini kaydedin.' }}</p>
     </div>
-    <span class="paytr-setup-pill">{{ $configured ? 'Kayıtlı · Doğrulanmadı' : 'Kurulum gerekli' }}</span>
+    <span class="paytr-setup-pill">{{ $testEnabled ? 'Test modu açık' : ($configured ? 'Kayıtlı · Doğrulanmadı' : 'Kurulum gerekli') }}</span>
   </div>
   <div class="paytr-setup-notice">
     <x-admin-icon name="info" />
-    <span><strong>Güvenlik:</strong> Kartla ödeme henüz aktif değil. Bu ekran yalnızca API bilgilerinin saklanmasını sağlar. Mevcut Havale/EFT ödeme akışı değişmez.</span>
+    <span><strong>Güvenlik:</strong> PAYTR kart ödemeleri yalnızca bu Hostinger test alan adında ve test modunda açılabilir. Gerçek tahsilat devre dışıdır. Havale/EFT etkilenmez.</span>
+  </div>
+</section>
+
+<section class="admin-panel paytr-test-control" aria-label="PAYTR test ödemesini etkinleştir">
+  <div>
+    <span class="paytr-step">02 / TEST ÖDEME DURUMU</span>
+    <h2>PAYTR test ödemesi</h2>
+    <p>{{ $testEnabled ? 'Kartla ödeme test mağazasında kullanılabilir. Müşteri yalnızca PAYTR test formuna yönlendirilir.' : 'Test ödemesini açmak için kayıtlı bilgilerinizle sandbox modunu etkinleştirin.' }}</p>
+  </div>
+  @if($testAllowed && $configured)
+    <form method="POST" action="{{ route('admin.paytr-settings.test-mode') }}">
+      @csrf
+      <input type="hidden" name="enabled" value="{{ $testEnabled ? 0 : 1 }}">
+      <button class="{{ $testEnabled ? 'admin-secondary' : 'admin-primary' }}" type="submit">
+        <x-admin-icon name="{{ $testEnabled ? 'close' : 'check' }}" />
+        {{ $testEnabled ? 'Test ödemesini kapat' : 'Test ödemesini etkinleştir' }}
+      </button>
+    </form>
+  @else
+    <div class="paytr-test-disabled">Önce mağaza bilgilerini kaydedin. Test modu yalnızca yetkili staging alan adında açılabilir.</div>
+  @endif
+  <div class="paytr-callback-box">
+    <strong>PAYTR Bildirim URL</strong>
+    <code>https://{{ \App\Support\PaytrTestAccess::HOST }}/odeme/paytr/bildirim</code>
+    <small>PAYTR Mağaza Paneli → Destek &amp; Kurulum → Ayarlar bölümüne bu HTTPS bildirim adresini tanımlayın. Bu olmadan test ödemeniz tamamlanmış sayılmaz.</small>
   </div>
 </section>
 
@@ -87,7 +112,7 @@
 <section class="admin-panel paytr-setup-next" aria-labelledby="paytr-next-title">
   <div class="paytr-section-heading">
     <div>
-      <span class="paytr-step">02 / SIRADAKİ ADIMLAR</span>
+      <span class="paytr-step">03 / SIRADAKİ ADIMLAR</span>
       <h2 id="paytr-next-title">Ödeme bağlantısı için kontrol listesi</h2>
     </div>
   </div>
@@ -101,7 +126,7 @@
     <div><span class="paytr-check-icon"><x-admin-icon name="clock" /></span>
       <span><strong>Test ve canlıya geçiş</strong><small>Başarılı / başarısız test, stok ve tekrar eden bildirim kontrolleri tamamlanmadan kartlı ödeme açılmaz.</small></span></div>
   </div>
-  <p class="admin-description">Bu sayfa PAYTR'ye API isteği göndermez ve anahtarların doğru olduğunu henüz doğrulamaz.</p>
+  <p class="admin-description">Bu ayar sayfası PAYTR'ye API isteği göndermez. Test modunu açtıktan sonra checkout üzerinden bir test ödemesi yaparak entegrasyonu doğrulayabilirsiniz.</p>
   <div class="paytr-official-links">
     <a href="https://dev.paytr.com/iframe-api/iframe-api-1-adim" target="_blank" rel="noopener noreferrer">PAYTR iFrame API 1. Adım <x-admin-icon name="external-link" /></a>
     <a href="https://dev.paytr.com/iframe-api/iframe-api-2-adim" target="_blank" rel="noopener noreferrer">PAYTR iFrame API 2. Adım <x-admin-icon name="external-link" /></a>
