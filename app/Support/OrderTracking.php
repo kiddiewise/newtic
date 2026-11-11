@@ -52,6 +52,11 @@ final class OrderTracking
                 'description' => 'Ödeme bilgilerinizi kontrol ederek yeniden bildirim yapabilirsiniz. Siparişiniz ödeme bekliyor.',
                 'badge' => 'Ödeme bekleniyor', 'progress' => 1, 'payment' => 'Bildirim doğrulanamadı',
             ],
+            $order->status === 'pending_payment' && $order->payment_method === 'paytr' => [
+                'key' => 'paytr_pending', 'icon' => 'review', 'title' => 'Kart ödemeniz kontrol ediliyor',
+                'description' => 'PAYTR test ödemesinin kesin sonucu bekleniyor. Yalnızca doğrulanmış sunucu bildirimi sonrasında siparişiniz hazırlanır.',
+                'badge' => 'Ödeme doğrulanıyor', 'progress' => 1, 'payment' => 'Kart ödemesi bekleniyor',
+            ],
             $order->status === 'pending_payment' => [
                 'key' => 'pending_payment', 'icon' => 'party', 'title' => 'Siparişiniz oluşturuldu!',
                 'description' => 'Siparişinizi aldık. Havale/EFT ödemenizi tamamlayıp bildirim yaparak süreci başlatabilirsiniz.',
