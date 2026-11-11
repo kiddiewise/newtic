@@ -149,7 +149,7 @@ class PaytrSettingsSecurityTest extends TestCase
         $this->assertDatabaseCount('paytr_settings', 0);
     }
 
-    public function test_credentials_do_not_enable_card_checkout_or_create_a_public_webhook(): void
+    public function test_credentials_do_not_enable_card_checkout_or_process_webhooks(): void
     {
         $this->actingAs($this->admin());
         $this->patch(route('admin.paytr-settings.update'), $this->credentials())
@@ -160,6 +160,12 @@ class PaytrSettingsSecurityTest extends TestCase
         $this->assertStringContainsString('value="bank_transfer"', $checkout);
         $this->assertStringNotContainsString('value="paytr"', $checkout);
 
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('checkout.paytr.callback'));
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('checkout.paytr.callback'));
+        $this->post(route('checkout.paytr.callback'), [
+            'merchant_oid' => 'NTSOMEUNKNOWNORDER',
+            'status' => 'success',
+            'total_amount' => '1000',
+            'hash' => str_repeat('a', 44),
+        ])->assertStatus(503);
     }
 }
