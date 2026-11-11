@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentNotificationController;
+use App\Http\Controllers\PaytrCallbackController;
 use App\Http\Controllers\ProductReviewController;
 use Illuminate\Support\Facades\Route;
 
