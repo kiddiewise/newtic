@@ -70,9 +70,14 @@
         @if($product->is_demo)<span>DEMO FİYAT</span>@endif
       </div>
       <a class="pdp-rating-link" href="#urun-yorumlari" aria-label="Ürün yorumlarına ve değerlendirmelere git">
-        <span class="pdp-rating-stars" aria-hidden="true">★★★★★</span>
+        <span class="pdp-rating-stars" aria-hidden="true">
+          @for($star = 1; $star <= 5; $star++)
+            <span @class(['is-lit' => $reviewCount && $reviewAverage >= $star - .5])>★</span>
+          @endfor
+        </span>
         <strong>{{ $reviewCount ? number_format($reviewAverage, 1, ',', '.') : 'Yeni' }}</strong>
-        <span>{{ $reviewCount ? $reviewCount.' doğrulanmış yorum' : 'İlk yorumunuzu bırakın' }}</span>
+        <span>{{ $reviewCount ? $reviewCount.' yorum' : 'İlk yorumunuzu bırakın' }}</span>
+        @if($testReviewCount > 0)<span class="pdp-rating-test-tag">Test önizlemesi</span>@endif
         <x-store-icon name="chevron-right" />
       </a>
       <div class="pdp-availability">
