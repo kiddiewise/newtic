@@ -5,15 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PaytrSetting;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 final class PaytrSettingsController extends Controller
 {
-    public function edit(): View
+    public function edit(): Response
     {
         $settings = PaytrSetting::query()->find(1);
 
@@ -23,9 +22,10 @@ final class PaytrSettingsController extends Controller
         $hasSalt = $settings && filled($settings->getRawOriginal('merchant_salt'));
         $configured = $settings?->hasCredentials() ?? false;
 
-        return view('admin.paytr-settings', compact(
+        return response()->view('admin.paytr-settings', compact(
             'merchantId', 'hasKey', 'hasSalt', 'configured'
-        ));
+        ))->header('Cache-Control', 'private, no-store, max-age=0')
+          ->header('Pragma', 'no-cache');
     }
 
     public function update(Request $request): RedirectResponse
