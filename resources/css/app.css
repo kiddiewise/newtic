@@ -28,6 +28,7 @@
 @import './polaris-corporate-theme.css';
 @import './polaris-typography.css';
 @import './paytr-admin.css';
+@import './paytr-checkout.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
