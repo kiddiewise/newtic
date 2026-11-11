@@ -90,6 +90,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/reviews', [AdminProductReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews/{review}/moderate', [AdminProductReviewController::class, 'moderate'])->name('reviews.moderate');
     Route::get('/reports', ReportController::class)->name('reports');
+    Route::get('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'edit'])->name('paytr-settings.edit');
+    Route::patch('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'update'])->middleware('throttle:10,1')->name('paytr-settings.update');
     Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
     Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
     Route::patch('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
