@@ -7,6 +7,17 @@
   <div class="product-card-content">
     <span class="product-card-brand">POLARIS KURŞUN</span>
     <a href="{{ route('product.show', $product->slug) }}" class="product-card-name">{{ $product->name }}</a>
+    @if((int) ($product->review_count ?? 0) > 0)
+      <a class="product-card-rating" href="{{ route('product.show', $product->slug) }}#urun-yorumlari"
+        aria-label="{{ $product->name }}: 5 üzerinden {{ number_format((float) $product->review_average, 1, ',', '.') }} yıldız, {{ (int) $product->review_count }} yorum. Yorumları görüntüle">
+        <span class="product-card-rating-star" aria-hidden="true">★</span>
+        <strong>{{ number_format((float) $product->review_average, 1, ',', '.') }}</strong>
+        <span class="product-card-rating-count">{{ number_format((int) $product->review_count, 0, ',', '.') }} yorum</span>
+        @if((int) ($product->review_test_count ?? 0) > 0)
+          <span class="product-card-rating-test">TEST</span>
+        @endif
+      </a>
+    @endif
     @if($product->discount_percent > 0)<s class="product-card-old-price">{{ number_format((float) $product->compare_at_price, 2, ',', '.') }} ₺</s>@endif
     <div class="product-card-bottom">
       <strong>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
