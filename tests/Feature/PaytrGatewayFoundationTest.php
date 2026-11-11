@@ -23,6 +23,11 @@ class PaytrGatewayFoundationTest extends TestCase
         config()->set('app.url', 'https://powderblue-dinosaur-538060.hostingersite.com');
         \Illuminate\Support\Facades\URL::forceRootUrl('https://powderblue-dinosaur-538060.hostingersite.com');
         \Illuminate\Support\Facades\URL::forceScheme('https');
+        // Service unit tests call the token provider directly, without a
+        // simulated HTTP request. Bind the same canonical request host.
+        app('request')->headers->set('host', 'powderblue-dinosaur-538060.hostingersite.com');
+        app('request')->server->set('HTTP_HOST', 'powderblue-dinosaur-538060.hostingersite.com');
+        app('request')->server->set('HTTPS', 'on');
         $this->withServerVariables([
             'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
             'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
