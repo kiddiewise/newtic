@@ -16,8 +16,8 @@ final class PaytrTestAccess
     {
         return (bool) config('newtic.checkout_test_mode', true)
             && parse_url((string) config('app.url'), PHP_URL_HOST) === self::HOST
-            && request()->getHost() === self::HOST
-            && request()->isSecure();
+            && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https'
+            && request()->getHost() === self::HOST;
     }
 
     public static function available(?PaytrSetting $settings = null): bool
