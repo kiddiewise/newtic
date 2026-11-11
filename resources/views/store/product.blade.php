@@ -67,7 +67,7 @@
       @endif
       <div class="detail-price pdp-price" data-detail-price-anchor>
         {{ number_format((float) $product->price, 2, ',', '.') }} ₺
-        @if($product->is_demo)<span>DEMO FİYAT</span>@endif
+
       </div>
       <a class="pdp-rating-link" href="#urun-yorumlari" aria-label="Ürün yorumlarına ve değerlendirmelere git">
         <span class="pdp-rating-stars" aria-hidden="true">
@@ -77,27 +77,25 @@
         </span>
         <strong>{{ $reviewCount ? number_format($reviewAverage, 1, ',', '.') : 'Yeni' }}</strong>
         <span>{{ $reviewCount ? $reviewCount.' yorum' : 'İlk yorumunuzu bırakın' }}</span>
-        @if($testReviewCount > 0)<span class="pdp-rating-test-tag">Test önizlemesi</span>@endif
         <x-store-icon name="chevron-right" />
       </a>
-      <div class="pdp-availability">
-        @if($product->stock_quantity > 0)
-          <span class="pdp-in-stock">● Stokta</span>
-        @else
-          <span class="pdp-out-of-stock">Stokta yok</span>
-        @endif
-        <span class="product-view-counter" aria-label="Ürün görüntülenme sayısı">◉ {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</span>
-      </div>
+      @if($product->stock_quantity === 0)
+        <p class="pdp-availability"><span class="pdp-out-of-stock">Tükendi</span></p>
+      @elseif($product->stock_quantity <= 10)
+        <p class="pdp-availability"><span class="pdp-low-stock">Son {{ $product->stock_quantity }} ürün</span></p>
+      @endif
       <div class="pdp-current-product-note">
         <strong>Seçili ürün:</strong> {{ $product->name }}
         @if($product->options->isNotEmpty())<small>· {{ $product->option_label }} seçimi gerekli</small>@endif
-        <button type="button" data-sheet-open-inline>Tüm kategori ürünlerini seç <span aria-hidden="true">›</span></button>
+        <button type="button" data-sheet-open-inline><span class="pdp-bundle-cta-text"><span class="pdp-bundle-fire" aria-hidden="true">🔥</span> Birlikte alınan diğer ürünler</span><span aria-hidden="true">›</span></button>
       </div>
       {{-- Desktop: the primary purchase action is immediately visible beside the product. --}}
       <div class="pdp-desktop-purchase" aria-label="Ürün satın alma seçenekleri">
         <div class="pdp-desktop-purchase-head">
           <strong>Adet seçin</strong>
-          <span>Stok: {{ $product->stock_quantity }} adet</span>
+          @if($product->stock_quantity > 0 && $product->stock_quantity <= 10)
+            <span class="pdp-low-stock">Son {{ $product->stock_quantity }} ürün</span>
+          @endif
         </div>
         @if($product->options->isNotEmpty())
           <div class="pdp-desktop-variant">
@@ -161,7 +159,11 @@
             <strong>{{ number_format((float) $categoryProduct->price, 2, ',', '.') }} ₺</strong>
             @if($categoryProduct->discount_percent > 0)<small class="order-discount">-%{{ $categoryProduct->discount_percent }} indirim</small>@endif
             @if($current)<span class="current-product-label">Görüntülenen ürün</span>@endif
-            @if($categoryProduct->stock_quantity === 0)<span class="pdp-stock-note">Tükendi</span>@endif
+            @if($categoryProduct->stock_quantity === 0)
+              <span class="pdp-stock-note">Tükendi</span>
+            @elseif($categoryProduct->stock_quantity <= 10)
+              <span class="pdp-low-stock">Son {{ $categoryProduct->stock_quantity }} ürün</span>
+            @endif
           </span>
           @if($categoryProduct->options->isNotEmpty())
             <label class="pdp-variant-field">
@@ -197,6 +199,12 @@
     </div>
   </section>
 
+  <div class="pdp-info-hub" data-product-info>
+    <div class="pdp-info-tabs" role="tablist" aria-label="Ürün bilgileri">
+      <button type="button" id="pdp-tab-description" role="tab" aria-controls="pdp-info-description" aria-selected="true" tabindex="0" data-product-tab="description">Ürün Açıklaması</button>
+      <button type="button" id="pdp-tab-reviews" role="tab" aria-controls="pdp-info-reviews" aria-selected="false" tabindex="-1" data-product-tab="reviews">Yorumlar <span>({{ $reviewCount }})</span></button>
+    </div>
+    <div class="pdp-info-panel" id="pdp-info-description" role="tabpanel" aria-labelledby="pdp-tab-description" tabindex="0" data-product-panel="description">
   <section class="pdp-description-section" aria-labelledby="pdp-description-title">
     <h2 id="pdp-description-title">Ürün açıklaması</h2>
     <div class="pdp-description-copy" id="pdp-description-content" data-description-content>
@@ -211,8 +219,11 @@
       <div><span>Kategori</span><a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a></div>
     </div>
   </section>
-  @include('store.partials.product-reviews')
-  <p class="pdp-order-notice">Bu test mağazasında henüz sipariş ve ödeme alınmamaktadır. Sepet kullanılabilir; sipariş ve ödeme henüz aktif değildir.</p>
+    </div>
+    <div class="pdp-info-panel" id="pdp-info-reviews" role="tabpanel" aria-labelledby="pdp-tab-reviews" tabindex="0" data-product-panel="reviews">
+      @include('store.partials.product-reviews')
+    </div>
+  </div>
 </main>
 
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>

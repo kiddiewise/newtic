@@ -1,0 +1,166 @@
+/* Polaris storefront — quiet navy purchase system, clean product details. */
+:root{
+  --store-action:#092037;
+  --store-action-hover:#173952;
+  --store-action-disabled:#e8edf2;
+  --store-action-disabled-ink:#627489;
+}
+body:not(.admin-body) :is(
+  .product-card-action,.pdp-desktop-add,.pdp-sticky-actions .pdp-sticky-add,
+  .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
+  .checkout-login-link,.checkout-bottom-bar>button,.cart-primary,
+  .cart-checkout-action,.quick-cart-view-cart,.mega-hero-cta,
+  .mega-whatsapp,.header-search button,.search-inline button
+):not(:disabled){
+  background:var(--store-action)!important;
+  border-color:var(--store-action)!important;
+  color:#fff!important;
+  opacity:1!important;
+  box-shadow:0 4px 12px rgba(9,32,55,.14)!important;
+  transform:none!important;
+  transition:background-color .15s ease,box-shadow .15s ease!important;
+}
+body:not(.admin-body) :is(
+  .product-card-action,.pdp-desktop-add,.pdp-sticky-actions .pdp-sticky-add,
+  .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
+  .checkout-login-link,.checkout-bottom-bar>button,.cart-primary,
+  .cart-checkout-action,.quick-cart-view-cart,.mega-hero-cta,
+  .mega-whatsapp,.header-search button,.search-inline button
+):not(:disabled):is(:hover,:focus-visible){
+  background:var(--store-action-hover)!important;
+  color:#fff!important;
+  box-shadow:0 5px 15px rgba(9,32,55,.19)!important;
+  transform:none!important;
+}
+body:not(.admin-body) :is(
+  .product-card-action,.pdp-desktop-add,.pdp-sticky-actions .pdp-sticky-add,
+  .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
+  .checkout-bottom-bar>button,.cart-primary,.cart-checkout-action
+):disabled{
+  background:var(--store-action-disabled)!important;
+  color:var(--store-action-disabled-ink)!important;
+  border-color:#d8e0e8!important;
+  box-shadow:none!important;
+  opacity:1!important;
+  transform:none!important;
+  filter:none!important;
+  cursor:not-allowed;
+  transition:background-color .15s ease,color .15s ease!important;
+}
+body:not(.admin-body) :is(
+  .product-card-action,.pdp-desktop-add,.pdp-sticky-actions .pdp-sticky-add,
+  .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
+  .checkout-login-link,.checkout-bottom-bar>button,.cart-primary,
+  .cart-checkout-action,.quick-cart-view-cart
+) .ui-icon{color:inherit!important;stroke:currentColor!important}
+body:not(.admin-body) .product-card-action.is-loading{
+  opacity:1!important;pointer-events:none;
+}
+body:not(.admin-body) .product-card-action.is-loading svg{animation:none!important}
+/* The admin uses the same primary action; destructive buttons keep their warning colors. */
+body.admin-body :is(.admin-primary,.admin-login-submit):not(:disabled){
+  background:var(--store-action)!important;color:#fff!important;
+  border-color:var(--store-action)!important;
+  box-shadow:0 4px 12px rgba(9,32,55,.12)!important;
+}
+body.admin-body :is(.admin-primary,.admin-login-submit):hover:not(:disabled){
+  background:var(--store-action-hover)!important;color:#fff!important;
+}
+body.admin-body :is(.admin-primary,.admin-login-submit) .ui-icon{stroke:currentColor!important}
+
+/* Rating link: no colored card, no border, no preview pill. */
+.pdp-rating-link,.pdp-rating-link:hover{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  padding:4px 0!important;
+  margin:5px 0 10px!important;
+  color:#64748b!important;
+  min-height:32px;
+  text-decoration:none;
+}
+.pdp-rating-link strong{color:var(--store-action)!important}
+.pdp-rating-link:focus-visible{outline-offset:5px}
+.product-card-rating{background:transparent!important;border:0!important;padding:3px 0!important}
+.product-card-rating:hover{background:transparent!important}
+.product-card-low-stock,.pdp-low-stock{
+  display:inline-flex;align-items:center;gap:5px;
+  width:fit-content;color:#a05218;
+  font-weight:650;font-size:.75rem;line-height:1.4;
+}
+.product-card-low-stock{margin-top:7px}
+.pdp-availability{margin:5px 0 13px!important}
+.pdp-out-of-stock{color:#ae3540!important}
+
+/* Subtle grouped-products CTA. Independent products retain separate SKUs. */
+.pdp-current-product-note [data-sheet-open-inline]{
+  background:#f4f7fa!important;
+  color:var(--store-action)!important;
+  border:1px solid #dce4ea!important;
+  box-shadow:none!important;
+  border-radius:12px;
+  text-align:left;
+  min-height:49px;
+  padding:12px 15px;
+  font-weight:700;
+}
+.pdp-current-product-note [data-sheet-open-inline]:is(:hover,:focus-visible){
+  background:#e9f0f6!important;color:var(--store-action)!important;
+  border-color:#bfcdd8!important;
+}
+.pdp-bundle-cta-text{display:inline-flex;align-items:center;gap:9px}
+.pdp-bundle-fire{display:inline-block;transform-origin:50% 85%;animation:pdp-gentle-flame 2.7s ease-in-out infinite}
+@keyframes pdp-gentle-flame{
+  0%,100%{transform:rotate(-4deg) scale(.97)}
+  50%{transform:rotate(4deg) scale(1.09)}
+}
+
+/* Compact accessible information tabs. No-JS keeps both panels readable. */
+.pdp-info-hub{
+  margin:22px auto 30px;max-width:1120px;
+  border:1px solid #e2e7ed;border-radius:18px;
+  background:#fff;overflow:hidden;
+}
+.pdp-info-tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #e2e7ed;background:#f8fafb}
+.pdp-info-tabs>button{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:55px;padding:13px 11px;
+  border:0;border-bottom:3px solid transparent;
+  background:transparent;color:#64758a;
+  font-weight:700;font-size:.93rem;
+  transition:color .15s ease,background-color .15s ease,border-color .15s ease;
+}
+.pdp-info-tabs>button[aria-selected="true"]{
+  color:var(--store-action);border-bottom-color:var(--store-action);background:#fff;
+}
+.pdp-info-tabs>button:hover:not([aria-selected="true"]){background:#f0f4f7;color:var(--store-action)}
+.pdp-info-tabs>button:focus-visible{outline:3px solid #617e99;outline-offset:-5px}
+.pdp-info-tabs>button span{font-weight:550;color:#7b8b9c}
+.pdp-info-panel{padding:20px 22px}
+.pdp-info-panel[hidden]{display:none!important}
+.pdp-info-panel:focus-visible{outline:3px solid #9bb3c6;outline-offset:-3px}
+.pdp-info-hub .pdp-description-section{
+  margin:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;
+}
+.pdp-info-hub .pdp-description-section h2{font-size:1rem;margin:0 0 12px}
+.pdp-info-hub .pdp-description-toggle{margin-bottom:17px}
+.pdp-info-hub .pdp-reviews{
+  max-width:none;margin:0!important;
+  padding:0!important;border:0!important;border-radius:0!important;
+}
+.pdp-info-hub .pdp-reviews-topline h2{font-size:1.2rem}
+#urun-yorumlari,#yorum-yaz{scroll-margin-top:105px}
+@media(max-width:760px){
+  .pdp-info-hub{margin:20px -2px 18px;border-radius:14px}
+  .pdp-info-panel{padding:17px 15px 20px}
+  .pdp-info-tabs>button{min-height:52px;font-size:.85rem}
+  .pdp-info-hub .pdp-reviews-topline{gap:8px}
+  .pdp-info-hub .pdp-reviews-topline h2{font-size:1.06rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .pdp-bundle-fire{animation:none!important}
+  .pdp-info-tabs>button{transition:none!important}
+  body:not(.admin-body) :is(.product-card-action,.pdp-sticky-add,.pdp-desktop-add){transition:none!important}
+}

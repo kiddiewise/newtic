@@ -30,5 +30,7 @@
 @import './paytr-admin.css';
 @import './paytr-checkout.css';
 
+@import './storefront-polish.css';
+
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

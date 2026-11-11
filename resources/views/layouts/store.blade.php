@@ -218,9 +218,9 @@
       <p>Balıkçılık tutkusuna eşlik eden, her detayı özenle düşünülmüş ekipmanlar.</p>
     </div>
     <div><strong>Keşfet</strong><a href="{{ route('home') }}">Ana sayfa</a><a href="{{ route('search') }}">Ürünler</a></div>
-    <div><strong>Bilgilendirme</strong><p>Test ortamında yalnızca deneme sipariş kayıtları oluşturulur. Gerçek ödeme alınmaz.</p></div>
+    <div><strong>Bilgilendirme</strong><p>Alışveriş işlemleri geliştirme ortamındadır. Gerçek tahsilat yapılmaz.</p></div>
   </div>
-  <div class="container footer-bottom">© {{ date('Y') }} Polaris Kurşun · Yeni mağaza önizlemesi</div>
+  <div class="container footer-bottom">© {{ date('Y') }} Polaris Kurşun · Balıkçılık ekipmanları</div>
 </footer>
 <nav class="mobile-bottom-nav" aria-label="Mobil gezinme">
   <a href="{{ route('home') }}"><x-store-icon name="house" /><span>Ana sayfa</span></a>

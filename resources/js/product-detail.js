@@ -149,6 +149,7 @@ if (pdpSheet) {
     // takes the customer to the exact selector instead of silently failing.
     addButtons.forEach((button) => {
       button.disabled = quantity === 0;
+      button.dataset.actionState = quantity === 0 ? 'empty' : (optionMissing ? 'needs-option' : 'ready');
       if (optionMissing && quantity > 0) {
         button.setAttribute('aria-disabled', 'true');
         button.dataset.needsOption = 'true';

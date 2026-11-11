@@ -333,22 +333,19 @@ class ProductReviewsExperienceTest extends TestCase
             ->assertSee('Henüz yayınlanmış yorum yok')
             ->assertDontSee('TEST ÖNİZLEMESİ');
 
-        // Preview requires BOTH the canonical staging APP_URL and the request host.
+        // Even on staging, sample reviews must not inflate public ratings.
         $host = 'powderblue-dinosaur-538060.hostingersite.com';
         config()->set('app.url', 'https://'.$host);
         $this->withServerVariables(['HTTP_HOST' => $host, 'SERVER_NAME' => $host]);
 
         $this->get('https://'.$host.'/kategori/'.$p->category->slug)->assertOk()
-            ->assertSee('class="product-card-rating"', false)
-            ->assertSee('5,0')->assertSee('1 yorum')
-            ->assertSee('product-card-rating-test', false)
-            ->assertSee('TEST');
+            ->assertDontSee('class="product-card-rating"', false);
         $this->actingAs($buyer);
         $this->get('https://'.$host.'/urun/'.$p->slug)->assertOk()
-            ->assertSee('Test değerlendirmeniz önizlemede yayınlandı')
-            ->assertSee('TEST ÖNİZLEMESİ')
-            ->assertSee('TEST DEĞERLENDİRMESİ')
-            ->assertSee('Denizde kullandım, dengesi çok iyi');
+            ->assertSee('Değerlendirmeniz kaydedildi')
+            ->assertSee('Henüz yayınlanmış yorum yok')
+            ->assertDontSee('TEST ÖNİZLEMESİ')
+            ->assertDontSee('Denizde kullandım, dengesi çok iyi');
 
         // Do not use preview data under a different public hostname.
         $this->get('https://polariskursun.com/kategori/'.$p->category->slug)->assertOk()

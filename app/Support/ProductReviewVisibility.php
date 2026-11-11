@@ -11,21 +11,17 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 final class ProductReviewVisibility
 {
-    private const STAGING_HOST = 'powderblue-dinosaur-538060.hostingersite.com';
-
+    // Sample reviews remain available to administrators, not customer-facing pages.
     public static function showsTestReviews(): bool
     {
-        return request()->getHost() === self::STAGING_HOST
-            && parse_url((string) config('app.url'), PHP_URL_HOST) === self::STAGING_HOST;
+        return false;
     }
 
     public static function constrain(Builder|Relation $query): void
     {
         $query->where('status', 'approved');
 
-        if (! self::showsTestReviews()) {
-            $query->where('is_test', false);
-        }
+        $query->where('is_test', false);
     }
 
     /** Two aggregate subqueries, rather than one query per product card. */
@@ -37,12 +33,6 @@ final class ProductReviewVisibility
             'reviews as review_average' => fn (Builder $reviewQuery) => self::constrain($reviewQuery),
         ], 'rating');
 
-        if (self::showsTestReviews()) {
-            $query->withCount([
-                'reviews as review_test_count' => fn (Builder $reviewQuery) =>
-                    $reviewQuery->where('status', 'approved')->where('is_test', true),
-            ]);
-        }
 
         return $query;
     }

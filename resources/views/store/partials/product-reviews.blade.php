@@ -4,9 +4,6 @@
       <p class="review-eyebrow">GERÇEK MÜŞTERİ DENEYİMLERİ</p>
       <h2 id="product-reviews-title">Ürün yorumları</h2>
       <p>Bu gramaja özel, satın almış müşterilerin değerlendirmeleri.</p>
-      @if($testReviewCount > 0)
-        <p class="review-preview-note"><span>TEST ÖNİZLEMESİ</span> Bu test mağazasında {{ $testReviewCount }} onaylı test yorumu örnek olarak gösterilir. Gerçek mağaza puanlarına dahil değildir.</p>
-      @endif
     </div>
     <span class="review-count-pill">{{ $reviewCount }} yorum</span>
   </div>
@@ -19,7 +16,7 @@
           <span @class(['is-lit' => $reviewCount && $reviewAverage >= $star - .5]) aria-hidden="true">★</span>
         @endfor
       </span>
-      <small>{{ $reviewCount ? ($testReviewCount > 0 ? 'Test yorumları dahil önizleme puanı' : '5 üzerinden ortalama puan') : 'İlk yorumu siz yapabilirsiniz' }}</small>
+      <small>{{ $reviewCount ? '5 üzerinden ortalama puan' : 'İlk yorumu siz yapabilirsiniz' }}</small>
     </div>
     <div class="review-distribution" aria-label="Yıldız dağılımı">
       @for($star = 5; $star >= 1; $star--)
@@ -57,8 +54,8 @@
         <div class="review-own-status">
           <x-store-icon name="check" />
           <span>
-            <strong>{{ $myReview->status === 'rejected' ? 'Yorumunuz yayınlanmadı' : ($myReview->status === 'approved' ? ($myReview->is_test ? ($isReviewPreview ? 'Test değerlendirmeniz önizlemede yayınlandı' : 'Test değerlendirmeniz gerçek mağazada gizli') : 'Yorumunuz yayınlandı') : 'Yorumunuz inceleme aşamasında') }}</strong>
-            <small>{{ $myReview->is_test ? 'Test siparişi: gerçek mağazanın puanlarına dahil edilmez.' : 'Değişiklik yaptığınızda yorum yeniden onaya gönderilir.' }}</small>
+            <strong>{{ $myReview->status === 'rejected' ? 'Yorumunuz yayınlanmadı' : ($myReview->status === 'approved' ? ($myReview->is_test ? 'Değerlendirmeniz kaydedildi' : 'Yorumunuz yayınlandı') : 'Yorumunuz inceleme aşamasında') }}</strong>
+            <small>{{ $myReview->is_test ? 'Yalnızca gerçek alışveriş yorumları mağaza puanına dahil edilir.' : 'Değişiklik yaptığınızda yorum yeniden onaya gönderilir.' }}</small>
           </span>
         </div>
       @endif
@@ -84,7 +81,7 @@
             <span><x-store-icon name="check" /> Doğrulanmış satın alma</span>
             <button type="submit" class="review-primary-action">{{ $myReview ? 'Değerlendirmemi güncelle' : 'Yorumumu gönder' }}</button>
           </div>
-          <p class="review-form-disclaimer">Yorumunuz güvenlik ve içerik kontrolünden sonra yayınlanır. Test siparişleri genel puana dahil edilmez.</p>
+          <p class="review-form-disclaimer">Yorumunuz içerik kontrolünden sonra yayınlanır. Yalnızca gerçek alışveriş yorumları genel puana dahil edilir.</p>
         </form>
       @else
         <p class="review-help-text">Bu ürünü değerlendirmek için hesabınızla verdiğiniz siparişin <strong>Tamamlandı</strong> durumunda olması gerekir.</p>
@@ -100,8 +97,7 @@
         <span class="review-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($review->public_name, 0, 1)) }}</span>
         <div class="review-card-person">
           <strong>{{ $review->public_name }}</strong>
-          @if($review->is_test)<span class="review-test-label">TEST DEĞERLENDİRMESİ</span>@endif
-          <small><x-store-icon name="check" /> {{ $review->is_test ? 'Test siparişi' : 'Satın alma doğrulandı' }}</small>
+          <small><x-store-icon name="check" /> Satın alma doğrulandı</small>
         </div>
         <time datetime="{{ $review->created_at->toDateString() }}">{{ $review->created_at->format('d.m.Y') }}</time>
       </div>
