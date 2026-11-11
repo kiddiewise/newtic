@@ -96,7 +96,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         return $order;
     }
 
-    private function callback(PaytrPaymentAttempt $attempt, string $status = 'success', ?string $amount = null): array
+    private function signedPayload(PaytrPaymentAttempt $attempt, string $status = 'success', ?string $amount = null): array
     {
         $amount ??= (string) $attempt->amount_cents;
         return [
@@ -161,9 +161,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertDatabaseCount('orders', 1);
         $attempt = $order->paytrAttempts()->firstOrFail();
 
-        $this->post(route('checkout.paytr.callback'), $this->callback($attempt))
+        $this->post(route('checkout.paytr.callback'), $this->signedPayload($attempt))
             ->assertOk()->assertSeeText('OK');
-        $this->post(route('checkout.paytr.callback'), $this->callback($attempt))
+        $this->post(route('checkout.paytr.callback'), $this->signedPayload($attempt))
             ->assertOk()->assertSeeText('OK');
 
         $this->assertSame('preparing', $order->fresh()->status);
@@ -183,7 +183,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $order = $this->place($product);
         $attempt = $order->paytrAttempts()->firstOrFail();
 
-        $failed = $this->callback($attempt, 'failed', '0');
+        $failed = $this->signedPayload($attempt, 'failed', '0');
         $failed['failed_reason_code'] = '6';
         $this->post(route('checkout.paytr.callback'), $failed)->assertOk()->assertSeeText('OK');
         $this->post(route('checkout.paytr.callback'), $failed)->assertOk()->assertSeeText('OK');
