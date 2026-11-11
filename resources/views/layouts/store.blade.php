@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="theme-color" content="#102f3e">
+  <meta name="theme-color" content="#092037">
   <meta name="robots" content="noindex,nofollow,noarchive">
   @if(request()->routeIs('checkout.success'))<meta name="referrer" content="no-referrer">@endif
   <title>@yield('title', 'Polaris Kurşun | Balıkçılık Ekipmanları')</title>
