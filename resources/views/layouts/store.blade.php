@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#092037">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
   <meta name="robots" content="noindex,nofollow,noarchive">
   @if(request()->routeIs('checkout.success'))<meta name="referrer" content="no-referrer">@endif
   <title>@yield('title', 'Polaris Kurşun | Balıkçılık Ekipmanları')</title>
