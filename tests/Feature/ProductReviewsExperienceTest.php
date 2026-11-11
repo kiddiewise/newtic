@@ -343,6 +343,7 @@ class ProductReviewsExperienceTest extends TestCase
             ->assertSee('5,0')->assertSee('1 yorum')
             ->assertSee('product-card-rating-test', false)
             ->assertSee('TEST');
+        $this->actingAs($buyer);
         $this->get(route('product.show', $p->slug))->assertOk()
             ->assertSee('Test değerlendirmeniz önizlemede yayınlandı')
             ->assertSee('TEST ÖNİZLEMESİ')
