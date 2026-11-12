@@ -1,0 +1,39 @@
+/* NEWTIC product-import console: quiet navy controls and compact audit tables. */
+.import-steps{display:grid;gap:13px;list-style:decimal;margin:15px 0 18px;padding-left:21px;color:#314b5e;line-height:1.65;font-size:13px}
+.import-steps strong{color:#092037}
+.import-note,.import-alert{padding:13px 15px;border-radius:12px;background:#f2f6fa;border:1px solid #dce5ee;color:#28445a;font-size:12.5px;line-height:1.6}
+.import-upload-form{display:flex;flex-direction:column;gap:13px;align-items:flex-start;padding-top:9px}
+.import-upload-form label{font-weight:730;color:#092037;font-size:13px}
+.import-upload-form input{display:block;width:100%;max-width:560px;background:#fafbfc;color:#233b50;border:1px dashed #becddc;border-radius:12px;padding:18px;font-family:inherit;font-size:13px}
+.import-upload-form small{font-size:12px;color:#76899c}
+.import-batch-row{display:flex;gap:15px;justify-content:space-between;align-items:center;padding:13px 5px;border-top:1px solid #e8edf2;text-decoration:none;color:#092037}
+.import-batch-row>span:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}
+.import-batch-row strong{word-break:break-word;font-size:13px}
+.import-batch-row small{color:#718297;font-size:11px}
+.import-status{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:5px 9px;border-radius:999px;background:#eef3f8;color:#344f65;font-size:11px;font-weight:710}
+.import-status-completed{background:#e6eef5;color:#092037}
+.import-status-running{background:#dce9f5;color:#204e75}
+.import-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:11px 0 20px}
+.import-summary-grid>div{display:flex;flex-direction:column;gap:5px;border:1px solid #e1e8ef;background:#fafbfd;padding:15px;border-radius:12px}
+.import-summary-grid strong{font-size:24px;font-variant-numeric:tabular-nums;color:#092037;line-height:1.2}
+.import-summary-grid small{font-size:11px;color:#6a7e91}
+.import-start-form{display:flex;flex-direction:column;align-items:flex-start;gap:16px;margin-top:19px}
+.import-check{display:flex;align-items:flex-start;gap:11px;font-size:12px;color:#304b63;line-height:1.55}
+.import-check>input{width:18px;height:18px;accent-color:#092037;flex:none;margin-top:2px}
+.import-check>span{display:flex;flex-direction:column;gap:3px}
+.import-check strong{color:#092037}
+.import-check small{color:#708397}
+.import-progress{display:block;width:100%;height:11px;border:0;border-radius:99px;background:#e2eaf1;overflow:hidden;accent-color:#092037}
+.import-progress::-webkit-progress-bar{background:#e2eaf1;border-radius:99px}
+.import-progress::-webkit-progress-value{background:#183955;border-radius:99px}
+.import-progress::-moz-progress-bar{background:#183955;border-radius:99px}
+.import-progress-caption{font-variant-numeric:tabular-nums;color:#40566a;font-size:12px;margin:8px 0 14px}
+.import-type-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.import-type-list>span{padding:7px 11px;background:#f3f6f9;border:1px solid #e2eaf1;border-radius:10px;color:#344b63;font-size:12px}
+.import-type-list strong{margin-right:5px;color:#092037}
+.import-table-scroll{width:100%;overflow-x:auto;scrollbar-width:thin}
+.import-table{border-collapse:collapse;width:100%;min-width:680px;text-align:left;font-size:12px;color:#31485d}
+.import-table th,.import-table td{padding:11px 10px;vertical-align:top;border-bottom:1px solid #e6ecf2}
+.import-table th{font-size:11px;font-weight:740;color:#637789;background:#f6f9fb}
+.import-table td:nth-child(4){max-width:260px;overflow-wrap:anywhere}
+@media(max-width:740px){.import-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.import-batch-row{align-items:flex-start;flex-direction:column}.import-summary-grid strong{font-size:21px}}

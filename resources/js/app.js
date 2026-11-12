@@ -82,3 +82,5 @@ import './admin-2026.js';
 import './product-reviews.js';
 
 import './live-search.js';
+
+import './catalog-import.js';

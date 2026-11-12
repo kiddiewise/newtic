@@ -1,5 +1,6 @@
 @extends('layouts.store')
-@section('title', $product->name.' | Polaris Kurşun')
+@section('title', $product->seo_title ? $product->seo_title : $product->name.' | Polaris Kurşun')
+@section('description', $product->seo_description ?: ($product->short_description ?: \Illuminate\Support\Str::limit($product->description ?: $product->name, 155)))
 @section('content')
 
 {{-- Mobile-only product toolbar replaces the full catalogue navigation on this page. --}}
@@ -206,7 +207,7 @@
   <section class="pdp-description-section" aria-labelledby="pdp-description-title">
     <h2 id="pdp-description-title">Ürün açıklaması</h2>
     <div class="pdp-description-copy" id="pdp-description-content" data-description-content>
-      <p>{{ $product->description ?: 'Polaris Kurşun balıkçılık ekipmanları koleksiyonundan.' }}</p>
+      <p>{!! nl2br(e($product->description ?: 'Polaris Kurşun balıkçılık ekipmanları koleksiyonundan.')) !!}</p>
     </div>
     <button type="button" class="pdp-description-toggle" data-description-toggle aria-expanded="false" aria-controls="pdp-description-content">
       Daha fazla göster <span aria-hidden="true">⌄</span>

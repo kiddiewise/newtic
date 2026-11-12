@@ -4,7 +4,10 @@
 <div class="admin-page-heading admin-heading-actions">
   <div><p class="admin-eyebrow">KATALOG / ÜRÜNLER</p><h1>Ürün yönetimi</h1>
     <p>Ürün fotoğraflarını, fiyatlarını, stok ve yayın durumlarını kolayca yönet.</p></div>
-  <a class="admin-primary" href="{{ route('admin.products.create') }}"><x-admin-icon name="plus" /> Yeni ürün ekle</a>
+  <div class="admin-heading-action-group">
+    <a class="admin-secondary" href="{{ route('admin.product-imports.index') }}"><x-admin-icon name="layers" /> WooCommerce'den aktar</a>
+    <a class="admin-primary" href="{{ route('admin.products.create') }}"><x-admin-icon name="plus" /> Yeni ürün ekle</a>
+  </div>
 </div>
 <div class="admin-panel">
   <div class="admin-panel-title"><h2>Ürün listesi</h2><span>{{ number_format($products->total(), 0, ',', '.') }} ürün</span></div>

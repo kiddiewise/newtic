@@ -35,6 +35,7 @@
 @import './commerce-interactions.css';
 @import './tr-phone-input.css';
 @import './province-district.css';
+@import './catalog-import.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

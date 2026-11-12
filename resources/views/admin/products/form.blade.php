@@ -37,6 +37,18 @@
         <label class="admin-editor-wide">Ürün açıklaması<textarea name="description" rows="7" maxlength="10000" placeholder="Ürünün özelliklerini, avantajlarını ve kullanım bilgilerini yazın">{{ old('description', $product->description) }}</textarea>
           <small>Müşteriler için açık ve anlaşılır ürün açıklaması yaz.</small>
         </label>
+        <label class="admin-editor-wide">Kısa açıklama<textarea name="short_description" rows="3" maxlength="10000">{{ old('short_description', $product->short_description) }}</textarea></label>
+      </div>
+    </section>
+    <section class="admin-panel admin-editor-section">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="search" /></span><div><h2>SEO ve kargo bilgileri</h2><p>WooCommerce'den taşınan değerler burada düzenlenebilir.</p></div></div>
+      <div class="admin-form admin-editor-fields">
+        <label>Ürün ağırlığı (kg)<input type="number" name="weight_kg" min="0" step="0.001" value="{{ old('weight_kg', $product->weight_kg) }}" placeholder="0.075"></label>
+        <label class="admin-editor-wide">SEO başlığı<input name="seo_title" maxlength="255" value="{{ old('seo_title', $product->seo_title) }}"></label>
+        <label class="admin-editor-wide">SEO açıklaması<textarea name="seo_description" rows="3" maxlength="2000">{{ old('seo_description', $product->seo_description) }}</textarea></label>
+        @if($product->exists && $product->importSource)
+          <p class="admin-description admin-editor-wide">İçe aktarıldı: {{ $product->importSource->source_site }} · Kaynak: {{ $product->importSource->source_key }}. Orijinal WooCommerce özel alanları denetim kaydında korunur.</p>
+        @endif
       </div>
     </section>
     <section class="admin-panel admin-editor-section">

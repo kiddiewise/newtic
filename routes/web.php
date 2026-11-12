@@ -69,6 +69,7 @@ use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CatalogImportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\StockController;
@@ -129,6 +130,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::patch('/categories/{category}/banners/{banner}', [CategoryBannerController::class, 'update'])->name('categories.banners.update');
     Route::delete('/categories/{category}/banners/{banner}', [CategoryBannerController::class, 'destroy'])->name('categories.banners.destroy');
 
+    Route::get('/products/import', [CatalogImportController::class, 'index'])->name('product-imports.index');
+    Route::post('/products/import', [CatalogImportController::class, 'upload'])->middleware('throttle:10,1')->name('product-imports.upload');
+    Route::get('/products/import/{catalogImport}', [CatalogImportController::class, 'show'])->name('product-imports.show');
+    Route::post('/products/import/{catalogImport}/start', [CatalogImportController::class, 'start'])->name('product-imports.start');
+    Route::post('/products/import/{catalogImport}/step', [CatalogImportController::class, 'step'])->name('product-imports.step');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');

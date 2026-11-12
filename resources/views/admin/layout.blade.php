@@ -24,6 +24,7 @@
     ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
     ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
     ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
+    ['label' => 'WooCommerce Aktarım', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
     ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
     ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
     ['label' => 'Stok Yönetimi', 'name' => 'admin.stock', 'active' => 'admin.stock', 'icon' => 'package'],
@@ -51,7 +52,7 @@
       <div class="admin-menu-caption">ANA MENÜ</div>
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
         @foreach($menu as $item)
-          @if($loop->index === 12)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
+          @if($loop->index === 13)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
           <a href="{{ route($item['name']) }}"
             @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
             @if(request()->routeIs($item['active'])) aria-current="page" @endif>

@@ -26,7 +26,10 @@ class CatalogController extends Controller
         $banners = $category->banners()->visible()->get();
 
         $products = ProductReviewVisibility::withRatingSummary(Product::query()->with('options'))
-            ->whereIn('primary_category_id', $categoryIds)
+            ->where(function ($query) use ($categoryIds) {
+                $query->whereIn('primary_category_id', $categoryIds)
+                    ->orWhereHas('categories', fn ($related) => $related->whereIn('categories.id', $categoryIds));
+            })
             ->where('is_active', true)
             ->orderBy('name')->paginate(24);
 

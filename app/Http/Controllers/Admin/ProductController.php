@@ -49,7 +49,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $product->load(['images', 'options']);
+        $product->load(['images', 'options', 'importSource']);
 
         return view('admin.products.form', [
             'product' => $product,
@@ -117,6 +117,10 @@ class ProductController extends Controller
             'sku' => ['required', 'string', 'max:100', $skuRule],
             'primary_category_id' => ['required', 'integer', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:10000'],
+            'short_description' => ['nullable','string','max:10000'],
+            'weight_kg' => ['nullable','numeric','min:0','max:9999999','decimal:0,3'],
+            'seo_title' => ['nullable','string','max:255'],
+            'seo_description' => ['nullable','string','max:2000'],
             'regular_price' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'sale_price' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'lt:regular_price'],
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:100000000'],

@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
     protected $fillable = [
         'primary_category_id', 'sku', 'name', 'slug', 'description',
         'price', 'compare_at_price', 'stock_quantity', 'image_path', 'is_active', 'is_demo', 'option_label',
+        'short_description', 'weight_kg', 'dimensions_cm', 'seo_title', 'seo_description',
     ];
 
     protected $casts = [
@@ -20,7 +23,19 @@ class Product extends Model
         'view_count' => 'integer',
         'is_active' => 'boolean',
         'is_demo' => 'boolean',
+        'dimensions_cm' => 'array',
+        'weight_kg' => 'decimal:3',
     ];
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'category_product');
+    }
+
+    public function importSource(): HasOne
+    {
+        return $this->hasOne(CatalogImportSource::class);
+    }
 
     public function category(): BelongsTo
     {
