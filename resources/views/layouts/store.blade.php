@@ -191,6 +191,7 @@
     </div>
   </div>
 </header>
+@if(request()->routeIs('home', 'category.show', 'search'))
 <div class="mobile-subnav">
   <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search">
     <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara">
@@ -203,6 +204,7 @@
     @endforeach
   </nav>
 </div>
+@endif
 
 @yield('content')
 @include('store.partials.quick-cart-sheet')

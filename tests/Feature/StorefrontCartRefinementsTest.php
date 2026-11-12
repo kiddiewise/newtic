@@ -83,4 +83,55 @@ class StorefrontCartRefinementsTest extends TestCase
         $this->assertStringContainsString('.checkout-invoice-options label:has(input:checked)', $css);
         $this->assertStringContainsString('@media(prefers-reduced-motion:reduce)', $css);
     }
+    public function test_search_and_categories_only_render_on_browsing_pages(): void
+    {
+        $product = $this->product();
+
+        foreach ([
+            route('home'),
+            route('category.show', $product->category->slug),
+            route('search'),
+        ] as $url) {
+            $this->get($url)->assertOk()
+                ->assertSee('class="mobile-subnav"', false)
+                ->assertSee('class="mobile-search-bar"', false)
+                ->assertSee('class="mobile-category-pills"', false);
+        }
+
+        foreach ([
+            route('product.show', $product->slug),
+            route('cart.index'),
+            route('account.login'),
+            route('account.register'),
+        ] as $url) {
+            $this->get($url)->assertOk()
+                ->assertDontSee('class="mobile-subnav"', false)
+                ->assertDontSee('class="mobile-category-pills"', false);
+        }
+
+        $this->post(route('cart.add'), ['items' => [$product->id => 1]])->assertRedirect();
+
+        $this->get(route('checkout.index'))->assertOk()
+            ->assertDontSee('class="mobile-subnav"', false)
+            ->assertDontSee('class="mobile-category-pills"', false);
+    }
+
+    public function test_mega_menu_cart_badge_uses_independent_compact_white_number_style(): void
+    {
+        $product = $this->product();
+        $this->post(route('cart.add'), ['items' => [$product->id => 1]])->assertRedirect();
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression(
+            '/class="mega-cart-link"[^>]*>.*?class="cart-icon-badge">1<\/span>/s',
+            $html
+        );
+
+        $css = file_get_contents(resource_path('css/storefront-refinements.css'));
+        $this->assertStringContainsString('.mobile-site-header .mega-menu-top .mega-cart-link>.cart-icon-badge', $css);
+        $this->assertStringContainsString('font-size:10px!important;', $css);
+        $this->assertStringContainsString('color:#fff!important;', $css);
+        $this->assertStringContainsString('right:-4px!important;', $css);
+    }
+
 }

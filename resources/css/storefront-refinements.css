@@ -285,3 +285,59 @@ body.is-auth .mobile-auth-tabs a.is-active:hover{color:#fff!important}
     .cart-primary,.product-card-action,.pdp-sticky-add
   ){transition:none!important}
 }
+
+
+/*
+ * Mega-menu cart badge: protect its font and geometry from the generic
+ * .mobile-menu-panel a span rule and from the mobile nav link styles.
+ */
+@media(max-width:760px){
+  .mobile-site-header .mega-menu-top .mega-cart-link{
+    position:relative!important;
+    display:grid!important;
+    place-items:center!important;
+    width:44px!important;
+    height:44px!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:visible!important;
+    isolation:isolate;
+  }
+  .mobile-site-header .mega-menu-top .mega-cart-link>.ui-icon{
+    width:27px!important;
+    height:27px!important;
+    color:var(--polaris-action);
+    stroke:currentColor!important;
+    flex:none!important;
+  }
+  .mobile-site-header .mega-menu-top .mega-cart-link>.cart-icon-badge{
+    position:absolute!important;
+    z-index:3!important;
+    top:-3px!important;
+    right:-4px!important;
+    left:auto!important;
+    bottom:auto!important;
+    display:grid!important;
+    place-items:center!important;
+    box-sizing:border-box!important;
+    min-width:21px!important;
+    width:auto!important;
+    height:21px!important;
+    max-width:38px;
+    padding:0 4px!important;
+    margin:0!important;
+    border:2px solid #fff!important;
+    border-radius:999px!important;
+    background:#cf2944!important;
+    color:#fff!important;
+    font-family:inherit!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    letter-spacing:0!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+    box-shadow:none!important;
+    transform:none!important;
+  }
+}
