@@ -1,0 +1,54 @@
+name: Modern Web Guidance read-only trial
+
+on:
+  push:
+    branches:
+      - audit/modern-web-guidance-2026-11-12
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DISABLE_TELEMETRY: '1'
+      CI: 'true'
+      NPM_CONFIG_UPDATE_NOTIFIER: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Scan storefront assets without modifying or deploying
+        id: audit
+        shell: bash
+        run: |
+          set -uo pipefail
+          npx --yes modern-web-guidance@1.0.0 legacy-scan resources --json > /tmp/newtic-mwg.json 2>/tmp/newtic-mwg.err
+          result=$?
+          echo "legacy-scan exit code: $result"
+          if [ -s /tmp/newtic-mwg.err ]; then
+            echo "--- scanner stderr (up to 40 lines) ---"
+            head -n 40 /tmp/newtic-mwg.err
+          fi
+          if [ -s /tmp/newtic-mwg.json ]; then
+            echo "--- scanner result preview, max 20000 chars ---"
+            head -c 20000 /tmp/newtic-mwg.json
+            echo
+          fi
+          cp /tmp/newtic-mwg.json ./mwg-report.json || true
+          if [ "$result" -ne 0 ]; then
+            exit "$result"
+          fi
+      - name: Upload private scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-modern-web-guidance-scan
+          path: mwg-report.json
+          retention-days: 3
+          if-no-files-found: ignore
