@@ -20,9 +20,17 @@
     </label>
   <label class="checkout-field">
     <span>Cep telefonu *</span>
-    <input name="phone" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}" @error('phone') aria-describedby="checkout-error-phone" @enderror type="tel" maxlength="20" inputmode="tel" autocomplete="tel-national" required placeholder="05XX XXX XX XX veya +90 5XX..."
-      value="{{ old('phone', $prefill?->phone) }}">
-  <small class="checkout-field-hint">Kargo görevlisinin gerektiğinde sana ulaşabilmesi için.</small>
+    <span class="tr-phone-control" data-tr-phone-control>
+      <span class="tr-phone-prefix" aria-hidden="true"><span class="tr-phone-flag">🇹🇷</span><span class="tr-phone-dial">+90</span></span>
+      <input name="phone" data-tr-mobile-phone
+        aria-label="Cep telefonu, Türkiye artı doksan"
+        aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}"
+        aria-describedby="checkout-phone-hint @if($errors->has('phone'))checkout-error-phone@endif"
+        type="tel" maxlength="32" inputmode="numeric" autocomplete="tel" enterkeyhint="next"
+        required placeholder="555 555 55 55"
+        value="{{ \App\Support\AddressValidation::formatForEntry(old('phone', $prefill?->phone)) }}">
+    </span>
+  <small class="checkout-field-hint" id="checkout-phone-hint">Numaranı 555 555 55 55 şeklinde gir. Kargo görevlisi gerektiğinde sana ulaşabilir.</small>
     @error('phone')<small class="checkout-field-error" id="checkout-error-phone">{{ $message }}</small>@enderror
     </label>
   <label class="checkout-field">

@@ -67,6 +67,8 @@ import './mega-menu.js';
 
 import './quick-cart.js';
 
+import './tr-phone-input.js';
+
 import './checkout.js';
 
 import './payment-instructions.js';

@@ -1,0 +1,87 @@
+/* NEWTIC Turkish mobile entry: visible, fixed +90 and lightweight national mask. */
+.checkout-field .tr-phone-control{
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-height:52px;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dce6e8;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:none;
+  transition:border-color .15s ease;
+}
+.checkout-field .tr-phone-control:focus-within{
+  border-color:#b6c5d0;
+  box-shadow:none;
+}
+.checkout-field .tr-phone-control:has(input[aria-invalid="true"]){
+  border-color:#c65e6a;
+}
+.checkout-field .tr-phone-prefix{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  gap:7px;
+  min-width:102px;
+  min-height:29px;
+  padding:0 11px 0 12px;
+  border-right:1px solid #e0e6eb;
+  color:#092037;
+  font-size:14px;
+  font-weight:750;
+  white-space:nowrap;
+  user-select:none;
+}
+.checkout-field .tr-phone-flag{
+  display:inline-block;
+  font-family:system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  font-size:21px;
+  font-weight:400;
+  line-height:1;
+  vertical-align:middle;
+}
+.checkout-field .tr-phone-dial{
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+}
+.checkout-field .tr-phone-control>input[type="tel"]{
+  flex:1 1 0;
+  width:100%;
+  min-width:0;
+  height:51px;
+  min-height:51px;
+  padding:11px 13px;
+  margin:0;
+  border:0!important;
+  border-radius:0;
+  outline:0!important;
+  background:transparent;
+  box-shadow:none!important;
+  color:#092037;
+  font-size:16px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.025em;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.checkout-field .tr-phone-control>input[type="tel"]:focus,
+.checkout-field .tr-phone-control>input[type="tel"]:focus-visible{
+  border:0!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+.checkout-field .tr-phone-control input::placeholder{
+  color:#9aa8b5;
+  opacity:1;
+  letter-spacing:.025em;
+}
+@media(max-width:380px){
+  .checkout-field .tr-phone-prefix{min-width:92px;gap:5px;padding:0 8px}
+  .checkout-field .tr-phone-control>input[type="tel"]{padding:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .checkout-field .tr-phone-control{transition:none}
+}

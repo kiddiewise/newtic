@@ -24,7 +24,10 @@ if (addressPicker) {
     };
     for (const [name, field] of Object.entries(map)) {
       const input = form.elements.namedItem(name);
-      if (input) input.value = option?.dataset[field] || '';
+      if (input) {
+        input.value = option?.dataset[field] || '';
+        if (name === 'phone') input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
     const type = option?.dataset.invoiceType || 'individual';
     const radio = form.querySelector('input[name="invoice_type"][value="' + type + '"]');
@@ -67,10 +70,10 @@ if (checkoutForm) {
 
     if (phone && typeof phone.setCustomValidity === 'function') {
       const raw = phone.value.trim();
-      const normalized = raw.replace(/[\s().-]/g, '');
-      const valid = /^(?:\+?90|0)?5\d{9}$/.test(normalized);
+      const normalized = raw.replace(/\D/g, '');
+      const valid = /^5\d{9}$/.test(normalized);
       phone.setCustomValidity(raw !== '' && !valid
-        ? 'Geçerli bir cep telefonu girin (05XX XXX XX XX).' : '');
+        ? 'Cep telefonu numaranı 555 555 55 55 şeklinde gir.' : '');
     }
 
     const ready = checkoutForm.checkValidity()

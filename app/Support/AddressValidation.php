@@ -14,6 +14,10 @@ final class AddressValidation
     {
         $phone = preg_replace('/[\s().-]+/u', '', trim($phone)) ?? trim($phone);
 
+        if (preg_match('/^00905[0-9]{9}$/', $phone)) {
+            return '0'.substr($phone, -10);
+        }
+
         if (preg_match('/^\+?905[0-9]{9}$/', $phone)) {
             return '0'.substr($phone, -10);
         }
@@ -23,6 +27,25 @@ final class AddressValidation
         }
 
         return $phone;
+    }
+
+    /**
+     * Show only the 10-digit national mobile number; the +90 prefix is fixed
+     * outside the field. Keep invalid old input unchanged for correction.
+     */
+    public static function formatForEntry(?string $phone): string
+    {
+        $original = trim((string) $phone);
+        $normalized = self::normalizePhone($original);
+
+        if (! preg_match('/^05[0-9]{9}$/', $normalized)) {
+            return $original;
+        }
+
+        $number = substr($normalized, 1);
+
+        return substr($number, 0, 3).' '.substr($number, 3, 3).' '
+            .substr($number, 6, 2).' '.substr($number, 8, 2);
     }
 
     public static function normalizePhoneInput(\Illuminate\Http\Request $request): void

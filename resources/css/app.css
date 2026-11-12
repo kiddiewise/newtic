@@ -33,6 +33,7 @@
 @import './storefront-polish.css';
 @import './storefront-refinements.css';
 @import './commerce-interactions.css';
+@import './tr-phone-input.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
