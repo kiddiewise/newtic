@@ -243,7 +243,7 @@ final class ShippingOperationsTest extends TestCase
         $this->assertNull($fresh->last_synced_at);
         $this->assertNotNull($fresh->last_sync_failed_at);
         $this->assertSame('preparing',$shipment->order->fresh()->status);
-        $this->get(route('admin.shipping-operations.index'))->assertSee('2 başarısız deneme');
+        $this->get(route('admin.shipping-operations.index'))->assertSee('API sorgu hatası: 2 kez');
         Http::assertSentCount(2);
     }
 
