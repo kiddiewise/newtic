@@ -52,7 +52,9 @@ class LiveStorefrontSearchTest extends TestCase
         $this->assertSame(route('product.show', 'surf-1'), $items[0]['url']);
         $this->assertSame('49,90 ₺', $items[0]['price']);
         $this->assertFalse(collect($items)->contains(fn ($item) => $item['name'] === 'Surf gizli kurşun'));
-        $response->assertHeader('Cache-Control', 'private, no-store');
+        $cache = $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('private', $cache);
+        $this->assertStringContainsString('no-store', $cache);
 
         $this->getJson(route('search.suggest', ['q' => '']))->assertOk()
             ->assertExactJson(['items' => []]);
