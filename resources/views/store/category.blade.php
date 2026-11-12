@@ -52,14 +52,7 @@
       <h2 id="category-products-heading">Ürünler</h2>
       <span class="category-product-count">{{ $products->total() }} ürün</span>
     </div>
-    <div class="product-grid">
-      @forelse($products as $product)
-        @include('store.partials.product-card', ['product' => $product])
-      @empty
-        <p class="nothing-found">Bu kategoride henüz ürün bulunmuyor.</p>
-      @endforelse
-    </div>
-    <div class="pagination-wrap">{{ $products->links() }}</div>
+    @include('store.partials.infinite-products', ['products' => $products, 'emptyMessage' => 'Bu kategoride henüz ürün bulunmuyor.'])
   </section>
 </main>
 @endsection

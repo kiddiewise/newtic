@@ -14,7 +14,7 @@ use Illuminate\View\View;
 
 class CatalogController extends Controller
 {
-    public function category(string $slug): View
+    public function category(Request $request, string $slug): View|JsonResponse
     {
         $category = Category::query()->where('slug', $slug)->where('is_active', true)->firstOrFail();
         $all = CategoryHierarchy::all();
@@ -31,7 +31,17 @@ class CatalogController extends Controller
                     ->orWhereHas('categories', fn ($related) => $related->whereIn('categories.id', $categoryIds));
             })
             ->where('is_active', true)
-            ->orderBy('name')->paginate(24);
+            ->orderBy('name')->orderBy('id')->paginate(12);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'html' => view('store.partials.infinite-products', [
+                    'products' => $products,
+                    'emptyMessage' => 'Bu kategoride henüz ürün bulunmuyor.',
+                ])->render(),
+                'count' => $products->total(),
+            ])->header('Cache-Control', 'private, no-store');
+        }
 
         return view('store.category', compact(
             'category', 'breadcrumbs', 'subcategories', 'banners', 'products'
@@ -153,7 +163,7 @@ class CatalogController extends Controller
             ->when($term !== '', fn ($q) =>
                 $q->where(fn ($sub) => $sub->where('name', 'like', $like)->orWhere('sku', 'like', $like))
             )
-            ->orderBy('name')->paginate(24)->withQueryString();
+            ->orderBy('name')->orderBy('id')->paginate(12)->withQueryString();
 
         if ($request->expectsJson()) {
             return response()->json([

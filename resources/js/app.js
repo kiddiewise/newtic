@@ -83,4 +83,6 @@ import './product-reviews.js';
 
 import './live-search.js';
 
+import './infinite-catalog.js';
+
 import './catalog-import.js';

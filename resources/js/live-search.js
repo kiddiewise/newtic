@@ -1,3 +1,5 @@
+import { disposeInfiniteCatalog } from './infinite-catalog.js';
+
 /*
  * Progressive enhancement for product search.
  * Header dropdown uses a small JSON suggestion endpoint. The listing page
@@ -145,7 +147,11 @@ if (catalogForm) {
         if (!response.ok) throw new Error('Live catalog unavailable');
         const data = await response.json();
         if (controller.signal.aborted || thisRequest !== requestNo) return;
+        disposeInfiniteCatalog(results);
         results.innerHTML = data.html;
+        document.dispatchEvent(new CustomEvent('newtic:catalog-results-replaced', {
+          detail: { holder: results },
+        }));
         heading.textContent = data.heading;
         status.textContent = data.count === 0 ? 'Ürün bulunamadı.'
           : data.count + ' ürün bulundu.';
