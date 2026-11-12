@@ -1,4 +1,4 @@
-name: NEWTIC catalog read-only verification
+name: NEWTIC public catalog verification
 
 on:
   push:
@@ -13,63 +13,74 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Configure verified staging SSH identity
-        env:
-          KEY: \${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
-          KNOWN: \${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+      - name: Inspect visible staging catalog over HTTPS (read-only)
         run: |
           set -euo pipefail
-          test -n "$KEY" && test -n "$KNOWN"
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$KEY" > ~/.ssh/newtic-audit
-          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/newtic-audit ~/.ssh/known_hosts
-      - name: Report staging catalog counts (SELECT only; no writes or deploy)
-        run: |
-          set -euo pipefail
-          ssh -p 65002 -i ~/.ssh/newtic-audit \
-            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o BatchMode=yes -o ConnectTimeout=15 \
-            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
-          set -euo pipefail
-          cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
-          php <<'PHP'
-          <?php
-          require __DIR__.'/vendor/autoload.php';
-          $app = require __DIR__.'/bootstrap/app.php';
-          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-          $db = \Illuminate\Support\Facades\DB::connection();
-          $count = static fn (string $table): int =>
-              \Illuminate\Support\Facades\Schema::hasTable($table)
-                  ? (int) $db->table($table)->count() : -1;
-          $batches = \Illuminate\Support\Facades\Schema::hasTable('catalog_imports')
-              ? $db->table('catalog_imports')->orderByDesc('id')->limit(6)->get([
-                  'id','created_at','status','total_rows','processed_rows','created_rows',
-                  'updated_rows','skipped_rows','failed_rows','publish_products',
-                ])->toArray()
-              : [];
-          $statuses = \Illuminate\Support\Facades\Schema::hasTable('catalog_import_rows')
-              ? $db->table('catalog_import_rows')->select('status')
-                  ->selectRaw('count(*) as n')->groupBy('status')->pluck('n','status')->all()
-              : [];
-          $sample = \Illuminate\Support\Facades\Schema::hasTable('products')
-              ? $db->table('products')
-                  ->select('id','sku','name','stock_quantity','is_active','image_path')
-                  ->orderByDesc('id')->limit(8)->get()->toArray()
-              : [];
-          $result = [
-              'products' => $count('products'),
-              'active_products' => $count('products') < 0 ? null :
-                  (int) $db->table('products')->where('is_active',true)->count(),
-              'categories' => $count('categories'),
-              'product_images' => $count('product_images'),
-              'imported_source_links' => $count('catalog_import_sources'),
-              'import_batches' => $count('catalog_imports'),
-              'import_row_statuses' => $statuses,
-              'recent_imports' => $batches,
-              'recent_products' => $sample,
-          ];
-          echo json_encode($result, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR),PHP_EOL;
-          PHP
-          REMOTE
+          BASE='https://powderblue-dinosaur-538060.hostingersite.com'
+          for path in / /ara; do
+            curl --fail --show-error --silent --location \
+              --max-time 20 --retry 3 \
+              -o "$(test "$path" = / && echo homepage.html || echo catalog.html)" \
+              "$BASE$path"
+          done
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from collections import Counter
+          import html, json, re
+          from urllib.parse import urlparse, parse_qs
+
+          class CatalogParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.in_product_name = False
+                  self.current_name = ''
+                  self.names = []
+                  self.cards = 0
+                  self.images = []
+                  self.pagination = set()
+                  self.headings = []
+                  self.in_h1 = False
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  cls = attrs.get('class', '').split()
+                  if tag == 'article' and 'product-card' in cls:
+                      self.cards += 1
+                  if tag == 'a' and 'product-card-name' in cls:
+                      self.in_product_name = True
+                      self.current_name = ''
+                  if tag == 'img' and 'product-card' in attrs.get('class',''):
+                      self.images.append(attrs.get('src',''))
+                  if tag == 'a':
+                      url = attrs.get('href','')
+                      page = parse_qs(urlparse(url).query).get('page', [])
+                      if page and page[0].isdigit():
+                          self.pagination.add(int(page[0]))
+                  if tag == 'h1':
+                      self.in_h1 = True
+              def handle_data(self, data):
+                  if self.in_product_name:
+                      self.current_name += data
+                  if self.in_h1:
+                      self.headings.append(data.strip())
+              def handle_endtag(self, tag):
+                  if tag == 'a' and self.in_product_name:
+                      self.names.append(html.unescape(self.current_name).strip())
+                      self.in_product_name = False
+                  if tag == 'h1':
+                      self.in_h1 = False
+
+          result = {}
+          for name in ('homepage','catalog'):
+              text = open(name+'.html', encoding='utf8', errors='replace').read()
+              p = CatalogParser()
+              p.feed(text)
+              result[name] = {
+                'http_content_bytes': len(text),
+                'product_cards_on_page': p.cards,
+                'names_sample': p.names[:16],
+                'heading': [x for x in p.headings if x][:3],
+                'pagination_page_numbers': sorted(p.pagination),
+                'demo_fallback_image_references': text.count('assets/products/demo-sinker.svg'),
+              }
+          print(json.dumps(result, ensure_ascii=False, indent=2))
+          PY
