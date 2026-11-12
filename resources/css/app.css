@@ -37,6 +37,7 @@
 @import './province-district.css';
 @import './catalog-import.css';
 @import './infinite-catalog.css';
+@import './shipping-integrations.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

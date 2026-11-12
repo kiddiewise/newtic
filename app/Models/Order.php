@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -23,6 +24,11 @@ class Order extends Model
         'placed_at' => 'datetime',
         'is_test' => 'boolean',
     ];
+
+    public function shippingShipment(): HasOne
+    {
+        return $this->hasOne(ShippingShipment::class);
+    }
 
     public function items(): HasMany
     {

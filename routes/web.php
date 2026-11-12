@@ -6,6 +6,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentNotificationController;
 use App\Http\Controllers\PaytrCallbackController;
+use App\Http\Controllers\ShippingCallbackController;
 use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +42,8 @@ Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('thro
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
 
 // Separate, sessionless endpoint. Explicit server-side gate remains OFF by default.
+Route::post('/kargo/bildirim', ShippingCallbackController::class)->middleware('throttle:120,1')->name('shipping.callback');
+
 Route::post('/odeme/paytr/bildirim', PaytrCallbackController::class)
     ->name('checkout.paytr.callback');
 
@@ -80,6 +83,8 @@ use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\PaytrSettingsController;
+use App\Http\Controllers\Admin\ShippingIntegrationController;
+use App\Http\Controllers\Admin\ShippingShipmentController;
 use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNotificationController;
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -112,6 +117,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::patch('/orders/{order}/shipping', [AdminOrderController::class, 'shipping'])->name('orders.shipping');
+    Route::get('/kargo-entegrasyonu', [ShippingIntegrationController::class, 'index'])->name('shipping-integrations.index');
+    Route::patch('/kargo-entegrasyonu', [ShippingIntegrationController::class, 'save'])->middleware('throttle:8,1')->name('shipping-integrations.save');
+    Route::post('/kargo-entegrasyonu/senkronize', [ShippingIntegrationController::class, 'sync'])->middleware('throttle:10,1')->name('shipping-integrations.sync');
+    Route::post('/kargo-entegrasyonu/test', [ShippingIntegrationController::class, 'toggle'])->middleware('throttle:8,1')->name('shipping-integrations.toggle');
+    Route::post('/orders/{order}/shipping-integration', [ShippingShipmentController::class, 'create'])->middleware('throttle:4,1')->name('shipping-shipments.create');
+    Route::post('/orders/{order}/shipping-integration/refresh', [ShippingShipmentController::class, 'refresh'])->middleware('throttle:10,1')->name('shipping-shipments.refresh');
+    Route::get('/orders/{order}/shipping-integration/label', [ShippingShipmentController::class, 'label'])->middleware('throttle:12,1')->name('shipping-shipments.label');
     Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
     Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
     Route::get('/logo-ayarlari', [AppearanceController::class, 'edit'])->name('appearance.edit');

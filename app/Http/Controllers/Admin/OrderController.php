@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ShippingProvider;
+use App\Support\ShippingTestAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,10 +45,19 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts']);
+        $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts',
+            'shippingShipment.carrier', 'shippingShipment.warehouse', 'shippingShipment.provider']);
         $allowed = self::TRANSITIONS[$order->status] ?? [];
 
-        return view('admin.orders.show', compact('order', 'allowed'));
+        $shippingProvider = ShippingProvider::where('provider', 'kargoentegrator')->first();
+        $shippingCarriers = $shippingProvider?->carriers()->orderBy('name')->get() ?? collect();
+        $shippingWarehouses = $shippingProvider?->warehouses()->orderBy('name')->get() ?? collect();
+        $shippingTestAllowed = ShippingTestAccess::allowed();
+
+        return view('admin.orders.show', compact(
+            'order','allowed','shippingProvider','shippingCarriers',
+            'shippingWarehouses','shippingTestAllowed'
+        ));
     }
 
     /**
@@ -63,6 +74,11 @@ class OrderController extends Controller
 
         DB::transaction(function () use ($order, $data) {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->shippingShipment()->exists()) {
+                throw ValidationException::withMessages([
+                    'shipping' => 'Bu siparişin kargo bilgileri entegratör tarafından yönetiliyor.',
+                ]);
+            }
             if (! in_array($locked->status, ['shipped', 'out_for_delivery', 'completed'], true)) {
                 throw ValidationException::withMessages([
                     'shipping' => 'Kargo bilgileri ancak sipariş kargoya verildiğinde girilebilir.',

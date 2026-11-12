@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // PAYTR notifies the backend without a browser session or CSRF token.
         // Callback uses HMAC verification and is disabled until go-live tests.
-        $middleware->validateCsrfTokens(except: ['odeme/paytr/bildirim']);
+        $middleware->validateCsrfTokens(except: ['odeme/paytr/bildirim', 'kargo/bildirim']);
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin', 'admin/*') ? route('admin.login') : route('account.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

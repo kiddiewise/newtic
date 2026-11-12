@@ -1,0 +1,42 @@
+/* NEWTIC / carrier aggregator settings and per-order shipping integration */
+.ship-setup-hero{overflow:hidden}
+.ship-setup-head{display:flex;align-items:flex-start;gap:16px}
+.ship-provider-icon{display:grid;place-items:center;flex:none;width:51px;height:51px;border:1px solid #dae5ee;background:#eff4f8;border-radius:14px;color:#092037}
+.ship-setup-head>div{flex:1;min-width:0}
+.ship-setup-head h2{margin:0 0 7px;color:#092037;font-size:17px}
+.ship-setup-head p{margin:0;color:#60768a;line-height:1.6;font-size:12px}
+.ship-setup-status{flex:none;display:inline-flex;align-items:center;padding:7px 11px;border:1px solid #d4dfeb;background:#f1f5f9;border-radius:99px;font-size:10px;font-weight:750;letter-spacing:.04em;color:#244661}
+.ship-hint,.ship-info,.ship-danger{border-radius:12px;padding:13px 15px;line-height:1.6;font-size:12px}
+.ship-hint{background:#f0f4f8;color:#3f586d;margin:16px 0 0;border:1px solid #e0e8ef}
+.ship-info{background:#f4f7fa;color:#566d80;margin:14px 0;border:1px solid #e4ebf1}
+.ship-danger{background:#fff4f3;color:#993c38;margin-top:14px;border:1px solid #f1ceca}
+.ship-settings-form{display:grid;gap:19px;max-width:770px;margin:15px 0 0}
+.ship-settings-form label,.ship-order-form label{display:grid;gap:8px;color:#173248;font-size:12px;font-weight:680}
+.ship-settings-form select,.ship-settings-form input,.ship-order-form select,.ship-order-form input{width:100%;min-height:43px;border:1px solid #d9e2eb;background:#fff;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:#092037}
+.ship-settings-form small,.ship-order-form small{display:block;font-size:11px;line-height:1.6;font-weight:450;color:#6e8091}
+.ship-settings-form .ship-hint{margin:0}
+.ship-settings-form button{justify-self:start}
+.ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.ship-list-panel{border:1px solid #e1e9f0;border-radius:14px;min-width:0;padding:16px;background:#fcfdff}
+.ship-list-panel h3{color:#092037;font-size:14px;margin:0 0 14px}
+.ship-list-panel h3 small{font-weight:550;color:#718397;font-size:11px}
+.ship-account-row{display:flex;gap:9px;align-items:center;justify-content:space-between;border-top:1px solid #e9eff4;padding:11px 0}
+.ship-account-row>span:first-child{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.ship-account-row strong{font-size:12px;color:#092037}
+.ship-account-row small{font-size:10px;color:#728397}
+.ship-account-pill{border-radius:20px;white-space:nowrap;padding:5px 8px;background:#edf2f6;color:#445c72;font-size:10px}
+.ship-callback-line{display:grid;gap:6px;border-radius:12px;border:1px solid #dce5ee;padding:15px;margin-top:18px;background:#f8fafc;font-size:12px}
+.ship-callback-line strong{color:#092037}
+.ship-callback-line code{display:block;font-size:11px;max-width:100%;overflow-wrap:anywhere;color:#264c66}
+.ship-callback-line small{line-height:1.5;color:#728698}
+.ship-steps{list-style:decimal;padding-left:24px;display:grid;gap:9px;margin:17px 0;color:#455d71;font-size:12px;line-height:1.75}
+.ship-steps a{color:#092037;font-weight:730;text-underline-offset:3px}
+.ship-order-panel .ship-order-facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.ship-order-facts>div{display:grid;gap:5px;border:1px solid #e2eaf1;background:#fafbfd;border-radius:10px;padding:12px;min-width:0}
+.ship-order-facts span{font-size:11px;color:#6f8495}
+.ship-order-facts strong{font-size:12px;color:#092037;overflow-wrap:anywhere}
+.ship-order-form{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:18px 0}
+.ship-order-form>p,.ship-order-form>button{grid-column:1/-1}
+.ship-order-form>button{justify-self:start}
+.ship-order-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:15px 0}
+@media(max-width:740px){.ship-setup-head{flex-wrap:wrap}.ship-setup-status{margin-left:67px}.ship-grid{grid-template-columns:1fr}.ship-order-form{grid-template-columns:1fr}.ship-order-panel .ship-order-facts{grid-template-columns:1fr}}

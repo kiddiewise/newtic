@@ -141,7 +141,8 @@
       @endif
       <p class="admin-description">Ödeme onaylanmadan “Hazırlanıyor” seçilemez. Onaylanmış ödeme iade kaydı olmadan iptal edilemez.</p>
     </section>
-    @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true))
+    @include('admin.orders.shipping-integration')
+    @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true) && !$order->shippingShipment)
     <section class="admin-panel admin-shipping-editor">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="truck" /></span>
         <div><h2>Kargo ve takip bilgileri</h2><p>Bu bilgiler müşterinin sipariş takip ekranında görüntülenir.</p></div>
