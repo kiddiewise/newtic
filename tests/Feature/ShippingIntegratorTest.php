@@ -93,8 +93,7 @@ class ShippingIntegratorTest extends TestCase
             'subtotal_cents' => 14990, 'shipping_cents' => 7990, 'total_cents' => 22980,
             'currency' => 'TRY', 'is_test' => $isTest, 'placed_at' => now(),
         ]);
-        OrderItem::create([
-            'order_id' => $order->id, 'sku' => 'SURF-75',
+        $order->items()->create([ 'sku' => 'SURF-75',
             'product_name' => 'Polaris Surf Kurşun 75 gr',
             'quantity' => 2, 'unit_price_cents' => 7495, 'line_total_cents' => 14990,
         ]);
