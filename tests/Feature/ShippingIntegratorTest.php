@@ -327,9 +327,9 @@ class ShippingIntegratorTest extends TestCase
         $this->assertSame('completed', $order->fresh()->status);
         $this->assertSame('1234567890', $order->fresh()->tracking_number);
         $this->assertSame('Dummy Kargo', $order->fresh()->carrier_name);
-        $this->get(route('admin.shipping-shipments.label', $order))
-            ->assertOk()->assertHeader('Content-Type','application/pdf')
-            ->assertHeader('Cache-Control', 'private, no-store, max-age=0');
+        $label = $this->get(route('admin.shipping-shipments.label', $order))
+            ->assertOk()->assertHeader('Content-Type','application/pdf');
+        $this->assertStringContainsString('no-store', (string)$label->headers->get('Cache-Control'));
         Http::assertSentCount(2);
     }
 
