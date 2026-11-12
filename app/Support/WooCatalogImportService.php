@@ -128,16 +128,26 @@ final class WooCatalogImportService
             'meta:_thumbnail_ext_url'
         ) ?: WooCsvReader::get($parent, 'Meta: _thumbnail_ext_url', 'meta:_thumbnail_ext_url');
         $images = $this->prependImage($images, $externalThumbnail);
-        $seoTitle = $this->seoText(WooCsvReader::get($row,
+        $seoTitleRaw = WooCsvReader::get($row,
             'Meta: _yoast_wpseo_title', 'meta:_yoast_wpseo_title',
-            'Meta: rank_math_title', 'meta:rank_math_title'), $name);
+            'Meta: rank_math_title', 'meta:rank_math_title')
+            ?: WooCsvReader::get($parent,
+                'Meta: _yoast_wpseo_title', 'meta:_yoast_wpseo_title',
+                'Meta: rank_math_title', 'meta:rank_math_title');
+        $seoTitle = $this->seoText($seoTitleRaw, $name);
         $seoDescription = WooCsvReader::get($row, 'Meta: _yoast_wpseo_metadesc', 'meta:_yoast_wpseo_metadesc',
-            'Meta: rank_math_description', 'meta:rank_math_description');
+            'Meta: rank_math_description', 'meta:rank_math_description')
+            ?: WooCsvReader::get($parent, 'Meta: _yoast_wpseo_metadesc', 'meta:_yoast_wpseo_metadesc',
+                'Meta: rank_math_description', 'meta:rank_math_description');
+        $seoFocusKeyword = WooCsvReader::get($row, 'Meta: _yoast_wpseo_focuskw', 'meta:_yoast_wpseo_focuskw',
+            'Meta: rank_math_focus_keyword', 'meta:rank_math_focus_keyword')
+            ?: WooCsvReader::get($parent, 'Meta: _yoast_wpseo_focuskw', 'meta:_yoast_wpseo_focuskw',
+                'Meta: rank_math_focus_keyword', 'meta:rank_math_focus_keyword');
 
         $processed = DB::transaction(function () use (
             $batch, $row, $parent, $type, $id, $sku, $sourceKey, $name,
             $regular, $sale, $discount, $stock, $tracksStock, $active, $categoryText,
-            $description, $shortDescription, $seoTitle, $seoDescription
+            $description, $shortDescription, $seoTitle, $seoDescription, $seoFocusKeyword
         ) {
             $link = CatalogImportSource::query()
                 ->where('source_site', $batch->source_site)
@@ -188,6 +198,7 @@ final class WooCatalogImportService
                 'dimensions_cm' => $dimensions,
                 'seo_title' => mb_substr($seoTitle, 0, 255) ?: null,
                 'seo_description' => mb_substr($seoDescription, 0, 2000) ?: null,
+                'seo_focus_keyword' => mb_substr($seoFocusKeyword, 0, 255) ?: null,
                 // A reimport without "publish" must not unpublish products
                 // that the merchant manually activated after an earlier run.
                 'is_active' => $batch->publish_products ? $active : ($product?->is_active ?? false),

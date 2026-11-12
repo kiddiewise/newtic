@@ -46,6 +46,7 @@
         <label>Ürün ağırlığı (kg)<input type="number" name="weight_kg" min="0" step="0.001" value="{{ old('weight_kg', $product->weight_kg) }}" placeholder="0.075"></label>
         <label class="admin-editor-wide">SEO başlığı<input name="seo_title" maxlength="255" value="{{ old('seo_title', $product->seo_title) }}"></label>
         <label class="admin-editor-wide">SEO açıklaması<textarea name="seo_description" rows="3" maxlength="2000">{{ old('seo_description', $product->seo_description) }}</textarea></label>
+        <label class="admin-editor-wide">SEO odak anahtar kelimesi<input name="seo_focus_keyword" maxlength="255" value="{{ old('seo_focus_keyword', $product->seo_focus_keyword) }}"></label>
         @if($product->exists && $product->importSource)
           <p class="admin-description admin-editor-wide">İçe aktarıldı: {{ $product->importSource->source_site }} · Kaynak: {{ $product->importSource->source_key }}. Orijinal WooCommerce özel alanları denetim kaydında korunur.</p>
         @endif

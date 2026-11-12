@@ -29,6 +29,7 @@ class WooCommerceProductImportTest extends TestCase
             'Regular price', 'Sale price', 'Categories', 'Description',
             'Short description', 'Images', 'Parent', 'Attribute 1 name',
             'Attribute 1 value(s)', 'Weight (kg)', 'Meta: _yoast_wpseo_title',
+            'Meta: _yoast_wpseo_metadesc', 'Meta: _yoast_wpseo_focuskw',
         ];
         $stream = fopen('php://temp', 'w+');
         fputcsv($stream, $head, ',', '"', '');
@@ -46,7 +47,8 @@ class WooCommerceProductImportTest extends TestCase
     {
         return [
             ['100', 'variable', '', 'Fırdöndülü Surf Kurşun', '1', '1', '', '', '', 'Kurşunlar > Surf Kurşun',
-                '<p>Ana ürün <strong>tanıtımı</strong>.</p>', '<p>Kurşun ürünü</p>', '', '', '', '', '', ''],
+                '<p>Ana ürün <strong>tanıtımı</strong>.</p>', '<p>Kurşun ürünü</p>', '', '', '', '', '',
+                'Surf Kurşun SEO', 'Surf kurşun açıklaması', 'surf kurşun'],
             ['101', 'variation', 'SURF-75', '', '1', '1', '5', '70', '', '', '', '', '', 'id:100', 'Gramaj', '75 gr', '0.075', ''],
             ['102', 'variation', 'SURF-100', '', '1', '1', '7', '100', '', '', '', '', '', 'id:100', 'Gramaj', '100 gr', '0.100', ''],
             ['200', 'simple', 'JIG-55', 'Jig Kurşun', '1', '1', '8', '60', '50', 'Kurşunlar > Jig', '<p>İlk satır.</p><p>İkinci satır.</p>',
@@ -129,6 +131,9 @@ class WooCommerceProductImportTest extends TestCase
         $this->assertSame('50.00', $jig->price);
         $this->assertSame('60.00', $jig->compare_at_price);
         $this->assertSame('Jig Kurşun SEO', $jig->seo_title);
+        $this->assertSame('Surf Kurşun SEO', $surf75->seo_title);
+        $this->assertSame('Surf kurşun açıklaması', $surf75->seo_description);
+        $this->assertSame('surf kurşun', $surf75->seo_focus_keyword);
         $this->assertStringContainsString('İkinci satır.', $jig->description);
         $this->assertSame('Kısa tanıtım', $jig->short_description);
         $this->assertSame('Kurşunlar', $surf75->category->parent->name);
@@ -222,6 +227,7 @@ class WooCommerceProductImportTest extends TestCase
             'Katalogda görünürlük', 'Stokta?', 'Stok', 'Normal fiyat',
             'Kategoriler', 'Açıklama', 'Kısa açıklama', 'Görseller',
             'Ağırlık (g)', 'Meta: _yoast_wpseo_title', 'Meta: _yoast_wpseo_metadesc',
+            'Meta: _yoast_wpseo_focuskw',
             'Meta: _thumbnail_ext_url',
         ];
         $values = [
@@ -231,6 +237,7 @@ class WooCommerceProductImportTest extends TestCase
             'Kısa tanıtım\\n[ozel_gramaj_tablosu kategori="fosforlu"]',
             'https://polariskursun.com/wp-content/uploads/2024/10/a.png, https://polariskursun.com/wp-content/uploads/2024/10/b.png',
             '150', '%%title%% %%page%% %%sep%% %%sitename%%', 'Fosforlu kurşun açıklaması',
+            'fosforlu surf kurşun',
             'https://polariskursun.com/wp-content/uploads/2024/10/featured.png',
         ];
         $stream = fopen('php://temp', 'w+');
@@ -258,6 +265,7 @@ class WooCommerceProductImportTest extends TestCase
             $product->seo_title
         );
         $this->assertSame('Fosforlu kurşun açıklaması', $product->seo_description);
+        $this->assertSame('fosforlu surf kurşun', $product->seo_focus_keyword);
         $this->assertMatchesRegularExpression('/Birinci satır\.\s+İkinci satır\./u', $product->description);
         $this->assertStringNotContainsString('ozel_gramaj_tablosu', $product->short_description);
         $this->assertSame(3, $product->images()->count());

@@ -124,6 +124,7 @@ class ProductController extends Controller
             'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:9999999', 'decimal:0,3'],
             'seo_title' => ['nullable', 'string', 'max:255'],
             'seo_description' => ['nullable', 'string', 'max:2000'],
+            'seo_focus_keyword' => ['nullable', 'string', 'max:255'],
             'regular_price' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'sale_price' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'lt:regular_price'],
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:100000000'],
