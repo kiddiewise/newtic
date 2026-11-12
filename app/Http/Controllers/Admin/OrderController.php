@@ -114,7 +114,7 @@ class OrderController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(array_keys(self::TRANSITIONS))],
         ]);
-        DB::transaction(function () use ($order, $data) {
+        DB::transaction(function () use ($order, $data, $request) {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             $next = $data['status'];
             if ($locked->shippingShipment()->exists()) {
