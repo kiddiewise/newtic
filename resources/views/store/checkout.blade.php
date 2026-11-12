@@ -3,9 +3,9 @@
 @section('content')
 @php $checkoutIsTest = (bool) config('newtic.checkout_test_mode', true); @endphp
 <main class="checkout-shell checkout-page" id="content">
-  <div class="checkout-top"><a href="{{ route('cart.index') }}" aria-label="Sepete dön">‹</a><strong>Siparişi Tamamla</strong><span class="checkout-stage-label">2 / 3</span></div>
+  <div class="checkout-top"><a href="{{ route('cart.index') }}" data-checkout-return-cart aria-label="Sepete dön">‹</a><strong>Siparişi Tamamla</strong><span class="checkout-stage-label">2 / 3</span></div>
   <nav class="checkout-steps" aria-label="Sipariş aşamaları">
-    <a href="{{ route('cart.index') }}"><span aria-hidden="true">✓</span> Sepet</a>
+    <a href="{{ route('cart.index') }}" data-checkout-return-cart><span aria-hidden="true">✓</span> Sepet</a>
     <span aria-current="step"><span aria-hidden="true">2</span> Teslimat ve ödeme</span>
     <span><span aria-hidden="true">3</span> Onay</span>
   </nav>
@@ -20,7 +20,7 @@
           <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($cart['subtotal_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
           <div class="checkout-price-line"><span>Kargo</span><strong>{{ $cart['shipping_cents'] === 0 ? 'Ücretsiz' : number_format($cart['shipping_cents'] / 100, 2, ',', '.').' ₺' }}</strong></div>
           <div class="checkout-price-line is-total"><span>Toplam</span><strong>{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
-          <a href="{{ route('cart.index') }}" class="checkout-inline-link">Sepetimi düzenle</a>
+          <a href="{{ route('cart.index') }}" data-checkout-return-cart class="checkout-inline-link">Sepetimi düzenle</a>
         </div>
       </details>
       @guest
@@ -138,7 +138,7 @@
     </div>
 
     <aside class="checkout-card checkout-order-summary" aria-label="Sipariş özeti">
-<div class="checkout-summary-heading"><h2>Sipariş Özeti</h2><a href="{{ route('cart.index') }}">Sepeti düzenle</a></div>
+<div class="checkout-summary-heading"><h2>Sipariş Özeti</h2><a href="{{ route('cart.index') }}" data-checkout-return-cart>Sepeti düzenle</a></div>
       @foreach($cart['lines'] as $line)
         <div class="checkout-order-item">
           <span>{{ $line['product']->name }} @if($line['option_value'])<small>· {{ $line['option_label'] }}: {{ $line['option_value'] }}</small>@endif <small>× {{ $line['quantity'] }}</small></span>

@@ -1,4 +1,7 @@
 import { checkoutHasValidDistrict } from './province-district.js';
+import { installCheckoutCartLinks } from './cart-checkout-navigation.js';
+
+installCheckoutCartLinks();
 
 // Checkout: saved address autofill, conditional invoice and account creation.
 document.querySelectorAll('[data-checkout-invoice]').forEach((section) => {

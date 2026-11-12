@@ -89,14 +89,6 @@ if (cartSheet) {
     if (event.matches && document.body.classList.contains('cart-summary-open')) close();
   });
 
-  const back = document.querySelector('[data-cart-back]');
-  back?.addEventListener('click', (event) => {
-    try {
-      const referrer = new URL(document.referrer);
-      if (referrer.origin === location.origin && referrer.pathname !== location.pathname && history.length > 1) {
-        event.preventDefault();
-        history.back();
-      }
-    } catch { /* Default route to home remains available. */ }
-  });
+  // The cart header link navigates to the storefront directly.
+  // Never traverse browser history here: the previous entry can be checkout.
 }
