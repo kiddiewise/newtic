@@ -53,7 +53,7 @@
     <form class="header-search" action="{{ route('search') }}" method="get" role="search">
       <x-store-icon name="search" />
       <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Ne aramıştınız?" aria-label="Ürün ara">
-      <button type="submit">Ara</button>
+      <button type="submit" aria-label="Ürün ara" title="Ara"><x-store-icon name="search" /></button>
     </form>
     <div class="header-actions">
       <a class="icon-link header-search-shortcut" href="{{ route('search') }}" aria-label="Ürün arama">
@@ -79,7 +79,7 @@
   </nav>
 </header>
 
-<header class="mobile-site-header" aria-label="Mobil mağaza üst menüsü">
+<header class="mobile-site-header {{ $shopAnnouncements->isNotEmpty() ? 'has-announcements' : '' }}" aria-label="Mobil mağaza üst menüsü">
   @include('store.partials.announcement-ticker')
   <div class="mobile-topbar">
     <details class="mobile-menu" data-mega-menu>
@@ -190,6 +190,8 @@
       </a>
     </div>
   </div>
+</header>
+<div class="mobile-subnav">
   <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search">
     <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara">
     <button type="submit" aria-label="Ara"><x-store-icon name="search" /></button>
@@ -200,7 +202,7 @@
       <a href="{{ route('category.show', $pillCategory->slug) }}" class="mobile-pill {{ in_array($pillCategory->slug, $activeCategorySlugs, true) ? 'is-active' : '' }}" @if(request()->routeIs('category.show') && request()->route('slug') === $pillCategory->slug) aria-current="page" @endif>{{ $pillCategory->name }}</a>
     @endforeach
   </nav>
-</header>
+</div>
 
 @yield('content')
 @include('store.partials.quick-cart-sheet')
@@ -214,7 +216,16 @@
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
-      <strong class="footer-brand">POLARIS <span>KURŞUN</span></strong>
+      <a class="footer-brandmark" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+        @if($shopAppearance->desktop_logo_path || $shopAppearance->mobile_logo_path)
+          <img src="{{ asset($shopAppearance->desktop_logo_path ?: $shopAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="170" height="54" loading="lazy">
+        @else
+          <span class="footer-brand-fallback">
+            <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/></svg>
+            <span><strong>POLARIS</strong><small>KURŞUN</small></span>
+          </span>
+        @endif
+      </a>
       <p>Balıkçılık tutkusuna eşlik eden, her detayı özenle düşünülmüş ekipmanlar.</p>
     </div>
     <div><strong>Keşfet</strong><a href="{{ route('home') }}">Ana sayfa</a><a href="{{ route('search') }}">Ürünler</a></div>

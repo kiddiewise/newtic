@@ -1,0 +1,287 @@
+/*
+ * NEWTIC — Storefront Refinements (Polaris navy system).
+ * Loaded after legacy accents to normalize action buttons without changing
+ * error/destructive controls or the checkout/payment sandbox safeguards.
+ */
+:root{
+  --polaris-action:#092037;
+  --polaris-action-hover:#173952;
+  --polaris-action-muted:#edf1f5;
+  --polaris-action-muted-ink:#607185;
+}
+
+/* Primary conversion actions share a single, accessible navy appearance.
+ * Quantity controls, icon navigation and destructive operations stay secondary.
+ */
+body:not(.admin-body) :is(
+  .cart-mobile-summary-open,.cart-sheet-continue,.cart-checkout-action,
+  .checkout-action,.checkout-bottom-bar>button,.checkout-login-link,
+  .cart-primary,.quick-cart-view-cart,
+  .product-card-action,.pdp-desktop-add,
+  .pdp-sticky-actions .pdp-sticky-add,.pdp-sheet-footer>button,
+  .review-primary-action,.cart-update-form .cart-quantity-save,
+  .header-search button,.search-inline button,.mega-hero-cta,
+  .checkout-form button[type="submit"]:not(.cart-remove-button)
+):not(:disabled):not([aria-disabled="true"]){
+  background:var(--polaris-action)!important;
+  border-color:var(--polaris-action)!important;
+  color:#fff!important;
+  opacity:1!important;
+  text-decoration:none;
+  box-shadow:0 3px 12px rgba(9,32,55,.12)!important;
+  transform:none!important;
+  transition:background-color .16s ease,box-shadow .16s ease!important;
+}
+body:not(.admin-body) :is(
+  .cart-mobile-summary-open,.cart-sheet-continue,.cart-checkout-action,
+  .checkout-action,.checkout-bottom-bar>button,.checkout-login-link,
+  .cart-primary,.quick-cart-view-cart,
+  .product-card-action,.pdp-desktop-add,
+  .pdp-sticky-actions .pdp-sticky-add,.pdp-sheet-footer>button,
+  .review-primary-action,.cart-update-form .cart-quantity-save,
+  .header-search button,.search-inline button,.mega-hero-cta
+):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible){
+  background:var(--polaris-action-hover)!important;
+  color:#fff!important;
+  box-shadow:0 4px 16px rgba(9,32,55,.2)!important;
+  transform:none!important;
+}
+body:not(.admin-body) :is(
+  .cart-mobile-summary-open,.cart-sheet-continue,.cart-checkout-action,
+  .checkout-action,.checkout-bottom-bar>button,.checkout-login-link,
+  .cart-primary,.quick-cart-view-cart,
+  .product-card-action,.pdp-desktop-add,
+  .pdp-sticky-actions .pdp-sticky-add,.pdp-sheet-footer>button,
+  .review-primary-action,.header-search button,.search-inline button
+) :is(svg,.ui-icon){stroke:currentColor!important;color:inherit!important}
+body:not(.admin-body) :is(
+  .cart-mobile-summary-open,.cart-sheet-continue,.cart-checkout-action,
+  .checkout-action,.checkout-bottom-bar>button,
+  .cart-primary,.product-card-action,.pdp-desktop-add,
+  .pdp-sticky-actions .pdp-sticky-add,.pdp-sheet-footer>button
+):disabled{
+  background:var(--polaris-action-muted)!important;
+  border-color:#dbe3ea!important;
+  color:var(--polaris-action-muted-ink)!important;
+  opacity:1!important;
+  filter:none!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+body:not(.admin-body) .pdp-sticky-actions .pdp-sticky-add[data-needs-option="true"]:not(:disabled){
+  background:#f1f4f8!important;
+  border-color:#cbd5df!important;
+  color:var(--polaris-action)!important;
+}
+body:not(.admin-body) .pdp-sticky-actions .pdp-sticky-add[data-needs-option="true"]:not(:disabled) svg{
+  stroke:currentColor!important;
+}
+body:not(.admin-body) .product-card-action.is-loading svg{animation:none!important}
+body:not(.admin-body) .product-card-action:active:not(:disabled){transform:none!important}
+
+/* Plain navy checkout selection rather than orange/green filled chips. */
+.checkout-invoice-options label{
+  color:#092037;
+  background:#fff;
+  border-color:#dae2e9;
+  transition:background-color .14s ease,color .14s ease,border-color .14s ease;
+}
+.checkout-invoice-options label:has(input:checked){
+  background:var(--polaris-action)!important;
+  border-color:var(--polaris-action)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.checkout-invoice-options input{
+  accent-color:#fff!important;
+}
+body:is(.is-checkout,.is-auth) :is(
+  .checkout-field input,.checkout-field select,.checkout-field textarea,
+  .checkout-extra-section textarea
+):focus{
+  border-color:#dce6e8!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+body:is(.is-checkout,.is-auth) :is(
+  .checkout-field input,.checkout-field select,.checkout-field textarea,
+  .checkout-extra-section textarea
+)[aria-invalid="true"]:focus{
+  border-color:#bc4052!important;
+}
+/* Preserve a restrained keyboard-only indicator on desktop. */
+@media (hover:hover) and (pointer:fine){
+  body:is(.is-checkout,.is-auth) :is(
+    .checkout-field input,.checkout-field select,.checkout-field textarea,
+    .checkout-extra-section textarea
+  ):focus-visible{
+    outline:2px solid var(--polaris-action)!important;
+    outline-offset:2px!important;
+  }
+}
+body.is-auth .mobile-auth-tabs a.is-active{
+  background:var(--polaris-action)!important;
+  color:#fff!important;
+  border-color:var(--polaris-action)!important;
+  box-shadow:none!important;
+}
+body.is-auth .mobile-auth-tabs a.is-active:hover{color:#fff!important}
+
+/* Unified compact free-shipping meter: navy track, no green/orange surfaces. */
+.cart-shipping-panel{
+  margin:0 0 18px;
+  padding:15px 17px;
+  border:1px solid #dfe6ee;
+  border-radius:15px;
+  background:#f7f9fc;
+  color:var(--polaris-action);
+  box-shadow:none;
+}
+.cart-shipping-panel-copy{display:flex;flex-direction:column;gap:4px}
+.cart-shipping-panel-copy strong{
+  display:block;font-size:.88rem;font-weight:700;line-height:1.4;
+  color:var(--polaris-action);
+}
+.cart-shipping-panel-copy small{
+  display:block;font-size:.72rem;line-height:1.5;color:#728194;
+}
+.cart-shipping-meter{margin-top:14px;padding:7px 15px 5px 0}
+.cart-shipping-meter-track{
+  position:relative;
+  height:7px;
+  border-radius:99px;
+  background:#dce5ee;
+}
+.cart-shipping-meter-fill{
+  display:block;width:var(--shipping-progress);height:100%;
+  border-radius:inherit;background:#254963;
+  position:relative;
+  animation:shipping-progress-enter .75s cubic-bezier(.22,1,.36,1) both;
+}
+.cart-shipping-truck{
+  position:absolute;
+  z-index:2;
+  left:clamp(15px,var(--shipping-progress),calc(100% - 2px));
+  top:50%;
+  display:grid;place-items:center;
+  width:31px;height:24px;
+  border:1px solid #cdd8e4;
+  background:#fff;color:var(--polaris-action);
+  border-radius:8px;
+  transform:translate(-50%,-50%);
+  box-shadow:0 2px 7px #09203713;
+  animation:shipping-truck-enter .65s cubic-bezier(.22,1,.36,1) both;
+}
+.cart-shipping-truck svg{width:19px;height:19px;stroke:currentColor;fill:none}
+@keyframes shipping-progress-enter{
+  from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}
+}
+@keyframes shipping-truck-enter{
+  from{opacity:.5;transform:translate(-50%,-65%) scale(.94)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+.cart-shipping-panel.is-complete .cart-shipping-meter-fill{background:var(--polaris-action)}
+.cart-summary .cart-shipping-panel,.cart-sheet-scroll .cart-shipping-panel{margin:0 0 12px}
+.cart-summary-savings dt,.cart-summary-savings dd{color:#203d56!important;font-weight:700}
+.cart-total-savings{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 13px;
+  background:#f1f5f9!important;
+  color:#233f58!important;
+  border:1px solid #dfe6ee!important;
+  border-radius:12px;
+  font-weight:650;
+}
+.cart-total-savings .ui-icon{width:19px;height:19px;flex:none;stroke:currentColor}
+.cart-item-discount .cart-savings-tag{
+  background:#ecf2f8!important;border-color:#dce4ec!important;color:#244b64!important;
+}
+.cart-mobile-price,.cart-mobile-shipping,.cart-grand-total dd{
+  color:var(--polaris-action)!important;
+}
+.cart-remove-button{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:42px!important;height:40px!important;
+  padding:8px!important;
+  border:1px solid #dce3ea!important;
+  border-radius:11px!important;
+  color:#344e64!important;background:#fff!important;
+  box-shadow:none!important;
+  font-size:0!important;
+}
+.cart-remove-button:hover{background:#f2f5f8!important;border-color:#c0ccd6!important}
+.cart-remove-button svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8}
+@media(max-width:760px){
+  .cart-mobile-header{display:grid!important;grid-template-columns:42px minmax(0,1fr) 42px!important}
+}
+.cart-mobile-header strong{justify-self:center}
+.cart-mobile-header-spacer{display:block;width:42px;height:42px}
+.cart-sheet-scroll .cart-shipping-panel{padding:15px}
+.cart-sheet-scroll .cart-shipping-panel-copy strong{font-size:.87rem}
+
+/* Search submits use a white magnifier, never a word-based CTA. */
+.header-search button,.search-inline button{
+  display:grid!important;place-items:center!important;
+  padding:8px!important;
+  min-width:45px!important;min-height:43px!important;
+}
+.header-search button svg,.search-inline button svg{width:22px;height:22px;stroke:currentColor;stroke-width:2}
+.search-inline button{border-radius:10px!important}
+
+/* Shared stored logo: auth and footer both automatically follow admin branding. */
+.footer-brandmark{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  width:fit-content;min-width:0;
+  padding:8px 13px;margin:0 0 12px!important;
+  border-radius:12px;background:#fff;color:var(--polaris-action);
+}
+.footer-brandmark img{
+  width:auto;max-width:195px;height:auto;max-height:58px;
+  object-fit:contain;
+}
+.footer-brand-fallback,.mobile-auth-fallback{
+  display:inline-flex;align-items:center;gap:10px;
+  color:var(--polaris-action);
+}
+.footer-brand-fallback svg,.mobile-auth-fallback svg{
+  display:block;width:34px;height:34px;flex:none;
+}
+.footer-brand-fallback>span,.mobile-auth-fallback>span{
+  display:flex;flex-direction:column;gap:1px;align-items:flex-start;line-height:1.1;
+}
+.footer-brand-fallback strong,.mobile-auth-fallback strong{
+  font-size:20px;font-weight:800;letter-spacing:-.04em;
+}
+.footer-brand-fallback small,.mobile-auth-fallback small{
+  font-size:10px;letter-spacing:.24em;font-weight:600;
+}
+.mobile-auth-brand .mobile-auth-fallback{max-width:100%;gap:8px}
+.mobile-auth-brand .mobile-auth-fallback strong{font-size:20px!important;letter-spacing:-.045em}
+.mobile-auth-brand .mobile-auth-fallback small{font-size:9px}
+.mobile-auth-brand .mobile-auth-fallback svg{width:30px;height:30px}
+
+/* Only the logo row stays pinned; search and category pills scroll normally. */
+.mobile-subnav{display:none}
+@media(max-width:760px){
+  .mobile-site-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:135;
+  }
+  .mobile-site-header.has-announcements{top:-33px!important}
+  body.mega-menu-open .mobile-site-header{z-index:350!important}
+  .mobile-subnav{display:block;background:#fff;box-shadow:0 1px 0 #e8ecee}
+  body:is(.is-cart-page,.is-auth) .mobile-subnav{display:none!important}
+  .mobile-subnav .mobile-search-bar{margin-top:5px}
+  .cart-mobile-summary-open,.cart-sheet-continue{
+    min-height:50px;border-radius:11px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .cart-shipping-meter-fill,.cart-shipping-truck{animation:none!important}
+  .cart-shipping-panel *{transition:none!important}
+  body:not(.admin-body) :is(
+    .cart-mobile-summary-open,.checkout-bottom-bar>button,.checkout-action,
+    .cart-primary,.product-card-action,.pdp-sticky-add
+  ){transition:none!important}
+}

@@ -18,6 +18,7 @@
   <symbol id="ui-package" viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5V17L12 22l-9-5Z"/><path d="M3 7.5 12 13l9-5.5M12 13v9M7.5 5.2l9 5"/></symbol>
   <symbol id="ui-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="ui-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="ui-tag" viewBox="0 0 24 24"><path d="M20 12.2 12.2 20a2 2 0 0 1-2.8 0L3 13.6V4h9.6L20 11.4a.6.6 0 0 1 0 .8Z"/><circle cx="8" cy="9" r="1.5"/></symbol>
   <symbol id="ui-trash-2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
   <symbol id="ui-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ui-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3ZM19 18l.8 2.2L22 21l-2.2.8L19 24l-.8-2.2L16 21l2.2-.8L19 18Z"/></symbol>

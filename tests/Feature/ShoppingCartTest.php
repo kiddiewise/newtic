@@ -113,11 +113,11 @@ class ShoppingCartTest extends TestCase
             ->assertSee('999,98 ₺')
             ->assertSee('79,90 ₺')
             ->assertSee('1.079,88 ₺')
-            ->assertSee('0,02 ₺ daha ekle, kargo ücretsiz olsun!');
+            ->assertSee('0,02 ₺ daha ekle, kargon ücretsiz olsun.');
 
         $product->update(['price' => '500.00']);
         $this->get(route('cart.index'))->assertOk()
-            ->assertSee('Ücretsiz kargo kazandın!')
+            ->assertSee('Kargon bizden!')
             ->assertSee('1.000,00 ₺')
             ->assertDontSee('1.079,88 ₺')
             ->assertSee('Ödenecek tutar');
@@ -146,7 +146,7 @@ class ShoppingCartTest extends TestCase
         $this->patch(route('admin.store-settings.update'), [
             'free_shipping_threshold' => '250.00', 'shipping_fee' => '99.00',
         ])->assertRedirect();
-        $this->get(route('cart.index'))->assertOk()->assertSee('Ücretsiz kargo kazandın!')
+        $this->get(route('cart.index'))->assertOk()->assertSee('Kargon bizden!')
             ->assertSee('300,00 ₺')->assertDontSee('349,50 ₺');
     }
 

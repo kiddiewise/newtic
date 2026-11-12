@@ -11,7 +11,10 @@
     @elseif($authAppearance->desktop_logo_path)
       <img src="{{ asset($authAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
     @else
-      <strong>POLARIS <span>KURŞUN</span></strong>
+      <span class="mobile-auth-fallback">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/></svg>
+        <span><strong>POLARIS</strong><small>KURŞUN</small></span>
+      </span>
     @endif
   </a>
   <a href="{{ route('home') }}" class="mobile-auth-close" aria-label="Üyelik ekranından çık"><x-store-icon name="x" /></a>

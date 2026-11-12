@@ -54,7 +54,8 @@ class CartMobileRedesignTest extends TestCase
             ->assertSee('<span>Özet</span>', false)
             ->assertSee('>Siparişi Tamamla</a>', false)
             ->assertDontSee('Siparişi Tamamla <span aria-hidden="true">›</span>', false)
-            ->assertSee('Sil')
+            ->assertSee('href="#ui-trash-2"', false)
+            ->assertDontSee('class="cart-mobile-favorites"', false)
             ->assertSee('Kargo dahil')
             ->assertSee('data-cart-update-form');
     }
@@ -115,7 +116,7 @@ class CartMobileRedesignTest extends TestCase
             ->assertSee('1.280,00 ₺')
             ->assertSee('280,00 ₺')
             ->assertSee('1.000,00 ₺')
-            ->assertSee('Ücretsiz kargo kazandın!')
+            ->assertSee('Kargon bizden!')
             ->assertSee('Kargo bedava')
             ->assertSee('Ödenecek tutar')
             ->assertSee('Bu alışverişte 280,00 ₺ indirim kazandın');

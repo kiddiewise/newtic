@@ -1,22 +1,20 @@
 @extends('layouts.store')
-@section('title', 'Sepetim | Polaris Kurşun')
+@section('title', 'Sepet | Polaris Kurşun')
 @section('content')
 
 <header class="cart-mobile-header" aria-label="Sepet üst menüsü">
   <a href="{{ route('home') }}" class="cart-mobile-back" data-cart-back aria-label="Alışverişe geri dön">
     <x-store-icon name="chevron-left" />
   </a>
-  <strong>Sepetim</strong>
-  <a href="{{ auth()->check() ? route('wishlist.index') : route('account.login', ['next' => 'wishlist']) }}" class="cart-mobile-favorites" aria-label="{{ auth()->check() ? 'Favorilerim' : 'Favorilerim için üye girişi yap' }}">
-    <x-store-icon name="heart" />
-  </a>
+  <strong>Sepet</strong>
+  <span class="cart-mobile-header-spacer" aria-hidden="true"></span>
 </header>
 
 <main class="container cart-page cart-redesign" id="content">
-  <nav class="breadcrumbs cart-breadcrumbs" aria-label="İçerik yolu"><a href="{{ route('home') }}">Ana sayfa</a><span>/</span><span>Sepetim</span></nav>
+  <nav class="breadcrumbs cart-breadcrumbs" aria-label="İçerik yolu"><a href="{{ route('home') }}">Ana sayfa</a><span>/</span><span>Sepet</span></nav>
 
   <div class="cart-page-heading">
-    <div><p class="eyebrow">POLARIS KURŞUN</p><h1>Sepetim <span>({{ $cart['count'] }} Ürün)</span></h1></div>
+    <div><p class="eyebrow">POLARIS KURŞUN</p><h1>Sepet <span>({{ $cart['count'] }} Ürün)</span></h1></div>
     <a href="{{ route('search') }}">Alışverişe devam et <span aria-hidden="true">›</span></a>
   </div>
 
@@ -34,34 +32,16 @@
         <x-store-icon name="shopping-bag" />
       </div>
       <h2>Sepetin henüz boş</h2>
-      <p>Farklı gramajları ve ürünleri aynı sepette birleştirebilirsin.</p>
+      <p>Ürünlerimizi keşfetmeye hazır mısın? Beğendiklerini kolayca sepetine ekleyebilirsin.</p>
       <a class="cart-primary" href="{{ route('search') }}">Ürünleri keşfet</a>
     </div>
   @else
-    <div class="cart-shipping-highlight {{ $cart['free_shipping'] ? 'is-free' : '' }}">
-      <span class="cart-shipping-highlight-icon" aria-hidden="true">
-        <x-store-icon name="truck" />
-      </span>
-      <div>
-        @if($cart['free_shipping'])
-          <strong>Bu alışverişinde kargo ücretsiz!</strong>
-          <small>Ücretsiz kargo limitine ulaştın.</small>
-        @else
-          <strong>{{ number_format($cart['remaining_cents'] / 100, 2, ',', '.') }} ₺ daha ekle, kargo ücretsiz olsun.</strong>
-          <small>{{ number_format($cart['threshold_cents'] / 100, 2, ',', '.') }} ₺ ve üzeri alışverişte ücretsiz kargo.</small>
-          @if($cart['threshold_cents'] > 0)
-            <div class="cart-progress" role="progressbar" aria-label="Ücretsiz kargo ilerlemesi" aria-valuemin="0" aria-valuemax="{{ $cart['threshold_cents'] }}" aria-valuenow="{{ min($cart['subtotal_cents'], $cart['threshold_cents']) }}">
-              <span style="width:{{ min(100, round($cart['subtotal_cents'] / $cart['threshold_cents'] * 100)) }}%"></span>
-            </div>
-          @endif
-        @endif
-      </div>
-    </div>
+    @include('store.partials.cart-shipping-progress', ['cart' => $cart])
 
     <div class="cart-columns">
       <div class="cart-items">
         <div class="cart-box-heading">
-          <h2>Sepetim <span>({{ $cart['count'] }} Ürün)</span></h2>
+          <h2>Sepet <span>({{ $cart['count'] }} Ürün)</span></h2>
           <form method="POST" action="{{ route('cart.clear') }}" onsubmit="return confirm('Sepetteki tüm ürünler kaldırılsın mı?')">
             @csrf <button type="submit" class="cart-text-action">Sepeti boşalt</button>
           </form>
@@ -109,7 +89,7 @@
               <form method="POST" action="{{ route('cart.remove', $item) }}">
                 @csrf @method('DELETE')
                 @if($line['option_id'])<input type="hidden" name="option_id" value="{{ $line['option_id'] }}">@endif
-                <button class="cart-remove-button" type="submit" aria-label="{{ $item->name }} ürününü sepetten sil">Sil</button>
+                <button class="cart-remove-button" type="submit" aria-label="{{ $item->name }} ürününü sepetten sil" title="Ürünü sil"><x-store-icon name="trash-2" /></button>
               </form>
               @auth
               <form class="cart-favorite-form" method="POST" action="{{ route('wishlist.toggle', $item) }}">
