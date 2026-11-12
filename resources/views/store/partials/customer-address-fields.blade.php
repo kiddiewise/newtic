@@ -25,7 +25,7 @@
       <input name="phone" data-tr-mobile-phone
         aria-label="Cep telefonu, Türkiye artı doksan"
         aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}"
-        aria-describedby="checkout-phone-hint @if($errors->has('phone'))checkout-error-phone@endif"
+        aria-describedby="checkout-phone-hint{{ $errors->has('phone') ? ' checkout-error-phone' : '' }}"
         type="tel" maxlength="32" inputmode="numeric" autocomplete="tel" enterkeyhint="next"
         required placeholder="555 555 55 55"
         value="{{ \App\Support\AddressValidation::formatForEntry(old('phone', $prefill?->phone)) }}">
