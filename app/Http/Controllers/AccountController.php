@@ -96,7 +96,7 @@ class AccountController extends Controller
     {
         $user = $request->user();
         $addresses = $user->addresses()->orderByDesc('is_default')->latest()->get();
-        $orders = $user->orders()->latest()->limit(15)->get();
+        $orders = $user->orders()->with('shippingShipment')->latest()->limit(15)->get();
 
         return view('store.account', compact('user','addresses','orders'));
     }

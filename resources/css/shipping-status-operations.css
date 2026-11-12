@@ -35,3 +35,6 @@
 .order-shipping-history strong{color:#23566a;font-size:12px;font-weight:720}
 .order-shipping-history small{font-size:11px;color:#79959a}
 @media(max-width:760px){.ship-correction-panel{padding:12px}.order-shipping-current{padding:12px}.ship-correction-panel button{width:100%;justify-content:center}}
+
+.account-shipping-state,.admin-shipping-state{display:block;margin-top:4px;color:#087c79!important;font-weight:760;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.admin-shipping-state{color:#275e6e!important}

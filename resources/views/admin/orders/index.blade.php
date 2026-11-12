@@ -34,6 +34,9 @@
         <span class="admin-order-list-date"><small>Tarih</small><strong>{{ $order->created_at->format('d.m.Y') }}</strong></span>
         <span><small>Tutar</small><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></span>
         <span><span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
+          @if($order->shippingShipment?->remote_status)
+            <small class="admin-shipping-state">Kargo: {{ \App\Support\ShippingStatus::label($order->shippingShipment->remote_status) }}</small>
+          @endif
           @if($order->pending_payment_notifications_count)
             <small class="admin-table-alert"><x-admin-icon name="bell" /> Ödeme bildirimi ({{ $order->pending_payment_notifications_count }})</small>
           @endif

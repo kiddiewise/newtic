@@ -18,7 +18,11 @@
   <div class="checkout-card"><h2>Siparişlerim</h2>
     @forelse($orders as $order)
       <a href="{{ route('checkout.success', $order) }}" class="account-order-row">
-        <span><strong>{{ $order->order_number }}</strong><small>{{ $order->created_at->format('d.m.Y') }} · {{ $order->statusLabel() }}</small></span>
+        <span><strong>{{ $order->order_number }}</strong><small>{{ $order->created_at->format('d.m.Y') }} · {{ $order->statusLabel() }}</small>
+          @if($order->shippingShipment?->remote_status)
+            <small class="account-shipping-state">Kargo: {{ \App\Support\ShippingStatus::label($order->shippingShipment->remote_status) }}</small>
+          @endif
+        </span>
         <strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong>
       </a>
     @empty

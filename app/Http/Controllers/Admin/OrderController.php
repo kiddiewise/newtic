@@ -35,7 +35,7 @@ class OrderController extends Controller
         abort_if($status !== '' && ! array_key_exists($status, self::TRANSITIONS), 422);
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
-        $orders = Order::query()->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
+        $orders = Order::query()->with('shippingShipment')->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
             ->when($status !== '', fn ($q) => $q->where('status', $status))
             ->when($term !== '', fn ($q) => $q->where(function ($q) use ($term) {
                 $safe = '%'.addcslashes($term, '%_\\').'%';

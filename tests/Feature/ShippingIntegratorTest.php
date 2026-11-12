@@ -528,4 +528,28 @@ class ShippingIntegratorTest extends TestCase
         $this->assertSame('preparing', $order->fresh()->status);
     }
 
+
+    public function test_account_and_admin_order_lists_show_specific_turkish_carrier_state(): void
+    {
+        $provider = $this->provider();
+        $order = $this->order();
+        $member = User::factory()->create();
+        $order->update(['user_id'=>$member->id]);
+        $shipment = ShippingShipment::create([
+            'order_id'=>$order->id,
+            'shipping_provider_id'=>$provider->id,
+            'shipping_carrier_id'=>$provider->carriers()->where('is_dummy', true)->firstOrFail()->id,
+            'shipping_warehouse_id'=>$provider->warehouses()->firstOrFail()->id,
+            'remote_id'=>77323,
+            'state'=>'submitted',
+            'remote_status'=>'at_delivery_center',
+            'desi'=>'1.00',
+        ]);
+        $this->actingAs($member)->get(route('account.index'))->assertOk()
+            ->assertSee('Kargo: Dağıtım Merkezinde');
+        $this->admin();
+        $this->get(route('admin.orders.index'))->assertOk()
+            ->assertSee('Kargo: Dağıtım Merkezinde');
+    }
+
 }
