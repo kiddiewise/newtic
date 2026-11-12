@@ -5,21 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\BankAccount;
 use App\Models\Order;
 use App\Models\PaytrPaymentAttempt;
-use App\Support\PaytrTestAccess;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\User;
 use App\Support\AddressValidation;
 use App\Support\CategoryHierarchy;
-use App\Support\ShoppingCart;
 use App\Support\OrderTracking;
+use App\Support\PaytrTestAccess;
+use App\Support\ShoppingCart;
 use App\Support\TurkeyProvinces;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -42,11 +42,11 @@ class CheckoutController extends Controller
         }
 
         $cart = ShoppingCart::snapshot($request);
-        if (!$cart['lines']) {
+        if (! $cart['lines']) {
             return redirect()->route('cart.index')->with('error', 'Önce sepetinize ürün ekleyin.');
         }
 
-        if (!$request->session()->has('checkout_token')) {
+        if (! $request->session()->has('checkout_token')) {
             $request->session()->put('checkout_token', (string) Str::uuid());
         }
 
@@ -54,6 +54,7 @@ class CheckoutController extends Controller
             ? $request->user()->addresses()->orderByDesc('is_default')->latest()->get()
             : collect();
         $selectedAddress = $addresses->first();
+
         return view('store.checkout', [
             'cart' => $cart,
             'checkoutToken' => $request->session()->get('checkout_token'),
@@ -70,13 +71,13 @@ class CheckoutController extends Controller
         AddressValidation::normalizePhoneInput($request);
         $paytrAvailable = PaytrTestAccess::available();
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
-            'email' => ['required','email','max:255'],
-            'order_note' => ['nullable','string','max:2000'],
-            'checkout_token' => ['required','uuid'],
+            'email' => ['required', 'email', 'max:255'],
+            'order_note' => ['nullable', 'string', 'max:2000'],
+            'checkout_token' => ['required', 'uuid'],
             'payment_method' => ['required', Rule::in($paytrAvailable ? ['bank_transfer', 'paytr'] : ['bank_transfer'])],
-            'save_address' => ['nullable','boolean'],
-            'create_account' => ['nullable','boolean'],
-            'account_password' => ['required_if:create_account,1','nullable',Password::min(8)],
+            'save_address' => ['nullable', 'boolean'],
+            'create_account' => ['nullable', 'boolean'],
+            'account_password' => ['required_if:create_account,1', 'nullable', Password::min(8)],
         ]));
 
         $token = $validated['checkout_token'];
@@ -89,10 +90,11 @@ class CheckoutController extends Controller
             if ($previous?->payment_method === 'paytr' && $previous->status === 'cancelled') {
                 return redirect()->route('checkout.index')->with('error', 'Önceki test ödemeniz başarısız. Yeniden deneyebilirsiniz.');
             }
+
             return redirect()->route('checkout.success', $request->session()->get('checkout_last_order'));
         }
         $expected = (string) $request->session()->get('checkout_token', '');
-        if ($expected === '' || !hash_equals($expected, $token)) {
+        if ($expected === '' || ! hash_equals($expected, $token)) {
             throw ValidationException::withMessages([
                 'checkout_token' => 'Sipariş oturumu yenilendi. Sayfayı tekrar açın.',
             ]);
@@ -117,7 +119,7 @@ class CheckoutController extends Controller
             // Stock is rechecked under row locks and never derived from the client's
             // subtotal. Stable ID ordering prevents deadlocks between checkout requests.
             $raw = ShoppingCart::raw($request);
-            if (!is_array($raw) || count($raw) < 1 || count($raw) > 100) {
+            if (! is_array($raw) || count($raw) < 1 || count($raw) > 100) {
                 throw ValidationException::withMessages(['cart' => 'Sepetiniz boş veya geçersiz.']);
             }
 
@@ -176,7 +178,7 @@ class CheckoutController extends Controller
             $shipping = $subtotal >= $freeThreshold ? 0 : $fee;
 
             $customer = $user;
-            if (!$customer && $request->boolean('create_account')) {
+            if (! $customer && $request->boolean('create_account')) {
                 $customer = User::create([
                     'name' => $address['full_name'],
                     'email' => $validated['email'],
@@ -225,7 +227,9 @@ class CheckoutController extends Controller
                     'unit_price_cents' => $unitCents,
                     'line_total_cents' => $unitCents * $quantity,
                 ]);
-                $product->decrement('stock_quantity', $quantity);
+                if ($product->tracks_stock) {
+                    $product->decrement('stock_quantity', $quantity);
+                }
             }
 
             if ($method === 'paytr') {
@@ -246,9 +250,10 @@ class CheckoutController extends Controller
                     'company_title' => $address['company_title'] ?? null,
                     'tax_office' => $address['tax_office'] ?? null,
                     'tax_number' => $address['tax_number'] ?? null,
-                    'is_default' => !$previous,
+                    'is_default' => ! $previous,
                 ]);
             }
+
             return $order;
         }, 3);
 
@@ -282,7 +287,7 @@ class CheckoutController extends Controller
 
         $order->load(['items', 'paymentNotifications', 'paytrAttempts']);
         if ($order->payment_method === 'paytr'
-            && in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true)
+            && in_array($order->status, ['preparing', 'shipped', 'out_for_delivery', 'completed'], true)
             && $isSessionOrder
             && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
             ShoppingCart::clear($request);

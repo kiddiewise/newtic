@@ -3,13 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\PaymentNotification;
 use App\Models\Product;
-use App\Models\StoreSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CheckoutOrdersTest extends TestCase
@@ -21,6 +20,7 @@ class CheckoutOrdersTest extends TestCase
         $category = Category::query()->first() ?? Category::create([
             'name' => 'Renkli Surf Kurşun', 'slug' => 'renkli-surf-kursun', 'is_active' => true,
         ]);
+
         return Product::create([
             'primary_category_id' => $category->id,
             'sku' => $sku, 'name' => 'Polaris '.$sku, 'slug' => strtolower($sku),
@@ -49,12 +49,14 @@ class CheckoutOrdersTest extends TestCase
         $this->post(route('cart.add'), ['items' => [$product->id => $quantity]])
             ->assertRedirect(route('cart.index'));
         $this->get(route('checkout.index'))->assertOk()->assertSee('Siparişi Tamamla');
+
         return (string) session('checkout_token');
     }
 
     private function purchase(Product $product, array $overrides = [], int $qty = 1)
     {
         $token = $this->ready($product, $qty);
+
         return $this->post(route('checkout.place'), $this->address(
             array_merge(['checkout_token' => $token], $overrides)
         ));
@@ -64,6 +66,7 @@ class CheckoutOrdersTest extends TestCase
     {
         $admin = User::factory()->create();
         $admin->forceFill(['is_admin' => true])->save();
+
         return $admin;
     }
 
@@ -95,10 +98,25 @@ class CheckoutOrdersTest extends TestCase
             ->assertDontSee('checkout-success-mark">✓</div>', false);
     }
 
+    public function test_untracked_stock_can_be_ordered_without_decrement_or_cancel_restore(): void
+    {
+        $product = $this->product();
+        $product->update(['tracks_stock' => false, 'stock_quantity' => 999]);
+
+        $this->purchase($product, [], 3)->assertRedirect()->assertSessionHasNoErrors();
+        $order = Order::firstOrFail();
+        $this->assertSame(999, $product->fresh()->stock_quantity);
+
+        $this->actingAs($this->admin());
+        $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(999, $product->fresh()->stock_quantity);
+    }
+
     public function test_empty_checkout_redirects_to_cart_and_cannot_place_order(): void
     {
         $this->get(route('checkout.index'))->assertRedirect(route('cart.index'));
-        $this->post(route('checkout.place'), $this->address(['checkout_token' => (string) \Illuminate\Support\Str::uuid()]))
+        $this->post(route('checkout.place'), $this->address(['checkout_token' => (string) Str::uuid()]))
             ->assertSessionHasErrors('checkout_token');
         $this->assertDatabaseCount('orders', 0);
     }
@@ -110,7 +128,7 @@ class CheckoutOrdersTest extends TestCase
 
         $this->post(route('checkout.place'), $this->address([
             'checkout_token' => $token, 'invoice_type' => 'corporate',
-        ]))->assertSessionHasErrors(['company_title','tax_office','tax_number']);
+        ]))->assertSessionHasErrors(['company_title', 'tax_office', 'tax_number']);
 
         $this->post(route('checkout.place'), $this->address([
             'checkout_token' => $token, 'invoice_type' => 'corporate',

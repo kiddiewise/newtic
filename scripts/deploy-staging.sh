@@ -43,6 +43,10 @@ cp -a "$APP/public/build/." "$WEB/build/"
 
 cd "$APP"
 git fetch --no-tags origin "$BRANCH"
+# Manual staging releases can point at a commit on a feature branch. Fetch the
+# exact verified commit as well as the protected base branch so the fast-forward
+# check below can resolve it without broadening the server checkout.
+git fetch --no-tags origin "$NEWTIC_EXPECTED_SHA"
 git merge --ff-only "$NEWTIC_EXPECTED_SHA"
 if [ "$(git rev-parse HEAD)" != "$NEWTIC_EXPECTED_SHA" ]; then
   echo "Refusing to deploy: checkout does not match compiled assets"

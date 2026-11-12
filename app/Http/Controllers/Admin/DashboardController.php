@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\PaymentNotification;
 use App\Models\Product;
-use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -19,7 +18,8 @@ class DashboardController extends Controller
             'preparing' => Order::query()->where('status', 'preparing')->count(),
             'pending_notifications' => PaymentNotification::query()->where('status', 'pending')->count(),
             'products' => Product::query()->count(),
-            'low_stock' => Product::query()->where('is_active', true)->where('stock_quantity', '<=', 10)->count(),
+            'low_stock' => Product::query()->where('is_active', true)->where('tracks_stock', true)
+                ->where('stock_quantity', '<=', 10)->count(),
             'verified_revenue_cents' => (int) Order::query()
                 ->where('is_test', false)
                 ->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'))
@@ -31,6 +31,7 @@ class DashboardController extends Controller
             ->latest('id')->limit(7)->get();
 
         $lowStockProducts = Product::query()->where('is_active', true)
+            ->where('tracks_stock', true)
             ->where('stock_quantity', '<=', 10)
             ->orderBy('stock_quantity')->orderBy('id')->limit(5)->get();
 

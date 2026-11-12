@@ -29,6 +29,7 @@ class WooCommerceProductImportTest extends TestCase
             'Regular price', 'Sale price', 'Categories', 'Description',
             'Short description', 'Images', 'Parent', 'Attribute 1 name',
             'Attribute 1 value(s)', 'Weight (kg)', 'Meta: _yoast_wpseo_title',
+            'Meta: _yoast_wpseo_metadesc', 'Meta: _yoast_wpseo_focuskw',
         ];
         $stream = fopen('php://temp', 'w+');
         fputcsv($stream, $head, ',', '"', '');
@@ -45,12 +46,13 @@ class WooCommerceProductImportTest extends TestCase
     private function rows(): array
     {
         return [
-            ['100','variable','','Fırdöndülü Surf Kurşun','1','1','','','','Kurşunlar > Surf Kurşun',
-                '<p>Ana ürün <strong>tanıtımı</strong>.</p>','<p>Kurşun ürünü</p>','','','','','',''],
-            ['101','variation','SURF-75','','1','1','5','70','','','', '', '', 'id:100','Gramaj','75 gr','0.075',''],
-            ['102','variation','SURF-100','','1','1','7','100','','','','','','id:100','Gramaj','100 gr','0.100',''],
-            ['200','simple','JIG-55','Jig Kurşun','1','1','8','60','50','Kurşunlar > Jig','<p>İlk satır.</p><p>İkinci satır.</p>',
-                'Kısa tanıtım','','','','','0.055','Jig Kurşun SEO'],
+            ['100', 'variable', '', 'Fırdöndülü Surf Kurşun', '1', '1', '', '', '', 'Kurşunlar > Surf Kurşun',
+                '<p>Ana ürün <strong>tanıtımı</strong>.</p>', '<p>Kurşun ürünü</p>', '', '', '', '', '',
+                'Surf Kurşun SEO', 'Surf kurşun açıklaması', 'surf kurşun'],
+            ['101', 'variation', 'SURF-75', '', '1', '1', '5', '70', '', '', '', '', '', 'id:100', 'Gramaj', '75 gr', '0.075', ''],
+            ['102', 'variation', 'SURF-100', '', '1', '1', '7', '100', '', '', '', '', '', 'id:100', 'Gramaj', '100 gr', '0.100', ''],
+            ['200', 'simple', 'JIG-55', 'Jig Kurşun', '1', '1', '8', '60', '50', 'Kurşunlar > Jig', '<p>İlk satır.</p><p>İkinci satır.</p>',
+                'Kısa tanıtım', '', '', '', '', '0.055', 'Jig Kurşun SEO'],
         ];
     }
 
@@ -129,6 +131,9 @@ class WooCommerceProductImportTest extends TestCase
         $this->assertSame('50.00', $jig->price);
         $this->assertSame('60.00', $jig->compare_at_price);
         $this->assertSame('Jig Kurşun SEO', $jig->seo_title);
+        $this->assertSame('Surf Kurşun SEO', $surf75->seo_title);
+        $this->assertSame('Surf kurşun açıklaması', $surf75->seo_description);
+        $this->assertSame('surf kurşun', $surf75->seo_focus_keyword);
         $this->assertStringContainsString('İkinci satır.', $jig->description);
         $this->assertSame('Kısa tanıtım', $jig->short_description);
         $this->assertSame('Kurşunlar', $surf75->category->parent->name);
@@ -168,7 +173,7 @@ class WooCommerceProductImportTest extends TestCase
             'sku' => 'MANUAL-1', 'name' => 'Manuel Ürün', 'slug' => 'manuel-urun',
             'price' => '999.00', 'stock_quantity' => 19, 'is_active' => true,
         ]);
-        $row = ['300','simple','MANUAL-1','Farklı Woo Ürünü','1','1','5','25','','Kurşunlar'];
+        $row = ['300', 'simple', 'MANUAL-1', 'Farklı Woo Ürünü', '1', '1', '5', '25', '', 'Kurşunlar'];
         $batch = $this->upload([$row]);
         $this->complete($batch);
 
@@ -193,7 +198,7 @@ class WooCommerceProductImportTest extends TestCase
         Storage::fake('public');
         Http::fake();
         $this->loginAdmin();
-        $row = ['400','simple','MEDIA-4','Medya Ürün','1','1','5','49.90','','Kurşunlar','','',
+        $row = ['400', 'simple', 'MEDIA-4', 'Medya Ürün', '1', '1', '5', '49.90', '', 'Kurşunlar', '', '',
             'https://127.0.0.1/wp-content/uploads/secret.png'];
         $batch = $this->upload([$row]);
         $this->complete($batch);
@@ -202,6 +207,71 @@ class WooCommerceProductImportTest extends TestCase
         $message = $batch->rows()->firstOrFail()->message;
         $this->assertStringContainsString('yalnızca eski wordpress', mb_strtolower($message));
         Http::assertNothingSent();
+    }
+
+    public function test_turkish_export_preserves_untracked_stock_media_categories_weight_and_seo(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+        Http::fake([
+            'https://polariskursun.com/wp-content/uploads/*' => Http::response(
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+                200,
+                ['Content-Type' => 'image/png']
+            ),
+        ]);
+        $this->loginAdmin();
+
+        $headers = [
+            'Kimlik', 'Tür', 'Stok kodu (SKU)', 'İsim', 'Yayımlanmış',
+            'Katalogda görünürlük', 'Stokta?', 'Stok', 'Normal fiyat',
+            'Kategoriler', 'Açıklama', 'Kısa açıklama', 'Görseller',
+            'Ağırlık (g)', 'Meta: _yoast_wpseo_title', 'Meta: _yoast_wpseo_metadesc',
+            'Meta: _yoast_wpseo_focuskw',
+            'Meta: _thumbnail_ext_url',
+        ];
+        $values = [
+            '4451', 'simple', 'FSK75', '75 Gr. Polaris Klasik Fosforlu Surf Kurşun', '1',
+            'visible', '1', '', '69.90', 'Genel, Polaris Klasik Fosforlu Surf Kurşun',
+            '<p>Birinci satır.</p>\\n<p>İkinci satır.</p>',
+            'Kısa tanıtım\\n[ozel_gramaj_tablosu kategori="fosforlu"]',
+            'https://polariskursun.com/wp-content/uploads/2024/10/a.png, https://polariskursun.com/wp-content/uploads/2024/10/b.png',
+            '150', '%%title%% %%page%% %%sep%% %%sitename%%', 'Fosforlu kurşun açıklaması',
+            'fosforlu surf kurşun',
+            'https://polariskursun.com/wp-content/uploads/2024/10/featured.png',
+        ];
+        $stream = fopen('php://temp', 'w+');
+        fputcsv($stream, $headers, ',', '"', '');
+        fputcsv($stream, $values, ',', '"', '');
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        $this->post(route('admin.product-imports.upload'), [
+            'csv' => UploadedFile::fake()->createWithContent('urunler.csv', $csv),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $import = CatalogImport::latest('id')->firstOrFail();
+        $this->complete($import);
+
+        $product = Product::query()->where('sku', 'FSK75')->firstOrFail();
+        $this->assertTrue($product->is_active);
+        $this->assertFalse($product->tracks_stock);
+        $this->assertSame(999, $product->stock_quantity);
+        $this->assertSame('0.150', $product->weight_kg);
+        $this->assertSame('Polaris Klasik Fosforlu Surf Kurşun', $product->category->name);
+        $this->assertSame(2, $product->categories()->count());
+        $this->assertSame(
+            '75 Gr. Polaris Klasik Fosforlu Surf Kurşun - Polaris Kurşun',
+            $product->seo_title
+        );
+        $this->assertSame('Fosforlu kurşun açıklaması', $product->seo_description);
+        $this->assertSame('fosforlu surf kurşun', $product->seo_focus_keyword);
+        $this->assertMatchesRegularExpression('/Birinci satır\.\s+İkinci satır\./u', $product->description);
+        $this->assertStringNotContainsString('ozel_gramaj_tablosu', $product->short_description);
+        $this->assertSame(3, $product->images()->count());
+        $this->assertStringContainsString(hash('sha256', 'https://polariskursun.com/wp-content/uploads/2024/10/featured.png'), $product->image_path);
+        $this->assertStringContainsString('stok takibi kapalı', mb_strtolower($import->rows()->firstOrFail()->message));
+        $this->assertSame('4451', CatalogImportSource::firstOrFail()->original_data['product']['id']);
     }
 
     public function test_invalid_csv_headers_do_not_create_import_or_products(): void

@@ -88,6 +88,7 @@ final class PaytrCallbackController extends Controller
                     'processed_at' => $now,
                 ]);
                 $order->update(['status' => 'preparing']);
+
                 return 200;
             }
 
@@ -104,11 +105,13 @@ final class PaytrCallbackController extends Controller
                 ->selectRaw('product_id, SUM(quantity) as qty')
                 ->groupBy('product_id')->pluck('qty', 'product_id');
             $products = Product::query()->whereIn('id', $quantities->keys())
+                ->where('tracks_stock', true)
                 ->orderBy('id')->lockForUpdate()->get();
             foreach ($products as $product) {
                 $product->increment('stock_quantity', (int) ($quantities[$product->id] ?? 0));
             }
             $order->update(['status' => 'cancelled']);
+
             return 200;
         }, 3);
 

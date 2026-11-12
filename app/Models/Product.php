@@ -12,14 +12,15 @@ class Product extends Model
 {
     protected $fillable = [
         'primary_category_id', 'sku', 'name', 'slug', 'description',
-        'price', 'compare_at_price', 'stock_quantity', 'image_path', 'is_active', 'is_demo', 'option_label',
-        'short_description', 'weight_kg', 'dimensions_cm', 'seo_title', 'seo_description',
+        'price', 'compare_at_price', 'stock_quantity', 'tracks_stock', 'image_path', 'is_active', 'is_demo', 'option_label',
+        'short_description', 'weight_kg', 'dimensions_cm', 'seo_title', 'seo_description', 'seo_focus_keyword',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'compare_at_price' => 'decimal:2',
         'stock_quantity' => 'integer',
+        'tracks_stock' => 'boolean',
         'view_count' => 'integer',
         'is_active' => 'boolean',
         'is_demo' => 'boolean',

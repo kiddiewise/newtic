@@ -16,8 +16,8 @@ class OrderController extends Controller
 {
     private const TRANSITIONS = [
         'pending_payment' => ['cancelled'], // Preparing requires bank verification via payment inbox.
-        'preparing' => ['shipped','cancelled'],
-        'shipped' => ['out_for_delivery','completed'],
+        'preparing' => ['shipped', 'cancelled'],
+        'shipped' => ['out_for_delivery', 'completed'],
         'out_for_delivery' => ['completed'],
         'completed' => [],
         'cancelled' => [],
@@ -26,7 +26,7 @@ class OrderController extends Controller
     public function index(Request $request): View
     {
         $status = (string) $request->query('status', '');
-        abort_if($status !== '' && !array_key_exists($status, self::TRANSITIONS), 422);
+        abort_if($status !== '' && ! array_key_exists($status, self::TRANSITIONS), 422);
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
         $orders = Order::query()->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
@@ -38,14 +38,15 @@ class OrderController extends Controller
             }))
             ->latest('id')->paginate(20)->withQueryString();
 
-        return view('admin.orders.index', compact('orders','status','term'));
+        return view('admin.orders.index', compact('orders', 'status', 'term'));
     }
 
     public function show(Order $order): View
     {
         $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts']);
         $allowed = self::TRANSITIONS[$order->status] ?? [];
-        return view('admin.orders.show', compact('order','allowed'));
+
+        return view('admin.orders.show', compact('order', 'allowed'));
     }
 
     /**
@@ -80,12 +81,12 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required',Rule::in(array_keys(self::TRANSITIONS))],
+            'status' => ['required', Rule::in(array_keys(self::TRANSITIONS))],
         ]);
         DB::transaction(function () use ($order, $data) {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             $next = $data['status'];
-            if (!in_array($next, self::TRANSITIONS[$locked->status] ?? [], true)) {
+            if (! in_array($next, self::TRANSITIONS[$locked->status] ?? [], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'Bu sipariş durumu değişikliği yapılamaz.',
                 ]);
@@ -121,7 +122,9 @@ class OrderController extends Controller
                 // Restore reserved stock exactly once; cancelled orders are terminal.
                 foreach ($locked->items()->orderBy('product_id')->get() as $item) {
                     if ($item->product_id) {
-                        Product::query()->whereKey($item->product_id)->increment('stock_quantity', $item->quantity);
+                        Product::query()->whereKey($item->product_id)
+                            ->where('tracks_stock', true)
+                            ->increment('stock_quantity', $item->quantity);
                     }
                 }
             }
