@@ -1,0 +1,41 @@
+/* Kargo operations — responsive issue review center */
+.ship-operations-nav{margin-bottom:14px;display:flex;justify-content:flex-end}
+.ship-ops-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.ship-ops-head>div{flex:1}
+.ship-ops-head h2{margin:0 0 9px;font-size:17px;color:#092037}
+.ship-ops-head p{font-size:12px;line-height:1.65;color:#60788a;margin:0}
+.ship-ops-head form{flex:none}
+.ship-ops-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:21px}
+.ship-ops-stats>div{border:1px solid #e0e9f0;border-radius:14px;padding:16px;background:#f9fbfd;display:grid;gap:6px}
+.ship-ops-stats strong{font-size:26px;line-height:1;font-weight:800;color:#092037}
+.ship-ops-stats span{font-size:11px;color:#607789}
+.ship-ops-stats .is-warning{background:#fff8f1;border-color:#f4dec8}
+.ship-ops-stats .is-warning strong{color:#aa621c}
+.ship-ops-filters{margin:14px 0;display:flex;flex-wrap:wrap;gap:6px}
+.ship-ops-filters a{white-space:nowrap}
+.ship-ops-filters a small{margin-left:5px;font-size:10px;opacity:.78}
+.ship-ops-search{display:flex;align-items:center;gap:9px;margin:13px 0 21px;max-width:510px}
+.ship-ops-search input{flex:1;min-width:0;min-height:41px;border:1px solid #d8e3eb;border-radius:10px;padding:10px 12px;font-family:inherit;color:#092037}
+.ship-ops-list{display:grid;gap:12px}
+.ship-ops-item{padding:19px;border:1px solid #dfe8ef;border-radius:15px;background:#fcfdff}
+.ship-ops-item-main{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ship-ops-item-main>div{min-width:0;display:grid;gap:5px}
+.ship-ops-order-link{font-weight:750;color:#092037;text-decoration:none;font-size:14px;overflow-wrap:anywhere}
+.ship-ops-order-link:hover{text-decoration:underline}
+.ship-ops-item-main small{font-size:11px;color:#6d8193;overflow-wrap:anywhere}
+.ship-ops-status{border-radius:30px;background:#eaf2f7;color:#205272;padding:8px 12px;font-size:10px;font-weight:700;line-height:1.4;text-align:center}
+.ship-ops-status.is-danger{background:#fff0ee;color:#9c332e}
+.ship-ops-item>p{font-size:12px;color:#435d71;line-height:1.65;margin:13px 0}
+.ship-ops-meta{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0;color:#617a8d;font-size:11px}
+.ship-ops-meta>span,.ship-ops-meta>strong{background:#f0f5f9;border-radius:8px;padding:7px 10px;font-weight:550}
+.ship-ops-meta>strong{color:#a4552c;background:#fff3eb}
+.ship-ops-reviewed{color:#326b5b!important;background:#eaf6f0!important}
+.ship-ops-review-form{border-top:1px solid #e4ebf2;padding:15px 0;margin-top:13px;display:grid;gap:10px}
+.ship-ops-review-form label{font-weight:700;color:#18384e;font-size:12px}
+.ship-ops-review-form textarea{min-height:62px;width:100%;font-family:inherit;border-radius:9px;border:1px solid #d6e2e9;padding:11px 12px;color:#092037;font-size:12px}
+.ship-ops-review-form button{justify-self:start}
+.ship-ops-review-note{margin:14px 0;padding:12px 14px;border:1px solid #e0e8ef;background:#f6f9fb;border-radius:11px;color:#3b5a70;line-height:1.55;font-size:12px}
+.ship-order-operations-link{margin:14px 0;display:inline-flex}
+.ship-ops-item>.admin-text-link{display:inline-flex;margin-top:10px}
+@media(max-width:760px){.ship-ops-head{flex-direction:column}.ship-ops-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ship-ops-item{padding:14px}.ship-ops-item-main{flex-direction:column}.ship-ops-status{align-self:flex-start}}
+@media(max-width:400px){.ship-ops-stats{gap:8px}.ship-ops-stats>div{padding:11px}.ship-ops-stats strong{font-size:22px}}

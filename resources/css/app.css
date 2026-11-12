@@ -39,6 +39,7 @@
 @import './infinite-catalog.css';
 @import './shipping-integrations.css';
 @import './shipping-status-operations.css';
+@import './shipping-ops-center.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

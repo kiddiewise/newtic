@@ -2,6 +2,7 @@
 @section('title', 'Kargo Entegrasyonu | NEWTIC')
 @section('topbar', 'Kargo Entegrasyonu')
 @section('content')
+<div class="ship-operations-nav"><a class="admin-secondary" href="{{ route('admin.shipping-operations.index') }}"><x-admin-icon name="package"/> Kargo operasyonlarını ve sorunlu gönderileri görüntüle</a></div>
 <div class="admin-page-heading admin-heading-actions">
   <div>
     <p class="admin-eyebrow">MAĞAZA AYARLARI / KARGO ENTEGRASYONU</p>

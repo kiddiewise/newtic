@@ -75,4 +75,32 @@ php artisan migrate --force
 php artisan optimize:clear
 php artisan view:cache
 
+# Staging-only, read-only shipping reconciliation. Kargo Entegratör does not
+# send callbacks for canceled/failed/draft states. Preserve every pre-existing
+# cron entry; never replace or edit any other application job.
+CRON_MARKER="# NEWTIC_STAGING_SHIPPING_SYNC"
+if command -v crontab >/dev/null 2>&1; then
+  CURRENT_CRON="$(mktemp)"
+  (crontab -l 2>/dev/null || true) > "$CURRENT_CRON"
+  if grep -Fq "$CRON_MARKER" "$CURRENT_CRON"; then
+    echo "NEWTIC staging shipping cron already installed"
+  else
+    PHP_BIN="$(command -v php)"
+    if test -n "$PHP_BIN" && test -x "$PHP_BIN"; then
+      # Every 15 minutes; only artisan shipping:sync. The PHP command itself
+      # independently refuses any host other than NEWTIC staging.
+      printf '\n*/15 * * * * cd "%s" && "%s" artisan shipping:sync --limit=20 --no-ansi >/dev/null 2>&1 %s\n' \
+        "$APP" "$PHP_BIN" "$CRON_MARKER" >> "$CURRENT_CRON"
+      if crontab "$CURRENT_CRON"; then
+        echo "NEWTIC staging shipping cron installed: every 15 minutes"
+      else
+        echo "WARNING: cron could not be installed; configure staging cron in hPanel"
+      fi
+    fi
+  fi
+  rm -f "$CURRENT_CRON"
+else
+  echo "WARNING: crontab not available; configure staging cron in hPanel"
+fi
+
 echo "NEWTIC staging deployed: $NEWTIC_EXPECTED_SHA"

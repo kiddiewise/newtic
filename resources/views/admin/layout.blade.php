@@ -38,6 +38,7 @@
     ['label' => 'Logolar', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
     ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
     ['label' => 'Kargo Entegrasyonu', 'name' => 'admin.shipping-integrations.index', 'active' => 'admin.shipping-integrations.*', 'icon' => 'truck'],
+    ['label' => 'Kargo Operasyonları', 'name' => 'admin.shipping-operations.index', 'active' => 'admin.shipping-operations.*', 'icon' => 'package'],
   ];
 @endphp
 <body class="admin-body {{ $adminAuthenticated ? 'admin-app-active' : 'admin-auth-only' }}">

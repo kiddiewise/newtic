@@ -12,8 +12,20 @@ final class ShippingShipment extends Model
         'order_id','shipping_provider_id','shipping_carrier_id','shipping_warehouse_id',
         'remote_id','state','remote_status','barcode','tracking_number',
         'tracking_link','desi','kg','last_callback_time',
+        'last_sync_attempt_at','last_synced_at','last_sync_failed_at','sync_failure_count',
+        'exception_acknowledged_at','exception_acknowledged_status','exception_acknowledged_by','exception_note',
     ];
-    protected $casts = ['remote_id' => 'integer', 'desi' => 'decimal:2', 'kg' => 'decimal:2'];
+    protected $casts = [
+        'remote_id' => 'integer','desi' => 'decimal:2','kg' => 'decimal:2',
+        'last_sync_attempt_at' => 'datetime','last_synced_at' => 'datetime',
+        'last_sync_failed_at' => 'datetime','exception_acknowledged_at' => 'datetime',
+        'sync_failure_count' => 'integer',
+    ];
+
+    public function exceptionReviews(): HasMany
+    {
+        return $this->hasMany(ShippingExceptionReview::class)->orderByDesc('id');
+    }
 
     public function events(): HasMany
     {

@@ -85,6 +85,7 @@ use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\PaytrSettingsController;
 use App\Http\Controllers\Admin\ShippingIntegrationController;
 use App\Http\Controllers\Admin\ShippingShipmentController;
+use App\Http\Controllers\Admin\ShippingOperationsController;
 use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNotificationController;
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -119,6 +120,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::patch('/orders/{order}/status-correction', [AdminOrderController::class, 'correct'])->middleware('throttle:8,1')->name('orders.correct');
     Route::post('/orders/{order}/bank-verification-correction', [AdminOrderController::class, 'revokeBankVerification'])->middleware('throttle:4,1')->name('orders.revoke-bank-verification');
     Route::patch('/orders/{order}/shipping', [AdminOrderController::class, 'shipping'])->name('orders.shipping');
+    Route::get('/kargo-operasyonlari', [ShippingOperationsController::class, 'index'])->name('shipping-operations.index');
+    Route::post('/kargo-operasyonlari/kontrol', [ShippingOperationsController::class, 'sync'])->middleware('throttle:4,1')->name('shipping-operations.sync');
+    Route::post('/kargo-operasyonlari/{shipment}/inceleme', [ShippingOperationsController::class, 'review'])->middleware('throttle:12,1')->name('shipping-operations.review');
     Route::get('/kargo-entegrasyonu', [ShippingIntegrationController::class, 'index'])->name('shipping-integrations.index');
     Route::patch('/kargo-entegrasyonu', [ShippingIntegrationController::class, 'save'])->middleware('throttle:8,1')->name('shipping-integrations.save');
     Route::post('/kargo-entegrasyonu/senkronize', [ShippingIntegrationController::class, 'sync'])->middleware('throttle:10,1')->name('shipping-integrations.sync');

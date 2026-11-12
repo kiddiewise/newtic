@@ -11,12 +11,17 @@ final class ShippingTestAccess
 {
     public const HOST = 'powderblue-dinosaur-538060.hostingersite.com';
 
-    public static function allowed(): bool
+    public static function safeEnvironment(): bool
     {
         return (bool) config('newtic.checkout_test_mode', true)
             && (bool) config('newtic.shipping_dummy_enabled', false)
             && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https'
-            && parse_url((string) config('app.url'), PHP_URL_HOST) === self::HOST
+            && parse_url((string) config('app.url'), PHP_URL_HOST) === self::HOST;
+    }
+
+    public static function allowed(): bool
+    {
+        return self::safeEnvironment()
             && request()->getHost() === self::HOST;
     }
 }

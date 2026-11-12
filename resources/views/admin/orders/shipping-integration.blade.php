@@ -15,6 +15,10 @@
       @if($shipment->barcode)<div><span>Barkod</span><strong>{{ $shipment->barcode }}</strong></div>@endif
       @if($shipment->tracking_number)<div><span>Takip numarası</span><strong>{{ $shipment->tracking_number }}</strong></div>@endif
       <div><span>Desi</span><strong>{{ $shipment->desi }} desi</strong></div>
+      <div><span>Son API sorgusu</span><strong>{{ $shipment->last_synced_at?->format('d.m.Y H:i') ?: 'Henüz sorgulanmadı' }}</strong></div>
+      @if($shipment->sync_failure_count)
+        <div><span>Bağlantı uyarısı</span><strong>{{ $shipment->sync_failure_count }} başarısız deneme</strong></div>
+      @endif
     </div>
     @if($shipment->remote_status)
       <div class="ship-status-summary {{ \App\Support\ShippingStatus::isException($shipment->remote_status) ? 'is-problem' : '' }}">
@@ -35,6 +39,10 @@
           @endforeach
         </ol>
       </div>
+    @endif
+    <a class="admin-secondary ship-order-operations-link" href="{{ route('admin.shipping-operations.index', ['q' => $order->order_number, 'filter' => 'all']) }}"><x-admin-icon name="package"/> Kargo operasyon kaydını aç</a>
+    @if($shipment->exception_note)
+      <div class="ship-ops-review-note"><strong>Yönetici inceleme notu:</strong> {{ $shipment->exception_note }}</div>
     @endif
     @if($shipment->state === 'uncertain')
       <p class="ship-danger">Gönderi sonucu doğrulanamadı. Aynı sipariş için tekrar gönderi oluşturma. Kargo Entegratör panelinde bu sipariş numarasıyla kontrol ederek destek al.</p>

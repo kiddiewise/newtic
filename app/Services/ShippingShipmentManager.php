@@ -29,7 +29,14 @@ final class ShippingShipmentManager
                 && strcmp($time, $locked->last_callback_time) <= 0) return;
 
             $changed = $locked->remote_status !== $status;
-            $locked->update(['remote_status' => $status, 'last_callback_time' => $time]);
+            $fields = ['remote_status' => $status, 'last_callback_time' => $time];
+            if ($changed) {
+                $fields['exception_acknowledged_at'] = null;
+                $fields['exception_acknowledged_status'] = null;
+                $fields['exception_acknowledged_by'] = null;
+                $fields['exception_note'] = null;
+            }
+            $locked->update($fields);
             if ($changed) {
                 $locked->events()->create([
                     'status' => $status, 'source' => 'callback',
@@ -52,7 +59,19 @@ final class ShippingShipmentManager
                 throw new \RuntimeException('Sağlayıcının gönderi durumu tanınmıyor.');
             }
             $changed = $locked->remote_status !== $status;
-            $fields = ['remote_status' => $status];
+            $fields = [
+                'remote_status' => $status,
+                'last_sync_attempt_at' => now(),
+                'last_synced_at' => now(),
+                'last_sync_failed_at' => null,
+                'sync_failure_count' => 0,
+            ];
+            if ($changed) {
+                $fields['exception_acknowledged_at'] = null;
+                $fields['exception_acknowledged_status'] = null;
+                $fields['exception_acknowledged_by'] = null;
+                $fields['exception_note'] = null;
+            }
             foreach (['barcode' => 'barcode','tracking_number' => 'tracking_number',
                 'tracking_link' => 'tracking_link'] as $key => $dest) {
                 if (!isset($remote[$key]) || !is_scalar($remote[$key])) continue;
