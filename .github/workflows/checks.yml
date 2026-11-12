@@ -100,6 +100,14 @@ jobs:
           cd "$APP" || exit 0
           echo "time=$(date -u +%FT%TZ)"
           echo "revision=$(git rev-parse --short HEAD)"
+          echo "git status (file names only):"
+          git status --porcelain | head -n 25
+          echo "staging recent commits:"
+          git log --format='%h %s' -n 6
+          echo "merge ancestry:"
+          git merge-base HEAD origin/feat/phase-01-foundation-homepage || true
+          echo "ahead/behind counts:"
+          git rev-list --left-right --count HEAD...origin/feat/phase-01-foundation-homepage || true
           echo "load:"; uptime
           echo "disk:"; df -h "$HOME" | tail -1
           echo "runtime:"; timeout 12 php artisan about --only=environment
