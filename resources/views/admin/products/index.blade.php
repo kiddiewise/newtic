@@ -38,7 +38,11 @@
               <s>{{ number_format((float) $product->compare_at_price, 2, ',', '.') }} ₺</s>
               <span class="admin-sale-tag">-%{{ $product->discount_percent }}</span>
             @endif
-            <span @class(['admin-stock-badge','is-low' => $product->stock_quantity <= 10])>Stok: {{ $product->stock_quantity }}</span>
+            @if($product->tracks_stock)
+              <span @class(['admin-stock-badge','is-low' => $product->stock_quantity <= 10])>Stok: {{ $product->stock_quantity }}</span>
+            @else
+              <span class="admin-stock-badge">Stok takibi kapalı</span>
+            @endif
             <span class="admin-status {{ $product->is_active ? 'is-active' : '' }}">{{ $product->is_active ? 'Yayında' : 'Pasif' }}</span>
             <span><x-admin-icon name="chart" /> {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</span>
           </div>

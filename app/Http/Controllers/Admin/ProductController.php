@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Support\CategoryHierarchy;
 use App\Support\UniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -29,7 +28,8 @@ class ProductController extends Controller
         $products = Product::query()->with('category')->withCount('images')
             ->when($status === 'active', fn ($query) => $query->where('is_active', true))
             ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
-            ->when($status === 'low_stock', fn ($query) => $query->where('is_active', true)->where('stock_quantity', '<=', 10))
+            ->when($status === 'low_stock', fn ($query) => $query->where('is_active', true)
+                ->where('tracks_stock', true)->where('stock_quantity', '<=', 10))
             ->when($term !== '', fn ($query) => $query->where(function ($query) use ($term) {
                 $safe = addcslashes($term, '%_\\');
                 $query->where('name', 'like', '%'.$safe.'%')->orWhere('sku', 'like', '%'.$safe.'%');
@@ -42,7 +42,7 @@ class ProductController extends Controller
     public function create(): View
     {
         return view('admin.products.form', [
-            'product' => new Product(),
+            'product' => new Product,
             'categories' => collect(CategoryHierarchy::choices()),
         ]);
     }
@@ -107,6 +107,9 @@ class ProductController extends Controller
 
     private function validated(Request $request, ?Product $product = null): array
     {
+        if (! $request->has('tracks_stock')) {
+            $request->merge(['tracks_stock' => true]);
+        }
         $skuRule = Rule::unique('products', 'sku');
         if ($product && $product->exists) {
             $skuRule->ignore($product->id);
@@ -117,13 +120,14 @@ class ProductController extends Controller
             'sku' => ['required', 'string', 'max:100', $skuRule],
             'primary_category_id' => ['required', 'integer', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:10000'],
-            'short_description' => ['nullable','string','max:10000'],
-            'weight_kg' => ['nullable','numeric','min:0','max:9999999','decimal:0,3'],
-            'seo_title' => ['nullable','string','max:255'],
-            'seo_description' => ['nullable','string','max:2000'],
+            'short_description' => ['nullable', 'string', 'max:10000'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:9999999', 'decimal:0,3'],
+            'seo_title' => ['nullable', 'string', 'max:255'],
+            'seo_description' => ['nullable', 'string', 'max:2000'],
             'regular_price' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'sale_price' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'lt:regular_price'],
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'tracks_stock' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'option_label' => ['nullable', 'string', 'max:80'],
             'options_text' => ['nullable', 'string', 'max:3000'],
@@ -135,7 +139,7 @@ class ProductController extends Controller
     private function toProductAttributes(array $data, Request $request): array
     {
         $regular = number_format((float) $data['regular_price'], 2, '.', '');
-        $sale = !empty($data['sale_price'])
+        $sale = ! empty($data['sale_price'])
             ? number_format((float) $data['sale_price'], 2, '.', '')
             : null;
 
@@ -143,6 +147,10 @@ class ProductController extends Controller
         $data['price'] = $sale ?? $regular;
         $data['compare_at_price'] = $sale ? $regular : null;
         $data['is_active'] = $request->boolean('is_active');
+        $data['tracks_stock'] = $request->boolean('tracks_stock');
+        if (! $data['tracks_stock']) {
+            $data['stock_quantity'] = max(999, (int) $data['stock_quantity']);
+        }
         $data['is_demo'] = false;
 
         return $data;
@@ -184,7 +192,7 @@ class ProductController extends Controller
     private function addPhotos(Product $product, Request $request): void
     {
         $images = $request->file('images', []);
-        if (!$images) {
+        if (! $images) {
             return;
         }
 
@@ -197,7 +205,7 @@ class ProductController extends Controller
         foreach ($images as $image) {
             $path = 'storage/'.$image->store('products', 'public');
             $product->images()->create(['path' => $path, 'sort_order' => $order++]);
-            if (!$product->image_path) {
+            if (! $product->image_path) {
                 $product->update(['image_path' => $path]);
             }
         }

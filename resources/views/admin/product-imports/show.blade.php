@@ -27,7 +27,7 @@
     <div class="import-alert">Önizleme güvenlidir: Henüz ürün, stok veya fiyat değişmedi. Gramaj/varyasyon satırları <strong>ayrı ürün</strong> olarak kaydedilecektir.</div>
     <form action="{{ route('admin.product-imports.start', $import) }}" method="POST" class="import-start-form">
       @csrf
-      <label class="import-check"><input type="checkbox" name="publish_products" value="1"> <span><strong>Aktarılan ürünleri yayına al</strong><small>Varsayılan olarak yeni ürünler pasif eklenir. Stok bilgisi olmayan veya taslak ürünler yayımlanmaz.</small></span></label>
+      <label class="import-check"><input type="checkbox" name="publish_products" value="1"> <span><strong>Aktarılan ürünleri yayına al</strong><small>Varsayılan olarak yeni ürünler pasif eklenir. Taslak, gizli veya stokta olmayan ürünler yayımlanmaz; WooCommerce'te stok takibi kapalı ürünler bu ayarla korunur.</small></span></label>
       <button type="submit" class="admin-primary"><x-admin-icon name="check"/> Aktarımı başlat</button>
     </form>
   @else

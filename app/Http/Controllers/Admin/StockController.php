@@ -17,8 +17,10 @@ class StockController extends Controller
         abort_if(mb_strlen($term) > 100, 422);
 
         $products = Product::query()->with('category')
-            ->when($filter === 'low', fn ($q) => $q->where('is_active', true)->where('stock_quantity', '<=', 10))
-            ->when($filter === 'empty', fn ($q) => $q->where('is_active', true)->where('stock_quantity', 0))
+            ->when($filter === 'low', fn ($q) => $q->where('is_active', true)
+                ->where('tracks_stock', true)->where('stock_quantity', '<=', 10))
+            ->when($filter === 'empty', fn ($q) => $q->where('is_active', true)
+                ->where('tracks_stock', true)->where('stock_quantity', 0))
             ->when($term !== '', fn ($q) => $q->where(function ($q) use ($term) {
                 $safe = '%'.addcslashes($term, '%_\\').'%';
                 $q->where('name', 'like', $safe)->orWhere('sku', 'like', $safe);

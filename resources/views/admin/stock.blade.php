@@ -18,7 +18,11 @@
     <div class="admin-catalog-row">
       <img class="admin-catalog-photo" src="{{ asset($product->image_path ?: 'assets/products/demo-sinker.svg') }}" alt="" width="68" height="68" loading="lazy">
       <div class="admin-catalog-info"><strong>{{ $product->name }}</strong><small>{{ $product->sku }} · {{ $product->category?->name }}</small>
-        <span @class(['admin-stock-badge','is-low'=>$product->stock_quantity<=10])>Stok: {{ $product->stock_quantity }}</span>
+        @if($product->tracks_stock)
+          <span @class(['admin-stock-badge','is-low'=>$product->stock_quantity<=10])>Stok: {{ $product->stock_quantity }}</span>
+        @else
+          <span class="admin-stock-badge">Stok takibi kapalı</span>
+        @endif
       </div>
       <a class="admin-secondary" href="{{ route('admin.products.edit', $product) }}">Stok güncelle <x-admin-icon name="arrow-right" /></a>
     </div>
