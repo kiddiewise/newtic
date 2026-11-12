@@ -13,74 +13,70 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Inspect visible staging catalog over HTTPS (read-only)
+      - name: Count publicly listed staging products and spot-check images (read-only)
         run: |
           set -euo pipefail
-          BASE='https://powderblue-dinosaur-538060.hostingersite.com'
-          for path in / /ara; do
-            curl --fail --show-error --silent --location \
-              --max-time 20 --retry 3 \
-              -o "$(test "$path" = / && echo homepage.html || echo catalog.html)" \
-              "$BASE$path"
-          done
           python3 - <<'PY'
           from html.parser import HTMLParser
-          from collections import Counter
-          import html, json, re
-          from urllib.parse import urlparse, parse_qs
+          from urllib.request import Request, urlopen
+          from urllib.parse import urljoin
+          import json
 
-          class CatalogParser(HTMLParser):
+          BASE='https://powderblue-dinosaur-538060.hostingersite.com/'
+          class Catalog(HTMLParser):
               def __init__(self):
                   super().__init__()
-                  self.in_product_name = False
-                  self.current_name = ''
-                  self.names = []
-                  self.cards = 0
-                  self.images = []
-                  self.pagination = set()
-                  self.headings = []
-                  self.in_h1 = False
-              def handle_starttag(self, tag, attrs):
-                  attrs = dict(attrs)
-                  cls = attrs.get('class', '').split()
-                  if tag == 'article' and 'product-card' in cls:
-                      self.cards += 1
-                  if tag == 'a' and 'product-card-name' in cls:
-                      self.in_product_name = True
-                      self.current_name = ''
-                  if tag == 'img' and 'product-card' in attrs.get('class',''):
-                      self.images.append(attrs.get('src',''))
-                  if tag == 'a':
-                      url = attrs.get('href','')
-                      page = parse_qs(urlparse(url).query).get('page', [])
-                      if page and page[0].isdigit():
-                          self.pagination.add(int(page[0]))
-                  if tag == 'h1':
-                      self.in_h1 = True
-              def handle_data(self, data):
-                  if self.in_product_name:
-                      self.current_name += data
-                  if self.in_h1:
-                      self.headings.append(data.strip())
-              def handle_endtag(self, tag):
-                  if tag == 'a' and self.in_product_name:
-                      self.names.append(html.unescape(self.current_name).strip())
-                      self.in_product_name = False
-                  if tag == 'h1':
-                      self.in_h1 = False
+                  self.names=[]
+                  self.imgs=[]
+                  self.has_next=False
+                  self.capture=False
+                  self.last=''
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  c=a.get('class','').split()
+                  if tag=='a' and 'product-card-name' in c:
+                      self.capture=True
+                      self.last=''
+                  if tag=='img' and 'product-card' in a.get('class',''):
+                      self.imgs.append(a.get('src',''))
+                  if tag=='a' and 'next' in a.get('rel','').split():
+                      self.has_next=True
+              def handle_data(self,data):
+                  if self.capture:self.last+=data
+              def handle_endtag(self,tag):
+                  if tag=='a' and self.capture:
+                      self.names.append(self.last.strip())
+                      self.capture=False
 
-          result = {}
-          for name in ('homepage','catalog'):
-              text = open(name+'.html', encoding='utf8', errors='replace').read()
-              p = CatalogParser()
-              p.feed(text)
-              result[name] = {
-                'http_content_bytes': len(text),
-                'product_cards_on_page': p.cards,
-                'names_sample': p.names[:16],
-                'heading': [x for x in p.headings if x][:3],
-                'pagination_page_numbers': sorted(p.pagination),
-                'demo_fallback_image_references': text.count('assets/products/demo-sinker.svg'),
-              }
-          print(json.dumps(result, ensure_ascii=False, indent=2))
+          result={'pages_checked':0,'published_cards_count':0,'unique_product_names_count':0,
+                  'pages':[],'image_checks':[],'scan_complete':False}
+          all_names=[]
+          image_urls=[]
+          for page in range(1,41):
+              url=urljoin(BASE,'ara'+('?page='+str(page) if page>1 else ''))
+              req=Request(url,headers={'User-Agent':'NEWTIC-catalog-healthcheck/1.0'})
+              with urlopen(req,timeout=18) as response:
+                  markup=response.read().decode('utf-8','replace')
+              p=Catalog();p.feed(markup)
+              result['pages_checked']+=1
+              result['pages'].append({'page':page,'visible_products':len(p.names),'next_page':p.has_next})
+              if not p.names:break
+              all_names+=p.names
+              image_urls+=p.imgs
+              if not p.has_next:
+                  result['scan_complete']=True
+                  break
+          result['published_cards_count']=len(all_names)
+          result['unique_product_names_count']=len(set(all_names))
+          for src in list(dict.fromkeys(image_urls))[:5]:
+              url=urljoin(BASE,src)
+              try:
+                  req=Request(url,method='HEAD',headers={'User-Agent':'NEWTIC-catalog-healthcheck/1.0'})
+                  with urlopen(req,timeout=12) as response:
+                      status=response.status
+                      mime=response.headers.get('content-type','')
+                  result['image_checks'].append({'path':src,'status':status,'mime':mime})
+              except Exception as e:
+                  result['image_checks'].append({'path':src,'error':type(e).__name__})
+          print(json.dumps(result,ensure_ascii=False,indent=2))
           PY
