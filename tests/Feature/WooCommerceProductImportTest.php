@@ -200,7 +200,7 @@ class WooCommerceProductImportTest extends TestCase
 
         $this->assertSame(1, $batch->fresh()->created_rows);
         $message = $batch->rows()->firstOrFail()->message;
-        $this->assertStringContainsString('yalnızca eski WordPress', mb_strtolower($message));
+        $this->assertStringContainsString('yalnızca eski wordpress', mb_strtolower($message));
         Http::assertNothingSent();
     }
 
