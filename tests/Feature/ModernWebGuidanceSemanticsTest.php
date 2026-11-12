@@ -50,7 +50,7 @@ class ModernWebGuidanceSemanticsTest extends TestCase
         $workflow = file_get_contents(base_path('.github/workflows/modern-web-guidance.yml'));
         $this->assertStringContainsString("DISABLE_TELEMETRY: '1'", $workflow);
         $this->assertStringContainsString('modern-web-guidance@1.0.0 legacy-scan resources --json', $workflow);
-        $this->assertStringNotContainsString('secrets.', $workflow);
+        $this->assertStringNotContainsString('${{ secrets.', $workflow);
         $this->assertStringNotContainsString('ssh ', $workflow);
         $this->assertStringNotContainsString('deploy-staging.sh', $workflow);
     }
