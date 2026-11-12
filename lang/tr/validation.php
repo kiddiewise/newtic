@@ -19,6 +19,9 @@ return [
         'array' => ':attribute :size öğe içermelidir.',
     ],
     'in' => ':attribute için geçerli bir seçim yapın.',
+    'custom' => [
+        'district' => ['in' => 'Seçtiğiniz ilçe bu ile bağlı değil. Lütfen listeden doğru ilçeyi seçin.'],
+    ],
     'integer' => ':attribute tam sayı olmalıdır.',
     'max' => [
         'array' => ':attribute en fazla :max öğe içerebilir.',

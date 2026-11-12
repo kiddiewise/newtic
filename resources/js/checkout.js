@@ -1,3 +1,5 @@
+import { checkoutHasValidDistrict } from './province-district.js';
+
 // Checkout: saved address autofill, conditional invoice and account creation.
 document.querySelectorAll('[data-checkout-invoice]').forEach((section) => {
   const fields = section.querySelector('[data-corporate-fields]');
@@ -76,7 +78,8 @@ if (checkoutForm) {
         ? 'Cep telefonu numaranı 555 555 55 55 şeklinde gir.' : '');
     }
 
-    const ready = checkoutForm.checkValidity()
+    const ready = checkoutHasValidDistrict(checkoutForm)
+      && checkoutForm.checkValidity()
       && !!checkoutForm.querySelector('input[name="payment_method"]:checked');
 
     for (const button of submitButtons) {
@@ -116,7 +119,7 @@ if (checkoutForm) {
   checkoutForm.addEventListener('submit', (event) => {
     if (submitting) { event.preventDefault(); return; }
     update();
-    if (!checkoutForm.checkValidity()) return; // Native browser validation.
+    if (!checkoutHasValidDistrict(checkoutForm) || !checkoutForm.checkValidity()) return; // Native browser validation.
     submitting = true;
     checkoutForm.setAttribute('aria-busy', 'true');
     submitButtons.forEach((button) => {

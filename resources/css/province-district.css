@@ -1,0 +1,31 @@
+/* Mobile-friendly native region selects, consistent with NEWTIC navy theme. */
+.checkout-field select[data-tr-district]{
+  min-height:49px;
+  background:#fff;
+  color:#193841;
+  cursor:pointer;
+  box-shadow:none;
+}
+.checkout-field select[data-tr-district]:disabled{
+  background:#f5f7f9;
+  color:#8796a4;
+  opacity:1;
+  cursor:not-allowed;
+}
+.checkout-field select[data-tr-district]:focus{
+  border-color:#dce6e8;
+  outline:none;
+  box-shadow:none;
+}
+.checkout-field [data-tr-district-hint]{
+  margin-top:1px;
+  font-size:11px;
+  line-height:1.5;
+  color:#7a8999;
+}
+@media(hover:hover) and (pointer:fine){
+  .checkout-field select[data-tr-district]:focus-visible{
+    outline:2px solid #092037;
+    outline-offset:2px;
+  }
+}

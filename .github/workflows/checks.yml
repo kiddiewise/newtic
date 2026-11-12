@@ -40,7 +40,7 @@ jobs:
           npm install --ignore-scripts
           npm run build
       - name: Test Turkish phone formatter
-        run: node --test tests/js/tr-phone-format.test.mjs
+        run: node --test tests/js/*.test.mjs
       - name: Verify admin CSS is present in compiled Vite assets
         run: |
           set -euo pipefail

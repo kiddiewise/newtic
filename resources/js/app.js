@@ -69,6 +69,8 @@ import './quick-cart.js';
 
 import './tr-phone-input.js';
 
+import './province-district.js';
+
 import './checkout.js';
 
 import './payment-instructions.js';

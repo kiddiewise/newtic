@@ -34,6 +34,7 @@
 @import './storefront-refinements.css';
 @import './commerce-interactions.css';
 @import './tr-phone-input.css';
+@import './province-district.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

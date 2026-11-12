@@ -1,8 +1,11 @@
 @php
   $prefill = $prefill ?? null;
   $currentType = old('invoice_type', $prefill?->invoice_type ?? 'individual');
+  $currentCity = old('city', $prefill?->city);
+  $currentDistrict = old('district', $prefill?->district);
+  $districtMap = \App\Support\TurkeyDistricts::all();
 @endphp
-<div class="checkout-field-grid">
+<div class="checkout-field-grid" data-tr-address-fields>
   <label class="checkout-field">
     <span>Adres adı *</span>
     <select name="address_label" aria-invalid="{{ $errors->has('address_label') ? 'true' : 'false' }}" @error('address_label') aria-describedby="checkout-error-address_label" @enderror required>
@@ -35,20 +38,29 @@
     </label>
   <label class="checkout-field">
     <span>İl *</span>
-    <select name="city" aria-invalid="{{ $errors->has('city') ? 'true' : 'false' }}" @error('city') aria-describedby="checkout-error-city" @enderror required autocomplete="address-level1">
+    <select name="city" data-tr-province aria-invalid="{{ $errors->has('city') ? 'true' : 'false' }}" @error('city') aria-describedby="checkout-error-city" @enderror required autocomplete="address-level1">
       <option value="">İl seçin</option>
       @foreach($provinces as $province)
-        <option value="{{ $province }}" @selected(old('city', $prefill?->city) === $province)>{{ $province }}</option>
+        <option value="{{ $province }}" @selected($currentCity === $province)>{{ $province }}</option>
       @endforeach
     </select>
   @error('city')<small class="checkout-field-error" id="checkout-error-city">{{ $message }}</small>@enderror
     </label>
   <label class="checkout-field">
     <span>İlçe *</span>
-    <input name="district" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}" @error('district') aria-describedby="checkout-error-district" @enderror type="text" required maxlength="100" autocomplete="address-level2" placeholder="İlçe"
-      value="{{ old('district', $prefill?->district) }}">
-  @error('district')<small class="checkout-field-error" id="checkout-error-district">{{ $message }}</small>@enderror
-    </label>
+    <select name="district" data-tr-district
+      aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}"
+      aria-describedby="checkout-district-hint{{ $errors->has('district') ? ' checkout-error-district' : '' }}"
+      required autocomplete="off" @disabled(! $currentCity)>
+      <option value="">{{ $currentCity ? 'İlçe seçin' : 'Önce il seçin' }}</option>
+      @foreach(\App\Support\TurkeyDistricts::forProvince($currentCity) as $district)
+        <option value="{{ $district }}" @selected($district === $currentDistrict)>{{ $district }}</option>
+      @endforeach
+    </select>
+    <small class="checkout-field-hint" id="checkout-district-hint" data-tr-district-hint aria-live="polite">{{ $currentCity ? 'Seçtiğiniz ile bağlı ilçeler gösteriliyor.' : 'İl seçildiğinde ilçeler listelenecek.' }}</small>
+    @error('district')<small class="checkout-field-error" id="checkout-error-district">{{ $message }}</small>@enderror
+  </label>
+  <script type="application/json" data-tr-district-map>@json($districtMap)</script>
   <label class="checkout-field is-full">
     <span>Açık adres *</span>
     <textarea name="street_address" aria-invalid="{{ $errors->has('street_address') ? 'true' : 'false' }}" @error('street_address') aria-describedby="checkout-error-street_address" @enderror rows="4" minlength="10" maxlength="1200" autocomplete="street-address" required

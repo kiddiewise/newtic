@@ -225,7 +225,7 @@ class CheckoutOrdersTest extends TestCase
 
         foreach ([
             ['address_label' => 'Ev', 'city' => 'İzmir'],
-            ['address_label' => 'İş', 'city' => 'Ankara'],
+            ['address_label' => 'İş', 'city' => 'Ankara', 'district' => 'Çankaya'],
         ] as $record) {
             $payload = $this->address($record);
             unset($payload['email'], $payload['payment_method'], $payload['order_note']);
