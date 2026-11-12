@@ -14,14 +14,13 @@
     @endif
   </div>
   @if($threshold > 0)
-    <div class="cart-shipping-meter"
-      role="progressbar" aria-label="Ücretsiz kargo hedefi"
-      aria-valuemin="0" aria-valuemax="{{ $threshold }}"
-      aria-valuenow="{{ min((int) $cart['subtotal_cents'], $threshold) }}"
-      style="--shipping-progress: {{ $progress }}%">
-      <div class="cart-shipping-meter-track" aria-hidden="true">
-        <span class="cart-shipping-meter-fill"></span>
-        <span class="cart-shipping-truck"><x-store-icon name="truck" /></span>
+    <div class="cart-shipping-meter" style="--shipping-progress: {{ $progress }}%">
+      <div class="cart-shipping-meter-track">
+        <progress class="cart-shipping-native-progress"
+          aria-label="Ücretsiz kargo hedefi"
+          value="{{ min((int) $cart['subtotal_cents'], $threshold) }}"
+          max="{{ $threshold }}">{{ $progress }}%</progress>
+        <span class="cart-shipping-truck" aria-hidden="true"><x-store-icon name="truck" /></span>
       </div>
     </div>
   @endif

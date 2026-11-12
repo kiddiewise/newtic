@@ -44,8 +44,14 @@
 .admin-body .admin-order-row small{font-size:11px;color:#8a9ba1}
 .admin-body .admin-order-detail-sidebar{min-width:0}
 .admin-body .checkout-price-line.is-total strong{color:#0b8c73}
-.admin-body .admin-table-scroll::-webkit-scrollbar{height:7px}
-.admin-body .admin-table-scroll::-webkit-scrollbar-thumb{border-radius:20px;background:#d4e4e4}
+.admin-body .admin-table-scroll{
+  scrollbar-width:thin;
+  scrollbar-color:#d4e4e4 transparent;
+}
+@supports not (scrollbar-color: auto){
+  .admin-body .admin-table-scroll::-webkit-scrollbar{height:7px}
+  .admin-body .admin-table-scroll::-webkit-scrollbar-thumb{border-radius:20px;background:#d4e4e4}
+}
 @media(max-width:760px){
  .admin-body .admin-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}
  .admin-login-panel{padding:23px}

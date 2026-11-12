@@ -152,10 +152,31 @@ body.is-auth .mobile-auth-tabs a.is-active:hover{color:#fff!important}
   border-radius:99px;
   background:#dce5ee;
 }
-.cart-shipping-meter-fill{
-  display:block;width:var(--shipping-progress);height:100%;
-  border-radius:inherit;background:#254963;
-  position:relative;
+.cart-shipping-native-progress{
+  display:block;
+  width:100%;
+  height:7px;
+  border:0;
+  border-radius:99px;
+  background:#dce5ee;
+  color:#254963;
+  accent-color:#254963;
+  appearance:none;
+  -webkit-appearance:none;
+  overflow:hidden;
+}
+.cart-shipping-native-progress::-webkit-progress-bar{
+  background:#dce5ee;
+  border-radius:99px;
+}
+.cart-shipping-native-progress::-webkit-progress-value{
+  background:#254963;
+  border-radius:99px;
+  animation:shipping-progress-enter .75s cubic-bezier(.22,1,.36,1) both;
+}
+.cart-shipping-native-progress::-moz-progress-bar{
+  background:#254963;
+  border-radius:99px;
   animation:shipping-progress-enter .75s cubic-bezier(.22,1,.36,1) both;
 }
 .cart-shipping-truck{
@@ -180,7 +201,9 @@ body.is-auth .mobile-auth-tabs a.is-active:hover{color:#fff!important}
   from{opacity:.5;transform:translate(-50%,-65%) scale(.94)}
   to{opacity:1;transform:translate(-50%,-50%) scale(1)}
 }
-.cart-shipping-panel.is-complete .cart-shipping-meter-fill{background:var(--polaris-action)}
+.cart-shipping-panel.is-complete .cart-shipping-native-progress{color:var(--polaris-action);accent-color:var(--polaris-action)}
+.cart-shipping-panel.is-complete .cart-shipping-native-progress::-webkit-progress-value{background:var(--polaris-action)}
+.cart-shipping-panel.is-complete .cart-shipping-native-progress::-moz-progress-bar{background:var(--polaris-action)}
 .cart-summary .cart-shipping-panel,.cart-sheet-scroll .cart-shipping-panel{margin:0 0 12px}
 .cart-summary-savings dt,.cart-summary-savings dd{color:#203d56!important;font-weight:700}
 .cart-total-savings{
@@ -278,7 +301,8 @@ body.is-auth .mobile-auth-tabs a.is-active:hover{color:#fff!important}
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .cart-shipping-meter-fill,.cart-shipping-truck{animation:none!important}
+  .cart-shipping-native-progress::-webkit-progress-value,
+  .cart-shipping-native-progress::-moz-progress-bar,.cart-shipping-truck{animation:none!important}
   .cart-shipping-panel *{transition:none!important}
   body:not(.admin-body) :is(
     .cart-mobile-summary-open,.checkout-bottom-bar>button,.checkout-action,
