@@ -85,8 +85,6 @@
         <p class="pdp-availability"><span class="pdp-low-stock">Son {{ $product->stock_quantity }} ürün</span></p>
       @endif
       <div class="pdp-current-product-note">
-        <strong>Seçili ürün:</strong> {{ $product->name }}
-        @if($product->options->isNotEmpty())<small>· {{ $product->option_label }} seçimi gerekli</small>@endif
         <button type="button" data-sheet-open-inline><span class="pdp-bundle-cta-text"><span class="pdp-bundle-fire" aria-hidden="true">🔥</span> Birlikte alınan diğer ürünler</span><span aria-hidden="true">›</span></button>
       </div>
       {{-- Desktop: the primary purchase action is immediately visible beside the product. --}}

@@ -9,6 +9,7 @@ use App\Support\ProductReviewEligibility;
 use App\Support\ProductReviewVisibility;
 use App\Support\CategoryHierarchy;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class CatalogController extends Controller
@@ -98,14 +99,66 @@ class CatalogController extends Controller
         ));
     }
 
-    public function search(Request $request): View
+    /**
+     * Search follows the same visibility rules as product pages: a disabled
+     * parent category must never leak active descendants into suggestions.
+     */
+    private function visibleSearchCategoryIds(): array
+    {
+        $all = CategoryHierarchy::all();
+
+        return $all->filter(
+            fn (Category $category) => CategoryHierarchy::visible($category, $all)
+        )->pluck('id')->all();
+    }
+
+    public function suggestions(Request $request): JsonResponse
     {
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
 
-        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['category', 'options']))->where('is_active', true)
-            ->when($term !== '', fn ($q) => $q->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
+        if ($term === '') {
+            return response()->json(['items' => []])->header('Cache-Control', 'private, no-store');
+        }
+
+        $like = '%'.addcslashes($term, '%_\\').'%';
+        $items = Product::query()
+            ->where('is_active', true)
+            ->whereIn('primary_category_id', $this->visibleSearchCategoryIds())
+            ->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('sku', 'like', $like))
+            ->orderBy('name')->limit(6)
+            ->get(['id', 'name', 'slug', 'price', 'image_path'])
+            ->map(fn (Product $product) => [
+                'name' => $product->name,
+                'price' => number_format((float) $product->price, 2, ',', '.').' ₺',
+                'url' => route('product.show', $product->slug),
+                'image' => asset($product->image_path ?: 'assets/products/demo-sinker.svg'),
+            ])->values()->all();
+
+        return response()->json(['items' => $items])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function search(Request $request): View|JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+        abort_if(mb_strlen($term) > 100, 422);
+
+        $like = '%'.addcslashes($term, '%_\\').'%';
+        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['category', 'options']))
+            ->where('is_active', true)
+            ->whereIn('primary_category_id', $this->visibleSearchCategoryIds())
+            ->when($term !== '', fn ($q) =>
+                $q->where(fn ($sub) => $sub->where('name', 'like', $like)->orWhere('sku', 'like', $like))
+            )
             ->orderBy('name')->paginate(24)->withQueryString();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'html' => view('store.partials.search-results', compact('products'))->render(),
+                'heading' => $term !== '' ? 'Arama: '.$term : 'Tüm ürünler',
+                'count' => $products->total(),
+            ])->header('Cache-Control', 'private, no-store');
+        }
 
         return view('store.search', compact('products', 'term'));
     }

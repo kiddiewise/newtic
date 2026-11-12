@@ -32,6 +32,7 @@
 
 @import './storefront-polish.css';
 @import './storefront-refinements.css';
+@import './commerce-interactions.css';
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
 Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
+Route::get('/ara/oneriler', [CatalogController::class, 'suggestions'])->middleware('throttle:60,1')->name('search.suggest');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
 // Session-backed shopping cart; order checkout uses the same authoritative cart.

@@ -34,7 +34,7 @@
 
   <div class="review-write-card" id="yorum-yaz">
     <div class="review-write-heading">
-      <span class="review-write-icon"><x-store-icon name="sparkles" /></span>
+      <span class="review-write-icon"><x-store-icon name="message-circle" /></span>
       <div><h3>Ürünü değerlendirin</h3><p>Deneyiminiz diğer balıkçılara yol göstersin.</p></div>
     </div>
     @if(session('review_success'))

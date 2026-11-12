@@ -59,7 +59,9 @@
         </section>
       @endguest
 
-      <form id="checkout-form" method="POST" action="{{ route('checkout.place') }}" class="checkout-form checkout-card">
+      <form id="checkout-form" method="POST" action="{{ route('checkout.place') }}" class="checkout-form checkout-card"
+        data-checkout-paytr-label="Güvenli Test Ödemesine Geç"
+        data-checkout-bank-label="{{ $checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur' }}">
         @csrf
         <input type="hidden" name="checkout_token" value="{{ $checkoutToken }}">
 
@@ -130,7 +132,8 @@
           {{ $paytrAvailable ? 'Kartla ödeme seçilirse yalnızca PAYTR test modu kullanılır; gerçek tahsilat yapılmaz. Havale/EFT gerçek banka ödemesi gerektirmez.' : ($checkoutIsTest ? 'Siparişiniz yalnızca test kaydı olarak oluşturulur; gerçek ödeme alınmaz.' : 'Ödeme altyapısı henüz etkin değil.') }}</p>
         </section>
         <p class="checkout-privacy">Sipariş bilgileri yalnızca teslimat, faturalama ve sipariş yönetimi amacıyla alınır. Pazarlama izni otomatik verilmez.</p>
-<button class="checkout-action checkout-desktop-submit" type="submit" data-checkout-submit>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button>
+<button class="checkout-action checkout-desktop-submit checkout-guarded-submit" type="submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</span></button>
+        <noscript><button class="checkout-action checkout-nojs-submit" type="submit">{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button></noscript>
       </form>
     </div>
 
@@ -150,6 +153,7 @@
 </main>
 <div class="checkout-bottom-bar" aria-label="Siparişi tamamla">
   <div><strong>{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</strong><span>{{ $cart['shipping_cents'] === 0 ? 'Kargo ücretsiz' : 'Kargo dahil' }}</span></div>
-<button type="submit" form="checkout-form" data-checkout-submit>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button>
+<button type="submit" form="checkout-form" class="checkout-guarded-submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</span></button>
+<noscript><button class="checkout-nojs-submit" type="submit" form="checkout-form">{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</button></noscript>
 </div>
 @endsection

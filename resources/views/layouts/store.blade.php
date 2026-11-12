@@ -50,10 +50,11 @@
         <span class="brand-words"><strong>POLARIS</strong><small>KURŞUN</small></span>
       @endif
     </a>
-    <form class="header-search" action="{{ route('search') }}" method="get" role="search">
+    <form class="header-search" action="{{ route('search') }}" method="get" role="search" data-search-suggest-form data-suggest-url="{{ route('search.suggest') }}">
       <x-store-icon name="search" />
-      <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Ne aramıştınız?" aria-label="Ürün ara">
+      <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Ne aramıştınız?" aria-label="Ürün ara" autocomplete="off" aria-autocomplete="list" aria-expanded="false">
       <button type="submit" aria-label="Ürün ara" title="Ara"><x-store-icon name="search" /></button>
+      <div class="search-suggest-results" data-suggest-results role="listbox" aria-label="Ürün önerileri" hidden></div>
     </form>
     <div class="header-actions">
       <a class="icon-link header-search-shortcut" href="{{ route('search') }}" aria-label="Ürün arama">
@@ -193,9 +194,10 @@
 </header>
 @if(request()->routeIs('home', 'category.show', 'search'))
 <div class="mobile-subnav">
-  <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search">
-    <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara">
+  <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search" data-search-suggest-form data-suggest-url="{{ route('search.suggest') }}">
+    <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara" autocomplete="off" aria-autocomplete="list" aria-expanded="false">
     <button type="submit" aria-label="Ara"><x-store-icon name="search" /></button>
+    <div class="search-suggest-results" data-suggest-results role="listbox" aria-label="Ürün önerileri" hidden></div>
   </form>
   <nav class="mobile-category-pills" aria-label="Hızlı kategoriler">
     <a href="{{ route('home') }}" class="mobile-pill-home {{ request()->routeIs('home') ? 'is-active' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif aria-label="Ana sayfa"><x-store-icon name="house" /></a>

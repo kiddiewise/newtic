@@ -48,27 +48,60 @@ document.querySelectorAll('[data-create-account]').forEach((checkbox) => {
   toggle();
 });
 
+// The checkout gate is a UX affordance; Laravel still validates all fields
+// and prices on POST, including users who bypass this client-side behavior.
 const checkoutForm = document.getElementById('checkout-form');
 if (checkoutForm) {
   const submitButtons = [
-    ...checkoutForm.querySelectorAll('button[type="submit"]'),
-    ...document.querySelectorAll('button[form="checkout-form"]'),
+    ...checkoutForm.querySelectorAll('[data-checkout-submit]'),
+    ...document.querySelectorAll('[data-checkout-submit][form="checkout-form"]'),
   ];
   const paymentChoices = [...checkoutForm.querySelectorAll('input[name="payment_method"]')];
-  const buttonLabelFor = () => checkoutForm.querySelector('input[name="payment_method"]:checked')?.value === 'paytr'
-    ? 'Güvenli Test Ödemesine Geç'
-    : 'Deneme Siparişini Oluştur';
-  const syncPayButton = () => {
-    if (!paymentChoices.length || checkoutForm.getAttribute('aria-busy') === 'true') return;
-    submitButtons.forEach((button) => { button.textContent = buttonLabelFor(); });
-  };
-  paymentChoices.forEach((radio) => radio.addEventListener('change', syncPayButton));
-  syncPayButton();
-  const buttonLabels = submitButtons.map(button => button.textContent);
+  const phone = checkoutForm.elements.namedItem('phone');
   let submitting = false;
+  const buttonLabelFor = () => checkoutForm.querySelector('input[name="payment_method"]:checked')?.value === 'paytr'
+    ? checkoutForm.dataset.checkoutPaytrLabel : checkoutForm.dataset.checkoutBankLabel;
 
-  // Server-side errors are displayed beside their matching fields; bring the
-  // first one into view so mobile customers don't have to hunt for it.
+  const update = () => {
+    if (submitting) return;
+
+    if (phone && typeof phone.setCustomValidity === 'function') {
+      const raw = phone.value.trim();
+      const normalized = raw.replace(/[\s().-]/g, '');
+      const valid = /^(?:\+?90|0)?5\d{9}$/.test(normalized);
+      phone.setCustomValidity(raw !== '' && !valid
+        ? 'Geçerli bir cep telefonu girin (05XX XXX XX XX).' : '');
+    }
+
+    const ready = checkoutForm.checkValidity()
+      && !!checkoutForm.querySelector('input[name="payment_method"]:checked');
+
+    for (const button of submitButtons) {
+      // The ready transition animates the lock's shackle opening and fading.
+      const previousState = button.dataset.checkoutState;
+      button.disabled = !ready;
+      button.dataset.checkoutState = ready ? 'ready' : 'locked';
+      const label = button.querySelector('[data-checkout-button-label]');
+      if (label) label.textContent = buttonLabelFor();
+      if (ready && previousState !== 'ready') {
+        button.classList.remove('checkout-relock');
+        // Force the transient animation to restart on revalidation.
+        void button.offsetWidth;
+        button.classList.add('checkout-unlock');
+      } else if (!ready) {
+        button.classList.remove('checkout-unlock');
+        button.classList.add('checkout-relock');
+      }
+    }
+  };
+
+  checkoutForm.addEventListener('input', update);
+  checkoutForm.addEventListener('change', update);
+  addressPicker?.addEventListener('change', () => queueMicrotask(update));
+  paymentChoices.forEach((radio) => radio.addEventListener('change', update));
+  update();
+
+  // On server-side errors, move directly to the first invalid field.
   const firstInvalid = checkoutForm.querySelector('[aria-invalid="true"]');
   if (firstInvalid) {
     requestAnimationFrame(() => {
@@ -78,27 +111,25 @@ if (checkoutForm) {
   }
 
   checkoutForm.addEventListener('submit', (event) => {
-    if (submitting) {
-      event.preventDefault();
-      return;
-    }
-    if (!checkoutForm.checkValidity()) return;
+    if (submitting) { event.preventDefault(); return; }
+    update();
+    if (!checkoutForm.checkValidity()) return; // Native browser validation.
     submitting = true;
     checkoutForm.setAttribute('aria-busy', 'true');
-    submitButtons.forEach(button => {
+    submitButtons.forEach((button) => {
       button.disabled = true;
-      button.textContent = 'Sipariş kaydediliyor…';
+      button.dataset.checkoutState = 'submitting';
+      button.classList.remove('checkout-unlock');
+      const label = button.querySelector('[data-checkout-button-label]');
+      if (label) label.textContent = 'Sipariş kaydediliyor…';
     });
   });
 
-  // Browsers can restore disabled buttons from the back/forward cache.
+  // bfcache can restore old disabled states on back navigation.
   window.addEventListener('pageshow', (event) => {
     if (!event.persisted) return;
     submitting = false;
     checkoutForm.removeAttribute('aria-busy');
-    submitButtons.forEach((button, index) => {
-      button.disabled = false;
-      button.textContent = buttonLabels[index];
-    });
+    update();
   });
 }
