@@ -30,6 +30,12 @@
     <div><strong>{{ $counts['moving'] }}</strong><span>Devam eden</span></div>
     <div><strong>{{ $counts['delivered'] }}</strong><span>Teslim edilen</span></div>
   </div>
+  <div class="ship-ops-cron-notice">
+    <strong>Otomatik kontrol kurulumu</strong>
+    <p>Hostinger Web/Cloud hosting'de zamanlanmış görevler hPanel → Cron Jobs bölümünden kurulur. 15 dakikada bir yalnızca gönderi durumunu okuyan görevi bir kez tanımlayın. Manuel kontrol düğmesi Cron Job olmadan da çalışır.</p>
+    <code>/bin/sh /home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/scripts/cron-shipping-sync.sh</code>
+    <small>Tip: Custom · Zaman: */15 * * * * · API anahtarını Cron Job komutuna yazmayın.</small>
+  </div>
   <p class="ship-hint"><strong>Durum ayrımı:</strong> Kargo “İptal”, “İade” veya “Hatalı” olduğunda siparişin ödeme onayı ve stok miktarı kendiliğinden değişmez. Gerçek işlem için kargo firması ve banka/PAYTR kayıtları ayrıca kontrol edilmelidir.</p>
 </section>
 

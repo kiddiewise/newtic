@@ -68,3 +68,17 @@ Resmî kaynaklar:
 https://dev.kargoentegrator.com/api/enum-sabitler/
 https://dev.kargoentegrator.com/api/callback/
 https://dev.kargoentegrator.com/api/shipments/tek-gonderi/
+
+## Hostinger hPanel Cron Jobs (Web/Cloud hosting)
+
+SSH ortamında crontab bulunmuyorsa normaldir; Hostinger Web/Cloud cron işleri
+hPanel üzerinden kurulur (resmî Hostinger yardımı: https://www.hostinger.com/support/1583465-how-to-set-up-a-cron-job-at-hostinger/).
+
+- Website: powderblue-dinosaur-538060.hostingersite.com
+- Websites → Manage site → Cron Jobs
+- Tür: Custom (PHP değil, kabuk betiği)
+- Komut: /bin/sh /home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/scripts/cron-shipping-sync.sh
+- Zamanlama: */15 * * * * (15 dakikada bir)
+- Cron işinin çıktısını hPanel View Output üzerinden kontrol et; checked/updated/failed/skipped metrikleri görünür.
+- API anahtarını komuta girme. Script yalnızca önceden şifrelenmiş uygulama anahtarını kullanır.
+- Aynı işi iki kere tanımlama; provider sorgularını sadece staging ortamında çalıştır.

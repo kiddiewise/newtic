@@ -39,3 +39,8 @@
 .ship-ops-item>.admin-text-link{display:inline-flex;margin-top:10px}
 @media(max-width:760px){.ship-ops-head{flex-direction:column}.ship-ops-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ship-ops-item{padding:14px}.ship-ops-item-main{flex-direction:column}.ship-ops-status{align-self:flex-start}}
 @media(max-width:400px){.ship-ops-stats{gap:8px}.ship-ops-stats>div{padding:11px}.ship-ops-stats strong{font-size:22px}}
+
+.ship-ops-cron-notice{border:1px solid #d8e5ef;border-radius:12px;background:#f5f9fc;padding:14px;margin-top:15px;color:#294d65}
+.ship-ops-cron-notice strong{font-size:12px;color:#092037}
+.ship-ops-cron-notice p,.ship-ops-cron-notice small{display:block;font-size:11px;line-height:1.6;color:#567185;margin:7px 0}
+.ship-ops-cron-notice code{display:block;white-space:normal;overflow-wrap:anywhere;padding:10px;background:#fff;border:1px solid #e0e9f1;border-radius:8px;font-size:10px;color:#183f5b}

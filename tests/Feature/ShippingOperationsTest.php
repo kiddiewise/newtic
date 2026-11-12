@@ -258,6 +258,17 @@ final class ShippingOperationsTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_staging_cron_wrapper_is_safe_and_visible_to_administrators(): void
+    {
+        $script = file_get_contents(base_path('scripts/cron-shipping-sync.sh'));
+        $this->assertStringContainsString('artisan shipping:sync --limit=20', $script);
+        $this->assertStringNotContainsString('api_key', $script);
+        $this->admin();
+        $this->get(route('admin.shipping-operations.index'))->assertOk()
+            ->assertSee('Hostinger Web/Cloud hosting')
+            ->assertSee('cron-shipping-sync.sh');
+    }
+
     public function test_order_search_and_filters_preserve_turkish_labels_and_customer_tracking(): void
     {
         $this->admin();
