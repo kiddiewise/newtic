@@ -285,7 +285,8 @@ class CheckoutController extends Controller
         $isSessionOrder = in_array($order->id, (array) $request->session()->get('confirmed_order_ids', []), true);
         abort_unless($isOwner || $isSessionOrder || $request->hasValidSignature(false), 404);
 
-        $order->load(['items', 'paymentNotifications', 'paytrAttempts']);
+        $order->load(['items', 'paymentNotifications', 'paytrAttempts',
+            'shippingShipment.carrier', 'shippingShipment.events']);
         if ($order->payment_method === 'paytr'
             && in_array($order->status, ['preparing', 'shipped', 'out_for_delivery', 'completed'], true)
             && $isSessionOrder

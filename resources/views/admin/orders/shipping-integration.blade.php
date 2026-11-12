@@ -11,11 +11,31 @@
       <div><span>Kargo firması</span><strong>{{ $shipment->carrier->name }}</strong></div>
       <div><span>Depo</span><strong>{{ $shipment->warehouse->name }}</strong></div>
       <div><span>İşlem durumu</span><strong>{{ match($shipment->state){'submitted'=>'Gönderi oluşturuldu','uncertain'=>'Kontrol gerekli','creating'=>'İşleniyor',default=>$shipment->state} }}</strong></div>
-      <div><span>Kargo süreci</span><strong>{{ $shipment->remote_status ?: 'Bekleniyor' }}</strong></div>
+      <div><span>Kargo süreci</span><strong>{{ \App\Support\ShippingStatus::label($shipment->remote_status) }}</strong></div>
       @if($shipment->barcode)<div><span>Barkod</span><strong>{{ $shipment->barcode }}</strong></div>@endif
       @if($shipment->tracking_number)<div><span>Takip numarası</span><strong>{{ $shipment->tracking_number }}</strong></div>@endif
       <div><span>Desi</span><strong>{{ $shipment->desi }} desi</strong></div>
     </div>
+    @if($shipment->remote_status)
+      <div class="ship-status-summary {{ \App\Support\ShippingStatus::isException($shipment->remote_status) ? 'is-problem' : '' }}">
+        <strong>{{ \App\Support\ShippingStatus::label($shipment->remote_status) }}</strong>
+        <p>{{ \App\Support\ShippingStatus::description($shipment->remote_status) }}</p>
+        @if(\App\Support\ShippingStatus::isException($shipment->remote_status))
+          <small>İade, iptal veya başarısız kargo işlemi otomatik ödeme iadesi anlamına gelmez; gönderici panelinden kontrol edin.</small>
+        @endif
+      </div>
+    @endif
+    @if($shipment->events->isNotEmpty())
+      <div class="ship-order-history">
+        <h3>Kargo hareket geçmişi</h3>
+        <ol>
+          @foreach($shipment->events->sortByDesc('id') as $event)
+            <li><strong>{{ \App\Support\ShippingStatus::label($event->status) }}</strong>
+              <small>{{ $event->created_at?->format('d.m.Y H:i') }} · {{ $event->source === 'callback' ? 'Kargo bildirimi' : ($event->source === 'api_sync' ? 'API kontrolü' : 'İlk kayıt') }}</small></li>
+          @endforeach
+        </ol>
+      </div>
+    @endif
     @if($shipment->state === 'uncertain')
       <p class="ship-danger">Gönderi sonucu doğrulanamadı. Aynı sipariş için tekrar gönderi oluşturma. Kargo Entegratör panelinde bu sipariş numarasıyla kontrol ederek destek al.</p>
     @elseif($shipment->state === 'submitted' && $shippingTestAllowed && $shipment->carrier->is_dummy)
@@ -27,6 +47,7 @@
         <a class="admin-primary" href="{{ route('admin.shipping-shipments.label', $order) }}"><x-admin-icon name="package"/> Barkod PDF indir</a>
       </div>
       <p class="admin-description">Bu bir Dummy Kargo test gönderisidir. Barkod üretildi diye sipariş gerçek kargo firmasına teslim edilmiş sayılmaz.</p>
+      <p class="admin-description">Kargo firmasının gönderi durumu NEWTIC sipariş aşamasını yönetir. Yanlış aşamayı düzeltmek için Dummy Kargo panelinden değiştirip durumu yenile. İptal veya hata durumlarında webhook gönderilmeyebilir.</p>
     @endif
   @elseif(!$shippingTestAllowed || !$order->is_test)
     <p class="ship-info">Canlı gönderi entegrasyonu henüz etkin değil. Güvenli testler tamamlandıktan sonra DHL ve diğer firmalar için kontrollü açılacak.</p>

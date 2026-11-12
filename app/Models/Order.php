@@ -30,6 +30,11 @@ class Order extends Model
         return $this->hasOne(ShippingShipment::class);
     }
 
+    public function statusChanges(): HasMany
+    {
+        return $this->hasMany(OrderStatusChange::class)->orderByDesc('id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -55,9 +60,9 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function statusLabel(): string
+    public static function labelForStatus(string $status): string
     {
-        return match ($this->status) {
+        return match ($status) {
             'pending_payment' => 'Ödeme bekleniyor',
             'preparing' => 'Hazırlanıyor',
             'shipped' => 'Kargolandı',
@@ -66,5 +71,10 @@ class Order extends Model
             'cancelled' => 'İptal edildi',
             default => 'Bilinmiyor',
         };
+    }
+
+    public function statusLabel(): string
+    {
+        return self::labelForStatus($this->status);
     }
 }

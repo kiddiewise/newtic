@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderStatusChange;
+use App\Models\PaymentNotification;
 use App\Models\Product;
 use App\Models\ShippingProvider;
 use App\Support\ShippingTestAccess;
@@ -16,6 +18,8 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    private const CORRECTABLE_STATES = ['preparing','shipped','out_for_delivery','completed'];
+
     private const TRANSITIONS = [
         'pending_payment' => ['cancelled'], // Preparing requires bank verification via payment inbox.
         'preparing' => ['shipped', 'cancelled'],
@@ -46,8 +50,18 @@ class OrderController extends Controller
     public function show(Order $order): View
     {
         $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts',
-            'shippingShipment.carrier', 'shippingShipment.warehouse', 'shippingShipment.provider']);
-        $allowed = self::TRANSITIONS[$order->status] ?? [];
+            'shippingShipment.carrier', 'shippingShipment.warehouse', 'shippingShipment.provider',
+            'shippingShipment.events', 'statusChanges.user']);
+        $allowed = $order->shippingShipment ? [] : (self::TRANSITIONS[$order->status] ?? []);
+        $verifiedBankNotice = $order->payment_method === 'bank_transfer'
+            ? $order->paymentNotifications->firstWhere('status', 'verified') : null;
+        $verifiedPaytr = $order->payment_method === 'paytr'
+            && $order->paytrAttempts->contains(fn ($attempt) => $attempt->status === 'success');
+        $paymentVerified = (bool) $verifiedBankNotice || $verifiedPaytr;
+        $canCorrectFulfillment = !$order->shippingShipment && $paymentVerified
+            && in_array($order->status, self::CORRECTABLE_STATES, true);
+        $canCorrectBankPayment = $order->status === 'preparing'
+            && !$order->shippingShipment && (bool)$verifiedBankNotice;
 
         $shippingProvider = ShippingProvider::where('provider', 'kargoentegrator')->first();
         $shippingCarriers = $shippingProvider?->carriers()->orderBy('name')->get() ?? collect();
@@ -56,7 +70,8 @@ class OrderController extends Controller
 
         return view('admin.orders.show', compact(
             'order','allowed','shippingProvider','shippingCarriers',
-            'shippingWarehouses','shippingTestAllowed'
+            'shippingWarehouses','shippingTestAllowed', 'paymentVerified',
+            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice'
         ));
     }
 
@@ -102,6 +117,11 @@ class OrderController extends Controller
         DB::transaction(function () use ($order, $data) {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             $next = $data['status'];
+            if ($locked->shippingShipment()->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Entegratöre bağlı siparişin kargo aşamasını sağlayıcı yönetir. Kargo durumunu sağlayıcıdan düzeltip senkronize edin.',
+                ]);
+            }
             if (! in_array($next, self::TRANSITIONS[$locked->status] ?? [], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'Bu sipariş durumu değişikliği yapılamaz.',
@@ -144,9 +164,98 @@ class OrderController extends Controller
                     }
                 }
             }
+            $previous = $locked->status;
             $locked->update(['status' => $next]);
+            OrderStatusChange::create([
+                'order_id' => $locked->id, 'user_id' => $request->user()->id,
+                'from_status' => $previous, 'to_status' => $next,
+                'source' => 'admin_forward', 'created_at' => now(),
+            ]);
         }, 3);
 
         return redirect()->route('admin.orders.show', $order)->with('success', 'Sipariş durumu güncellendi.');
+    }
+    public function correct(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in(self::CORRECTABLE_STATES)],
+            'reason' => ['required', 'string', 'min:15', 'max:500'],
+        ]);
+
+        DB::transaction(function () use ($request, $order, $data) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if (!in_array($locked->status, self::CORRECTABLE_STATES, true)
+                || $locked->shippingShipment()->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Entegratöre bağlı, iptal edilmiş veya ödeme bekleyen sipariş manuel geri alınamaz.',
+                ]);
+            }
+            $verified = $locked->payment_method === 'bank_transfer'
+                ? $locked->paymentNotifications()->where('status', 'verified')->exists()
+                : $locked->paytrAttempts()->where('status', 'success')->exists();
+            if (!$verified) {
+                throw ValidationException::withMessages([
+                    'status' => 'Durum düzeltmek için doğrulanmış ödeme kaydı gereklidir.',
+                ]);
+            }
+            if ($locked->status === $data['status']) {
+                throw ValidationException::withMessages(['status' => 'Zaten aynı durum seçili.']);
+            }
+
+            $previous = $locked->status;
+            $locked->update(['status' => $data['status']]);
+            OrderStatusChange::create([
+                'order_id' => $locked->id, 'user_id' => $request->user()->id,
+                'from_status' => $previous, 'to_status' => $data['status'],
+                'source' => 'admin_correction', 'reason' => trim($data['reason']),
+                'created_at' => now(),
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.orders.show', $order)
+            ->with('success', 'Sipariş hazırlık/teslimat aşaması gerekçeyle düzeltildi. Ödeme kaydı değişmedi.');
+    }
+
+    public function revokeBankVerification(Request $request, Order $order): RedirectResponse
+    {
+        // Never rewrite a PAYTR callback or assume a genuine transfer was refunded.
+        $data = $request->validate([
+            'reason' => ['required','string','min:15','max:500'],
+            'bank_not_received' => ['required','accepted'],
+        ]);
+        DB::transaction(function () use ($request, $order, $data) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->payment_method !== 'bank_transfer'
+                || $locked->status !== 'preparing'
+                || $locked->shippingShipment()->exists()) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Yalnızca henüz kargo kaydı bulunmayan, hazırlanıyor durumundaki havale siparişinin hatalı onayı geri alınabilir.',
+                ]);
+            }
+            $notice = PaymentNotification::where('order_id', $locked->id)
+                ->where('status', 'verified')->lockForUpdate()->first();
+            if (!$notice || $locked->paymentNotifications()->where('status', 'verified')->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Tek ve geçerli bir banka onay kaydı bulunamadı.',
+                ]);
+            }
+
+            $notice->update([
+                'status' => 'rejected',
+                'admin_note' => 'Önceki ödeme doğrulaması geri çekildi: '.trim($data['reason']),
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+            $locked->update(['status' => 'pending_payment']);
+            OrderStatusChange::create([
+                'order_id' => $locked->id, 'user_id' => $request->user()->id,
+                'from_status' => 'preparing', 'to_status' => 'pending_payment',
+                'source' => 'bank_verification_correction',
+                'reason' => trim($data['reason']), 'created_at' => now(),
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.orders.show', $order)
+            ->with('success', 'Hatalı banka ödeme onayı geri alındı; sipariş ödeme bekliyor. Gerçek tahsilat veya iade işlemi yapılmadı.');
     }
 }

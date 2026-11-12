@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\OrderStatusChange;
 use App\Models\ShippingShipment;
+use App\Support\ShippingStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Only signed provider callbacks or authenticated admin GET detail calls may
- * advance fulfillment. They can never approve a pending payment.
+ * Shipping is provider-authoritative. A newer signed carrier update may
+ * correct a shipping stage backwards, but cannot change payment or stock.
  */
 final class ShippingShipmentManager
 {
@@ -21,12 +23,20 @@ final class ShippingShipmentManager
     {
         DB::transaction(function () use ($shipment, $status, $time) {
             $locked = ShippingShipment::whereKey($shipment->id)->lockForUpdate()->firstOrFail();
-            if ($locked->state !== 'submitted' || ! $locked->remote_id) return;
-            // Time is provider's exact Y-m-d H:i:s string. Lexical ordering
-            // avoids server timezone assumptions and repeated/out-of-order events.
-            if ($locked->last_callback_time !== null && strcmp($time, $locked->last_callback_time) <= 0) return;
+            if ($locked->state !== 'submitted' || !$locked->remote_id) return;
+            // Preserve provider event order and reject duplicated or older events.
+            if ($locked->last_callback_time !== null
+                && strcmp($time, $locked->last_callback_time) <= 0) return;
+
+            $changed = $locked->remote_status !== $status;
             $locked->update(['remote_status' => $status, 'last_callback_time' => $time]);
-            $this->advanceOrder($locked, $status);
+            if ($changed) {
+                $locked->events()->create([
+                    'status' => $status, 'source' => 'callback',
+                    'provider_time' => $time, 'created_at' => now(),
+                ]);
+            }
+            $this->syncCoarseOrder($locked, $status);
         }, 3);
     }
 
@@ -34,11 +44,14 @@ final class ShippingShipmentManager
     {
         DB::transaction(function () use ($shipment, $remote) {
             $locked = ShippingShipment::whereKey($shipment->id)->lockForUpdate()->firstOrFail();
-            if (!$locked->remote_id || (int)($remote['id'] ?? 0) !== $locked->remote_id) return;
+            if ($locked->state !== 'submitted' || !$locked->remote_id
+                || (int)($remote['id'] ?? 0) !== $locked->remote_id) return;
+
             $status = (string)($remote['status'] ?? '');
-            if (!in_array($status, self::STATUSES, true)) {
+            if (!ShippingStatus::valid($status)) {
                 throw new \RuntimeException('Sağlayıcının gönderi durumu tanınmıyor.');
             }
+            $changed = $locked->remote_status !== $status;
             $fields = ['remote_status' => $status];
             foreach (['barcode' => 'barcode','tracking_number' => 'tracking_number',
                 'tracking_link' => 'tracking_link'] as $key => $dest) {
@@ -50,37 +63,50 @@ final class ShippingShipmentManager
                 $fields[$dest] = mb_substr($value, 0, $dest === 'tracking_link' ? 2000 : 255);
             }
             $locked->update($fields);
-            // Carrier status can advance the paid-order delivery state,
-            // but never mark an unpaid or cancelled order as fulfilled.
-            $this->advanceOrder($locked, $status);
+            if ($changed) {
+                $locked->events()->create([
+                    'status' => $status, 'source' => 'api_sync',
+                    'created_at' => now(),
+                ]);
+            }
+            $this->syncCoarseOrder($locked, $status);
         }, 3);
     }
 
-    private function advanceOrder(ShippingShipment $shipment, string $providerStatus): void
+    private function syncCoarseOrder(ShippingShipment $shipment, string $providerStatus): void
     {
-        $target = match ($providerStatus) {
-            'shipped', 'on_transit', 'at_delivery_center' => 'shipped',
-            'in_courier' => 'out_for_delivery',
-            'delivered' => 'completed',
-            default => null,
-        };
-        if (!$target) return;
-
+        $target = ShippingStatus::coarseOrderStatus($providerStatus);
         $order = Order::whereKey($shipment->order_id)->lockForUpdate()->firstOrFail();
-        $levels = ['preparing' => 0, 'shipped' => 1, 'out_for_delivery' => 2, 'completed' => 3];
-        if (!array_key_exists($order->status, $levels)) return;
 
-        $data = [];
-        if ($levels[$target] > $levels[$order->status]) {
-            $data['status'] = $target;
+        // Do not let shipment activity override payment/cancel/refund facts.
+        if (!in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true)) {
+            return;
         }
-        // A later GET can supply tracking data after a "delivered" callback;
-        // update metadata without rolling the order status backwards.
-        if ($levels[$target] >= 1) {
-            $data['carrier_name'] = $shipment->carrier->name;
-            if ($shipment->tracking_number) $data['tracking_number'] = $shipment->tracking_number;
-            if ($shipment->tracking_link) $data['tracking_url'] = $shipment->tracking_link;
+
+        $update = [];
+        if ($target !== null && $target !== $order->status) {
+            $update['status'] = $target;
         }
-        if ($data) $order->update($data);
+        // Copy tracking metadata even when the order was already at this stage.
+        // Details can arrive in a later GET after a webhook with only a status.
+        if (in_array($providerStatus, ['shipped','on_transit','at_delivery_center',
+            'in_courier','delivered','on_return','returned'], true)) {
+            $update['carrier_name'] = $shipment->carrier->name;
+            if ($shipment->tracking_number) $update['tracking_number'] = $shipment->tracking_number;
+            if ($shipment->tracking_link) $update['tracking_url'] = $shipment->tracking_link;
+        }
+        if (!$update) return;
+
+        $previous = $order->status;
+        $order->update($update);
+        if ($previous !== $order->status) {
+            OrderStatusChange::create([
+                'order_id' => $order->id, 'user_id' => null,
+                'from_status' => $previous, 'to_status' => $order->status,
+                'source' => 'shipping_provider',
+                'reason' => 'Kargo Entegratör: '.ShippingStatus::label($providerStatus),
+                'created_at' => now(),
+            ]);
+        }
     }
 }

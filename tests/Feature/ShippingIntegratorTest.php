@@ -348,4 +348,184 @@ class ShippingIntegratorTest extends TestCase
         $this->assertDatabaseCount('shipping_shipments', 0);
         Http::assertNothingSent();
     }
+
+    public function test_all_eleven_provider_states_have_readable_turkish_labels(): void
+    {
+        $expected = [
+            'draft' => 'Taslak',
+            'non_processed' => 'Gönderime Hazır',
+            'shipped' => 'Kargoya Verildi',
+            'on_transit' => 'Taşıma Sürecinde',
+            'at_delivery_center' => 'Dağıtım Merkezinde',
+            'in_courier' => 'Dağıtıma Çıktı',
+            'delivered' => 'Teslim Edildi',
+            'on_return' => 'İade Sürecinde',
+            'returned' => 'İade Edildi',
+            'canceled' => 'Kargo Gönderisi İptal Edildi',
+            'failed' => 'Kargo İşleminde Sorun',
+        ];
+        $this->assertSame($expected, \App\Support\ShippingStatus::LABELS);
+        $this->assertSame(array_keys($expected), \App\Services\ShippingShipmentManager::STATUSES);
+    }
+
+    public function test_shipping_callback_can_correct_an_earlier_distribution_stage_and_show_turkish_timeline_to_buyer(): void
+    {
+        $this->admin();
+        $provider = $this->provider();
+        $order = $this->order();
+        $shipment = $this->createShipment($order, $provider);
+        $callback = function (string $status, string $time) use ($provider): void {
+            $this->postJson(route('shipping.callback'), [
+                'shipment_id' => 7444, 'status' => $status, 'time' => $time,
+                'hash' => hash_hmac('sha512', '7444'.$status.$time, $provider->api_key),
+            ])->assertOk();
+        };
+
+        $callback('at_delivery_center', '2026-11-13 09:10:00');
+        $this->assertSame('shipped', $order->fresh()->status);
+        $callback('in_courier', '2026-11-13 10:10:00');
+        $this->assertSame('out_for_delivery', $order->fresh()->status);
+        $callback('at_delivery_center', '2026-11-13 11:10:00');
+        $this->assertSame('shipped', $order->fresh()->status);
+        $this->assertSame('at_delivery_center', $shipment->fresh()->remote_status);
+        $this->assertSame(4, $shipment->events()->count());
+        $this->assertSame(3, $order->statusChanges()->count());
+
+        $this->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('Dağıtım Merkezinde')
+            ->assertSee('Kargo hareket geçmişi')
+            ->assertDontSee('>at_delivery_center<', false);
+
+        $this->withSession(['confirmed_order_ids' => [$order->id]])
+            ->get(route('checkout.success', $order))
+            ->assertOk()
+            ->assertSee('Kargonuz dağıtım merkezinde!')
+            ->assertSee('Dağıtım Merkezinde')
+            ->assertSee('Kargo hareketleri')
+            ->assertSee('Dağıtıma Çıktı')
+            ->assertDontSee('>at_delivery_center<', false);
+    }
+
+    public function test_shipping_return_and_failure_are_customer_visible_but_do_not_refund_or_cancel_payment(): void
+    {
+        $this->admin();
+        $provider = $this->provider();
+        $order = $this->order();
+        $shipment = $this->createShipment($order, $provider);
+        $post = function (string $status, string $at) use ($provider): void {
+            $this->postJson(route('shipping.callback'), [
+                'shipment_id'=>7444, 'status'=>$status, 'time'=>$at,
+                'hash'=>hash_hmac('sha512', '7444'.$status.$at, $provider->api_key),
+            ])->assertOk();
+        };
+        $post('shipped', '2026-11-13 12:00:00');
+        $post('on_return', '2026-11-13 13:00:00');
+        $this->assertSame('shipped', $order->fresh()->status);
+        $this->withSession(['confirmed_order_ids' => [$order->id]])
+            ->get(route('checkout.success', $order))->assertOk()
+            ->assertSee('Kargonuz iade sürecinde')
+            ->assertSee('İade Sürecinde')
+            ->assertSee('Ödeme iadesi otomatik yapılmış anlamına gelmez');
+
+        $post('returned', '2026-11-13 14:00:00');
+        $this->withSession(['confirmed_order_ids' => [$order->id]])
+            ->get(route('checkout.success', $order))->assertOk()
+            ->assertSee('Kargonuz göndericiye iade edildi')
+            ->assertSee('İade Edildi');
+        $this->assertSame('shipped', $order->fresh()->status);
+        $this->assertSame('returned', $shipment->fresh()->remote_status);
+
+        // Provider never callbacks for failed / canceled: manual GET refresh must.
+        Http::fake([
+            'https://app.kargoentegrator.com/api/shipments/7444' =>
+                Http::response(['data' => ['id' => 7444, 'status' => 'failed']]),
+        ]);
+        $this->post(route('admin.shipping-shipments.refresh', $order))
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->withSession(['confirmed_order_ids' => [$order->id]])
+            ->get(route('checkout.success', $order))->assertOk()
+            ->assertSee('Kargo gönderinizle ilgili işlem gerekiyor')
+            ->assertSee('Kargo İşleminde Sorun');
+        $this->assertSame('shipped', $order->fresh()->status);
+    }
+
+    public function test_admin_can_correct_non_integrated_shipping_status_with_a_reason_and_audit_log(): void
+    {
+        $this->admin();
+        $order = $this->order();
+        \App\Models\PaymentNotification::create([
+            'order_id'=>$order->id, 'bank_name_snapshot'=>'Test Banka',
+            'iban_snapshot'=>'TR330006100519786457841326', 'status'=>'verified',
+        ]);
+
+        $this->patch(route('admin.orders.correct', $order), [
+            'status'=>'completed', 'reason'=>'Operasyon kaydındaki eksik teslimat adımını düzelttim.',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('completed', $order->fresh()->status);
+
+        $this->patch(route('admin.orders.correct', $order), [
+            'status'=>'preparing', 'reason'=>'Teslimat bilgisi yanlış işaretlenmiş; kargo henüz çıkmadı.',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('preparing', $order->fresh()->status);
+        $this->assertDatabaseHas('order_status_changes', [
+            'order_id'=>$order->id,'from_status'=>'completed',
+            'to_status'=>'preparing','source'=>'admin_correction',
+        ]);
+        $this->assertSame(2, $order->statusChanges()->count());
+        $this->get(route('admin.orders.show', $order))
+            ->assertOk()->assertSee('Sipariş durum değişiklikleri')
+            ->assertSee('Durumu gerekçeyle düzelt');
+
+        $this->patch(route('admin.orders.correct', $order), [
+            'status'=>'shipped', 'reason'=>'short',
+        ])->assertSessionHasErrors('reason');
+        $this->assertSame('preparing', $order->fresh()->status);
+    }
+
+    public function test_admin_may_revoke_false_bank_verification_only_before_shipping_with_audit(): void
+    {
+        $this->admin();
+        $order = $this->order();
+        $notice = \App\Models\PaymentNotification::create([
+            'order_id'=>$order->id, 'bank_name_snapshot'=>'Test Banka',
+            'iban_snapshot'=>'TR330006100519786457841326', 'status'=>'verified',
+        ]);
+        $this->post(route('admin.orders.revoke-bank-verification', $order), [
+            'reason'=>'Banka hareketinde bu siparişe ait tahsilat bulunamadı.',
+        ])->assertSessionHasErrors('bank_not_received');
+        $this->assertSame('verified', $notice->fresh()->status);
+
+        $this->post(route('admin.orders.revoke-bank-verification', $order), [
+            'reason'=>'Banka hareketinde bu siparişe ait tahsilat bulunamadı.',
+            'bank_not_received'=>'1',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertSame('rejected', $notice->fresh()->status);
+        $this->assertDatabaseHas('order_status_changes', [
+            'order_id'=>$order->id,'from_status'=>'preparing',
+            'to_status'=>'pending_payment',
+            'source'=>'bank_verification_correction',
+        ]);
+        $this->post(route('admin.orders.revoke-bank-verification', $order), [
+            'reason'=>'Banka hareketinde hâlâ ödeme bulunamadı.', 'bank_not_received'=>'1',
+        ])->assertSessionHasErrors('payment');
+        $this->assertDatabaseCount('order_status_changes', 1);
+    }
+
+    public function test_integrated_shipping_must_be_corrected_at_provider_not_with_admin_dropdown(): void
+    {
+        $this->admin();
+        $provider = $this->provider();
+        $order = $this->order();
+        $this->createShipment($order, $provider);
+        $this->patch(route('admin.orders.correct', $order), [
+            'status'=>'completed', 'reason'=>'Dış sağlayıcı bilgisi olmadan aşama değiştirilmeye çalışıldı.',
+        ])->assertSessionHasErrors('status');
+        $this->patch(route('admin.orders.update', $order), ['status'=>'shipped'])
+            ->assertSessionHasErrors('status');
+        $this->assertSame('preparing', $order->fresh()->status);
+    }
+
 }

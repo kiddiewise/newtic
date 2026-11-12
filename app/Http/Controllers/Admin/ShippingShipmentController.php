@@ -151,6 +151,10 @@ final class ShippingShipmentController extends Controller
                     'barcode' => isset($remote['barcode']) ? mb_substr((string)$remote['barcode'], 0, 255) : null,
                 ]);
             }, 3);
+            $reserved->events()->create([
+                'status' => $reserved->fresh()->remote_status ?: 'non_processed',
+                'source' => 'created', 'created_at' => now(),
+            ]);
             return redirect()->route('admin.orders.show', $order)
                 ->with('success','Dummy Kargo test barkodu oluşturuldu. Paket kargo firmasına teslim edilmiş sayılmaz.');
         } catch (\Throwable) {

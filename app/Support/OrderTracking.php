@@ -69,6 +69,46 @@ final class OrderTracking
             ],
         };
 
+        // Shipping is a separate state machine. Customer-facing labels always
+        // reflect the latest signed provider event, not the coarse order status.
+        $shipment = $order->shippingShipment;
+        if ($shipment && $order->status !== 'pending_payment' && $order->status !== 'cancelled') {
+            $carrierStatus = $shipment->remote_status;
+            if (ShippingStatus::isException($carrierStatus)) {
+                $state = match ($carrierStatus) {
+                    'on_return' => [
+                        'key' => 'shipping_return', 'icon' => 'truck',
+                        'title' => 'Kargonuz iade sürecinde',
+                        'description' => ShippingStatus::description($carrierStatus),
+                        'badge' => ShippingStatus::label($carrierStatus),
+                        'progress' => 3, 'payment' => 'Ödeme doğrulandı',
+                    ],
+                    'returned' => [
+                        'key' => 'shipping_returned', 'icon' => 'alert',
+                        'title' => 'Kargonuz göndericiye iade edildi',
+                        'description' => ShippingStatus::description($carrierStatus),
+                        'badge' => ShippingStatus::label($carrierStatus),
+                        'progress' => 3, 'payment' => 'Ödeme doğrulandı',
+                    ],
+                    default => [
+                        'key' => 'shipping_issue', 'icon' => 'alert',
+                        'title' => 'Kargo gönderinizle ilgili işlem gerekiyor',
+                        'description' => ShippingStatus::description($carrierStatus),
+                        'badge' => ShippingStatus::label($carrierStatus),
+                        'progress' => 2, 'payment' => 'Ödeme doğrulandı',
+                    ],
+                };
+            } elseif (ShippingStatus::valid((string)$carrierStatus)) {
+                $state['description'] = ShippingStatus::description($carrierStatus);
+                $state['badge'] = ShippingStatus::label($carrierStatus);
+                if ($carrierStatus === 'at_delivery_center') {
+                    $state['title'] = 'Kargonuz dağıtım merkezinde!';
+                } elseif ($carrierStatus === 'on_transit') {
+                    $state['title'] = 'Kargonuz taşıma sürecinde!';
+                }
+            }
+        }
+
         $stages = [
             ['name' => 'Sipariş alındı', 'icon' => 'check'],
             ['name' => 'Ödeme onayı', 'icon' => 'landmark'],
@@ -83,6 +123,11 @@ final class OrderTracking
         }
         unset($stage);
 
-        return $state + ['stages' => $stages];
+        return $state + [
+            'stages' => $stages,
+            'shipment_status' => $shipment?->remote_status,
+            'shipment_status_label' => ShippingStatus::label($shipment?->remote_status),
+            'shipment_status_description' => ShippingStatus::description($shipment?->remote_status),
+        ];
     }
 }

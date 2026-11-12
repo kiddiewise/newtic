@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ShippingShipment extends Model
 {
@@ -13,6 +14,11 @@ final class ShippingShipment extends Model
         'tracking_link','desi','kg','last_callback_time',
     ];
     protected $casts = ['remote_id' => 'integer', 'desi' => 'decimal:2', 'kg' => 'decimal:2'];
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(ShippingStatusEvent::class)->orderBy('id');
+    }
 
     public function order(): BelongsTo
     {

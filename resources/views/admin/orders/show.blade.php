@@ -140,8 +140,64 @@
         <p class="admin-description">Sipariş bu durumdan sonra değiştirilemez.</p>
       @endif
       <p class="admin-description">Ödeme onaylanmadan “Hazırlanıyor” seçilemez. Onaylanmış ödeme iade kaydı olmadan iptal edilemez.</p>
+      @if($order->shippingShipment)
+        <p class="ship-info">Bu siparişin kargo aşaması Kargo Entegratör tarafından yönetiliyor. Değişiklikleri sağlayıcı panelinden yapıp aşağıdaki “Kargo durumunu yenile” işlemini kullan.</p>
+      @endif
+      @if($canCorrectFulfillment)
+        <div class="ship-correction-panel">
+          <h3>Yanlış sipariş aşamasını düzelt</h3>
+          <p>Hazırlık veya teslimat aşamasını geri ya da ileri alabilirsin. Bu işlem ödeme kaydını veya stoğu değiştirmez ve gerekçesi kaydedilir.</p>
+          <form class="admin-form" method="POST" action="{{ route('admin.orders.correct', $order) }}">
+            @csrf @method('PATCH')
+            <label>Doğru sipariş aşaması
+              <select name="status" required>
+                @foreach(['preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı', 'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı'] as $key => $label)
+                  <option value="{{ $key }}" @selected($order->status === $key)>{{ $label }}</option>
+                @endforeach
+              </select>
+            </label>
+            <label>Düzeltme gerekçesi (zorunlu)
+              <textarea name="reason" rows="2" required minlength="15" maxlength="500" placeholder="Hatalı durum seçildi, paket henüz kargoya teslim edilmedi..."></textarea>
+            </label>
+            <button class="admin-secondary" type="submit"><x-admin-icon name="check"/> Durumu gerekçeyle düzelt</button>
+          </form>
+        </div>
+      @endif
+      @if($canCorrectBankPayment)
+        <div class="ship-correction-panel is-warning">
+          <h3>Hatalı havale onayını geri al</h3>
+          <p><strong>Yalnızca banka hesabına gerçekten para ulaşmadıysa kullan.</strong> Sipariş “Ödeme bekleniyor” durumuna döner; eski ödeme onayı geri çekilir ve işlem kaydedilir. Bankaya para geldiyse iade işlemi ayrıca yapılmalıdır.</p>
+          <form class="admin-form" method="POST" action="{{ route('admin.orders.revoke-bank-verification', $order) }}">
+            @csrf
+            <label>Geri alma gerekçesi
+              <textarea name="reason" rows="2" minlength="15" maxlength="500" required placeholder="Banka hareketi tekrar kontrol edildi; bu siparişe ait tahsilat bulunamadı..."></textarea>
+            </label>
+            <label class="ship-correction-confirm"><input type="checkbox" name="bank_not_received" value="1" required>
+              Banka hesabına bu sipariş için ödeme ulaşmadığını kontrol ettim.
+            </label>
+            <button class="admin-danger" type="submit"><x-admin-icon name="alert"/> Hatalı ödeme onayını geri al</button>
+          </form>
+        </div>
+      @elseif($order->payment_method === 'paytr')
+        <p class="admin-description">PAYTR tarafından doğrulanan kart ödemesi yönetim panelinden geri alınmaz; bunun için ayrı iade akışı gerekir.</p>
+      @endif
     </section>
     @include('admin.orders.shipping-integration')
+    @if($order->statusChanges->isNotEmpty())
+      <section class="admin-panel ship-order-audit">
+        <h2>Sipariş durum değişiklikleri</h2>
+        <p class="admin-description">Yönetici düzeltmeleri ve kargo kaynaklı değişiklikler kaydedilir.</p>
+        <ol>
+          @foreach($order->statusChanges as $change)
+            <li>
+              <strong>{{ \App\Models\Order::labelForStatus($change->from_status) }} → {{ \App\Models\Order::labelForStatus($change->to_status) }}</strong>
+              <small>{{ $change->created_at?->format('d.m.Y H:i') }} · {{ $change->user?->name ?: 'Kargo Entegratör' }} · {{ $change->source }}</small>
+              @if($change->reason)<p>{{ $change->reason }}</p>@endif
+            </li>
+          @endforeach
+        </ol>
+      </section>
+    @endif
     @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true) && !$order->shippingShipment)
     <section class="admin-panel admin-shipping-editor">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="truck" /></span>
@@ -166,7 +222,10 @@
     <section class="admin-panel">
       <h2>Operasyon bilgileri</h2>
       <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart (Test)' : 'Havale / EFT' }}</strong></div>
-      <div class="admin-detail-line"><span>Ödeme durumu</span><strong>{{ $order->status === 'pending_payment' ? ($order->payment_method === 'paytr' ? 'PAYTR bildirim bekleniyor' : 'Banka kontrolü bekleniyor') : $order->statusLabel() }}</strong></div>
+      <div class="admin-detail-line"><span>Ödeme durumu</span>
+        <strong>{{ $paymentVerified ? 'Ödeme doğrulandı' : ($order->payment_method === 'paytr' ? 'PAYTR ödeme bildirimi bekleniyor / başarısız' : 'Havale/EFT doğrulaması bekleniyor') }}</strong>
+      </div>
+      <div class="admin-detail-line"><span>Sipariş durumu</span><strong>{{ $order->statusLabel() }}</strong></div>
       <div class="admin-detail-line"><span>Oluşturulma</span><strong>{{ $order->created_at->format('d.m.Y H:i') }}</strong></div>
       <div class="admin-detail-line"><span>Tür</span><strong>{{ $order->is_test ? 'TEST siparişi' : 'Gerçek sipariş' }}</strong></div>
     </section>

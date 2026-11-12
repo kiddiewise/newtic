@@ -150,28 +150,59 @@
     <div class="payment-copy-toast" data-payment-copy-toast hidden aria-hidden="true"></div>
   </section>
   @endif
-  @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true))
+  @if($order->shippingShipment || in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true))
+  @php
+    $shippingShipment = $order->shippingShipment;
+    $shippingTrackingNumber = $shippingShipment?->tracking_number ?: $order->tracking_number;
+    $shippingTrackingUrl = $shippingShipment?->tracking_link ?: $order->tracking_url;
+    $shippingCarrierName = $shippingShipment?->carrier?->name ?: $order->carrier_name;
+  @endphp
   <section class="checkout-card order-shipping-card" id="shipment-status" aria-labelledby="shipment-title">
     <div class="order-tracking-heading"><div><span class="payment-eyebrow">KARGO TAKİBİ</span><h2 id="shipment-title">Kargo bilgileri</h2></div><x-store-icon name="truck" /></div>
     <p class="order-shipping-description">
       @if($order->status === 'out_for_delivery')Paketiniz dağıtıma çıkarıldı.
       @elseif($order->status === 'shipped')Paketiniz kargo sürecinde.
-      @else Siparişiniz tamamlandı.@endif
+      @elseif($order->status === 'completed')Siparişiniz tamamlandı.
+      @else Paketiniz kargo işlemleri için hazırlanıyor.@endif
     </p>
-    @if($order->carrier_name)
-      <div class="order-shipping-line"><span>Kargo firması</span><strong>{{ $order->carrier_name }}</strong></div>
+    @if($shippingShipment)
+      <div class="order-shipping-current">
+        <span>KARGONUN GÜNCEL DURUMU</span>
+        <strong>{{ $tracking['shipment_status_label'] }}</strong>
+        <p>{{ $tracking['shipment_status_description'] }}</p>
+      </div>
+      @if(\App\Support\ShippingStatus::isException($shippingShipment->remote_status))
+        <p class="order-shipping-alert">Kargo işleminde iade veya başka bir sorun oluşmuş olabilir. Ödeme iadesi otomatik yapılmış anlamına gelmez. Destek için mağazayla iletişime geçebilirsiniz.</p>
+      @endif
     @endif
-    @if($order->tracking_number)
+    @if($shippingCarrierName)
+      <div class="order-shipping-line"><span>Kargo firması</span><strong>{{ $shippingCarrierName }}</strong></div>
+    @endif
+    @if($shippingTrackingNumber)
       <div class="order-shipping-line"><span>Takip numarası</span>
-        <div><strong>{{ $order->tracking_number }}</strong>
-          <button type="button" class="payment-copy-button" data-copy-value="{{ $order->tracking_number }}" data-copy-label="Kargo takip numarası" aria-label="Kargo takip numarasını kopyala"><x-store-icon name="copy" /></button>
+        <div><strong>{{ $shippingTrackingNumber }}</strong>
+          <button type="button" class="payment-copy-button" data-copy-value="{{ $shippingTrackingNumber }}" data-copy-label="Kargo takip numarası" aria-label="Kargo takip numarasını kopyala"><x-store-icon name="copy" /></button>
         </div>
       </div>
     @else
       <p class="order-shipping-pending">Kargo takip numarası henüz paylaşılmadı. Eklendiğinde burada görüntülenecek.</p>
     @endif
-    @if($order->tracking_url && str_starts_with($order->tracking_url, 'https://'))
-      <a class="checkout-outline-action" href="{{ $order->tracking_url }}" target="_blank" rel="noopener noreferrer nofollow"><x-store-icon name="truck" /> Kargo firmasından takip et</a>
+    @if($shippingTrackingUrl && str_starts_with($shippingTrackingUrl, 'https://'))
+      <a class="checkout-outline-action" href="{{ $shippingTrackingUrl }}" target="_blank" rel="noopener noreferrer nofollow"><x-store-icon name="truck" /> Kargo firmasından takip et</a>
+    @endif
+    @if($shippingShipment && $shippingShipment->events->isNotEmpty())
+      <div class="order-shipping-history">
+        <h3>Kargo hareketleri</h3>
+        <ol>
+          @foreach($shippingShipment->events->sortByDesc('id') as $event)
+            <li>
+              <span aria-hidden="true"></span>
+              <div><strong>{{ \App\Support\ShippingStatus::label($event->status) }}</strong>
+                <small>{{ $event->created_at?->format('d.m.Y H:i') }}</small></div>
+            </li>
+          @endforeach
+        </ol>
+      </div>
     @endif
   </section>
   @endif
