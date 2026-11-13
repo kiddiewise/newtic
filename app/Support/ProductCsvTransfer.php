@@ -77,14 +77,14 @@ final class ProductCsvTransfer
         }
 
         try {
-            $header = fgetcsv($handle, 0, ';', '"', '');
+            $header = fgetcsv($handle, null, ';', '"', '');
             $line = 1;
             if (is_array($header) && isset($header[0]) && str_starts_with((string) $header[0], "\xEF\xBB\xBF")) {
                 $header[0] = substr($header[0], 3);
             }
             // Support Excel CSV files saved with an explicit separator directive.
             if (is_array($header) && ($header[0] ?? '') === 'sep=') {
-                $header = fgetcsv($handle, 0, ';', '"', '');
+                $header = fgetcsv($handle, null, ';', '"', '');
                 $line++;
             }
             if (!is_array($header)) {
@@ -106,7 +106,7 @@ final class ProductCsvTransfer
             $seen = [];
             $errors = [];
 
-            while (($cells = fgetcsv($handle, 0, ';', '"', '')) !== false) {
+            while (($cells = fgetcsv($handle, null, ';', '"', '')) !== false) {
                 ++$line;
                 if ($cells === [null] || collect($cells)->every(fn ($value) => trim((string) $value) === '')) {
                     continue;
@@ -253,7 +253,7 @@ final class ProductCsvTransfer
         $options = null;
         if (array_key_exists('secenekler', $values)) {
             $options = $this->tokens($values['secenekler'], 'Seçenek', 30, 60);
-            if ($options && !$attributes['option_label']) {
+            if ($options && empty($attributes['option_label'])) {
                 throw new \InvalidArgumentException('Seçenek kullanıldığında seçenek başlığı zorunludur.');
             }
             if (!$options) {
@@ -320,7 +320,7 @@ final class ProductCsvTransfer
                 throw new \InvalidArgumentException('Sunucuda bulunmayan görsel: '.$path);
             }
         }
-        if ($gallery !== null) {
+        if ($paths) {
             // Never delete existing photographs silently during a spreadsheet import.
             $existing = $product->images()->pluck('path')->all();
             $new = array_values(array_diff($paths, $existing));
