@@ -8,10 +8,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
-  <meta name="robots" content="noindex,nofollow,noarchive">
+  @php $seo = \App\Support\SeoMetadata::forRequest(request()); @endphp
+  <meta name="robots" content="{{ $seo['robots'] }}">
   @if(request()->routeIs('checkout.success'))<meta name="referrer" content="no-referrer">@endif
-  <title>@yield('title', 'Polaris Kurşun | Balıkçılık Ekipmanları')</title>
-  <meta name="description" content="@yield('description', 'Polaris Kurşun balıkçılık ekipmanları. Yeni mağaza tasarımı hazırlanmaktadır.')">
+  <title>{{ $seo['title'] }}</title>
+  <meta name="description" content="{{ $seo['description'] }}">
+  @if($seo['canonical'])
+  <link rel="canonical" href="{{ $seo['canonical'] }}">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:type" content="{{ $seo['og_type'] }}">
+  <meta property="og:title" content="{{ $seo['title'] }}">
+  <meta property="og:description" content="{{ $seo['description'] }}">
+  <meta property="og:url" content="{{ $seo['canonical'] }}">
+  <meta name="twitter:card" content="{{ $seo['image'] ? 'summary_large_image' : 'summary' }}">
+  <meta name="twitter:title" content="{{ $seo['title'] }}">
+  <meta name="twitter:description" content="{{ $seo['description'] }}">
+  @if($seo['image'])
+  <meta property="og:image" content="{{ $seo['image'] }}">
+  <meta name="twitter:image" content="{{ $seo['image'] }}">
+  @endif
+  @endif
+  @if($seo['verification'])
+  <meta name="google-site-verification" content="{{ $seo['verification'] }}">
+  @endif
+  @if($seo['structured'])
+  <script type="application/ld+json">{!! json_encode($seo['structured'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) !!}</script>
+  @endif
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="{{ request()->routeIs('home') ? 'is-home' : (request()->routeIs('product.show') ? 'is-product-detail' : (request()->routeIs('cart.index') ? 'is-cart-page' : (request()->routeIs('checkout.*') ? 'is-checkout' : (request()->routeIs('account.login','account.register') ? 'is-auth' : '')))) }}">
