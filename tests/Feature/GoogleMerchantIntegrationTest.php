@@ -105,7 +105,7 @@ class GoogleMerchantIntegrationTest extends TestCase
             DB::table('google_merchant_settings')->first()->client_secret);
         $this->assertArrayNotHasKey('client_secret', $setting->toArray());
         $body = $this->get(route('admin.google-merchant.edit'))->assertOk()
-            ->assertHeader('Cache-Control', 'private, no-store, max-age=0')->getContent();
+            ->assertHeader('Cache-Control', 'max-age=0, no-store, private')->getContent();
         $this->assertStringNotContainsString('very-private-client-secret', $body);
         $this->assertStringContainsString('Google Merchant Center', $body);
         $this->assertStringContainsString('google/merchant-products.xml', $body);
@@ -179,7 +179,8 @@ class GoogleMerchantIntegrationTest extends TestCase
         $this->post(route('admin.google-merchant.prepare'))->assertSessionHasNoErrors();
         $this->assertSame('accounts/123456789/dataSources/555',
             GoogleMerchantSetting::current()->data_source_name);
-        $this->post(route('admin.google-merchant.prepare'))->assertSessionHasErrors('google');
+        $this->post(route('admin.google-merchant.prepare'))->assertRedirect(route('admin.google-merchant.edit'));
+        $this->assertSame('accounts/123456789/dataSources/555', GoogleMerchantSetting::current()->data_source_name);
     }
 
     public function test_sync_sends_prices_stock_and_unique_product_id_and_skips_unchanged(): void
