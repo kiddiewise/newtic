@@ -1,0 +1,73 @@
+/* Product merchandising ribbons: soft color, strong contrast, no image overlap. */
+.product-badge-strip{
+  display:flex;flex-wrap:wrap;align-items:flex-start;gap:5px;
+  padding:9px 12px 0;min-width:0;
+}
+.product-badge{
+  --badge-bg:#e6f6eb;--badge-ink:#266344;--badge-line:#cde9d7;
+  display:inline-flex;align-items:center;justify-content:center;min-width:0;
+  max-width:100%;padding:5px 9px;border:1px solid var(--badge-line);
+  border-radius:5px;background:var(--badge-bg);color:var(--badge-ink);
+  font-size:10px;font-weight:750;letter-spacing:.012em;line-height:1.25;
+  white-space:normal;overflow-wrap:anywhere;text-align:center;
+}
+.product-badge--mint{--badge-bg:#e5f6eb;--badge-ink:#235d3d;--badge-line:#c5e8d0}
+.product-badge--lilac{--badge-bg:#f0eafa;--badge-ink:#604181;--badge-line:#ded1f0}
+.product-badge--rose{--badge-bg:#fdecef;--badge-ink:#9b384b;--badge-line:#f3ced5}
+.product-badge--lemon{--badge-bg:#fff6d9;--badge-ink:#81631c;--badge-line:#f3e4b5}
+.product-badge--sky{--badge-bg:#e8f2fd;--badge-ink:#285d8a;--badge-line:#ccdef6}
+.product-badge--peach{--badge-bg:#ffefe2;--badge-ink:#945323;--badge-line:#f5dcc5}
+.product-badge--aqua{--badge-bg:#e0f7f4;--badge-ink:#286b66;--badge-line:#bceae3}
+.product-badge--pink{--badge-bg:#fcecf7;--badge-ink:#8b4175;--badge-line:#f0d1e6}
+.product-badge--slate{--badge-bg:#edf1f6;--badge-ink:#4d5f72;--badge-line:#d9e0e9}
+.product-card .product-badge-strip{flex:none;padding:8px 12px 0}
+.product-card .product-badge-strip + .product-card-content{padding-top:9px}
+.product-badge-strip--detail{padding:13px 0 4px;gap:7px}
+.product-badge-strip--detail .product-badge{font-size:11px;padding:7px 11px;border-radius:6px}
+@media(max-width:760px){
+  .product-card .product-badge-strip{padding:7px 9px 0;gap:4px}
+  .product-card .product-badge{font-size:9.2px;padding:4px 6px}
+  .product-card .product-badge-strip + .product-card-content{padding-top:8px}
+  .pdp-gallery .product-badge-strip--detail{padding:12px 14px 3px;gap:6px}
+}
+.badge-admin-create,.badge-admin-edit{
+  display:grid;grid-template-columns:minmax(160px,2fr) minmax(120px,1fr) 90px auto auto;
+  align-items:end;gap:12px;
+}
+.badge-admin-create select,.badge-admin-edit select{
+  width:100%;min-height:44px;padding:9px 11px;border-radius:10px;
+  border:1px solid #d5e1e5;background:white;color:#213b47;font-size:13px;
+}
+.badge-admin-active{align-self:center;white-space:nowrap}
+.badge-admin-actions{display:flex;align-items:center;justify-content:flex-end}
+.badge-palette-guide{display:flex;flex-wrap:wrap;gap:7px;margin-top:17px;padding-top:16px;border-top:1px solid #e8eef0}
+.badge-admin-list{display:grid;gap:0}
+.badge-admin-item{padding:17px 0;border-top:1px solid #e7edef}
+.badge-admin-item-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.badge-admin-count{font-size:11px;color:#657c88}
+.badge-admin-item>form:last-child{margin-top:8px}
+.admin-badge-picker{display:flex;flex-wrap:wrap;gap:9px}
+.admin-product-editor .admin-badge-choice{
+  display:inline-flex;flex-direction:row;align-items:center;gap:8px;
+  padding:8px;border:1px solid #dce6e8;border-radius:10px;cursor:pointer;
+  background:#fff;min-width:0;
+}
+.admin-product-editor .admin-badge-choice:has(input:checked){border-color:#7cad9d;background:#f5fbf8}
+.admin-product-editor .admin-badge-choice input[type=checkbox]{
+  width:17px;height:17px;flex:none;accent-color:#287861;
+}
+.admin-product-editor .admin-badge-choice input:focus-visible{
+  outline:2px solid #287861;outline-offset:3px;
+}
+.admin-product-editor .admin-badge-choice.is-muted{opacity:.58}
+.admin-badge-help{margin:10px 0;color:#667c85;font-size:12px;line-height:1.55}
+@media(max-width:1020px){
+  .badge-admin-create,.badge-admin-edit{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .badge-admin-actions{justify-content:flex-start}
+}
+@media(max-width:600px){
+  .badge-admin-create,.badge-admin-edit{grid-template-columns:1fr}
+  .badge-admin-active{justify-self:start}
+  .badge-admin-actions .admin-primary{width:100%}
+  .badge-admin-item-heading{align-items:flex-start;flex-wrap:wrap}
+}
