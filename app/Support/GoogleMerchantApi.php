@@ -144,7 +144,7 @@ final class GoogleMerchantApi
     private function request(string $method, string $path, string $token, array $query = [], ?array $body = null): array
     {
         $url = self::API_URL.$path;
-        $http = Http::withToken($token)->acceptJson()->timeout(12)
+        $http = Http::withToken($token)->acceptJson()->timeout(7)
             ->withOptions(['allow_redirects' => false]);
         $response = match ($method) {
             'POST' => $http->post($url.($query ? '?'.http_build_query($query, '', '&', PHP_QUERY_RFC3986) : ''), $body ?? []),
