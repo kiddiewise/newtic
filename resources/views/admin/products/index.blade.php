@@ -5,6 +5,8 @@
   <div><p class="admin-eyebrow">KATALOG / ÜRÜNLER</p><h1>Ürün yönetimi</h1>
     <p>Ürün fotoğraflarını, fiyatlarını, stok ve yayın durumlarını kolayca yönet.</p></div>
   <div class="admin-heading-action-group">
+    <a class="admin-secondary" href="{{ route('admin.products.bulk.export') }}"><x-admin-icon name="package" /> Excel'e aktar (CSV)</a>
+    <a class="admin-secondary" href="{{ route('admin.products.bulk.index') }}"><x-admin-icon name="layers" /> Toplu ürün yükle</a>
     <a class="admin-secondary" href="{{ route('admin.product-imports.index') }}"><x-admin-icon name="layers" /> WooCommerce'den aktar</a>
     <a class="admin-primary" href="{{ route('admin.products.create') }}"><x-admin-icon name="plus" /> Yeni ürün ekle</a>
   </div>
