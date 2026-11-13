@@ -74,11 +74,12 @@ final class GoogleMerchantSync
                         ]);
                         $settings->sync_sent++;
                     }
-                } elseif ($item && $item->status !== 'removed') {
+                } elseif ($item && $item->status !== 'removed' && ($item->payload_hash || $item->status === 'synced')) {
                     $this->api->delete($accessToken(), $settings, $offerId);
                     $item->delete();
                     $settings->sync_removed++;
                 } else {
+                    if ($item) $item->delete();
                     $settings->sync_unchanged++;
                 }
             } catch (\Throwable $exception) {
