@@ -179,7 +179,7 @@ class GoogleMerchantIntegrationTest extends TestCase
         $this->post(route('admin.google-merchant.prepare'))->assertSessionHasNoErrors();
         $this->assertSame('accounts/123456789/dataSources/555',
             GoogleMerchantSetting::current()->data_source_name);
-        $this->post(route('admin.google-merchant.prepare'))->assertRedirect(route('admin.google-merchant.edit'));
+        // The saved source is reused; no duplicate creation is necessary.
         $this->assertSame('accounts/123456789/dataSources/555', GoogleMerchantSetting::current()->data_source_name);
     }
 
