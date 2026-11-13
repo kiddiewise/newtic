@@ -41,11 +41,20 @@
         @if($product->discount_percent > 0)
           <span class="detail-discount-pill">-%{{ $product->discount_percent }}</span>
         @endif
-        <img data-product-main-image src="{{ $cover }}" alt="{{ $product->name }}" width="600" height="600" fetchpriority="high">
+        <img id="pdp-main-photo" data-product-main-image src="{{ $cover }}" alt="{{ $product->name }}" width="600" height="600" fetchpriority="high">
+        @if($galleryCount > 1)
+          <button type="button" class="pdp-gallery-arrow pdp-gallery-prev" data-gallery-prev aria-label="Önceki ürün fotoğrafı" aria-controls="pdp-main-photo">
+            <x-store-icon name="chevron-left" />
+          </button>
+          <button type="button" class="pdp-gallery-arrow pdp-gallery-next" data-gallery-next aria-label="Sonraki ürün fotoğrafı" aria-controls="pdp-main-photo">
+            <x-store-icon name="chevron-right" />
+          </button>
+        @endif
         <span class="pdp-image-counter" aria-label="Ürün fotoğrafı sırası">
           <span data-gallery-current>1</span> / {{ $galleryCount }}
         </span>
       </div>
+      <span class="sr-only" data-gallery-live role="status" aria-live="polite">Fotoğraf 1 / {{ $galleryCount }}</span>
       @include('store.partials.product-badges', ['product' => $product, 'placement' => 'detail'])
       @if($gallery->isNotEmpty())
         <div class="detail-thumbnails" aria-label="Ürün fotoğrafları">

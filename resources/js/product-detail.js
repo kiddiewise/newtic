@@ -383,36 +383,6 @@ if (pdpSheet) {
   }
 }
 
-const gallery = document.querySelector('[data-product-gallery]');
-if (gallery) {
-  const main = gallery.querySelector('[data-product-main-image]');
-  const thumbs = [...gallery.querySelectorAll('[data-gallery-thumb]')];
-  const count = gallery.querySelector('[data-gallery-current]');
-  const images = thumbs.length ? thumbs.map((el) => el.dataset.imageUrl) : [main?.src];
-  let index = 0;
-  const show = (next) => {
-    if (!main || !images.length) return;
-    index = (next + images.length) % images.length;
-    main.src = images[index];
-    if (count) count.textContent = String(index + 1);
-    thumbs.forEach((el, i) => el.setAttribute('aria-pressed', String(i === index)));
-  };
-  thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => show(i)));
-
-  const swipeArea = gallery.querySelector('[data-gallery-swipe]');
-  let start = null;
-  swipeArea?.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    start = { x: event.clientX, y: event.clientY };
-  }, { passive: true });
-  swipeArea?.addEventListener('pointerup', (event) => {
-    if (!start) return;
-    const dx = event.clientX - start.x;
-    const dy = event.clientY - start.y;
-    start = null;
-    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.3 && images.length > 1) {
-      show(index + (dx < 0 ? 1 : -1));
-    }
-  }, { passive: true });
-  swipeArea?.addEventListener('pointercancel', () => { start = null; });
-}
+// Desktop arrows, mobile swipe and two-finger transient zoom share one gallery state.
+import { initProductGallery } from './product-gallery.js';
+initProductGallery();
