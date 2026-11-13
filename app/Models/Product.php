@@ -28,6 +28,12 @@ class Product extends Model
         'weight_kg' => 'decimal:3',
     ];
 
+    public function badges(): BelongsToMany
+    {
+        return $this->belongsToMany(ProductBadge::class, 'badge_product', 'product_id', 'product_badge_id')
+            ->orderBy('product_badges.sort_order')->orderBy('product_badges.id');
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'category_product');

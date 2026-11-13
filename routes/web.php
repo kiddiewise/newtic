@@ -73,6 +73,7 @@ use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductBadgeController;
 use App\Http\Controllers\Admin\CatalogImportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SearchController;
@@ -156,6 +157,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/products/import/{catalogImport}', [CatalogImportController::class, 'show'])->name('product-imports.show');
     Route::post('/products/import/{catalogImport}/start', [CatalogImportController::class, 'start'])->name('product-imports.start');
     Route::post('/products/import/{catalogImport}/step', [CatalogImportController::class, 'step'])->name('product-imports.step');
+    Route::get('/urun-rozetleri', [ProductBadgeController::class, 'index'])->name('product-badges.index');
+    Route::post('/urun-rozetleri', [ProductBadgeController::class, 'store'])->name('product-badges.store');
+    Route::patch('/urun-rozetleri/{badge}', [ProductBadgeController::class, 'update'])->name('product-badges.update');
+    Route::delete('/urun-rozetleri/{badge}', [ProductBadgeController::class, 'destroy'])->name('product-badges.destroy');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');

@@ -55,6 +55,7 @@
           @endforeach
         </div>
       @endif
+      @include('store.partials.product-badges', ['product' => $product, 'placement' => 'detail'])
     </div>
 
     <div class="detail-intro pdp-intro">

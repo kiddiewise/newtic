@@ -3,6 +3,7 @@
     @if($product->discount_percent > 0)<span class="product-discount-pill">-%{{ $product->discount_percent }}</span>@endif
     <img src="{{ $product->image_path ? asset($product->image_path) : asset('assets/products/demo-sinker.svg') }}" alt="{{ $product->name }}" width="360" height="360" loading="lazy">
   </a>
+  @include('store.partials.product-badges', ['product' => $product, 'placement' => 'card'])
   <div class="product-card-content">
     <span class="product-card-brand">POLARIS KURŞUN</span>
     <a href="{{ route('product.show', $product->slug) }}" class="product-card-name">{{ $product->name }}</a>

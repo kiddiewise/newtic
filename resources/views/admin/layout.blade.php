@@ -24,6 +24,7 @@
     ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
     ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
     ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
+    ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
     ['label' => 'WooCommerce Aktarım', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
     ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
     ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
@@ -57,7 +58,7 @@
       <div class="admin-menu-caption">ANA MENÜ</div>
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
         @foreach($menu as $item)
-          @if($loop->index === 13)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
+          @if($item['name'] === 'admin.announcements.index')<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
           @if(isset($item['children']))
             <details class="admin-nav-group" @if(request()->routeIs($item['active'])) open @endif>
               <summary @class(['admin-side-link', 'is-active' => request()->routeIs($item['active'])])>

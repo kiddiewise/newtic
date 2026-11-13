@@ -45,3 +45,5 @@
 @source '../js/**/*.js';
 
 @import './mega-menu-settings.css';
+
+@import './product-badges.css';
