@@ -47,6 +47,14 @@
         <label class="admin-editor-wide">SEO başlığı<input name="seo_title" maxlength="255" value="{{ old('seo_title', $product->seo_title) }}"></label>
         <label class="admin-editor-wide">SEO açıklaması<textarea name="seo_description" rows="3" maxlength="2000">{{ old('seo_description', $product->seo_description) }}</textarea></label>
         <label class="admin-editor-wide">SEO odak anahtar kelimesi<input name="seo_focus_keyword" maxlength="255" value="{{ old('seo_focus_keyword', $product->seo_focus_keyword) }}"></label>
+        <label class="admin-editor-toggle admin-editor-wide">
+          <input type="hidden" name="seo_noindex" value="0">
+          <input type="checkbox" name="seo_noindex" value="1" @checked(old('seo_noindex', $product->seo_noindex ?? false))>
+          <span class="admin-toggle-track" aria-hidden="true"></span>
+          <span><strong>Bu ürünü Google indekslemesinden hariç tut</strong>
+            <small>Ürün site haritasından çıkarılır, meta robots noindex gönderilir ve Merchant ürün kaynağında yer almaz.</small></span>
+        </label>
+        <p class="admin-description admin-editor-wide">Canonical URL bu ürünün kalıcı bağlantısından otomatik oluşur. Google Product/Offer verileri gerçek fiyat ve stoktan hazırlanır; yıldızlar onaylanmış gerçek yorumlardan alınır.</p>
         <label class="admin-editor-wide">Google Merchant marka bilgisi
           <input name="google_brand" maxlength="120" value="{{ old('google_brand', $product->google_brand) }}" placeholder="Boşsa Polaris Kurşun kullanılır">
           <small>Marka adı ürünün gerçek markası olmalıdır.</small>
