@@ -262,6 +262,8 @@ final class ShippingOperationsTest extends TestCase
     {
         $script = file_get_contents(base_path('scripts/cron-shipping-sync.sh'));
         $this->assertStringContainsString('artisan shipping:sync --limit=20', $script);
+        $this->assertStringContainsString('NEWTIC_KARGO_CRON', $script);
+        $this->assertStringContainsString('shipping-cron-health.log', $script);
         $this->assertStringNotContainsString('api_key', $script);
         $this->admin();
         $this->get(route('admin.shipping-operations.index'))->assertOk()

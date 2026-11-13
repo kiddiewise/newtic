@@ -82,3 +82,13 @@ hPanel üzerinden kurulur (resmî Hostinger yardımı: https://www.hostinger.com
 - Cron işinin çıktısını hPanel View Output üzerinden kontrol et; checked/updated/failed/skipped metrikleri görünür.
 - API anahtarını komuta girme. Script yalnızca önceden şifrelenmiş uygulama anahtarını kullanır.
 - Aynı işi iki kere tanımlama; provider sorgularını sadece staging ortamında çalıştır.
+
+## Cron çalışma kaydı
+
+`scripts/cron-shipping-sync.sh` artık hem hPanel'e `NEWTIC_KARGO_CRON`
+ön ekiyle başlangıç/başarı/hata satırları basar hem de yalnızca tarih ve
+sayaç bilgilerini `storage/logs/shipping-cron-health.log` içine yazar.
+Bu dosya uygulamanın web kökü dışında kalır. Ödeme, adres, API anahtarı
+ve sipariş numarası kaydedilmez. Boş hPanel çıktısında son çalışmanın
+zamanını bu logdan kontrol et. CLI üzerinden elle çalıştırma, hPanel
+zamanlamasının gerçekten çalıştığını kanıtlamaz.
