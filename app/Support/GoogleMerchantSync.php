@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\GoogleMerchantSetting;
 use App\Models\GoogleMerchantSyncItem;
 use App\Models\Product;
+use App\Support\CategoryHierarchy;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -35,13 +36,14 @@ final class GoogleMerchantSync
     }
 
     /** @return array<string, mixed> */
-    public function step(GoogleMerchantSetting $settings, int $limit = 4): array
+    public function step(GoogleMerchantSetting $settings, int $limit = 3): array
     {
         if (!$settings->isReady() || $settings->sync_status !== 'running') {
             throw new RuntimeException('Başlatılmış bir Google senkronizasyonu yok.');
         }
 
         $limit = max(1, min(8, $limit));
+        $allCategories = CategoryHierarchy::all();
         $products = Product::query()->with(['category', 'images'])
             ->where('id', '>', $settings->sync_cursor)->orderBy('id')->limit($limit)->get();
 
@@ -55,7 +57,7 @@ final class GoogleMerchantSync
             $offerId = GoogleMerchantProduct::offerId($product);
             $item = GoogleMerchantSyncItem::query()
                 ->where('merchant_id', $settings->merchant_id)->where('offer_id', $offerId)->first();
-            $eligible = GoogleMerchantProduct::eligible($product);
+            $eligible = GoogleMerchantProduct::eligible($product, $allCategories);
 
             try {
                 if ($eligible) {
