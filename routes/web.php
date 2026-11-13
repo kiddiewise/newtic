@@ -73,6 +73,7 @@ use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductCsvController;
 use App\Http\Controllers\Admin\ProductBadgeController;
 use App\Http\Controllers\Admin\CatalogImportController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -161,6 +162,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/urun-rozetleri', [ProductBadgeController::class, 'store'])->name('product-badges.store');
     Route::patch('/urun-rozetleri/{badge}', [ProductBadgeController::class, 'update'])->name('product-badges.update');
     Route::delete('/urun-rozetleri/{badge}', [ProductBadgeController::class, 'destroy'])->name('product-badges.destroy');
+    Route::get('/products/bulk', [ProductCsvController::class, 'index'])->name('products.bulk.index');
+    Route::get('/products/bulk/export', [ProductCsvController::class, 'export'])->middleware('throttle:5,1')->name('products.bulk.export');
+    Route::get('/products/bulk/template', [ProductCsvController::class, 'template'])->name('products.bulk.template');
+    Route::post('/products/bulk', [ProductCsvController::class, 'upload'])->middleware('throttle:5,1')->name('products.bulk.upload');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
