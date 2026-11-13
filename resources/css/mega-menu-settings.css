@@ -44,3 +44,13 @@
   .mega-menu-form-fields>.wide{grid-column:auto}
   .mega-menu-settings-form .admin-form-actions .admin-primary{width:100%}
 }
+
+/* Native, accessible admin submenu: Menüler > Mega Menü Ayarları. */
+.admin-nav-group>summary{list-style:none;cursor:pointer}
+.admin-nav-group>summary::-webkit-details-marker{display:none}
+.admin-nav-group>summary>.admin-icon:last-child{width:15px;height:15px;opacity:.65;transition:transform .2s}
+.admin-nav-group[open]>summary>.admin-icon:last-child{transform:rotate(90deg)}
+.admin-nav-children{display:grid;gap:4px;margin:4px 0 9px 27px;padding-left:12px;border-left:1px solid #ffffff2b}
+.admin-nav-child{display:flex;align-items:center;min-height:36px;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600;color:#cbdae0;text-decoration:none}
+.admin-nav-child:hover,.admin-nav-child:focus-visible{background:#ffffff13;color:#fff}
+.admin-nav-child.is-active{background:#ffffff1d;color:#fff;font-weight:760}
