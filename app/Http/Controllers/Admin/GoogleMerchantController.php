@@ -8,6 +8,7 @@ use App\Models\GoogleMerchantSyncItem;
 use App\Models\Product;
 use App\Support\GoogleMerchantApi;
 use App\Support\GoogleMerchantSync;
+use App\Support\SeoMetadata;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ final class GoogleMerchantController extends Controller
             'accounts' => $accountChoices,
             'syncIssues' => $syncIssues,
             'productCount' => Product::query()->where('is_active', true)->where('is_demo', false)->count(),
+            'isStaging' => SeoMetadata::staging($request),
         ])->header('Cache-Control', 'private, no-store, max-age=0');
     }
 
@@ -173,8 +175,8 @@ final class GoogleMerchantController extends Controller
     {
         $data = $request->validate(['enabled' => ['required', 'boolean']]);
         $setting = GoogleMerchantSetting::current();
-        if (!$setting->isReady()) {
-            return back()->withErrors(['google' => 'Otomatik senkronizasyon için Merchant API bağlantısı tamamlanmalı.']);
+        if (!$setting->isReady() || !SeoMetadata::merchantSyncAllowed()) {
+            return back()->withErrors(['google' => 'Otomatik senkronizasyon için gerçek alan adı, açık indeksleme ve Merchant API bağlantısı gereklidir.']);
         }
         $setting->update(['auto_sync' => (bool) $data['enabled']]);
         return back()->with('success', $data['enabled']
