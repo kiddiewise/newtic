@@ -17,7 +17,7 @@ final class ProductCsvTransfer
         'stok', 'stok_takibi', 'yayinda', 'aciklama', 'kisa_aciklama',
         'agirlik_kg', 'seo_baslik', 'seo_aciklama', 'seo_odak_kelime',
         'secenek_basligi', 'secenekler', 'rozetler', 'kapak_gorseli',
-        'galeri_gorselleri', 'ek_kategori_sluglari',
+        'galeri_gorselleri', 'ek_kategori_sluglari', 'google_brand', 'gtin', 'mpn',
     ];
 
     private const REQUIRED = [
@@ -62,6 +62,9 @@ final class ProductCsvTransfer
                         $product->images->pluck('path')->implode('|'),
                         $product->categories->filter(fn ($category) => $category->id !== $product->primary_category_id)
                             ->pluck('slug')->implode('|'),
+                        $product->google_brand ?? '',
+                        $product->gtin ?? '',
+                        $product->mpn ?? '',
                     ];
                     fputcsv($stream, array_map(self::safeForExcel(...), $row), ';', '"', '');
                 }
@@ -230,6 +233,9 @@ final class ProductCsvTransfer
             'seo_aciklama' => ['seo_description', 2000],
             'seo_odak_kelime' => ['seo_focus_keyword', 255],
             'secenek_basligi' => ['option_label', 80],
+            'google_brand' => ['google_brand', 120],
+            'gtin' => ['gtin', 14],
+            'mpn' => ['mpn', 70],
         ];
         foreach ($texts as $column => [$field, $maximum]) {
             if (!array_key_exists($column, $values)) {
@@ -242,6 +248,9 @@ final class ProductCsvTransfer
             $attributes[$field] = $value !== '' ? $value : null;
         }
 
+        if (filled($attributes['gtin'] ?? null) && !preg_match('/^[0-9]{8,14}$/D', $attributes['gtin'])) {
+            throw new \InvalidArgumentException('GTIN 8–14 rakam içermelidir.');
+        }
         if (array_key_exists('agirlik_kg', $values)) {
             $weight = trim($values['agirlik_kg']);
             if ($weight !== '' && (!preg_match('/^\d+(?:[.,]\d{1,3})?$/', $weight) || (float) str_replace(',', '.', $weight) > 9999999)) {
