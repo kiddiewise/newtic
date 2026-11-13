@@ -80,6 +80,33 @@
       <p class="admin-description">75 gr, 100 gr ve 125 gr ürünlerini yine ayrı SKU olarak açarsın. Her ürünün kendi iğne seçenekleri olabilir. Şu an bütün iğne seçenekleri ürünün ortak stok adedini ve fiyatını kullanır.</p>
     </section>
     <section class="admin-panel admin-editor-section">
+      <div class="admin-editor-heading">
+        <span class="admin-editor-heading-icon is-purple"><x-admin-icon name="star" /></span>
+        <div><h2>Ürün rozetleri</h2><p>Görselin hemen altındaki pastel renkli şeritleri seç.</p></div>
+      </div>
+      @php
+        $selectedBadgeIds = collect(old('badge_ids', $product->exists ? $product->badges->pluck('id')->all() : []))
+            ->filter()->map(fn ($id) => (int) $id)->all();
+      @endphp
+      <input type="hidden" name="badge_ids[]" value="">
+      @if($badges->isNotEmpty())
+        <div class="admin-badge-picker" aria-label="Ürüne eklenecek rozetler">
+          @foreach($badges as $badge)
+            <label class="admin-badge-choice {{ !$badge->is_active ? 'is-muted' : '' }}">
+              <input type="checkbox" name="badge_ids[]" value="{{ $badge->id }}" @checked(in_array($badge->id, $selectedBadgeIds, true))>
+              <span class="product-badge product-badge--{{ $badge->color }}">{{ $badge->name }}</span>
+              @if(!$badge->is_active)<small>Gizli</small>@endif
+            </label>
+          @endforeach
+        </div>
+      @else
+        <p class="admin-badge-help">Henüz rozet tanımlamadın.</p>
+      @endif
+      <p class="admin-badge-help">Birden fazla seçebilirsin. Pasif rozetler mağazada görünmez. <a href="{{ route('admin.product-badges.index') }}" target="_blank" rel="noopener noreferrer">Rozetleri oluştur veya renklerini düzenle</a>.</p>
+      @error('badge_ids')<div class="admin-alert admin-alert-error">{{ $message }}</div>@enderror
+      @error('badge_ids.*')<div class="admin-alert admin-alert-error">{{ $message }}</div>@enderror
+    </section>
+    <section class="admin-panel admin-editor-section">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="check" /></span><div><h2>Yayın durumu</h2><p>Ürünün mağazadaki görünürlüğünü belirle</p></div></div>
       <label class="admin-editor-toggle"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $product->exists ? $product->is_active : true))>
         <span class="admin-toggle-track" aria-hidden="true"></span><span><strong>Ürün mağazada yayınlansın</strong><small>Pasif ürünler müşteri kataloğunda görünmez.</small></span>

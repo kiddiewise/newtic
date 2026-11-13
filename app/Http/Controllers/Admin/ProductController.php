@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductBadge;
 use App\Support\CategoryHierarchy;
 use App\Support\UniqueSlug;
 use Illuminate\Http\RedirectResponse;
@@ -44,16 +45,18 @@ class ProductController extends Controller
         return view('admin.products.form', [
             'product' => new Product,
             'categories' => collect(CategoryHierarchy::choices()),
+            'badges' => ProductBadge::query()->orderBy('sort_order')->orderBy('id')->get(),
         ]);
     }
 
     public function edit(Product $product): View
     {
-        $product->load(['images', 'options', 'importSource']);
+        $product->load(['images', 'options', 'importSource', 'badges']);
 
         return view('admin.products.form', [
             'product' => $product,
             'categories' => collect(CategoryHierarchy::choices()),
+            'badges' => ProductBadge::query()->orderBy('sort_order')->orderBy('id')->get(),
         ]);
     }
 
@@ -61,11 +64,13 @@ class ProductController extends Controller
     {
         $data = $this->validated($request);
         $values = $this->optionValues($data);
+        $badgeIds = $this->badgeIds($data);
         $data = $this->toProductAttributes($data, $request);
         $data['slug'] = UniqueSlug::make(Product::class, $data['name']);
-        $product = DB::transaction(function () use ($data, $values) {
+        $product = DB::transaction(function () use ($data, $values, $badgeIds) {
             $product = Product::create($data);
             $this->syncOptions($product, $values);
+            $product->badges()->sync($badgeIds);
 
             return $product;
         });
@@ -78,10 +83,12 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
         $values = $this->optionValues($data);
+        $badgeIds = $this->badgeIds($data);
         $data = $this->toProductAttributes($data, $request);
-        DB::transaction(function () use ($product, $data, $values) {
+        DB::transaction(function () use ($product, $data, $values, $badgeIds) {
             $product->update($data);
             $this->syncOptions($product, $values);
+            $product->badges()->sync($badgeIds);
         });
         $this->addPhotos($product, $request);
 
@@ -132,6 +139,8 @@ class ProductController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'option_label' => ['nullable', 'string', 'max:80'],
             'options_text' => ['nullable', 'string', 'max:3000'],
+            'badge_ids' => ['sometimes', 'array', 'max:31'],
+            'badge_ids.*' => ['nullable', 'integer', 'distinct', Rule::exists('product_badges', 'id')],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
         ]);
@@ -144,7 +153,7 @@ class ProductController extends Controller
             ? number_format((float) $data['sale_price'], 2, '.', '')
             : null;
 
-        unset($data['images'], $data['regular_price'], $data['sale_price'], $data['options_text']);
+        unset($data['images'], $data['regular_price'], $data['sale_price'], $data['options_text'], $data['badge_ids']);
         $data['price'] = $sale ?? $regular;
         $data['compare_at_price'] = $sale ? $regular : null;
         $data['is_active'] = $request->boolean('is_active');
@@ -179,6 +188,13 @@ class ProductController extends Controller
         $data['option_label'] = $values->isNotEmpty() ? trim($data['option_label']) : null;
 
         return $values->all();
+    }
+
+    private function badgeIds(array $data): array
+    {
+        return collect($data['badge_ids'] ?? [])
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (int) $id)->unique()->values()->all();
     }
 
     private function syncOptions(Product $product, array $values): void

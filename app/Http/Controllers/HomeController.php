@@ -16,7 +16,7 @@ class HomeController extends Controller
             ->with([
                 'slides' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
                 'categories' => fn ($q) => $q->where('is_active', true),
-                'products' => fn ($q) => ProductReviewVisibility::withRatingSummary($q->with('options'))->where('is_active', true),
+                'products' => fn ($q) => ProductReviewVisibility::withRatingSummary($q->with(['options', 'badges']))->where('is_active', true),
             ])
             ->get();
 

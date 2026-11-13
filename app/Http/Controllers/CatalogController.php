@@ -25,7 +25,7 @@ class CatalogController extends Controller
         $subcategories = $category->activeChildren()->get();
         $banners = $category->banners()->visible()->get();
 
-        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with('options'))
+        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['options', 'badges']))
             ->where(function ($query) use ($categoryIds) {
                 $query->whereIn('primary_category_id', $categoryIds)
                     ->orWhereHas('categories', fn ($related) => $related->whereIn('categories.id', $categoryIds));
@@ -50,7 +50,7 @@ class CatalogController extends Controller
 
     public function product(Request $request, string $slug): View
     {
-        $product = Product::query()->with(['category', 'images', 'options'])->where('slug', $slug)
+        $product = Product::query()->with(['category', 'images', 'options', 'badges'])->where('slug', $slug)
             ->where('is_active', true)
             ->whereHas('category', fn ($q) => $q->where('is_active', true))
             ->firstOrFail();
@@ -157,7 +157,7 @@ class CatalogController extends Controller
         abort_if(mb_strlen($term) > 100, 422);
 
         $like = '%'.addcslashes($term, '%_\\').'%';
-        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['category', 'options']))
+        $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['category', 'options', 'badges']))
             ->where('is_active', true)
             ->whereIn('primary_category_id', $this->visibleSearchCategoryIds())
             ->when($term !== '', fn ($q) =>
