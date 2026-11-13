@@ -19,6 +19,7 @@
 @php
   $headerCartCount = \App\Support\ShoppingCart::itemCount();
   $shopAppearance = \App\Models\ShopAppearance::current();
+  $megaMenuSettings = \App\Models\MegaMenuSetting::current();
   $shopAnnouncements = \App\Models\ShopAnnouncement::query()->visible()->orderBy('sort_order')->orderBy('id')->limit(30)->get();
   $activeCategorySlugs = request()->routeIs('category.show') && isset($breadcrumbs)
       ? array_map(fn ($crumb) => $crumb->slug, $breadcrumbs)
@@ -91,11 +92,8 @@
             <x-store-icon name="x" />
           </button>
           <a class="mega-menu-brand" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
-            @if($shopAppearance->mobile_logo_path)
-              <img class="store-logo store-logo-mega" src="{{ asset($shopAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="44" height="44">
-              <span class="mega-brand-label">POLARIS<small>KURŞUN</small></span>
-            @elseif($shopAppearance->desktop_logo_path)
-              <img class="store-logo store-logo-mega-horizontal" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="130" height="42">
+            @if($shopAppearance->mobile_logo_path || $shopAppearance->desktop_logo_path)
+              <img class="store-logo store-logo-mega mega-brand-logo" src="{{ asset($shopAppearance->mobile_logo_path ?: $shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="135" height="43">
             @else
               <span class="mega-brand-icon"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/><circle cx="25" cy="12" r="1.5" fill="#fff"/></svg></span>
               <span>POLARIS<small>KURŞUN</small></span>
@@ -107,36 +105,14 @@
           </a>
         </div>
         <div class="mega-menu-scroll" data-mega-scroll>
-          <div class="mega-hero">
-            <div class="mega-hero-copy">
-              <span class="mega-hero-eyebrow"><span class="mega-hero-dot"></span> POLARIS KOLEKSİYON</span>
-              <h2>Avın her anına<br><em>hazır ol.</em></h2>
-              <p>Surf kurşunlardan av ekipmanlarına, aradığın her şey bir dokunuş uzağında.</p>
-              <a href="{{ route('search') }}" class="mega-hero-cta">Tüm ürünleri keşfet <span aria-hidden="true">↗</span></a>
-            </div>
-            <svg class="mega-hero-art" viewBox="0 0 240 300" fill="none" aria-hidden="true">
-              <circle cx="135" cy="148" r="109" stroke="white" stroke-opacity=".12"/>
-              <circle cx="135" cy="148" r="81" stroke="white" stroke-opacity=".12"/>
-              <path d="M130 0c20 24 12 47 3 70-8 20-9 36-4 52" stroke="#9BE4E0" stroke-width="2" stroke-dasharray="4 5"/>
-              <path d="M128 117c-14 5-18 20-13 32 4 10 10 20 21 24 10-4 19-17 20-28 0-15-10-25-28-28Z" fill="#DDF5EF"/>
-              <path d="M133 121c-9 22-7 35 3 48" stroke="#5CB9B7" stroke-width="2"/>
-              <path d="M118 112c2-18 30-18 32 1" stroke="#C2E8E0" stroke-width="3" stroke-linecap="round"/>
-              <path d="M111 194c-36 1-53 21-83 20M147 201c31-13 58-9 93-28M103 224c-36-1-59 15-89 11" stroke="#8CD7D4" stroke-opacity=".6" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="53" cy="105" r="4" fill="#8FE5D2"/><circle cx="67" cy="86" r="2.5" fill="#8FE5D2"/><circle cx="176" cy="218" r="4" fill="#8FE5D2"/>
-              <path d="M81 269c38-12 73-12 113 2" stroke="white" stroke-opacity=".13" stroke-width="2"/>
-            </svg>
-            <div class="mega-hero-glow" aria-hidden="true"></div>
+          @if($megaMenuSettings->hero_image_path)
+          <div class="mega-menu-banner">
+            <img src="{{ asset($megaMenuSettings->hero_image_path) }}" alt="Polaris mega menü görseli" width="1200" height="750" decoding="async">
           </div>
-
-          <div class="mega-quick-links" aria-label="Hızlı erişim">
-            <a href="{{ route('home') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v10H3z"/><path d="M9 21v-8h6v8"/></svg><span>Ana sayfa</span></a>
-            <a href="{{ route('search') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Ürün ara</span></a>
-            <a href="{{ route('wishlist.index') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.5c0 4.2-8.5 10-8.5 10S3.5 12.7 3.5 8.5a4.7 4.7 0 0 1 8.5-2.4 4.7 4.7 0 0 1 8.5 2.4Z"/></svg><span>Favoriler</span></a>
-          </div>
+          @endif
 
           <div class="mega-section-title">
-            <div><span>KEŞFET</span><h3>Kategorileri keşfet</h3></div>
-            <span class="mega-section-count">{{ $navigationCategories->count() }} ana kategori</span>
+            <div><h3>Kategorileri keşfet</h3></div>
           </div>
           <nav class="mega-category-list" aria-label="Ürün kategorileri">
             @include('store.partials.category-menu-items', ['items' => $navigationCategories, 'level' => 0])
@@ -145,29 +121,45 @@
             <span class="mega-all-products-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
             Tüm ürünler <span aria-hidden="true">↗</span>
           </a>
+          @if($megaMenuSettings->instagram_url || $megaMenuSettings->youtube_url || $megaMenuSettings->facebook_url || $megaMenuSettings->x_url)
           <div class="mega-social-section">
-            <div class="mega-social-head"><span>POLARIS DÜNYASI</span><h3>Bizimle bağlantıda kal.</h3></div>
+            <div class="mega-social-head"><h3>Bizimle bağlantıda kal.</h3></div>
             <div class="mega-social-grid">
-              <a href="https://instagram.com/polariskursun" target="_blank" rel="noopener noreferrer" aria-label="Polaris Instagram">
+              @if($megaMenuSettings->instagram_url)
+              <a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris Instagram">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
                 <span>Instagram</span>
               </a>
-              <a href="https://youtube.com/@polariskursun" target="_blank" rel="noopener noreferrer" aria-label="Polaris YouTube">
+              @endif
+              @if($megaMenuSettings->youtube_url)
+              <a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris YouTube">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="m10 9 5 3-5 3Z"/></svg>
                 <span>YouTube</span>
               </a>
-              <a href="https://facebook.com/polariskursun" target="_blank" rel="noopener noreferrer" aria-label="Polaris Facebook">
+              @endif
+              @if($megaMenuSettings->facebook_url)
+              <a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris Facebook">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h-2.2C11.6 4 11 5.3 11 7.2V10H8v4h3v7h4v-7h3l.5-4H15V7.5c0-.4.2-.5.7-.5H18V4Z"/></svg>
                 <span>Facebook</span>
               </a>
+              @endif
+              @if($megaMenuSettings->x_url)
+              <a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris X">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h4l12 18h-4L4 3ZM20 3 4 21"/></svg>
+                <span>X</span>
+              </a>
+              @endif
             </div>
           </div>
-          <a class="mega-whatsapp" href="https://wa.me/905462629002" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp destek hattı">
+          @endif
+          @if($megaMenuSettings->whatsappUrl())
+          <a class="mega-whatsapp" href="{{ $megaMenuSettings->whatsappUrl() }}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp destek hattı">
             <span class="mega-whatsapp-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.8A9 9 0 0 1 8 20l-5 1 1.3-4.5A9 9 0 1 1 21 11.8Z"/><path d="M9 8c.5 4 3 6 7 7l1.5-1.6-2.7-1.5-1.3 1c-1.5-.6-2.5-1.6-3-3l1-1.3L10 6.5Z"/></svg></span>
             <span><strong>WhatsApp Destek</strong><small>Soruların için yanındayız</small></span>
             <svg class="mega-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
-          <div class="mega-menu-footnote">POLARIS KURŞUN <span>•</span> TÜRKİYE</div>
+          @endif
+          <div class="mega-menu-footnote">{{ $megaMenuSettings->footer_text }}</div>
         </div>
       </div>
     </details>

@@ -33,7 +33,7 @@ class MegaNavigationTest extends TestCase
             ->assertSee('mega-menu-shell')
             ->assertSee('data-mega-toggle')
             ->assertSee('data-mega-close')
-            ->assertSee('mega-hero-art')
+            ->assertDontSee('mega-hero-art')
             ->assertSee('Kategorileri keşfet')
             ->assertSee('mega-social-grid')
             ->assertSee('https://instagram.com/polariskursun')

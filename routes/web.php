@@ -10,6 +10,7 @@ use App\Http\Controllers\ShippingCallbackController;
 use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
@@ -132,6 +133,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/orders/{order}/shipping-integration/label', [ShippingShipmentController::class, 'label'])->middleware('throttle:12,1')->name('shipping-shipments.label');
     Route::get('/kargo-ayarlari', [StoreSettingController::class, 'edit'])->name('store-settings.edit');
     Route::patch('/kargo-ayarlari', [StoreSettingController::class, 'update'])->name('store-settings.update');
+    Route::get('/menuler/mega-menu-ayarlari', [MegaMenuSettingsController::class, 'edit'])->name('menus.mega-menu.edit');
+    Route::patch('/menuler/mega-menu-ayarlari', [MegaMenuSettingsController::class, 'update'])->middleware('throttle:10,1')->name('menus.mega-menu.update');
     Route::get('/logo-ayarlari', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::patch('/logo-ayarlari', [AppearanceController::class, 'update'])->name('appearance.update');
     Route::get('/duyurular', [AnnouncementController::class, 'index'])->name('announcements.index');
