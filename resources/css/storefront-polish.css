@@ -10,7 +10,7 @@ body:not(.admin-body) :is(
   .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
   .checkout-login-link,.checkout-bottom-bar>button,.cart-primary,
   .cart-checkout-action,.quick-cart-view-cart,.mega-hero-cta,
-  .mega-whatsapp,.header-search button,.search-inline button
+  .header-search button,.search-inline button
 ):not(:disabled){
   background:var(--store-action)!important;
   border-color:var(--store-action)!important;
@@ -25,7 +25,7 @@ body:not(.admin-body) :is(
   .pdp-sheet-footer>button,.review-primary-action,.checkout-action,
   .checkout-login-link,.checkout-bottom-bar>button,.cart-primary,
   .cart-checkout-action,.quick-cart-view-cart,.mega-hero-cta,
-  .mega-whatsapp,.header-search button,.search-inline button
+  .header-search button,.search-inline button
 ):not(:disabled):is(:hover,:focus-visible){
   background:var(--store-action-hover)!important;
   color:#fff!important;
