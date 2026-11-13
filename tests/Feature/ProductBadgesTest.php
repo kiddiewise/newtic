@@ -104,6 +104,12 @@ class ProductBadgesTest extends TestCase
         $detail = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
         $this->assertStringContainsString('product-badge-strip--detail', $detail);
         $this->assertStringContainsString('Popüler Ürün', $detail);
+        // Multiple gallery photos must never push the ribbons below the thumbnail strip.
+        $product->images()->create(['path' => 'assets/products/demo-sinker.svg', 'sort_order' => 0]);
+        $withThumbnails = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
+        $this->assertTrue(
+            strpos($withThumbnails, 'product-badge-strip--detail') < strpos($withThumbnails, 'detail-thumbnails')
+        );
         // The ribbons appear immediately after the photo, before the product title.
         $this->assertTrue(
             strpos($detail, 'data-gallery-swipe') < strpos($detail, 'product-badge-strip--detail')
