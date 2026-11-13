@@ -167,7 +167,8 @@ final class SeoMetadata
             // Checkout, account, search, cart and other utility pages must
             // never enter Google even when the public catalogue is indexable.
             $individualNoindex = true;
-            $pageMeta = (array) (($setting->page_metadata ?? [])[$route] ?? []);
+            $pageKey = array_search($route, SeoSetting::PAGE_ROUTES, true);
+            $pageMeta = (array) (($setting->page_metadata ?? [])[$pageKey ?: ''] ?? []);
             $title = trim((string) ($pageMeta['title'] ?? '')) ?: $title;
             $description = trim((string) ($pageMeta['description'] ?? '')) ?: $description;
         }
@@ -176,7 +177,7 @@ final class SeoMetadata
         $forced = self::staging($request) || (bool) $setting->noindex || $individualNoindex;
         $robots = $forced ? 'noindex,nofollow,noarchive' : ($setting->nofollow ? 'index,nofollow' : 'index,follow');
 
-        return compact('title', 'description', 'robots', 'canonical', 'image', 'ogType', 'structured')
+        return compact('title', 'description', 'robots', 'canonical', 'image', 'structured')
             + ['og_type' => $ogType, 'verification' => $setting->google_verification];
     }
 
