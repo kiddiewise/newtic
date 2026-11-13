@@ -103,7 +103,7 @@
     <p class="admin-description">Sepet, hesap, ödeme ve arama gibi yardımcı sayfaların başlık ve açıklamalarını düzenleyebilirsin. Bu sayfalar güvenlik ve gereksiz arama sonuçlarını önlemek için <strong>noindex</strong> kalır.</p>
     <div class="seo-page-grid">
       @foreach($pages as $key => $label)
-        @php $pageValue = (array) data_get($setting->page_metadata, $key, []); @endphp
+        @php $pageValue = (array) (($setting->page_metadata ?? [])[$key] ?? []); @endphp
         <div class="seo-page-item">
           <strong>{{ $label }}</strong>
           <label>Sayfa başlığı
