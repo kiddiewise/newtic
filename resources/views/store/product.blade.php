@@ -46,6 +46,7 @@
           <span data-gallery-current>1</span> / {{ $galleryCount }}
         </span>
       </div>
+      @include('store.partials.product-badges', ['product' => $product, 'placement' => 'detail'])
       @if($gallery->isNotEmpty())
         <div class="detail-thumbnails" aria-label="Ürün fotoğrafları">
           @foreach($gallery as $image)
@@ -55,7 +56,6 @@
           @endforeach
         </div>
       @endif
-      @include('store.partials.product-badges', ['product' => $product, 'placement' => 'detail'])
     </div>
 
     <div class="detail-intro pdp-intro">
