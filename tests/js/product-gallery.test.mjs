@@ -88,7 +88,7 @@ test('mobile pinch zooms and releasing one finger resets without changing photo'
     touches: [finger(55), finger(245)],
     cancelable: true, preventDefault: () => { cancelled++; },
   });
-  assert.match(gallery.main.style.transform, /scale\\(1\\.900\\)/);
+  assert.match(gallery.main.style.transform, /scale\(1\.900\)/);
   assert.ok(cancelled > 0);
   gallery.stage.fire('touchend', { touches: [finger(55)], changedTouches: [finger(245)] });
   assert.equal(gallery.main.style.transform, '');
