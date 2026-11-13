@@ -1,6 +1,4 @@
 @extends('layouts.store')
-@section('title', $category->name.' | Polaris Kurşun')
-@section('description', $category->description ?: $category->name.' ürün çeşitleri, gramaj seçenekleri ve güncel fiyatları.')
 @section('content')
 <main class="container inner-page category-landing" id="content">
   @if($banners->isNotEmpty())
