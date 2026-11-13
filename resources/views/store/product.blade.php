@@ -1,6 +1,4 @@
 @extends('layouts.store')
-@section('title', $product->seo_title ? $product->seo_title : $product->name.' | Polaris Kurşun')
-@section('description', $product->seo_description ?: ($product->short_description ?: \Illuminate\Support\Str::limit($product->description ?: $product->name, 155)))
 @section('content')
 
 {{-- Mobile-only product toolbar replaces the full catalogue navigation on this page. --}}
