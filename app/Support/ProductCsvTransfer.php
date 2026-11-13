@@ -225,9 +225,12 @@ final class ProductCsvTransfer
             'stock_quantity' => $track ? (int) $stock : max(999, (int) $stock),
             'tracks_stock' => $track,
             'is_active' => $active,
-            'seo_noindex' => array_key_exists('seo_noindex', $values)
-                ? $this->boolean($values['seo_noindex'] ?: '0', 'Ürün noindex') : false,
+
         ];
+
+        if (array_key_exists('seo_noindex', $values)) {
+            $attributes['seo_noindex'] = $this->boolean($values['seo_noindex'] ?: '0', 'Ürün noindex');
+        }
 
         $texts = [
             'aciklama' => ['description', 10000],
