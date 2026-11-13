@@ -22,7 +22,7 @@ final class GoogleMerchantController extends Controller
     {
         $setting = GoogleMerchantSetting::current();
         $accountChoices = session('google_merchant_accounts', []);
-        $errors = GoogleMerchantSyncItem::query()
+        $syncIssues = GoogleMerchantSyncItem::query()
             ->when($setting->merchant_id, fn ($q) => $q->where('merchant_id', $setting->merchant_id),
                 fn ($q) => $q->whereRaw('1 = 0'))
             ->where('status', 'error')->latest('updated_at')->limit(15)->get();
@@ -32,7 +32,7 @@ final class GoogleMerchantController extends Controller
             'hasSecret' => filled($setting->getRawOriginal('client_secret')),
             'hasToken' => filled($setting->getRawOriginal('refresh_token')),
             'accounts' => $accountChoices,
-            'errors' => $errors,
+            'syncIssues' => $syncIssues,
             'productCount' => Product::query()->where('is_active', true)->where('is_demo', false)->count(),
         ])->header('Cache-Control', 'private, no-store, max-age=0');
     }
