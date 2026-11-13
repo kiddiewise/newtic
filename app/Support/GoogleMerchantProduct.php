@@ -24,6 +24,12 @@ final class GoogleMerchantProduct
 
     public static function eligible(Product $product, ?Collection $allCategories = null): bool
     {
+        if ($product->seo_noindex) return false;
+        if ($product->category) {
+            foreach (CategoryHierarchy::ancestors($product->category, $allCategories) as $ancestor) {
+                if ($ancestor->seo_noindex) return false;
+            }
+        }
         return (bool) $product->is_active
             && ! $product->is_demo
             && filled($product->image_path)
