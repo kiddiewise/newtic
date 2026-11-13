@@ -33,29 +33,32 @@
     outline:2px solid #246a78;outline-offset:3px;
   }
 
+  /* WhatsApp support is a light menu link, never a storefront purchase CTA. */
   .mobile-site-header .mega-menu-shell .mega-whatsapp{
-    min-height:60px;padding:10px 11px;border:1px solid #dfe8ea;border-radius:12px;
-    background:transparent!important;color:#1a4350!important;
-    box-shadow:none!important;
+    min-height:60px;padding:10px 11px;border:1px solid #b9dcc4!important;border-radius:12px;
+    background:transparent!important;background-image:none!important;
+    color:#48765a!important;box-shadow:none!important;
   }
   .mobile-site-header .mega-menu-shell .mega-whatsapp:hover,
   .mobile-site-header .mega-menu-shell .mega-whatsapp:focus-visible{
-    border-color:#8cafb7;
+    border-color:#94c4a6!important;
+    background:transparent!important;background-image:none!important;
+    box-shadow:none!important;
   }
   .mobile-site-header .mega-menu-shell .mega-whatsapp-symbol{
     width:36px;height:36px;border-radius:9px;background:transparent!important;
   }
   .mobile-site-header .mega-menu-shell .mega-whatsapp-symbol svg{
-    width:25px;height:25px;stroke:#245566!important;
+    width:25px;height:25px;stroke:#74a886!important;
   }
   .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2),
   .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) strong{
-    color:#1a4350!important;font-size:12.5px!important;
+    color:#48765a!important;font-size:12.5px!important;
   }
   .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) small{
-    color:#647d87!important;font-size:10px!important;
+    color:#668f74!important;font-size:10px!important;
   }
-  .mobile-site-header .mega-menu-shell .mega-action-arrow{stroke:#507984!important}
+  .mobile-site-header .mega-menu-shell .mega-action-arrow{stroke:#74a886!important}
 }
 @media(max-width:360px){
   .mobile-site-header .mega-menu-shell .mega-menu-banner{height:208px;min-height:208px}
