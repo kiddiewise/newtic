@@ -55,6 +55,7 @@ class CategoryController extends Controller
         unset($data['image']);
         $data['slug'] = UniqueSlug::make(Category::class, $data['name']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['seo_noindex'] = $request->boolean('seo_noindex');
 
         $category = Category::create($data);
 
@@ -71,6 +72,7 @@ class CategoryController extends Controller
         }
         unset($data['image']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['seo_noindex'] = $request->boolean('seo_noindex');
         $category->update($data);
 
         if ($previousImage && $previousImage !== $category->image_path && str_starts_with($previousImage, 'storage/')) {
@@ -87,6 +89,9 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:3000'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:100000'],
+            'seo_title' => ['nullable', 'string', 'max:190'],
+            'seo_description' => ['nullable', 'string', 'max:500'],
+            'seo_noindex' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:4096', 'dimensions:max_width=4000,max_height=4000'],
         ]);
