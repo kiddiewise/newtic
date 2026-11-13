@@ -104,10 +104,10 @@ class ProductBadgesTest extends TestCase
         $detail = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
         $this->assertStringContainsString('product-badge-strip--detail', $detail);
         $this->assertStringContainsString('Popüler Ürün', $detail);
-        // The ribbons touch the main product photo, before its thumbnail gallery.
+        // The ribbons appear immediately after the photo, before the product title.
         $this->assertTrue(
             strpos($detail, 'data-gallery-swipe') < strpos($detail, 'product-badge-strip--detail')
-            && strpos($detail, 'product-badge-strip--detail') < strpos($detail, 'detail-thumbnails')
+            && strpos($detail, 'product-badge-strip--detail') < strpos($detail, 'pdp-intro')
         );
 
         $this->patch(route('admin.products.update', $product), $this->fields($category, [
