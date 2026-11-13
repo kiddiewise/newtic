@@ -47,6 +47,17 @@
         <label class="admin-editor-wide">SEO başlığı<input name="seo_title" maxlength="255" value="{{ old('seo_title', $product->seo_title) }}"></label>
         <label class="admin-editor-wide">SEO açıklaması<textarea name="seo_description" rows="3" maxlength="2000">{{ old('seo_description', $product->seo_description) }}</textarea></label>
         <label class="admin-editor-wide">SEO odak anahtar kelimesi<input name="seo_focus_keyword" maxlength="255" value="{{ old('seo_focus_keyword', $product->seo_focus_keyword) }}"></label>
+        <label class="admin-editor-wide">Google Merchant marka bilgisi
+          <input name="google_brand" maxlength="120" value="{{ old('google_brand', $product->google_brand) }}" placeholder="Boşsa Polaris Kurşun kullanılır">
+          <small>Marka adı ürünün gerçek markası olmalıdır.</small>
+        </label>
+        <label>GTIN / Barkod (varsa)
+          <input name="gtin" maxlength="14" inputmode="numeric" value="{{ old('gtin', $product->gtin) }}" placeholder="Örn. 869XXXXXXXXXX">
+          <small>Yalnızca gerçek üretici barkodunu yazın.</small>
+        </label>
+        <label>MPN / Üretici parça numarası (varsa)
+          <input name="mpn" maxlength="70" value="{{ old('mpn', $product->mpn) }}" placeholder="Gerçek üretici parça numarası">
+        </label>
         @if($product->exists && $product->importSource)
           <p class="admin-description admin-editor-wide">İçe aktarıldı: {{ $product->importSource->source_site }} · Kaynak: {{ $product->importSource->source_key }}. Orijinal WooCommerce özel alanları denetim kaydında korunur.</p>
         @endif
