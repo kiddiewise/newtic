@@ -36,6 +36,9 @@
     ['label' => 'Vitrin Yönetimi', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
     ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
     ['label' => 'Logolar', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
+    ['label' => 'Menüler', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.*', 'icon' => 'menu', 'children' => [
+      ['label' => 'Mega Menü Ayarları', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.mega-menu.*'],
+    ]],
     ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
     ['label' => 'Kargo Entegrasyonu', 'name' => 'admin.shipping-integrations.index', 'active' => 'admin.shipping-integrations.*', 'icon' => 'truck'],
     ['label' => 'Kargo Operasyonları', 'name' => 'admin.shipping-operations.index', 'active' => 'admin.shipping-operations.*', 'icon' => 'package'],
@@ -55,13 +58,28 @@
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
         @foreach($menu as $item)
           @if($loop->index === 13)<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
-          <a href="{{ route($item['name']) }}"
-            @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
-            @if(request()->routeIs($item['active'])) aria-current="page" @endif>
-            <x-admin-icon :name="$item['icon']" />
-            <span>{{ $item['label'] }}</span>
-            @if(($item['count'] ?? 0) > 0)<strong class="admin-side-count">{{ $item['count'] }}</strong>@endif
-          </a>
+          @if(isset($item['children']))
+            <details class="admin-nav-group" @if(request()->routeIs($item['active'])) open @endif>
+              <summary @class(['admin-side-link', 'is-active' => request()->routeIs($item['active'])])>
+                <x-admin-icon :name="$item['icon']" />
+                <span>{{ $item['label'] }}</span>
+                <x-admin-icon name="arrow-right" />
+              </summary>
+              <div class="admin-nav-children">
+                @foreach($item['children'] as $child)
+                  <a href="{{ route($child['name']) }}" @class(['admin-nav-child', 'is-active' => request()->routeIs($child['active'])]) @if(request()->routeIs($child['active'])) aria-current="page" @endif>{{ $child['label'] }}</a>
+                @endforeach
+              </div>
+            </details>
+          @else
+            <a href="{{ route($item['name']) }}"
+              @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
+              @if(request()->routeIs($item['active'])) aria-current="page" @endif>
+              <x-admin-icon :name="$item['icon']" />
+              <span>{{ $item['label'] }}</span>
+              @if(($item['count'] ?? 0) > 0)<strong class="admin-side-count">{{ $item['count'] }}</strong>@endif
+            </a>
+          @endif
         @endforeach
       </nav>
     </div>

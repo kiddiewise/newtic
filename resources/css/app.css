@@ -43,3 +43,5 @@
 
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
+
+@import './mega-menu-settings.css';
