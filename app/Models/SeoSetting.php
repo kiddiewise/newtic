@@ -8,12 +8,22 @@ final class SeoSetting extends Model
 {
     public const OTHER_PAGES = [
         'search' => 'Arama sayfası',
-        'cart.index' => 'Sepet',
-        'account.login' => 'Giriş',
-        'account.register' => 'Üye ol',
-        'wishlist.index' => 'Favoriler',
-        'checkout.index' => 'Ödeme',
-        'checkout.success' => 'Sipariş onayı',
+        'cart' => 'Sepet',
+        'login' => 'Giriş',
+        'register' => 'Üye ol',
+        'wishlist' => 'Favoriler',
+        'checkout' => 'Ödeme',
+        'success' => 'Sipariş onayı',
+    ];
+
+    public const PAGE_ROUTES = [
+        'search' => 'search',
+        'cart' => 'cart.index',
+        'login' => 'account.login',
+        'register' => 'account.register',
+        'wishlist' => 'wishlist.index',
+        'checkout' => 'checkout.index',
+        'success' => 'checkout.success',
     ];
 
     protected $fillable = [
