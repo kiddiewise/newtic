@@ -18,8 +18,8 @@ jobs:
     steps:
       - name: Prepare fixed Hostinger SSH identity
         env:
-          DEPLOY_KEY: \${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
-          KNOWN_HOSTS: \${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
           test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
