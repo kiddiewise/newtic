@@ -121,10 +121,10 @@
       @if($setting->last_synced_at)<p>Son aktarım: {{ $setting->last_synced_at->format('d.m.Y H:i') }}</p>@endif
     </div>
   </div>
-  @if($errors->count())
+  @if($syncIssues->count())
     <div class="google-merchant-errors">
       <h3>Ürün bazlı son hatalar</h3>
-      @foreach($errors as $issue)
+      @foreach($syncIssues as $issue)
         <p>Ürün #{{ $issue->product_id ?: $issue->offer_id }}: {{ $issue->message }}</p>
       @endforeach
     </div>
