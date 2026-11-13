@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Support\GoogleMerchantProduct;
+use App\Support\CategoryHierarchy;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,11 +20,12 @@ final class GoogleMerchantFeedController extends Controller
             $this->tag('link', url('/'));
             $this->tag('description', 'NEWTIC ürün kataloğu - Türkiye');
 
+            $allCategories = CategoryHierarchy::all();
             Product::query()->with(['category', 'images'])
                 ->where('is_active', true)->where('is_demo', false)
-                ->orderBy('id')->chunkById(100, function ($products): void {
+                ->orderBy('id')->chunkById(100, function ($products) use ($allCategories): void {
                     foreach ($products as $product) {
-                        if (!GoogleMerchantProduct::eligible($product)) {
+                        if (!GoogleMerchantProduct::eligible($product, $allCategories)) {
                             continue;
                         }
                         $attr = GoogleMerchantProduct::attributes($product);
