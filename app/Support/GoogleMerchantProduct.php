@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Product;
 use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 
 final class GoogleMerchantProduct
 {
@@ -21,13 +22,13 @@ final class GoogleMerchantProduct
         ];
     }
 
-    public static function eligible(Product $product): bool
+    public static function eligible(Product $product, ?Collection $allCategories = null): bool
     {
         return (bool) $product->is_active
             && ! $product->is_demo
             && filled($product->image_path)
             && $product->category !== null
-            && CategoryHierarchy::visible($product->category);
+            && CategoryHierarchy::visible($product->category, $allCategories);
     }
 
     public static function attributes(Product $product): array
