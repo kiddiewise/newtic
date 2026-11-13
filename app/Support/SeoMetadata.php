@@ -12,7 +12,12 @@ final class SeoMetadata
 {
     public static function staging(Request $request): bool
     {
-        $host = strtolower($request->getHost());
+        return self::stagingHost($request->getHost());
+    }
+
+    public static function stagingHost(string $hostname): bool
+    {
+        $host = strtolower($hostname);
         return $host === 'localhost'
             || $host === '127.0.0.1'
             || $host === '::1'
@@ -24,6 +29,20 @@ final class SeoMetadata
     public static function indexableHost(Request $request): bool
     {
         return !self::staging($request) && !SeoSetting::current()->noindex;
+    }
+
+    public static function merchantSyncAllowed(): bool
+    {
+        // Unit tests use HTTP fakes. Production/staging never sends staging
+        // links to Google, including when invoked from the Laravel scheduler.
+        if (app()->environment('testing')) return true;
+
+        if (SeoSetting::current()->noindex) return false;
+        $host = app()->runningInConsole()
+            ? (string) parse_url((string) config('app.url'), PHP_URL_HOST)
+            : request()->getHost();
+
+        return $host !== '' && !self::stagingHost($host);
     }
 
     public static function url(Request $request, string $path = '/'): string
