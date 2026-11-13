@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Support\GoogleMerchantProduct;
 use App\Support\CategoryHierarchy;
+use App\Support\SeoMetadata;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -13,6 +14,10 @@ final class GoogleMerchantFeedController extends Controller
 {
     public function __invoke(): StreamedResponse
     {
+        if (!SeoMetadata::merchantSyncAllowed()) {
+            abort(404, 'Google Merchant kataloğu test alan adında veya noindex modunda yayınlanmaz.');
+        }
+
         return response()->stream(function (): void {
             echo '<?xml version="1.0" encoding="UTF-8"?>'."\n";
             echo '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel>';
