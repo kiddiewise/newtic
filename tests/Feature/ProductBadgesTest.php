@@ -104,6 +104,11 @@ class ProductBadgesTest extends TestCase
         $detail = $this->get(route('product.show', $product->slug))->assertOk()->getContent();
         $this->assertStringContainsString('product-badge-strip--detail', $detail);
         $this->assertStringContainsString('Popüler Ürün', $detail);
+        // The ribbons appear immediately after the photo, before the product title.
+        $this->assertTrue(
+            strpos($detail, 'data-gallery-swipe') < strpos($detail, 'product-badge-strip--detail')
+            && strpos($detail, 'product-badge-strip--detail') < strpos($detail, 'pdp-intro')
+        );
 
         $this->patch(route('admin.products.update', $product), $this->fields($category, [
             'badge_ids' => [''],
@@ -127,6 +132,17 @@ class ProductBadgesTest extends TestCase
         $badge->update(['is_active' => false]);
         $this->get(route('product.show', $product->slug))->assertDontSee('product-badge-strip--detail');
         $this->assertCount(1, $product->fresh()->badges);
+    }
+
+    public function test_ribbon_styles_are_full_width_flush_and_square_cornered(): void
+    {
+        $css = file_get_contents(resource_path('css/product-badges.css'));
+
+        $this->assertStringContainsString('flex-direction:column', $css);
+        $this->assertStringContainsString('width:100%;max-width:none', $css);
+        $this->assertStringContainsString('border:0;border-radius:0', $css);
+        $this->assertStringContainsString('.pdp-gallery .product-badge-strip--detail', $css);
+        $this->assertStringContainsString('.product-card .product-badge-strip', $css);
     }
 
     public function test_badge_input_validation_rejects_unknown_ids_and_colors(): void
