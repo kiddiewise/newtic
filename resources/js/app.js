@@ -86,3 +86,5 @@ import './live-search.js';
 import './infinite-catalog.js';
 
 import './catalog-import.js';
+
+import './google-merchant-admin.js';

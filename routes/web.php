@@ -9,10 +9,14 @@ use App\Http\Controllers\PaytrCallbackController;
 use App\Http\Controllers\ShippingCallbackController;
 use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
+use App\Http\Controllers\GoogleMerchantFeedController;
+use App\Http\Controllers\Admin\GoogleMerchantController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/google/merchant-products.xml', GoogleMerchantFeedController::class)
+    ->middleware('throttle:30,1')->name('google-merchant.feed');
 Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
 Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
 Route::get('/ara/oneriler', [CatalogController::class, 'suggestions'])->middleware('throttle:60,1')->name('search.suggest');
@@ -166,6 +170,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/products/bulk/export', [ProductCsvController::class, 'export'])->middleware('throttle:5,1')->name('products.bulk.export');
     Route::get('/products/bulk/template', [ProductCsvController::class, 'template'])->name('products.bulk.template');
     Route::post('/products/bulk', [ProductCsvController::class, 'upload'])->middleware('throttle:5,1')->name('products.bulk.upload');
+    Route::get('/google-merchant', [GoogleMerchantController::class, 'edit'])->name('google-merchant.edit');
+    Route::patch('/google-merchant', [GoogleMerchantController::class, 'save'])->middleware('throttle:6,1')->name('google-merchant.save');
+    Route::post('/google-merchant/connect', [GoogleMerchantController::class, 'connect'])->middleware('throttle:6,1')->name('google-merchant.connect');
+    Route::get('/google-merchant/callback', [GoogleMerchantController::class, 'callback'])->middleware('throttle:6,1')->name('google-merchant.callback');
+    Route::post('/google-merchant/accounts', [GoogleMerchantController::class, 'accounts'])->middleware('throttle:6,1')->name('google-merchant.accounts');
+    Route::post('/google-merchant/account', [GoogleMerchantController::class, 'selectAccount'])->middleware('throttle:6,1')->name('google-merchant.select');
+    Route::post('/google-merchant/source', [GoogleMerchantController::class, 'prepare'])->middleware('throttle:4,1')->name('google-merchant.prepare');
+    Route::patch('/google-merchant/auto-sync', [GoogleMerchantController::class, 'toggleAutoSync'])->name('google-merchant.auto-sync');
+    Route::post('/google-merchant/disconnect', [GoogleMerchantController::class, 'disconnect'])->middleware('throttle:6,1')->name('google-merchant.disconnect');
+    Route::post('/google-merchant/sync/start', [GoogleMerchantController::class, 'start'])->middleware('throttle:6,1')->name('google-merchant.start');
+    Route::post('/google-merchant/sync/step', [GoogleMerchantController::class, 'step'])->middleware('throttle:40,1')->name('google-merchant.step');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');

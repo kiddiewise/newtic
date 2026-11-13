@@ -13,3 +13,6 @@ Artisan::command('inspire', function () {
 // shipping:sync cron configured on staging Hostinger. Never runs on live domains.
 Schedule::command('shipping:sync --limit=20')
     ->everyFifteenMinutes()->withoutOverlapping(12);
+
+// Requires a configured Hostinger cron calling php artisan schedule:run.
+Schedule::command('merchant:sync --steps=6')->everyFifteenMinutes()->withoutOverlapping(13);
