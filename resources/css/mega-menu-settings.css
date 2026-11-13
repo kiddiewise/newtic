@@ -11,23 +11,51 @@
   }
   .mobile-site-header .mega-social-section{margin-top:26px}
   .mobile-site-header .mega-social-grid{grid-template-columns:repeat(auto-fit,minmax(65px,1fr));gap:8px;margin-top:12px}
-  .mobile-site-header .mega-social-grid a{
-    min-height:62px;padding:9px 5px;gap:6px;border-radius:11px;
-    border:1px solid #294b60;background:#112f43;color:#f1f7fb;
-    box-shadow:0 3px 10px #112f4312;
+  /* Light, unfilled buttons: the white menu canvas stays visible. */
+  .mobile-site-header .mega-menu-shell .mega-social-grid a{
+    min-height:56px;padding:8px 5px;gap:5px;border-radius:11px;
+    border:1px solid #dfe8ea;background:transparent!important;color:#1a4350!important;
+    box-shadow:none!important;
   }
-  .mobile-site-header .mega-social-grid a svg{width:19px;height:19px;color:#d6e7f1}
-  .mobile-site-header .mega-social-grid a>span{font-size:9.7px!important;line-height:1.2;color:#f1f7fb!important}
-  .mobile-site-header .mega-whatsapp{
-    min-height:65px;padding:11px 13px;border:1px solid #2a5065;border-radius:13px;
-    background:#12364b;color:#eaf6fa;box-shadow:0 5px 16px #112f4312;
+  .mobile-site-header .mega-menu-shell .mega-social-grid a svg{
+    width:19px;height:19px;color:#245566!important;
   }
-  .mobile-site-header .mega-whatsapp-symbol{width:39px;height:39px;border-radius:11px;background:#224c5e}
-  .mobile-site-header .mega-whatsapp-symbol svg{stroke:#bce7dc}
-  .mobile-site-header .mega-whatsapp>span:nth-child(2),
-  .mobile-site-header .mega-whatsapp>span:nth-child(2) strong{color:#f0f9fb!important;font-size:12.5px!important}
-  .mobile-site-header .mega-whatsapp>span:nth-child(2) small{color:#b5d4df!important;font-size:10px!important}
-  .mobile-site-header .mega-action-arrow{stroke:#b5d4df}
+  .mobile-site-header .mega-menu-shell .mega-social-grid a>span{
+    font-size:10px!important;line-height:1.25;font-weight:650!important;
+    color:#1a4350!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-social-grid a:hover,
+  .mobile-site-header .mega-menu-shell .mega-social-grid a:focus-visible{
+    border-color:#8cafb7;
+  }
+  .mobile-site-header .mega-menu-shell .mega-social-grid a:focus-visible,
+  .mobile-site-header .mega-menu-shell .mega-whatsapp:focus-visible{
+    outline:2px solid #246a78;outline-offset:3px;
+  }
+
+  .mobile-site-header .mega-menu-shell .mega-whatsapp{
+    min-height:60px;padding:10px 11px;border:1px solid #dfe8ea;border-radius:12px;
+    background:transparent!important;color:#1a4350!important;
+    box-shadow:none!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp:hover,
+  .mobile-site-header .mega-menu-shell .mega-whatsapp:focus-visible{
+    border-color:#8cafb7;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp-symbol{
+    width:36px;height:36px;border-radius:9px;background:transparent!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp-symbol svg{
+    width:25px;height:25px;stroke:#245566!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2),
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) strong{
+    color:#1a4350!important;font-size:12.5px!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-whatsapp>span:nth-child(2) small{
+    color:#647d87!important;font-size:10px!important;
+  }
+  .mobile-site-header .mega-menu-shell .mega-action-arrow{stroke:#507984!important}
 }
 @media(max-width:360px){
   .mobile-site-header .mega-menu-shell .mega-menu-banner{height:208px;min-height:208px}
