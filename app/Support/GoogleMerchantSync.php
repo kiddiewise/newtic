@@ -17,6 +17,9 @@ final class GoogleMerchantSync
 
     public function begin(GoogleMerchantSetting $settings): array
     {
+        if (!SeoMetadata::merchantSyncAllowed()) {
+            throw new RuntimeException('Google ürün gönderimi test alan adında veya noindex modunda kapalıdır. Gerçek mağaza alan adında SEO indekslemeyi açın.');
+        }
         if (!$settings->isReady()) {
             throw new RuntimeException('Önce Google hesabını seçin ve API veri kaynağını oluşturun.');
         }
@@ -38,6 +41,9 @@ final class GoogleMerchantSync
     /** @return array<string, mixed> */
     public function step(GoogleMerchantSetting $settings, int $limit = 3): array
     {
+        if (!SeoMetadata::merchantSyncAllowed()) {
+            throw new RuntimeException('Google eşitlemesi test alan adında veya noindex modunda kapalıdır.');
+        }
         if (!$settings->isReady() || $settings->sync_status !== 'running') {
             throw new RuntimeException('Başlatılmış bir Google senkronizasyonu yok.');
         }

@@ -132,6 +132,7 @@ class ProductController extends Controller
             'seo_title' => ['nullable', 'string', 'max:255'],
             'seo_description' => ['nullable', 'string', 'max:2000'],
             'seo_focus_keyword' => ['nullable', 'string', 'max:255'],
+            'seo_noindex' => ['sometimes', 'boolean'],
             'google_brand' => ['nullable', 'string', 'max:120'],
             'gtin' => ['nullable', 'string', 'regex:/^[0-9]{8,14}$/D'],
             'mpn' => ['nullable', 'string', 'max:70'],
@@ -165,6 +166,7 @@ class ProductController extends Controller
             $data['stock_quantity'] = max(999, (int) $data['stock_quantity']);
         }
         $data['is_demo'] = false;
+        $data['seo_noindex'] = $request->boolean('seo_noindex');
 
         return $data;
     }

@@ -107,14 +107,17 @@
 
 <section class="admin-panel google-merchant-section">
   <div class="admin-panel-title"><h2>4. Ürünleri Google'a gönder</h2></div>
+  @if($isStaging)
+    <p class="seo-notice"><strong>Test ortamı koruması:</strong> Google ürün gönderimi ve XML ürün kaynağı bu geçici alan adında devre dışıdır. Gerçek alan adına taşındığında etkinleştirebilirsin.</p>
+  @endif
   <p class="admin-description">Yayınlanan ve fotoğrafı bulunan ürünler Google’a aktarılır. İndirim, stok durumu, başlık, açıklama ve ürün görselleri gönderilir. Her gramaj Google’da ayrı ürün olarak kalır.</p>
   <div data-google-merchant-sync
     data-start-url="{{ route('admin.google-merchant.start') }}"
     data-step-url="{{ route('admin.google-merchant.step') }}"
     data-csrf="{{ csrf_token() }}"
     data-running="{{ $setting->sync_status === 'running' ? '1' : '0' }}">
-    <button type="button" class="admin-primary" data-sync-launch @disabled(!$setting->isReady())>Ürünleri Google ile eşitle</button>
-    <button type="button" class="admin-secondary" data-sync-resume @disabled(!$setting->isReady() || $setting->sync_status !== 'running')>Kalan aktarımı sürdür</button>
+    <button type="button" class="admin-primary" data-sync-launch @disabled(!$setting->isReady() || $isStaging)>Ürünleri Google ile eşitle</button>
+    <button type="button" class="admin-secondary" data-sync-resume @disabled(!$setting->isReady() || $isStaging || $setting->sync_status !== 'running')>Kalan aktarımı sürdür</button>
     <div class="google-merchant-progress" role="status" aria-live="polite" data-sync-progress>
       <strong>Son durum: {{ $setting->sync_status }}</strong>
       <p>Gönderilen {{ $setting->sync_sent }}, değişmeyen {{ $setting->sync_unchanged }}, kaldırılan {{ $setting->sync_removed }}, hatalı {{ $setting->sync_errors }}.</p>
@@ -133,7 +136,7 @@
     <form method="POST" action="{{ route('admin.google-merchant.auto-sync') }}">
       @csrf @method('PATCH')
       <input type="hidden" name="enabled" value="{{ $setting->auto_sync ? '0' : '1' }}">
-      <button class="admin-secondary" type="submit" @disabled(!$setting->isReady())>
+      <button class="admin-secondary" type="submit" @disabled(!$setting->isReady() || $isStaging)>
         {{ $setting->auto_sync ? 'Zamanlanmış eşitlemeyi kapat' : 'Zamanlanmış eşitlemeyi aç' }}
       </button>
     </form>

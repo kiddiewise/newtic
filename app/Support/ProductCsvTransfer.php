@@ -17,7 +17,7 @@ final class ProductCsvTransfer
         'stok', 'stok_takibi', 'yayinda', 'aciklama', 'kisa_aciklama',
         'agirlik_kg', 'seo_baslik', 'seo_aciklama', 'seo_odak_kelime',
         'secenek_basligi', 'secenekler', 'rozetler', 'kapak_gorseli',
-        'galeri_gorselleri', 'ek_kategori_sluglari', 'google_brand', 'gtin', 'mpn',
+        'galeri_gorselleri', 'ek_kategori_sluglari', 'google_brand', 'gtin', 'mpn', 'seo_noindex',
     ];
 
     private const REQUIRED = [
@@ -65,6 +65,7 @@ final class ProductCsvTransfer
                         $product->google_brand ?? '',
                         $product->gtin ?? '',
                         $product->mpn ?? '',
+                        $product->seo_noindex ? '1' : '0',
                     ];
                     fputcsv($stream, array_map(self::safeForExcel(...), $row), ';', '"', '');
                 }
@@ -224,7 +225,12 @@ final class ProductCsvTransfer
             'stock_quantity' => $track ? (int) $stock : max(999, (int) $stock),
             'tracks_stock' => $track,
             'is_active' => $active,
+
         ];
+
+        if (array_key_exists('seo_noindex', $values)) {
+            $attributes['seo_noindex'] = $this->boolean($values['seo_noindex'] ?: '0', 'Ürün noindex');
+        }
 
         $texts = [
             'aciklama' => ['description', 10000],

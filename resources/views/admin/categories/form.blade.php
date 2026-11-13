@@ -42,6 +42,19 @@
     <label class="admin-full">Kategori açıklaması
       <textarea name="description" rows="4" maxlength="3000" placeholder="İsteğe bağlı">{{ old('description', $category->description) }}</textarea>
     </label>
+    <div class="admin-full seo-category-subtitle"><strong>Arama motorları / Kategori SEO</strong><small>Boş bırakılan alanlarda kategori adı ve açıklamasından otomatik meta oluşturulur.</small></div>
+    <label class="admin-full">SEO başlığı
+      <input name="seo_title" maxlength="190" value="{{ old('seo_title', $category->seo_title) }}" placeholder="Kategori adı | Polaris Kurşun">
+    </label>
+    <label class="admin-full">SEO meta açıklaması
+      <textarea name="seo_description" rows="3" maxlength="500" placeholder="Kategoriyi özgün olarak anlatın">{{ old('seo_description', $category->seo_description) }}</textarea>
+    </label>
+    <label class="admin-check admin-full">
+      <input type="hidden" name="seo_noindex" value="0">
+      <input type="checkbox" name="seo_noindex" value="1" @checked(old('seo_noindex', $category->seo_noindex ?? false))>
+      Bu kategoriyi ve alt kategorilerini arama motoru indeksinden hariç tut
+    </label>
+    <p class="admin-description admin-full">Canonical adres kategori URL'sinden otomatik oluşur ve yeni domaini kullanır.</p>
     @if($category->image_path)
       <div class="admin-full"><img class="admin-category-preview" src="{{ asset($category->image_path) }}" alt="{{ $category->name }}"></div>
     @endif

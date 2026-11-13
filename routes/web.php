@@ -10,11 +10,19 @@ use App\Http\Controllers\ShippingCallbackController;
 use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\GoogleMerchantFeedController;
+use App\Http\Controllers\SeoSitemapController;
+use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/robots.txt', [SeoSitemapController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [SeoSitemapController::class, 'index'])->name('seo.sitemap');
+Route::get('/sitemap/pages.xml', [SeoSitemapController::class, 'pages'])->name('seo.sitemap.pages');
+Route::get('/sitemap/categories.xml', [SeoSitemapController::class, 'categories'])->name('seo.sitemap.categories');
+Route::get('/sitemap/products/{page}.xml', [SeoSitemapController::class, 'products'])
+    ->whereNumber('page')->name('seo.sitemap.products');
 Route::get('/google/merchant-products.xml', GoogleMerchantFeedController::class)
     ->middleware('throttle:30,1')->name('google-merchant.feed');
 Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
@@ -106,6 +114,9 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::patch('/seo-ayarlari', [SeoSettingsController::class, 'update'])
+        ->middleware('throttle:10,1')->name('seo.update');
     Route::get('/search', SearchController::class)->name('search');
     Route::get('/stock', StockController::class)->name('stock');
     Route::get('/customers', CustomerController::class)->name('customers');
