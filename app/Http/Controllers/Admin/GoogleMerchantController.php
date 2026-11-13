@@ -155,7 +155,8 @@ final class GoogleMerchantController extends Controller
                 throw new RuntimeException('Önce Google hesabını ve Merchant Center hesabını seçin.');
             }
             if ($setting->data_source_name) {
-                throw new RuntimeException('Bu hesapta zaten bir NEWTIC veri kaynağı oluşturuldu.');
+                return redirect()->route('admin.google-merchant.edit')
+                    ->with('success', 'NEWTIC ürün veri kaynağı zaten oluşturulmuş; yeniden oluşturulmadı.');
             }
             $setting->data_source_name = $api->createDataSource(
                 $api->accessToken($setting), $setting->merchant_id
