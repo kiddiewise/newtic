@@ -93,6 +93,9 @@ class SeoManagementTest extends TestCase
 
     public function test_live_domain_uses_its_own_origin_not_old_hostinger_or_old_app_url(): void
     {
+        // Fresh installs deliberately start private; opening indexing is an
+        // explicit SEO administrator decision.
+        SeoSetting::current()->update(['noindex' => false]);
         $category = $this->category();
         $product = $this->product($category);
 
@@ -220,6 +223,7 @@ class SeoManagementTest extends TestCase
 
     public function test_category_seo_can_be_edited_and_child_products_excluded_from_sitemap(): void
     {
+        SeoSetting::current()->update(['noindex' => false]);
         $category = $this->category();
         $product = $this->product($category);
 

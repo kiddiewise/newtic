@@ -66,7 +66,7 @@
     </div>
 
     <div class="detail-intro pdp-intro">
-      <p class="eyebrow pdp-brand">POLARIS KURŞUN</p>
+      <p class="eyebrow pdp-brand">{{ mb_strtoupper(\App\Support\StoreIdentity::productBrand($product), 'UTF-8') }}</p>
       <h1>{{ $product->name }}</h1>
       @if($product->discount_percent > 0)
         <div class="detail-original-price pdp-original-price">
@@ -129,7 +129,7 @@
           </button>
         </div>
         <p class="pdp-desktop-purchase-summary" data-desktop-summary aria-live="polite">Seçimler hesaplanıyor</p>
-        <a href="#pdp-picker" class="pdp-desktop-more">Diğer gramaj ve ürünleri birlikte seç <span aria-hidden="true">↓</span></a>
+        <a href="#pdp-picker" class="pdp-desktop-more">Aynı kategoriden diğer ürünleri birlikte seç <span aria-hidden="true">↓</span></a>
       </div>
     </div>
   </div>
@@ -146,7 +146,7 @@
       <div>
         <p class="eyebrow">ÇOKLU ÜRÜN SEÇİMİ</p>
         <h2 id="category-order-title">{{ $product->category->name }} ürünleri</h2>
-        <p>Aynı kategorideki bütün ürünlerin adetlerini ayrı ayrı belirleyin. Seçenekli ürünlerde iğne kalınlığını da seçin.</p>
+        <p>Aynı kategorideki bütün ürünlerin adetlerini ayrı ayrı belirleyin. Seçenekli ürünlerde gereken seçeneği ayrıca belirleyin.</p>
       </div>
       <button type="button" class="pdp-sheet-close" data-sheet-close aria-label="Seçim panelini kapat">✕</button>
     </div>
@@ -215,13 +215,13 @@
   <section class="pdp-description-section" aria-labelledby="pdp-description-title">
     <h2 id="pdp-description-title">Ürün açıklaması</h2>
     <div class="pdp-description-copy" id="pdp-description-content" data-description-content>
-      <p>{!! nl2br(e($product->description ?: 'Polaris Kurşun balıkçılık ekipmanları koleksiyonundan.')) !!}</p>
+      <p>{!! nl2br(e($product->description ?: 'Ürün bilgileri yakında eklenecek.')) !!}</p>
     </div>
     <button type="button" class="pdp-description-toggle" data-description-toggle aria-expanded="false" aria-controls="pdp-description-content">
       Daha fazla göster <span aria-hidden="true">⌄</span>
     </button>
     <div class="pdp-specifications">
-      <div><span>Marka</span><strong>Polaris Kurşun</strong></div>
+      <div><span>Marka</span><strong>{{ \App\Support\StoreIdentity::productBrand($product) }}</strong></div>
       <div><span>Stok kodu</span><strong>{{ $product->sku }}</strong></div>
       <div><span>Kategori</span><a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a></div>
     </div>
@@ -236,8 +236,8 @@
 <div class="pdp-sheet-backdrop" data-sheet-backdrop aria-hidden="true"></div>
 <div class="pdp-sticky-bar" data-sticky-bar aria-label="Hızlı ürün seçimi">
   <button class="pdp-sticky-choose pdp-sticky-gramages" type="button" data-sheet-open data-scroll-ribbon
-    aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle" aria-hidden="true" inert>
-    <span>Diğer gramaj seçenekleri</span>
+    aria-label="Aynı kategorideki diğer ürün seçeneklerini görüntüle" aria-hidden="true" inert>
+    <span>{{ \App\Support\StoreIdentity::alternativesLabel($product) }}</span>
     <x-store-icon name="chevron-up" />
   </button>
   <div class="pdp-sticky-meta pdp-sticky-meta-a11y">

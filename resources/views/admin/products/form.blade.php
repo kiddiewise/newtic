@@ -25,7 +25,7 @@
     <section class="admin-panel admin-editor-section">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="package" /></span><div><h2>Genel bilgiler</h2><p>Ürünün müşterilere gösterilecek bilgileri</p></div></div>
       <div class="admin-form admin-editor-fields">
-        <label class="admin-editor-wide">Ürün adı *<input name="name" autocomplete="off" required maxlength="190" value="{{ old('name', $product->name) }}" placeholder="Örn. Renkli Surf Kurşun 125 gr"></label>
+        <label class="admin-editor-wide">Ürün adı *<input name="name" autocomplete="off" required maxlength="190" value="{{ old('name', $product->name) }}" placeholder="Örn. Ürünün adı ve modeli"></label>
         <label>Stok kodu (SKU) *<input name="sku" autocomplete="off" required maxlength="100" value="{{ old('sku', $product->sku) }}" placeholder="Örn. POL-SURF-125"></label>
         <label>Kategori *<select name="primary_category_id" required>
           <option value="">Kategori veya alt kategori seçin</option>
@@ -56,7 +56,7 @@
         </label>
         <p class="admin-description admin-editor-wide">Canonical URL bu ürünün kalıcı bağlantısından otomatik oluşur. Google Product/Offer verileri gerçek fiyat ve stoktan hazırlanır; yıldızlar onaylanmış gerçek yorumlardan alınır.</p>
         <label class="admin-editor-wide">Google Merchant marka bilgisi
-          <input name="google_brand" maxlength="120" value="{{ old('google_brand', $product->google_brand) }}" placeholder="Boşsa Polaris Kurşun kullanılır">
+          <input name="google_brand" maxlength="120" value="{{ old('google_brand', $product->google_brand) }}" placeholder="Boşsa mağaza adı kullanılır">
           <small>Marka adı ürünün gerçek markası olmalıdır.</small>
         </label>
         <label>GTIN / Barkod (varsa)

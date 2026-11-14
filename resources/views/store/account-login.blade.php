@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Üye Girişi | Polaris Kurşun')
+@section('title', 'Üye Girişi | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 @php
   $authNext = in_array(request('next'), ['checkout', 'wishlist', 'cart', 'review'], true) ? request('next') : '';

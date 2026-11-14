@@ -1,8 +1,9 @@
 @extends('layouts.store')
 
 @section('content')
+@php $storeName = \App\Support\StoreIdentity::name(); @endphp
 <main id="content">
-  <h1 class="sr-only">Polaris Kurşun — Balıkçılık ekipmanları</h1>
+  <h1 class="sr-only">{{ $storeName }} — Online Mağaza</h1>
   @forelse($sections as $section)
     @if($section->type === \App\Models\HomeSection::TYPE_SLIDER && $section->slides->isNotEmpty())
       <section class="container homepage-hero" aria-label="Ana görsel kaydırıcısı">
@@ -15,7 +16,7 @@
                 @endif
                 <picture>
                   <source media="(max-width: 640px)" srcset="{{ $slide->mobile_image_url }}">
-                  <img src="{{ $slide->desktop_image_url }}" alt="Polaris Kurşun koleksiyon görseli" width="1440" height="560" {{ $loop->first ? 'fetchpriority=high' : 'loading=lazy' }} decoding="async">
+                  <img src="{{ $slide->desktop_image_url }}" alt="{{ $storeName }} koleksiyon görseli" width="1440" height="560" {{ $loop->first ? 'fetchpriority=high' : 'loading=lazy' }} decoding="async">
                 </picture>
                 @if($slide->link_url)</a>@endif
               </div>
@@ -52,7 +53,7 @@
     @elseif($section->type === \App\Models\HomeSection::TYPE_PRODUCTS && $section->products->isNotEmpty())
       <section class="container shop-section" aria-labelledby="section-{{ $section->id }}">
         <div class="section-heading">
-          <div><p class="eyebrow">POLARIS SEÇKİSİ</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Popüler Ürünler' }}</h2></div>
+          <div><p class="eyebrow">ÖNE ÇIKANLAR</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Popüler Ürünler' }}</h2></div>
           <a class="section-all" href="{{ route('search') }}">Tümünü gör <span aria-hidden="true">↗</span></a>
         </div>
         <div class="product-grid">
@@ -65,18 +66,18 @@
       <section class="container banner-strip" aria-label="Koleksiyon bannerları"><div class="promo-track">
         @foreach($section->slides as $slide)
           @if($slide->link_url)<a href="{{ $slide->link_url }}" aria-label="Koleksiyonu incele">@endif
-            <picture><source media="(max-width: 640px)" srcset="{{ $slide->mobile_image_url }}"><img src="{{ $slide->desktop_image_url }}" alt="Polaris Kurşun koleksiyon görseli" width="1440" height="560" loading="lazy"></picture>
+            <picture><source media="(max-width: 640px)" srcset="{{ $slide->mobile_image_url }}"><img src="{{ $slide->desktop_image_url }}" alt="{{ $storeName }} koleksiyon görseli" width="1440" height="560" loading="lazy"></picture>
           @if($slide->link_url)</a>@endif
         @endforeach
         </div>
       </section>
     @endif
   @empty
-    <section class="container empty-home"><span class="empty-symbol" aria-hidden="true">✦</span><p class="eyebrow">POLARIS KURŞUN</p><h1>Yeni bir deneyim hazırlanıyor.</h1><p>Ürünlerimiz ve koleksiyonlarımız yakında burada.</p></section>
+    <section class="container empty-home"><span class="empty-symbol" aria-hidden="true">✦</span><p class="eyebrow">{{ mb_strtoupper($storeName, 'UTF-8') }}</p><h1>Yeni bir deneyim hazırlanıyor.</h1><p>Ürünlerimiz ve koleksiyonlarımız yakında burada.</p></section>
   @endforelse
 
-  <section class="container reassurance-strip" aria-label="Polaris ayrıcalıkları">
-    <div><span class="benefit-icon" aria-hidden="true">◇</span><div><strong>Özenli ürün seçkisi</strong><small>Balıkçılık için tasarlandı</small></div></div>
+  <section class="container reassurance-strip" aria-label="{{ $storeName }} alışveriş avantajları">
+    <div><span class="benefit-icon" aria-hidden="true">◇</span><div><strong>Özenli ürün seçkisi</strong><small>Özenle sunulan ürünler</small></div></div>
     <div><span class="benefit-icon" aria-hidden="true">◎</span><div><strong>Kolay ürün keşfi</strong><small>Mobil odaklı alışveriş</small></div></div>
     <div><span class="benefit-icon" aria-hidden="true">↗</span><div><strong>Hızlı gezinme</strong><small>Yalın ve akıcı tasarım</small></div></div>
   </section>

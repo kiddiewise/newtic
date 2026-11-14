@@ -5,7 +5,7 @@
   </a>
   @include('store.partials.product-badges', ['product' => $product, 'placement' => 'card'])
   <div class="product-card-content">
-    <span class="product-card-brand">POLARIS KURŞUN</span>
+    <span class="product-card-brand">{{ mb_strtoupper(\App\Support\StoreIdentity::productBrand($product), 'UTF-8') }}</span>
     <a href="{{ route('product.show', $product->slug) }}" class="product-card-name">{{ $product->name }}</a>
     @if((int) ($product->review_count ?? 0) > 0)
       <a class="product-card-rating" href="{{ route('product.show', $product->slug) }}#urun-yorumlari"

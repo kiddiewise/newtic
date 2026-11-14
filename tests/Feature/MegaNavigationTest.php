@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\MegaMenuSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,20 +27,28 @@ class MegaNavigationTest extends TestCase
         $root = $this->category('Renkli Surf Kurşun');
         $child = $this->category('Fırdöndülü Renkli Surf Kurşun', $root);
         $grandchild = $this->category('Fırdöndülü Aparatlı Surf Kurşun', $child);
+        // Fresh installs contain no inherited customer links: add explicit
+        // test fixtures to verify optional social and WhatsApp rendering.
+        MegaMenuSetting::current()->update([
+            'instagram_url' => 'https://instagram.com/newtic_demo',
+            'youtube_url' => 'https://youtube.com/@newtic_demo',
+            'facebook_url' => 'https://facebook.com/newtic_demo',
+            'whatsapp_number' => '905321234567',
+        ]);
 
         $this->get('/')->assertOk()
             ->assertSee('data-mega-menu')
-            ->assertSee('polaris-mega-menu')
+            ->assertSee('store-mega-menu')
             ->assertSee('mega-menu-shell')
             ->assertSee('data-mega-toggle')
             ->assertSee('data-mega-close')
             ->assertDontSee('mega-hero-art')
             ->assertSee('Kategorileri keşfet')
             ->assertSee('mega-social-grid')
-            ->assertSee('https://instagram.com/polariskursun')
-            ->assertSee('https://youtube.com/@polariskursun')
-            ->assertSee('https://facebook.com/polariskursun')
-            ->assertSee('https://wa.me/905462629002')
+            ->assertSee('https://instagram.com/newtic_demo')
+            ->assertSee('https://youtube.com/@newtic_demo')
+            ->assertSee('https://facebook.com/newtic_demo')
+            ->assertSee('https://wa.me/905321234567')
             ->assertSee($grandchild->name)
             ->assertSee(route('category.show', $root->slug))
             ->assertSee(route('category.show', $child->slug))

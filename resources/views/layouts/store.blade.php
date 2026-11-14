@@ -40,6 +40,9 @@
 @include('store.partials.ui-icons')
 @php
   $headerCartCount = \App\Support\ShoppingCart::itemCount();
+  $storeName = \App\Support\StoreIdentity::name();
+  [$brandTop, $brandBottom] = \App\Support\StoreIdentity::wordmark();
+  $storeDescription = \App\Support\StoreIdentity::description();
   $shopAppearance = \App\Models\ShopAppearance::current();
   $megaMenuSettings = \App\Models\MegaMenuSetting::current();
   $shopAnnouncements = \App\Models\ShopAnnouncement::query()->visible()->orderBy('sort_order')->orderBy('id')->limit(30)->get();
@@ -60,17 +63,17 @@
     @include('store.partials.announcement-ticker')
   @else
   <div class="utility-bar"><div class="container utility-content">
-    <span>Balıkçılığa tutkuyla bağlı olanlara</span>
-    <span>POLARIS / TÜRKİYE</span>
+    <span>{{ \Illuminate\Support\Str::limit($storeDescription, 65) }}</span>
+    <span>{{ mb_strtoupper($storeName, 'UTF-8') }}</span>
   </div></div>
   @endif
   <div class="container header-main">
-    <a class="brand" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+    <a class="brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
       @if($shopAppearance->desktop_logo_path)
-        <img class="store-logo store-logo-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="176" height="48">
+        <img class="store-logo store-logo-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="176" height="48">
       @else
-        <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 36 36" fill="none"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/><circle cx="25" cy="12" r="1.5" fill="#102f3e"/></svg></span>
-        <span class="brand-words"><strong>POLARIS</strong><small>KURŞUN</small></span>
+        <span class="brand-symbol" aria-hidden="true"><x-store-icon name="shopping-bag" /></span>
+        <span class="brand-words"><strong>{{ mb_strtoupper($brandTop, 'UTF-8') }}</strong>@if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif</span>
       @endif
     </a>
     <form class="header-search" action="{{ route('search') }}" method="get" role="search" data-search-suggest-form data-suggest-url="{{ route('search.suggest') }}">
@@ -107,18 +110,18 @@
   @include('store.partials.announcement-ticker')
   <div class="mobile-topbar">
     <details class="mobile-menu" data-mega-menu>
-      <summary aria-label="Kategoriler menüsünü aç" aria-controls="polaris-mega-menu" data-mega-toggle><x-store-icon name="menu" /></summary>
-      <div class="mobile-menu-panel mega-menu-shell" id="polaris-mega-menu" role="dialog" aria-label="Polaris mağaza menüsü" aria-modal="true" data-mega-panel>
+      <summary aria-label="Kategoriler menüsünü aç" aria-controls="store-mega-menu" data-mega-toggle><x-store-icon name="menu" /></summary>
+      <div class="mobile-menu-panel mega-menu-shell" id="store-mega-menu" role="dialog" aria-label="{{ $storeName }} mağaza menüsü" aria-modal="true" data-mega-panel>
         <div class="mega-menu-top">
           <button type="button" class="mega-menu-close" data-mega-close aria-label="Menüyü kapat">
             <x-store-icon name="x" />
           </button>
-          <a class="mega-menu-brand" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+          <a class="mega-menu-brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
             @if($shopAppearance->mobile_logo_path || $shopAppearance->desktop_logo_path)
-              <img class="store-logo store-logo-mega mega-brand-logo" src="{{ asset($shopAppearance->mobile_logo_path ?: $shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="135" height="43">
+              <img class="store-logo store-logo-mega mega-brand-logo" src="{{ asset($shopAppearance->mobile_logo_path ?: $shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="135" height="43">
             @else
-              <span class="mega-brand-icon"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/><circle cx="25" cy="12" r="1.5" fill="#fff"/></svg></span>
-              <span>POLARIS<small>KURŞUN</small></span>
+              <span class="mega-brand-icon"><x-store-icon name="shopping-bag" /></span>
+              <span>{{ mb_strtoupper($brandTop, 'UTF-8') }}@if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif</span>
             @endif
           </a>
           <a href="{{ route('cart.index') }}" class="mega-cart-link" aria-label="Sepetim, {{ $headerCartCount }} adet">
@@ -129,7 +132,7 @@
         <div class="mega-menu-scroll" data-mega-scroll>
           @if($megaMenuSettings->hero_image_path)
           <div class="mega-menu-banner">
-            <img src="{{ asset($megaMenuSettings->hero_image_path) }}" alt="Polaris mega menü görseli" width="1200" height="750" decoding="async">
+            <img src="{{ asset($megaMenuSettings->hero_image_path) }}" alt="{{ $storeName }} menü görseli" width="1200" height="750" decoding="async">
           </div>
           @endif
 
@@ -148,25 +151,25 @@
             <div class="mega-social-head"><h3>Bizimle bağlantıda kal.</h3></div>
             <div class="mega-social-grid">
               @if($megaMenuSettings->instagram_url)
-              <a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris Instagram">
+              <a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $storeName }} Instagram">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
                 <span>Instagram</span>
               </a>
               @endif
               @if($megaMenuSettings->youtube_url)
-              <a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris YouTube">
+              <a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $storeName }} YouTube">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="m10 9 5 3-5 3Z"/></svg>
                 <span>YouTube</span>
               </a>
               @endif
               @if($megaMenuSettings->facebook_url)
-              <a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris Facebook">
+              <a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $storeName }} Facebook">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h-2.2C11.6 4 11 5.3 11 7.2V10H8v4h3v7h4v-7h3l.5-4H15V7.5c0-.4.2-.5.7-.5H18V4Z"/></svg>
                 <span>Facebook</span>
               </a>
               @endif
               @if($megaMenuSettings->x_url)
-              <a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer" aria-label="Polaris X">
+              <a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $storeName }} X">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h4l12 18h-4L4 3ZM20 3 4 21"/></svg>
                 <span>X</span>
               </a>
@@ -181,18 +184,20 @@
             <svg class="mega-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
           @endif
+          @if(filled($megaMenuSettings->footer_text))
           <div class="mega-menu-footnote">{{ $megaMenuSettings->footer_text }}</div>
+          @endif
         </div>
       </div>
     </details>
-    <a class="mobile-center-brand" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+    <a class="mobile-center-brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
       @if($shopAppearance->mobile_logo_path)
-        <img class="store-logo store-logo-mobile" src="{{ asset($shopAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="54" height="54">
+        <img class="store-logo store-logo-mobile" src="{{ asset($shopAppearance->mobile_logo_path) }}" alt="{{ $storeName }}" width="54" height="54">
       @elseif($shopAppearance->desktop_logo_path)
-        <img class="store-logo store-logo-mobile store-logo-mobile-from-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="90" height="42">
+        <img class="store-logo store-logo-mobile store-logo-mobile-from-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="90" height="42">
       @else
-        <span class="mobile-brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36" fill="none"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/><circle cx="25" cy="12" r="1.5" fill="#fff"/></svg></span>
-        <span class="mobile-brand-name">POLARIS</span>
+        <span class="mobile-brand-mark" aria-hidden="true"><x-store-icon name="shopping-bag" /></span>
+        <span class="mobile-brand-name">{{ mb_strtoupper($storeName, 'UTF-8') }}</span>
       @endif
     </a>
     <div class="mobile-top-actions">
@@ -209,7 +214,7 @@
 @if(request()->routeIs('home', 'category.show', 'search'))
 <div class="mobile-subnav">
   <form class="mobile-search-bar" action="{{ route('search') }}" method="get" role="search" data-search-suggest-form data-suggest-url="{{ route('search.suggest') }}">
-    <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Kurşun, gramaj veya ürün ara" aria-label="Ürün ara" autocomplete="off" aria-autocomplete="list" aria-expanded="false">
+    <input type="search" name="q" value="{{ request('q') }}" maxlength="100" placeholder="Ürün, marka veya kategori ara" aria-label="Ürün ara" autocomplete="off" aria-autocomplete="list" aria-expanded="false">
     <button type="submit" aria-label="Ara"><x-store-icon name="search" /></button>
     <div class="search-suggest-results" data-suggest-results role="listbox" aria-label="Ürün önerileri" hidden></div>
   </form>
@@ -234,22 +239,22 @@
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
-      <a class="footer-brandmark" href="{{ route('home') }}" aria-label="Polaris Kurşun ana sayfa">
+      <a class="footer-brandmark" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
         @if($shopAppearance->desktop_logo_path || $shopAppearance->mobile_logo_path)
-          <img src="{{ asset($shopAppearance->desktop_logo_path ?: $shopAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="170" height="54" loading="lazy">
+          <img src="{{ asset($shopAppearance->desktop_logo_path ?: $shopAppearance->mobile_logo_path) }}" alt="{{ $storeName }}" width="170" height="54" loading="lazy">
         @else
           <span class="footer-brand-fallback">
-            <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/></svg>
+            <x-store-icon name="shopping-bag" />
             <span><strong>POLARIS</strong><small>KURŞUN</small></span>
           </span>
         @endif
       </a>
-      <p>Balıkçılık tutkusuna eşlik eden, her detayı özenle düşünülmüş ekipmanlar.</p>
+      <p>{{ $storeDescription }}</p>
     </div>
     <div><strong>Keşfet</strong><a href="{{ route('home') }}">Ana sayfa</a><a href="{{ route('search') }}">Ürünler</a></div>
-    <div><strong>Bilgilendirme</strong><p>Alışveriş işlemleri geliştirme ortamındadır. Gerçek tahsilat yapılmaz.</p></div>
+    <div><strong>Bilgilendirme</strong><p>@if(config('newtic.checkout_test_mode', true)) Sipariş işlemleri test modundadır. Gerçek kart tahsilatı yapılmaz. @else Ödeme ve teslimat bilgileri sipariş adımında gösterilir. @endif</p></div>
   </div>
-  <div class="container footer-bottom">© {{ date('Y') }} Polaris Kurşun · Balıkçılık ekipmanları</div>
+  <div class="container footer-bottom">© {{ date('Y') }} {{ $storeName }} · Tüm hakları saklıdır</div>
 </footer>
 <nav class="mobile-bottom-nav" aria-label="Mobil gezinme">
   <a href="{{ route('home') }}"><x-store-icon name="house" /><span>Ana sayfa</span></a>

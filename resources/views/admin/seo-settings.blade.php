@@ -32,15 +32,15 @@
     <div class="admin-panel-title"><h2>1. Site geneli ve ana sayfa</h2></div>
     <div class="admin-form admin-settings-grid">
       <label>Mağaza / marka adı *
-        <input name="site_name" maxlength="120" required value="{{ old('site_name', $setting->site_name) }}" placeholder="Polaris Kurşun">
+        <input name="site_name" maxlength="120" required value="{{ old('site_name', $setting->site_name ?: \App\Support\StoreIdentity::name($setting)) }}" placeholder="{{ \App\Support\StoreIdentity::name() }}">
         <small>Site genelinde marka ve Organization şeması için kullanılır.</small>
       </label>
       <label>Varsayılan sayfa başlığı son eki *
-        <input name="title_suffix" maxlength="100" required value="{{ old('title_suffix', $setting->title_suffix) }}" placeholder="Polaris Kurşun">
+        <input name="title_suffix" maxlength="100" required value="{{ old('title_suffix', $setting->title_suffix ?: \App\Support\StoreIdentity::name($setting)) }}" placeholder="{{ \App\Support\StoreIdentity::name() }}">
         <small>Özel SEO başlığı yoksa kategori ve ürün adından sonra kullanılır.</small>
       </label>
       <label class="admin-full">Ana sayfa SEO başlığı
-        <input name="home_title" maxlength="190" value="{{ old('home_title', $setting->home_title) }}" placeholder="Polaris Kurşun | Balıkçılık ve Olta Kurşunları">
+        <input name="home_title" maxlength="190" value="{{ old('home_title', $setting->home_title) }}" placeholder="Mağazanız | Online Alışveriş">
         <small>Öneri: doğal ve açıklayıcı bir başlık; karakter sayısı tek başına sıralama kriteri değildir.</small>
       </label>
       <label class="admin-full">Ana sayfa meta açıklaması
@@ -107,7 +107,7 @@
         <div class="seo-page-item">
           <strong>{{ $label }}</strong>
           <label>Sayfa başlığı
-            <input maxlength="190" name="pages[{{ $key }}][title]" value="{{ old('pages.'.$key.'.title', $pageValue['title'] ?? '') }}" placeholder="{{ $label }} | Polaris Kurşun">
+            <input maxlength="190" name="pages[{{ $key }}][title]" value="{{ old('pages.'.$key.'.title', $pageValue['title'] ?? '') }}" placeholder="{{ $label }} | {{ \App\Support\StoreIdentity::name() }}">
           </label>
           <label>Meta açıklaması
             <textarea rows="2" maxlength="500" name="pages[{{ $key }}][description]" placeholder="İsteğe bağlı açıklama">{{ old('pages.'.$key.'.description', $pageValue['description'] ?? '') }}</textarea>

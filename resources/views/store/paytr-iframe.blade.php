@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'PAYTR Test Ödemesi | Polaris Kurşun')
+@section('title', 'PAYTR Test Ödemesi | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="checkout-shell paytr-payment-page" id="content">
   <div class="checkout-top">

@@ -10,7 +10,7 @@
   <form method="POST" action="{{ route('admin.announcements.store') }}" class="admin-form admin-settings-grid">
     @csrf
     <label class="admin-full">Duyuru cümleleri
-      <textarea name="messages" rows="5" maxlength="5000" required placeholder="₺1000 üzeri siparişlerde kargo bedava&#10;Polaris Surf Kurşun koleksiyonunu keşfedin">{{ old('messages') }}</textarea>
+      <textarea name="messages" rows="5" maxlength="5000" required placeholder="₺1000 üzeri siparişlerde kargo bedava&#10;Yeni koleksiyonumuzu keşfedin">{{ old('messages') }}</textarea>
       <small>Her satır ayrı duyuru olur. En fazla 12 satır, satır başına 240 karakter. Duyurular üst bantta sırayla kayar.</small>
     </label>
     <label>Başlangıç — Türkiye saati

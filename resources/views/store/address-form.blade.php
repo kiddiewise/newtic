@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', ($address->exists ? 'Adresi Düzenle' : 'Yeni Adres').' | Polaris Kurşun')
+@section('title', ($address->exists ? 'Adresi Düzenle' : 'Yeni Adres').' | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="checkout-shell" id="content">
   <div class="checkout-top"><a href="{{ route('account.addresses.index') }}" aria-label="Geri dön">‹</a><strong>{{ $address->exists ? 'Adresi Düzenle' : 'Yeni Adres' }}</strong><span></span></div>

@@ -73,7 +73,7 @@
     <div class="admin-panel-title"><h2>Menü alt yazısı</h2></div>
     <div class="mega-menu-form-fields">
       <label class="wide">En alttaki marka yazısı
-        <input type="text" name="footer_text" maxlength="120" required value="{{ old('footer_text', $settings->footer_text) }}" placeholder="POLARIS KURŞUN • TÜRKİYE">
+        <input type="text" name="footer_text" maxlength="120" required value="{{ old('footer_text', $settings->footer_text) }}" placeholder="Mağaza adı · Türkiye">
       </label>
     </div>
   </section>

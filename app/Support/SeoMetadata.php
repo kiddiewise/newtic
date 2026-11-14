@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\SeoSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Support\StoreIdentity;
 
 final class SeoMetadata
 {
@@ -67,9 +68,9 @@ final class SeoMetadata
     {
         $setting = SeoSetting::current();
         $route = (string) ($request->route()?->getName() ?? '');
-        $title = (string) ($setting->site_name ?: 'Polaris Kurşun');
+        $title = StoreIdentity::name($setting);
         $suffix = trim((string) ($setting->title_suffix ?: $title));
-        $description = (string) ($setting->default_description ?: 'Polaris Kurşun balıkçılık ekipmanları, kurşun ve olta malzemeleri.');
+        $description = StoreIdentity::description($setting);
         $image = self::image($request, $setting->social_image_path);
         $canonical = null;
         $structured = [];
@@ -77,13 +78,13 @@ final class SeoMetadata
         $ogType = 'website';
 
         if ($route === 'home') {
-            $title = trim((string) ($setting->home_title ?: $title.' | Balıkçılık Ekipmanları'));
+            $title = trim((string) ($setting->home_title ?: $title.' | Online Mağaza'));
             $description = trim((string) ($setting->home_description ?: $description));
             $canonical = self::url($request);
             $org = [
                 '@type' => 'Organization',
                 '@id' => $canonical.'#organization',
-                'name' => $setting->site_name ?: 'Polaris Kurşun',
+                'name' => StoreIdentity::name($setting),
                 'url' => $canonical,
             ];
             if ($image) $org['logo'] = $image;
@@ -94,7 +95,7 @@ final class SeoMetadata
                     [
                         '@type' => 'WebSite',
                         '@id' => $canonical.'#website',
-                        'name' => $setting->site_name ?: 'Polaris Kurşun',
+                        'name' => StoreIdentity::name($setting),
                         'url' => $canonical,
                         'inLanguage' => 'tr-TR',
                     ],
@@ -104,7 +105,7 @@ final class SeoMetadata
             $category = Category::query()->where('slug', (string) $request->route('slug'))->first();
             if ($category && CategoryHierarchy::visible($category)) {
                 $title = trim((string) ($category->seo_title ?: $category->name.' | '.$suffix));
-                $description = trim((string) ($category->seo_description ?: $category->description ?: $category->name.' ürün çeşitleri, gramaj seçenekleri ve güncel fiyatları.'));
+                $description = trim((string) ($category->seo_description ?: $category->description ?: $category->name.' ürün çeşitleri, modelleri ve güncel fiyatları.'));
                 $image = self::image($request, $category->image_path) ?: $image;
                 $canonical = self::url($request, 'kategori/'.$category->slug);
                 $page = filter_var($request->query('page', 1), FILTER_VALIDATE_INT);
@@ -144,7 +145,7 @@ final class SeoMetadata
                         'sku' => $product->sku,
                         'brand' => [
                             '@type' => 'Brand',
-                            'name' => $product->google_brand ?: 'Polaris Kurşun',
+                            'name' => StoreIdentity::productBrand($product),
                         ],
                         'image' => array_slice($photos, 0, 10),
                         'offers' => [
@@ -159,7 +160,7 @@ final class SeoMetadata
                             'itemCondition' => 'https://schema.org/NewCondition',
                             'seller' => [
                                 '@type' => 'Organization',
-                                'name' => $setting->site_name ?: 'Polaris Kurşun',
+                                'name' => StoreIdentity::name($setting),
                             ],
                         ],
                     ];

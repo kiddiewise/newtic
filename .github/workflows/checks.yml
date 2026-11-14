@@ -24,7 +24,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
           coverage: none
       - uses: actions/setup-node@v4
         with:
@@ -40,6 +40,25 @@ jobs:
         run: |
           npm install --ignore-scripts
           npm run build
+      - name: Verify portable installer and webroot scripts
+        run: |
+          bash -n scripts/install-production.sh
+          bash -n scripts/prepare-hostinger-webroot.sh
+          echo "Portable installer scripts parse successfully"
+      - name: Exercise brand-independent installer preflight
+        run: |
+          set -euo pipefail
+          cp .env .env.newtic-ci-backup
+          trap 'mv -f .env.newtic-ci-backup .env' EXIT
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
+          bash scripts/install-production.sh --check
+          test -f .env.newtic-ci-backup
+          mv -f .env.newtic-ci-backup .env
+          trap - EXIT
       - name: Test Turkish phone formatter
         run: node --test tests/js/*.test.mjs
       - name: Verify admin CSS is present in compiled Vite assets

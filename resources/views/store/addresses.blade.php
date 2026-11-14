@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Adreslerim | Polaris Kurşun')
+@section('title', 'Adreslerim | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="checkout-shell" id="content">
   <div class="checkout-top"><a href="{{ route('account.index') }}" aria-label="Hesabım">‹</a><strong>Adreslerim</strong><span></span></div>

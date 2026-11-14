@@ -57,7 +57,7 @@ class ProductPurchaseBarUxTest extends TestCase
             ->assertSee('href="#ui-chevron-up"', false)
             ->assertSee('data-scroll-ribbon', false)
             ->assertSee('aria-hidden="true" inert', false)
-            ->assertSee('aria-label="Diğer gramaj seçeneklerini ve kategorideki ürünleri görüntüle"', false);
+            ->assertSee('aria-label="Aynı kategorideki diğer ürün seçeneklerini görüntüle"', false);
         // The slim options ribbon sits ABOVE the purchase row.
         // The row contains ONLY variant (if configured), quantity and cart add.
         $this->assertSame(1, substr_count($html, 'class="pdp-sticky-option-help"'));

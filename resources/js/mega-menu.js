@@ -1,4 +1,4 @@
-// Polaris immersive mobile navigation. Native <details> remains functional without JS.
+// NEWTIC immersive mobile navigation. Native <details> remains functional without JS.
 const megaMenu = document.querySelector('[data-mega-menu]');
 if (megaMenu) {
   const trigger = megaMenu.querySelector(':scope > summary');

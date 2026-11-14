@@ -18,7 +18,7 @@
     @csrf
     @if($category->exists) @method('PATCH') @endif
     <label>Kategori adı *
-      <input name="name" value="{{ old('name', $category->name) }}" maxlength="190" required placeholder="Örn. Fırdöndülü Renkli Surf Kurşun">
+      <input name="name" value="{{ old('name', $category->name) }}" maxlength="190" required placeholder="Örn. Yeni ürün kategorisi">
     </label>
     <label>Bağlı olduğu ana kategori
       <select name="parent_id">
@@ -44,7 +44,7 @@
     </label>
     <div class="admin-full seo-category-subtitle"><strong>Arama motorları / Kategori SEO</strong><small>Boş bırakılan alanlarda kategori adı ve açıklamasından otomatik meta oluşturulur.</small></div>
     <label class="admin-full">SEO başlığı
-      <input name="seo_title" maxlength="190" value="{{ old('seo_title', $category->seo_title) }}" placeholder="Kategori adı | Polaris Kurşun">
+      <input name="seo_title" maxlength="190" value="{{ old('seo_title', $category->seo_title) }}" placeholder="Kategori adı | {{ \App\Support\StoreIdentity::name() }}">
     </label>
     <label class="admin-full">SEO meta açıklaması
       <textarea name="seo_description" rows="3" maxlength="500" placeholder="Kategoriyi özgün olarak anlatın">{{ old('seo_description', $category->seo_description) }}</textarea>
@@ -132,7 +132,7 @@
           <small>Mobil için 16:9 oranında ayrı görsel önerilir.</small>
         </label>
         <label>Banner açıklaması
-          <input name="alt_text" maxlength="190" placeholder="Örn. Surf Kurşun Kampanyası">
+          <input name="alt_text" maxlength="190" placeholder="Örn. Sezon koleksiyonu">
         </label>
         <label>Tıklanınca açılacak site içi sayfa
           <input name="link_url" maxlength="255" placeholder="/kategori/renkli-surf-kursun">
