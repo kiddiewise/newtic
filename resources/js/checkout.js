@@ -81,7 +81,8 @@ if (checkoutForm) {
         ? 'Cep telefonu numaranı 555 555 55 55 şeklinde gir.' : '');
     }
 
-    const ready = checkoutHasValidDistrict(checkoutForm)
+    const ready = checkoutForm.dataset.paymentAvailable === '1'
+      && checkoutHasValidDistrict(checkoutForm)
       && checkoutForm.checkValidity()
       && !!checkoutForm.querySelector('input[name="payment_method"]:checked');
 
@@ -122,7 +123,10 @@ if (checkoutForm) {
   checkoutForm.addEventListener('submit', (event) => {
     if (submitting) { event.preventDefault(); return; }
     update();
-    if (!checkoutHasValidDistrict(checkoutForm) || !checkoutForm.checkValidity()) return; // Native browser validation.
+    if (checkoutForm.dataset.paymentAvailable !== '1' || !checkoutHasValidDistrict(checkoutForm) || !checkoutForm.checkValidity()) {
+      event.preventDefault();
+      return;
+    } // Native browser validation.
     submitting = true;
     checkoutForm.setAttribute('aria-busy', 'true');
     submitButtons.forEach((button) => {

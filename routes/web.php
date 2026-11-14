@@ -11,6 +11,9 @@ use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\GoogleMerchantFeedController;
 use App\Http\Controllers\SeoSitemapController;
+use App\Http\Controllers\UrlRedirectController as PublicUrlRedirectController;
+use App\Http\Middleware\ResolveCatalogRedirect;
+use App\Http\Controllers\Admin\UrlRedirectController as AdminUrlRedirectController;
 use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
 use Illuminate\Support\Facades\Route;
@@ -25,8 +28,8 @@ Route::get('/sitemap/products/{page}.xml', [SeoSitemapController::class, 'produc
     ->whereNumber('page')->name('seo.sitemap.products');
 Route::get('/google/merchant-products.xml', GoogleMerchantFeedController::class)
     ->middleware('throttle:30,1')->name('google-merchant.feed');
-Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
-Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
+Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->middleware(ResolveCatalogRedirect::class)->name('category.show');
+Route::get('/urun/{slug}', [CatalogController::class, 'product'])->middleware(ResolveCatalogRedirect::class)->name('product.show');
 Route::get('/ara/oneriler', [CatalogController::class, 'suggestions'])->middleware('throttle:60,1')->name('search.suggest');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
@@ -115,6 +118,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::get('/301-yonlendirmeler', [AdminUrlRedirectController::class, 'index'])->name('redirects.index');
+    Route::post('/301-yonlendirmeler', [AdminUrlRedirectController::class, 'store'])->middleware('throttle:20,1')->name('redirects.store');
+    Route::post('/301-yonlendirmeler/import', [AdminUrlRedirectController::class, 'import'])->middleware('throttle:5,1')->name('redirects.import');
+    Route::patch('/301-yonlendirmeler/{redirect}', [AdminUrlRedirectController::class, 'update'])->name('redirects.update');
+    Route::delete('/301-yonlendirmeler/{redirect}', [AdminUrlRedirectController::class, 'destroy'])->name('redirects.destroy');
+    Route::post('/orders/expire-unpaid', [AdminOrderController::class, 'expireUnpaid'])->middleware('throttle:4,1')->name('orders.expire-unpaid');
     Route::patch('/seo-ayarlari', [SeoSettingsController::class, 'update'])
         ->middleware('throttle:10,1')->name('seo.update');
     Route::get('/search', SearchController::class)->name('search');
@@ -208,3 +217,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::delete('/sections/{section}/slides/{slide}', [HomeSlideController::class, 'destroy'])->name('slides.destroy');
     Route::post('/categories/{category}/image', [CategoryImageController::class, 'update'])->name('categories.image');
 });
+
+// Only previously unknown GET/HEAD URLs can be redirected. Other routes keep their existing behavior.
+Route::fallback(PublicUrlRedirectController::class);

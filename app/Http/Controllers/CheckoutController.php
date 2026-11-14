@@ -70,11 +70,16 @@ class CheckoutController extends Controller
     {
         AddressValidation::normalizePhoneInput($request);
         $paytrAvailable = PaytrTestAccess::available();
+        $bankAvailable = BankAccount::query()->where('is_active', true)->exists();
+        $allowedMethods = array_values(array_filter([
+            $bankAvailable ? 'bank_transfer' : null,
+            $paytrAvailable ? 'paytr' : null,
+        ]));
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
             'email' => ['required', 'email', 'max:255'],
             'order_note' => ['nullable', 'string', 'max:2000'],
             'checkout_token' => ['required', 'uuid'],
-            'payment_method' => ['required', Rule::in($paytrAvailable ? ['bank_transfer', 'paytr'] : ['bank_transfer'])],
+            'payment_method' => ['required', Rule::in($allowedMethods)],
             'save_address' => ['nullable', 'boolean'],
             'create_account' => ['nullable', 'boolean'],
             'account_password' => ['required_if:create_account,1', 'nullable', Password::min(8)],
@@ -116,6 +121,13 @@ class CheckoutController extends Controller
         $method = $validated['payment_method'];
         $cartSnapshot = ShoppingCart::raw($request);
         $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, &$newUser) {
+            // Recheck inside the order transaction to prevent hidden/disabled
+            // bank transfer requests from creating unpayable orders.
+            if ($method === 'bank_transfer' && !BankAccount::query()->where('is_active', true)->exists()) {
+                throw ValidationException::withMessages([
+                    'payment_method' => 'Havale/EFT şu anda kullanılamıyor. Aktif banka hesabı bulunamadı.',
+                ]);
+            }
             // Stock is rechecked under row locks and never derived from the client's
             // subtotal. Stable ID ordering prevents deadlocks between checkout requests.
             $raw = ShoppingCart::raw($request);

@@ -6,7 +6,12 @@
     <p class="admin-eyebrow">OPERASYON / SİPARİŞLER</p><h1>Siparişler</h1>
     <p>Ödeme kontrolünden teslimata kadar tüm siparişleri tek yerden takip et.</p>
   </div>
-  <a class="admin-secondary" href="{{ route('admin.payment-notifications.index') }}"><x-admin-icon name="landmark" /> Ödeme bildirimleri</a>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <a class="admin-secondary" href="{{ route('admin.payment-notifications.index') }}"><x-admin-icon name="landmark" /> Ödeme bildirimleri</a>
+    <form method="POST" action="{{ route('admin.orders.expire-unpaid') }}" onsubmit="return confirm('Yalnızca süresi dolmuş, ödeme bildirimi beklemeyen havale siparişleri iptal edilecek ve stokları iade edilecek. Devam edilsin mi?')">
+      @csrf <button class="admin-secondary" type="submit">Ödenmeyen siparişleri kontrol et</button>
+    </form>
+  </div>
 </div>
 <div class="admin-panel">
   <div class="admin-panel-title"><h2>Sipariş listesi</h2><span>{{ number_format($orders->total(), 0, ',', '.') }} sipariş</span></div>

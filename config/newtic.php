@@ -8,6 +8,10 @@ return [
      */
     'checkout_test_mode' => (bool) env('NEWTIC_CHECKOUT_TEST_MODE', true),
 
+    // Pending, unpaid bank transfer orders reserve stock for 48 hours by default.
+    // Pending payment claims are protected until an administrator reviews them.
+    'bank_transfer_expiry_hours' => max(1, min(720, (int) env('NEWTIC_BANK_TRANSFER_EXPIRY_HOURS', 48))),
+
     // Hard-disabled defaults: saving PAYTR credentials never activates payments.
     'paytr_card_payments_enabled' => (bool) env('NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED', parse_url((string) env('APP_URL'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com'),
     'paytr_webhooks_enabled' => (bool) env('NEWTIC_PAYTR_WEBHOOKS_ENABLED', parse_url((string) env('APP_URL'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com'),

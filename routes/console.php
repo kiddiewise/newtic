@@ -16,3 +16,8 @@ Schedule::command('shipping:sync --limit=20')
 
 // Requires a configured Hostinger cron calling php artisan schedule:run.
 Schedule::command('merchant:sync --steps=6')->everyFifteenMinutes()->withoutOverlapping(13);
+
+// Release stale bank transfer reservations; never expire PAYTR payments or
+// orders with an unreviewed/verified bank payment notification.
+Schedule::command('orders:expire-unpaid --limit=50')->everyFifteenMinutes()
+    ->withoutOverlapping(10);
