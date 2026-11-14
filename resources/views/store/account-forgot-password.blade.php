@@ -1,6 +1,11 @@
 @extends('layouts.store')
 @section('title', 'Şifremi Unuttum | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
+@php
+  $authNext = '';
+  $favoriteId = '';
+  $reviewProduct = '';
+@endphp
 <main class="checkout-shell account-auth-shell" id="content">
   <div class="auth-experience">
     @include('store.partials.auth-artwork')
