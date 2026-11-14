@@ -57,8 +57,8 @@
       <form method="POST" action="{{ route('admin.redirects.update', $redirect) }}" class="admin-form" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
         @csrf @method('PATCH')
         <input name="new_path" aria-label="Yeni hedef URL" maxlength="2048" value="{{ $redirect->new_path }}" style="flex:1;min-width:180px" required>
-        <label><input type="checkbox" name="is_active" value="1" @checked($redirect->is_active)> Etkin</label>
         <input type="hidden" name="is_active" value="0">
+        <label><input type="checkbox" name="is_active" value="1" @checked($redirect->is_active)> Etkin</label>
         <button type="submit" class="admin-secondary">Güncelle</button>
       </form>
       <form method="POST" action="{{ route('admin.redirects.destroy', $redirect) }}" onsubmit="return confirm('Bu yönlendirme silinsin mi?')">

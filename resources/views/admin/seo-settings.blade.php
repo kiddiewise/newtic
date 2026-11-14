@@ -145,7 +145,8 @@
   <div class="admin-panel-title"><h2>6. Google'a çıkmadan önce</h2></div>
   <p class="admin-description">Ürün fotoğrafı, fiyatı, stok durumu ve yıldızı için Google'a doğru <code>Product</code>/<code>Offer</code> JSON-LD verileri sunulur. Yıldızlar yalnızca gerçek, onaylanmış, test dışı satın alma yorumlarından gelir. Google, rich result gösterimini garanti etmez.</p>
   <p class="admin-description">Google Shopping için ayrıca Merchant Center bağlantısı, doğrulanmış gerçek domain, doğru kargo/iade bilgileri ve Google politikalarına uygun ürünler gerekir. Staging mağazasından ürün gönderme; gerçek domain yayına geçince Merchant Center ve Search Console'da doğrula.</p>
-  <p class="admin-description">Eski WordPress adresleri değişecekse <strong>301 yönlendirme tablosu</strong> oluşturmak gerekir. Canonical/sitemap tek başına eski bağlantıların aktarılmasını sağlamaz.</p>
+  <p class="admin-description">WordPress, WooCommerce veya başka bir sistemden geçişte URL yapısı değişirse <strong>301 yönlendirme tablosunu</strong> kullan. Eski adresleri yeni sayfalara eşleyip SEO trafiğini korumaya yardımcı olur.</p>
+  <div class="seo-link-grid"><a class="admin-secondary" href="{{ route('admin.redirects.index') }}">301 yönlendirmelerini yönet</a></div>
   <div class="seo-link-grid">
     <a class="admin-secondary" href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Google Search Console</a>
     <a class="admin-secondary" href="https://search.google.com/test/rich-results" target="_blank" rel="noopener noreferrer">Google Zengin Sonuçlar Testi</a>

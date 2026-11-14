@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Console\Commands\ExpireUnpaidBankOrders;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\OrderStatusChange;
 use App\Models\PaymentNotification;
 use App\Models\Product;
@@ -28,6 +30,17 @@ class OrderController extends Controller
         'completed' => [],
         'cancelled' => [],
     ];
+
+    public function expireUnpaid(Request $request): RedirectResponse
+    {
+        // Protected admin-only fallback when the host has no scheduler cron.
+        $exitCode = Artisan::call('orders:expire-unpaid', ['--limit' => 50]);
+        if ($exitCode !== 0) {
+            return redirect()->route('admin.orders.index')->with('error', 'Ödenmeyen siparişler kontrol edilemedi. Sunucu kayıtlarını inceleyin.');
+        }
+        return redirect()->route('admin.orders.index')
+            ->with('success', 'Süresi dolmuş havale siparişleri kontrol edildi. Ödeme bildirimi bekleyen siparişler korunur.');
+    }
 
     public function index(Request $request): View
     {
