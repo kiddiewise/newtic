@@ -40,6 +40,11 @@ jobs:
         run: |
           npm install --ignore-scripts
           npm run build
+      - name: Verify portable installer and webroot scripts
+        run: |
+          bash -n scripts/install-production.sh
+          bash -n scripts/prepare-hostinger-webroot.sh
+          echo "Portable installer scripts parse successfully"
       - name: Test Turkish phone formatter
         run: node --test tests/js/*.test.mjs
       - name: Verify admin CSS is present in compiled Vite assets
