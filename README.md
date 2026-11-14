@@ -1,41 +1,61 @@
-# newtic — Polaris Kurşun 2.0
+# NEWTIC — bağımsız Laravel e-ticaret altyapısı
 
-Polaris Kurşun için mobil öncelikli, yüksek performanslı, özgün Laravel e-ticaret platformu.
+**NEWTIC**, her müşteri için ayrı ve güvenli biçimde kurulabilen, mobil
+öncelikli bir Laravel e-ticaret yazılımıdır. Kodun tek kalıcı kaynağı
+GitHub main dalıdır. Her müşteri kendi domainine, MySQL veritabanına,
+APP_KEY anahtarına, depolamasına ve yönetim bilgilerine sahip olur.
 
-- **Geliştirme adresi:** https://powderblue-dinosaur-538060.hostingersite.com/
-- **Mevcut canlı mağaza:** https://polariskursun.com/ (WordPress/WooCommerce; geliştirme süresince dokunulmaz)
-- **Referans deneyim:** Petlebi'nin mobildeki gezinme kolaylığı. Marka tasarımları, görseller, metinler ve varlıkları kopyalanmaz.
-- **Dil / para birimi:** Türkçe / TRY
+## Yeni mağaza kurma
 
-## Değiştirilemez ürün kuralları
+[Bağımsız mağaza kurulum rehberi](docs/INSTALL_NEW_STORE.md)
 
-1. Her gramaj/ürün kendi veritabanı kaydına, fiyatına, stokuna, SKU'suna ve detay URL'sine sahiptir. Bunlar tek varyasyonlu ürüne **birleştirilmez**.
-2. Ürün detayına girildiğinde, görüntülenen ürünün bağlı olduğu **ana kategorideki bütün aktif ürünler** aynı sayfada listelenir; yalnız gramaj alternatifleri değil.
-3. Açılan ürün, başlangıçta seçili/vurgulu görünür ve miktarı varsayılan olarak 1'dir. Diğer ürünlerin miktarları başlangıçta 0'dır.
-4. Her satırda bağımsız miktar kontrolü vardır. Kullanıcı farklı ürünleri birlikte seçerek tek işlemde sepete ekler.
-5. Sunucu fiyatı, stok durumunu, adet limitlerini ve yetkileri yeniden doğrular; tarayıcıdaki fiyatlar otorite değildir.
+Özet: Yeni bir domain/hosting ve ayrı veritabanı hazırlayın; main kodunu
+public_html dışına alın; mağazaya özel .env oluşturun; önce salt-okunur
+kontrolü, ardından kurulumu çalıştırın:
 
-## Ana sayfa içerik yönetimi
+    bash scripts/install-production.sh --check
+    bash scripts/install-production.sh --install
+    php artisan newtic:admin
 
-- **Ana slider:** Sadece görseller. Overlay başlık, açıklama ve düğme **yoktur**. Ayrı mobil ve masaüstü görseli, isteğe bağlı bütün banner bağlantısı, sıralama, yayın durumu ve otomatik kaydırma.
-- **Kategoriler:** Yönetici hangi kategorilerin görüneceğini ve sırasını seçer.
-- **Popüler ürünler:** Yönetici hangi bağımsız ürünlerin görüneceğini ve sırasını seçer.
-- **Diğer bloklar:** Kampanya görselleri, yeni ürünler ve kategori vitrinleri; görünürlük ve sıralama yönetilir.
-- Blok türleri yönetim panelinden eklenir, açılıp kapatılır ve yeniden sıralanır.
+Laravel public dizini webroot olmalıdır. Hostinger planlarında
+public_html zorunluysa boş bir webrootta
+scripts/prepare-hostinger-webroot.sh kullanılabilir. Mevcut sitelerin
+dosyaları hiçbir kurulum betiği tarafından otomatik silinmez.
 
-## Tasarım ve teknoloji
+## Marka bağımsızlığı
 
-- Mobile-first, özgün premium tasarım; okunabilir Türkçe tipografi ve tutarlı SVG ikonlar.
-- Laravel + Blade + Livewire + Alpine + Tailwind CSS (kurulum anında PHP ve paket uyumluluğu doğrulanır).
-- MySQL (Hostinger), geliştirme/test için izole veritabanı; görsel optimizasyonu ve önbellekleme.
-- İlk aşamada gerçek ödeme alınmaz ve gerçek müşteri verisi kullanılmaz.
+- Mağaza adı ve varsayılan marka: Admin > SEO Ayarları, ilk kurulumda APP_NAME.
+- Logo: Admin > Logolar. Logosuz mağazada genel alışveriş simgesi ve mağaza adı.
+- Ana sayfa, menü, kategoriler, ürünler, sosyal medya/WhatsApp, rozetler,
+  SEO ve Google Merchant katalog metinleri her kurulumun kendi verilerinden gelir.
+- Yeni bir mağazaya başka müşterinin WhatsApp numarası, ürünleri, logoları,
+  API anahtarları ve sosyal medya adresleri kendiliğinden yüklenmez.
+- Yeni kurulumda SEO noindex açıktır, canlıya çıkış kontrollerinden sonra
+  admin tarafından kapatılabilir.
 
-## İş akışı
+## Ürün iş kuralları
 
-1. [Codex talimatları](AGENTS.md)
-2. [Ürün gereksinimleri](docs/PRODUCT_REQUIREMENTS.md)
-3. [İlk geliştirme görevi](docs/CODEX_PHASE_01.md)
+Her gramaj/SKU ayrı ürün, ayrı URL, ayrı fiyat ve stok olarak kalır.
+Ürün detayında aynı ana kategorideki diğer ürünler bağımsız miktarlarla
+sepete eklenebilir. Opsiyonlar ve yorumlar ürün bazında yönetilir.
 
-Codex, ilgili dokümanları okuyup görev için ayrı bir `feat/` dalı oluşturarak uygulama geliştirir; test sonuçları ve kurulum yönergeleriyle pull request açar.
+## Güvenli ödeme ve kargo durumu
 
-**Güvenlik:** `.env`, şifreler, tokenlar, ödeme anahtarları ve müşteri verileri asla Git'e eklenmez.
+Bu aşamada **yeni domainlerde canlı PAYTR kart tahsilatı ve gerçek kargo
+gönderisi bilerek etkin değildir**. İlgili modüller eski Polaris test
+domaininde güvenli test moduna sınırlandırılmıştır. Yeni mağaza kurulumu,
+gerçek ödeme/kargo izni anlamına gelmez. Havale/EFT yalnızca aktif banka
+hesabı varsa görünür; ödeme bekleyen siparişlerin stok süresi kontrol edilir.
+
+**E-posta altyapısı ve grafik kurulum sihirbazı bu aşamaya dahil değildir.**
+Gerçek müşteri e-postaları için ayrıca geliştirme ve onay gereklidir.
+
+## Tarihçe / önceki uygulama
+
+İlk NEWTIC kurulumu Polaris Kurşun için hazırlanmış
+Hostinger test mağazasıdır. Bu test dağıtımının yolları ve
+özel güvenlik kapıları mevcut staging iş akışında korunur; yeni
+müşteriler bunun yerine [genel kurulum rehberini](docs/INSTALL_NEW_STORE.md)
+kullanmalıdır. Legacy ürün-demo seeder'ı üretim kurulumu için değildir.
+
+[GitHub ve sürüm stratejisi](docs/BRANCH_AND_GO_LIVE.md)

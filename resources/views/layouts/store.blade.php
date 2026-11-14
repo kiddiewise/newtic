@@ -110,8 +110,8 @@
   @include('store.partials.announcement-ticker')
   <div class="mobile-topbar">
     <details class="mobile-menu" data-mega-menu>
-      <summary aria-label="Kategoriler menüsünü aç" aria-controls="polaris-mega-menu" data-mega-toggle><x-store-icon name="menu" /></summary>
-      <div class="mobile-menu-panel mega-menu-shell" id="polaris-mega-menu" role="dialog" aria-label="{{ $storeName }} mağaza menüsü" aria-modal="true" data-mega-panel>
+      <summary aria-label="Kategoriler menüsünü aç" aria-controls="store-mega-menu" data-mega-toggle><x-store-icon name="menu" /></summary>
+      <div class="mobile-menu-panel mega-menu-shell" id="store-mega-menu" role="dialog" aria-label="{{ $storeName }} mağaza menüsü" aria-modal="true" data-mega-panel>
         <div class="mega-menu-top">
           <button type="button" class="mega-menu-close" data-mega-close aria-label="Menüyü kapat">
             <x-store-icon name="x" />

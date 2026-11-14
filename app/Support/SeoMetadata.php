@@ -84,7 +84,7 @@ final class SeoMetadata
             $org = [
                 '@type' => 'Organization',
                 '@id' => $canonical.'#organization',
-                'name' => $title,
+                'name' => StoreIdentity::name($setting),
                 'url' => $canonical,
             ];
             if ($image) $org['logo'] = $image;
@@ -95,7 +95,7 @@ final class SeoMetadata
                     [
                         '@type' => 'WebSite',
                         '@id' => $canonical.'#website',
-                        'name' => $title,
+                        'name' => StoreIdentity::name($setting),
                         'url' => $canonical,
                         'inLanguage' => 'tr-TR',
                     ],
