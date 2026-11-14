@@ -27,6 +27,7 @@
     ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
     ['label' => 'WooCommerce Aktarım', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
     ['label' => 'Google Merchant Center', 'name' => 'admin.google-merchant.edit', 'active' => 'admin.google-merchant.*', 'icon' => 'globe'],
+    ['label' => 'Google Giriş ve Üyelik', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
     ['label' => 'SEO Ayarları', 'name' => 'admin.seo.edit', 'active' => 'admin.seo.*', 'icon' => 'search'],
     ['label' => '301 Yönlendirmeler', 'name' => 'admin.redirects.index', 'active' => 'admin.redirects.*', 'icon' => 'arrow-right'],
     ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],

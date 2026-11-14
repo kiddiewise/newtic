@@ -10,12 +10,15 @@ use App\Http\Controllers\ShippingCallbackController;
 use App\Http\Controllers\PaytrCheckoutController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\GoogleMerchantFeedController;
+use App\Http\Controllers\GoogleCustomerAuthController;
 use App\Http\Controllers\SeoSitemapController;
 use App\Http\Controllers\UrlRedirectController as PublicUrlRedirectController;
 use App\Http\Middleware\ResolveCatalogRedirect;
 use App\Http\Controllers\Admin\UrlRedirectController as AdminUrlRedirectController;
 use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
+use App\Http\Controllers\Admin\GoogleCustomerLoginController;
+use App\Http\Controllers\Admin\AuthVisualController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
@@ -55,6 +58,8 @@ Route::get('/giris', [AccountController::class, 'loginPage'])->name('account.log
 Route::post('/giris', [AccountController::class, 'login'])->middleware('throttle:6,1')->name('account.login.submit');
 Route::get('/uye-ol', [AccountController::class, 'registerPage'])->name('account.register');
 Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('throttle:5,1')->name('account.register.submit');
+Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
+Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
 
 // Separate, sessionless endpoint. Explicit server-side gate remains OFF by default.
@@ -118,6 +123,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::get('/google-giris', [GoogleCustomerLoginController::class, 'edit'])->name('google-login.edit');
+    Route::patch('/google-giris', [GoogleCustomerLoginController::class, 'update'])->middleware('throttle:8,1')->name('google-login.update');
+    Route::patch('/google-giris/gorseller', [AuthVisualController::class, 'update'])->middleware('throttle:6,1')->name('google-login.images');
     Route::get('/301-yonlendirmeler', [AdminUrlRedirectController::class, 'index'])->name('redirects.index');
     Route::post('/301-yonlendirmeler', [AdminUrlRedirectController::class, 'store'])->middleware('throttle:20,1')->name('redirects.store');
     Route::post('/301-yonlendirmeler/import', [AdminUrlRedirectController::class, 'import'])->middleware('throttle:5,1')->name('redirects.import');

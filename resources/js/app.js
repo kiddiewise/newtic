@@ -88,3 +88,5 @@ import './infinite-catalog.js';
 import './catalog-import.js';
 
 import './google-merchant-admin.js';
+
+import './auth-experience.js';

@@ -19,7 +19,7 @@ class MobileAuthExperienceTest extends TestCase
                 ->assertSee('Üyelik ekranından çık')
                 ->assertSee('Giriş Yap')
                 ->assertSee('Üye Ol')
-                ->assertSee('POLARIS')
+                ->assertSee(\App\Support\StoreIdentity::name())
                 ->getContent();
 
             $this->assertSame(1, substr_count($html, 'class="mobile-auth-header"'));
@@ -32,26 +32,33 @@ class MobileAuthExperienceTest extends TestCase
             ->assertDontSee('class="is-auth"', false);
     }
 
-    public function test_social_providers_are_side_by_side_and_not_false_functional_logins(): void
+    public function test_only_google_social_login_is_visible_when_configured(): void
     {
         foreach (['account.login', 'account.register'] as $name) {
-            $html = $this->get(route($name))->assertOk()
-                ->assertSee('Google')
-                ->assertSee('Facebook')
-                ->assertSee('Yakında')
-                ->getContent();
-
-            $this->assertSame(2, substr_count($html, 'class="social-auth-button" type="button" disabled'));
-            $this->assertSame(2, substr_count($html, 'class="social-provider-name"'));
-            $this->assertStringNotContainsString('href="/oauth/', $html);
+            $html = $this->get(route($name))->assertOk()->getContent();
+            $this->assertStringNotContainsString('Facebook ile giriş', $html);
+            $this->assertStringNotContainsString('Google ile devam et', $html);
+            $this->assertStringContainsString('auth-experience', $html);
         }
 
-        $css = file_get_contents(resource_path('css/mobile-auth.css'));
-        $this->assertStringContainsString('grid-template-columns:repeat(2,minmax(0,1fr))', $css);
+        \App\Models\GoogleLoginSetting::current()->update([
+            'client_id' => '123456-google.apps.googleusercontent.com',
+            'client_secret' => 'oauth-secret-value',
+            'enabled' => true,
+        ]);
+        foreach (['account.login', 'account.register'] as $name) {
+            $html = $this->get(route($name))->assertOk()
+                ->assertSee('Google ile devam et')
+                ->assertDontSee('Facebook ile giriş')
+                ->getContent();
+            $this->assertSame(1, substr_count($html, 'class="auth-google-button"'));
+        }
+
+        $css = file_get_contents(resource_path('css/auth-experience.css'));
+        $this->assertStringContainsString('grid-template-columns:', $css);
+        $this->assertStringContainsString('prefers-reduced-motion:reduce', $css);
         $this->assertStringContainsString('body.is-auth .mobile-bottom-nav', $css);
         $this->assertStringContainsString('body.is-auth .site-footer', $css);
-        $this->assertStringContainsString('body.is-auth .mobile-site-header', $css);
-        $this->assertStringContainsString('body.is-auth .desktop-site-header', $css);
     }
 
     public function test_switching_mobile_auth_tabs_keeps_favorite_intent(): void

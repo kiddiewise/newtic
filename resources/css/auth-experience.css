@@ -1,0 +1,123 @@
+/* Auth is an intentionally focused premium experience, separate from the store shell. */
+body.is-auth{background:radial-gradient(circle at 5% 15%,#eaf6f1 0,transparent 34%),radial-gradient(circle at 95% 80%,#eaeff7 0,transparent 33%),#f6f8f7;color:#142d35;min-height:100vh}
+body.is-auth .site-header,body.is-auth .desktop-site-header,body.is-auth .mobile-site-header,body.is-auth .site-footer,body.is-auth .mobile-bottom-nav,body.is-auth .mobile-search-row{display:none!important}
+body.is-auth .account-auth-shell{max-width:1240px;width:100%;padding:42px 30px 65px;margin:0 auto}
+body.is-auth .account-auth-shell .auth-experience{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);max-width:1090px;margin:0 auto;min-height:660px;background:#fff;border:1px solid rgba(219,232,227,.9);border-radius:29px;overflow:hidden;box-shadow:0 34px 90px rgba(13,44,46,.12),0 6px 20px rgba(11,44,47,.04)}
+.auth-experience .auth-artwork{position:relative;isolation:isolate;min-width:0;min-height:660px;overflow:hidden;background:#cfeae0}
+.auth-artwork-slides,.auth-artwork-fallback,.auth-artwork-slide,.auth-artwork-shade{position:absolute;inset:0}
+.auth-artwork-slide{opacity:0;transition:opacity 1.25s ease, transform 9s ease;transform:scale(1.075)}
+.auth-artwork-slide.is-active{opacity:1;transform:scale(1)}
+.auth-artwork-slide img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;max-width:none}
+.auth-artwork-fallback{background:linear-gradient(146deg,#bee5d3 5%,#8dcabd 42%,#9ac9df 86%);overflow:hidden}
+.auth-orb{position:absolute;border-radius:50%;filter:blur(1px);box-shadow:inset -28px -30px 54px rgba(21,77,72,.07),0 35px 75px rgba(22,81,87,.12);animation:auth-drift 13s ease-in-out infinite alternate}
+.auth-orb-one{width:88%;aspect-ratio:1;top:12%;left:-30%;background:linear-gradient(145deg,#e8f8ee,#a8d9c0)}
+.auth-orb-two{width:72%;aspect-ratio:1;bottom:-21%;right:-22%;background:linear-gradient(140deg,#c2e5e8,#6bb4bf);animation-delay:-4s}
+.auth-orb-three{width:37%;aspect-ratio:1;right:-11%;top:6%;background:linear-gradient(140deg,#f0fbe8,#b6dbc1);animation-delay:-7s}
+.auth-orbit{position:absolute;border:1px solid rgba(255,255,255,.4);width:87%;aspect-ratio:1;border-radius:50%;left:13%;top:21%;transform:rotate(-27deg)}
+.auth-orbit-two{width:56%;left:-12%;top:3%;border-width:2px}
+.auth-floating-star{position:absolute;right:20%;top:36%;font-size:66px;color:#fff4bd;text-shadow:0 10px 26px #64806e70;animation:auth-drift 8s ease-in-out infinite alternate}
+@keyframes auth-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(15px,-18px,0)}}
+.auth-artwork-shade{z-index:1;background:linear-gradient(0deg,rgba(7,40,46,.66),rgba(8,43,43,.04) 58%,rgba(2,33,38,.12))}
+.auth-artwork-brand,.auth-artwork-copy{position:absolute;z-index:2;left:42px;color:white}
+.auth-artwork-brand{top:36px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 80px);font-size:16px;font-weight:730;letter-spacing:-.025em;text-decoration:none;text-shadow:0 1px 10px #10393445}
+.auth-artwork-brand-icon{height:32px;width:32px;border:1px solid rgba(255,255,255,.55);border-radius:10px;display:grid;place-items:center;background:#ffffff27;backdrop-filter:blur(8px)}
+.auth-artwork-brand-icon svg{width:18px;height:18px}
+.auth-artwork-copy{bottom:42px;right:40px}
+.auth-artwork-kicker{display:block;font-size:10px;font-weight:720;letter-spacing:.2em;margin-bottom:14px;opacity:.88}
+.auth-artwork-copy h2{font-family:"Plus Jakarta Sans",Montserrat,sans-serif;font-size:clamp(32px,4vw,55px);line-height:1.12;font-weight:700;letter-spacing:-.065em;color:#fff;margin:0 0 17px}
+.auth-artwork-copy p{color:#fff;font-size:13px;line-height:1.75;max-width:340px;opacity:.94;margin:0}
+.auth-slide-dots{display:flex;gap:8px;margin-top:23px}
+.auth-slide-dots button{border:0;width:8px;height:8px;display:block;border-radius:999px;background:#ffffff80;transition:width .35s,background .35s;padding:0;cursor:pointer}
+.auth-slide-dots button[aria-current=true]{background:white;width:29px}
+.auth-experience .auth-form-column{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:40px clamp(28px,5vw,68px)}
+body.is-auth .auth-experience .mobile-auth-header,body.is-auth .auth-experience .mobile-auth-tabs{display:none}
+body.is-auth .auth-experience .checkout-card.auth-card{box-shadow:none!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;margin:0!important;min-width:0}
+.auth-form-heading{margin-bottom:27px}
+.auth-form-heading .auth-eyebrow{display:block;font-size:10px;font-weight:760;letter-spacing:.15em;color:#468875;margin-bottom:15px}
+.auth-form-heading h1{font-family:"Plus Jakarta Sans",Montserrat,sans-serif;font-size:clamp(29px,3.1vw,38px);line-height:1.15;letter-spacing:-.055em;font-weight:730;color:#182f35;margin:0 0 12px}
+.auth-form-heading h1 span{color:#51a87d}
+.auth-form-heading p{font-size:13px;line-height:1.7;color:#73858a;margin:0!important;max-width:390px}
+.auth-google-section{margin:22px 0 25px}
+.auth-google-button{display:flex;align-items:center;justify-content:center;gap:13px;min-height:53px;width:100%;border:1px solid #dce7e5;border-radius:13px;padding:13px 17px;color:#2a4145;background:#fff;box-shadow:0 6px 15px rgba(34,70,64,.035);font-size:13px;font-weight:700;text-decoration:none;transition:box-shadow .2s,border-color .2s,transform .2s}
+.auth-google-button:hover{transform:translateY(-1px);border-color:#91bfb3;box-shadow:0 8px 20px #0c3e3820}
+.auth-google-button .auth-google-next{margin-left:auto;color:#85999a}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:25px 0 0;color:#849498;font-size:11px;white-space:nowrap}
+.auth-divider:before,.auth-divider:after{content:"";height:1px;flex:1;background:#e6eeed}
+.auth-fields{display:grid;gap:15px}
+.auth-fields .checkout-field{display:grid;gap:7px}
+.auth-fields .checkout-field span{font-size:11.5px;font-weight:700;color:#365057}
+.auth-fields .checkout-field input{background:#f7f9f8!important;border:1px solid #e6eceb!important;box-shadow:none!important;color:#203c42;min-height:51px;padding:12px 15px;border-radius:12px!important;font-size:13px}
+.auth-fields .checkout-field input:focus{border-color:#a4cdbf!important;background:#fff!important;outline:2px solid #b1d9c56a!important;outline-offset:0}
+.auth-fields .checkout-field input::placeholder{color:#9cadad}
+.auth-fields .auth-submit{min-height:52px;border-radius:12px!important;background:#153b37!important;color:#fff!important;border:0!important;box-shadow:0 11px 25px #153b3725;margin-top:8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:13px}
+.auth-fields .auth-submit:hover{background:#20574f!important}
+.auth-fields .auth-submit span{font-size:18px;font-weight:400}
+.auth-switch{text-align:center!important;color:#7b8b8e!important;margin:21px 0 9px!important;font-size:12px!important}
+.auth-switch a{font-weight:750;color:#276f62!important;text-decoration:none}
+.auth-help{display:flex;align-items:center;justify-content:center;gap:9px;color:#96a7a8;font-size:10px;margin-top:24px;padding-top:20px;border-top:1px solid #edf2f1}
+.auth-error{margin:0 0 17px!important;font-size:12px;line-height:1.55}
+.auth-artwork a:focus-visible,.auth-google-button:focus-visible,.auth-slide-dots button:focus-visible{outline:3px solid #8ce2af;outline-offset:3px}
+
+/* Admin settings: practical, readable controls rather than marketing decoration. */
+.google-login-admin-block{margin-bottom:17px}
+.google-login-admin-block .admin-panel-title{margin-bottom:12px}
+.google-login-admin-form{display:grid;max-width:740px;gap:16px}
+.google-login-admin-form>label{display:grid;gap:7px}
+.google-login-admin-form input[type=text],.google-login-admin-form input[type=password],.google-login-admin-form input[type=file]{width:100%;max-width:740px}
+.google-login-admin-form small,.google-login-image-spec small{color:#6a8085;font-size:11px;line-height:1.65}
+.google-login-admin-form button{justify-self:start}
+.google-login-admin-status{display:flex;align-items:center;gap:9px;margin:11px 0 15px;font-size:13px;color:#496c72}
+.google-login-admin-led{width:10px;height:10px;border-radius:50%;background:#d4a75d}
+.google-login-admin-led.is-ready{background:#249d72}
+.google-login-uri,.google-login-image-spec{background:#f6faf9;border:1px solid #dbe9e7;border-radius:12px;padding:13px 16px;margin:12px 0 20px;display:grid;gap:9px}
+.google-login-uri span,.google-login-image-spec span{font-size:12px;color:#526c70}
+.google-login-uri code{font-size:12px;color:#1d6e63;overflow-wrap:anywhere}
+.google-login-admin-toggle{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:11px!important;padding:13px 0}
+.google-login-admin-toggle input[type=checkbox]{margin:4px 0 0;accent-color:#277f6b;width:19px;height:19px}
+.google-login-admin-toggle span{display:grid;gap:5px}
+.google-login-admin-toggle strong{font-size:13px;color:#264b50}
+.google-login-image-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;max-width:760px}
+.google-login-thumb{display:grid;gap:8px!important;padding:9px;background:#f5f9f8;border-radius:11px;border:1px solid #dce9e5}
+.google-login-thumb img{width:100%;height:155px;object-fit:cover;aspect-ratio:4/5;border-radius:7px}
+.google-login-thumb span{display:flex;align-items:center;gap:6px;font-size:11px}
+.google-login-admin-links{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 0}
+@media(max-width:800px){
+  body.is-auth .account-auth-shell{padding:16px 14px 45px!important;max-width:570px!important}
+  body.is-auth .account-auth-shell .auth-experience{display:flex;flex-direction:column;min-height:0;border-radius:24px;box-shadow:0 18px 48px rgba(12,49,49,.12),0 4px 14px rgba(12,49,49,.04)}
+  .auth-experience .auth-artwork{min-height:0;height:268px;flex:none;border-radius:23px 23px 0 0}
+  .auth-artwork-brand{top:17px;left:20px;font-size:12.5px}
+  .auth-artwork-brand-icon{width:28px;height:28px}
+  .auth-artwork-copy{left:23px;right:20px;bottom:21px}
+  .auth-artwork-kicker{font-size:9px;letter-spacing:.13em;margin-bottom:7px}
+  .auth-artwork-copy h2{font-size:30px;line-height:1.07;margin-bottom:8px}
+  .auth-artwork-copy p{font-size:10.5px;line-height:1.5;max-width:300px}
+  .auth-slide-dots{margin-top:13px}
+  .auth-experience .auth-form-column{padding:17px 24px 29px!important}
+  body.is-auth .auth-experience .mobile-auth-header{display:grid!important;grid-template-columns:minmax(0,1fr) 40px!important;background:transparent!important;border:0!important;height:40px!important;margin:0 0 9px!important;padding:0!important}
+  body.is-auth .auth-experience .mobile-auth-header .mobile-auth-brand{display:none!important}
+  body.is-auth .auth-experience .mobile-auth-header .mobile-auth-close{grid-column:2;width:38px;height:38px;border:1px solid #e1ece8;border-radius:50%;background:#fff}
+  body.is-auth .auth-experience .mobile-auth-tabs{display:grid!important;margin:0 0 23px!important;grid-template-columns:1fr 1fr!important;border-radius:11px;background:#f3f7f6;padding:4px;gap:4px}
+  body.is-auth .auth-experience .mobile-auth-tabs a{min-height:39px;border-radius:8px!important;border:0!important;box-shadow:none!important;background:transparent!important;color:#748d8c;font-size:12px;font-weight:670}
+  body.is-auth .auth-experience .mobile-auth-tabs a.is-active{background:#fff!important;box-shadow:0 2px 8px rgba(20,55,50,.075)!important;color:#25574a}
+  .auth-form-heading{margin-bottom:17px}
+  .auth-form-heading .auth-eyebrow{margin-bottom:10px;font-size:9px}
+  .auth-form-heading h1{font-size:26px;margin-bottom:7px}
+  .auth-form-heading p{font-size:11.5px}
+  .auth-google-section{margin:18px 0 20px}
+  .auth-google-button{min-height:49px;font-size:12px}
+  .auth-divider{margin:18px 0 0;font-size:10px}
+  .auth-fields{gap:11px}
+  .auth-fields .checkout-field input{min-height:47px}
+  .auth-help{margin-top:18px;padding-top:15px}
+}
+@media(max-width:380px){
+  body.is-auth .account-auth-shell{padding:8px 10px 32px!important}
+  .auth-experience .auth-artwork{height:223px}
+  .auth-experience .auth-form-column{padding:12px 17px 23px!important}
+  .auth-artwork-copy h2{font-size:26px}
+}
+@media(prefers-reduced-motion:reduce){
+  .auth-orb,.auth-floating-star{animation:none!important}
+  .auth-artwork-slide{transition:none;transform:none}
+  .auth-google-button{transition:none}
+}

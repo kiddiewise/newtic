@@ -64,7 +64,7 @@ class AccountController extends Controller
      * Keep the customer's requested destination after sign-in or sign-up.
      * Favoriting while logged out adds the requested product only after auth.
      */
-    private function afterAuthentication(Request $request, array $data): RedirectResponse
+    public function afterAuthentication(Request $request, array $data): RedirectResponse
     {
         $next = $data['next'] ?? '';
 
