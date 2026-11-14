@@ -48,8 +48,9 @@ Yeni kurulumda APP_KEY boş bırakılır. Kurulum yalnızca boşsa benzersiz ana
 oluşturur. Mevcut mağazanın anahtarını ASLA değiştirmeyin.
 APP_DEBUG=false ve HTTPS zorunludur.
 
-E-posta sistemi henüz hazırlanmadı. MAIL_MAILER=log gerçek posta göndermez.
-Sipariş bildirimleri ve parola sıfırlama için ayrıca e-posta altyapısı gerekir.
+E-posta merkezi kendi şifrelenmiş SMTP ayarlarını kullanır. MAIL_MAILER=log
+varsayılanı diğer Laravel e-postalarını kapalı tutar. Yönetici SMTP testini
+geçip açıkça etkinleştirmeden otomatik müşteri e-postası gönderilmez.
 
 ## 3. Ön kontrol ve kurulum
 
@@ -104,7 +105,17 @@ Yeni mağaza varsayılan olarak noindex kullanır; gerçek içerik ve SEO
 kontrol edilmeden kapatmayın. Hostinger geçici domainleri zorunlu noindex.
 Polaris ürünleri, WhatsApp numarası ve sosyal linkleri yeni kuruluma gelmez.
 
-## 6. Zamanlanmış görevler
+## 6. E-posta ve müşteri bildirimleri
+
+Admin > E-posta ve Bildirimler üzerinden bu mağazaya ait SMTP gönderici
+bilgilerini tanımlayın, test e-postasını doğrulayın ve yalnız gerekli
+bildirimleri açın. Ayarlar varsayılan olarak kapalıdır; şifreli SMTP parolası
+asla depolar arasında kopyalanmaz. Google giriş ve Merchant bağlantılarından
+bağımsızdır. Test ortamında bütün e-postalar yalnızca tanımlı test alıcısına
+yönlenir. SPF/DKIM/DMARC ayarlarını her müşteri domaininde doğrulayın.
+Tam işlem ve hukuki değerlendirme listesi: docs/EMAIL_NOTIFICATIONS.md.
+
+## 7. Zamanlanmış görevler
 
 Her yeni müşterinin kendi Hostinger Cron Jobs ayarında HER DAKİKA çalıştırın
 (PHP yolunu ve dizini bu hesaba göre değiştirin):
@@ -114,12 +125,13 @@ Her yeni müşterinin kendi Hostinger Cron Jobs ayarında HER DAKİKA çalışt�
 GitHub bakım iş akışı sadece eski Polaris staging'e bağlıdır, diğer
 müşterilerin cron görevi değildir.
 
-## 7. Yayına geçiş kontrolleri
+## 8. Yayına geçiş kontrolleri
 
 - HTTPS, admin login, yetki, gizli .env koruması, storage izinleri.
 - Marka adı/logo, SEO, Merchant, tüm vitrin ve mobil menüler.
 - Ürünler/gramajlar, sepet, sipariş, stok, IBAN, Excel, 301 yönlendirmeler.
-- Mail altyapısı henüz yok; gerçek müşteri bildirimleri test edilmeden satış açılmaz.
+- E-posta altyapısı mevcuttur ama varsayılan kapalıdır; SMTP testi, DNS
+  ve gerçek müşteri ileti onayları kontrol edilmeden otomatik gönderimleri açmayın.
 - PAYTR gerçek kart tahsilatı ve gerçek kargo gönderileri yeni domainlerde
   bilerek kapalıdır; canlı entegrasyon testleri ayrıca gerekli.
 - Search Console, Merchant Center, robots/sitemap/canonical yeni domainde
