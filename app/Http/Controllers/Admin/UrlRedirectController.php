@@ -43,12 +43,12 @@ final class UrlRedirectController extends Controller
                     throw new \InvalidArgumentException('Bu eski URL zaten kayıtlı; mevcut yönlendirmeyi düzenleyin.');
                 }
                 $pairs = UrlRedirect::query()->where('is_active', true)->pluck('new_path', 'old_path')->all();
-                if ($request->boolean('is_active', true)) {
+                if ($request->boolean('is_active')) {
                     $pairs[$old] = $new;
                     UrlRedirect::assertAcyclic($pairs);
                 }
                 UrlRedirect::create([
-                    'old_path' => $old, 'new_path' => $new, 'is_active' => $request->boolean('is_active', true),
+                    'old_path' => $old, 'new_path' => $new, 'is_active' => $request->boolean('is_active'),
                 ]);
             }, 3);
         } catch (\InvalidArgumentException $e) {
