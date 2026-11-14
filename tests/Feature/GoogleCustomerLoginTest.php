@@ -18,6 +18,8 @@ final class GoogleCustomerLoginTest extends TestCase
 
     private const CLIENT_ID = '1234567-customer.apps.googleusercontent.com';
 
+    private string $googleNonce = '';
+
     private function admin(): User
     {
         $admin = User::factory()->create();
@@ -38,14 +40,15 @@ final class GoogleCustomerLoginTest extends TestCase
 
     private function fakeGoogle(string $nonce, array $overrides = []): void
     {
+        $this->googleNonce = $nonce;
         Http::fake([
             'https://oauth2.googleapis.com/token' => Http::response(['id_token' => 'signed-google-token'], 200),
-            'https://oauth2.googleapis.com/tokeninfo*' => function () use ($overrides, $nonce) {
+            'https://oauth2.googleapis.com/tokeninfo*' => function () use ($overrides) {
                 return Http::response(array_merge([
                     'aud' => self::CLIENT_ID,
                     'iss' => 'https://accounts.google.com',
                     'exp' => (string) now()->addMinutes(45)->timestamp,
-                    'nonce' => $nonce,
+                    'nonce' => $this->googleNonce,
                     'email_verified' => 'true',
                     'sub' => '11223344556677889900',
                     'email' => 'customer@example.com',
@@ -191,7 +194,8 @@ final class GoogleCustomerLoginTest extends TestCase
     public function test_admin_can_upload_remove_and_preview_premium_auth_images(): void
     {
         Storage::fake('public');
-        $this->actingAs($this->admin());
+        $admin = $this->admin();
+        $this->actingAs($admin);
         $this->patch(route('admin.google-login.images'), [
             'images' => [
                 UploadedFile::fake()->image('portrait-one.jpg', 1600, 2000),
@@ -202,10 +206,11 @@ final class GoogleCustomerLoginTest extends TestCase
         $images = $appearance->auth_image_paths;
         $this->assertCount(2, $images);
         foreach ($images as $path) Storage::disk('public')->assertExists(substr($path, 8));
+        IlluminateSupportFacadesAuth::logout();
         $html = $this->get(route('account.login'))->assertOk()->getContent();
         $this->assertSame(2, substr_count($html, 'data-auth-slide aria-hidden='));
         $this->assertStringContainsString('data-auth-slideshow', $html);
-        $this->get(route('admin.google-login.edit'))->assertOk()->assertSee('1600 × 2000');
+        $this->actingAs($admin)->get(route('admin.google-login.edit'))->assertOk()->assertSee('1600 × 2000');
 
         $this->patch(route('admin.google-login.images'), ['remove' => [0]])
             ->assertSessionHasNoErrors();
