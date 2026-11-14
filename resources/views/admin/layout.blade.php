@@ -130,7 +130,7 @@
       @endif
       @yield('content')
     </main>
-    <footer class="admin-footer">NEWTIC · Polaris Kurşun · Yönetim Paneli</footer>
+    <footer class="admin-footer">NEWTIC · {{ \App\Support\StoreIdentity::name() }} · Yönetim Paneli</footer>
   </div>
 </div>
 @else

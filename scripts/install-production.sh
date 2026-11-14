@@ -50,8 +50,8 @@ SITE_URL="$(env_value APP_URL)"
   fail "Use an owned domain, not a Hostinger preview domain for a production install."
 [[ "$(env_value DB_CONNECTION)" == "mysql" ]] ||
   fail "Set DB_CONNECTION=mysql for an isolated customer MySQL database."
-[[ -n "$(env_value DB_DATABASE)" && -n "$(env_value DB_USERNAME)" ]] ||
-  fail "Missing DB_DATABASE or DB_USERNAME."
+[[ -n "$(env_value DB_DATABASE)" && -n "$(env_value DB_USERNAME)" && -n "$(env_value DB_PASSWORD)" ]] ||
+  fail "Missing isolated MySQL database name, username or password."
 [[ -n "$(env_value APP_NAME)" ]] || fail "Set this merchant's APP_NAME."
 [[ "$(env_value DB_DATABASE)" != "u880685189_newtic" ]] ||
   fail "The original development database is forbidden for new merchants."
