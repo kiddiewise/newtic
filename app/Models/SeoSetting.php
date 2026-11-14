@@ -33,9 +33,7 @@ final class SeoSetting extends Model
     ];
 
     protected $attributes = [
-        'site_name' => 'Polaris Kurşun',
-        'title_suffix' => 'Polaris Kurşun',
-        'noindex' => false,
+        'noindex' => true,
         'nofollow' => false,
     ];
 

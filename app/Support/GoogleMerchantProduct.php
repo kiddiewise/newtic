@@ -42,7 +42,7 @@ final class GoogleMerchantProduct
         $current = (float) $product->price;
         $regular = (float) $product->compare_at_price;
         $isSale = $regular > $current && $current > 0;
-        $brand = trim((string) ($product->google_brand ?: 'Polaris Kurşun'));
+        $brand = StoreIdentity::productBrand($product);
 
         $attrs = [
             'title' => Str::limit($product->name, 150, ''),

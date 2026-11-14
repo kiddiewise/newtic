@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Support\GoogleMerchantProduct;
 use App\Support\CategoryHierarchy;
 use App\Support\SeoMetadata;
+use App\Support\StoreIdentity;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,7 +22,7 @@ final class GoogleMerchantFeedController extends Controller
         return response()->stream(function (): void {
             echo '<?xml version="1.0" encoding="UTF-8"?>'."\n";
             echo '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel>';
-            $this->tag('title', 'Polaris Kurşun Ürün Kataloğu');
+            $this->tag('title', StoreIdentity::name().' Ürün Kataloğu');
             $this->tag('link', url('/'));
             $this->tag('description', 'NEWTIC ürün kataloğu - Türkiye');
 

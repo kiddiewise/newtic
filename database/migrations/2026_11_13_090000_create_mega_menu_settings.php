@@ -17,20 +17,21 @@ return new class extends Migration {
             $table->string('x_url')->nullable();
             $table->string('whatsapp_number', 25)->nullable();
             $table->string('whatsapp_message', 500)->nullable();
-            $table->string('footer_text', 120)->default('POLARIS KURŞUN • TÜRKİYE');
+            $table->string('footer_text', 120)->default('');
             $table->timestamps();
         });
 
-        // Carry over the links already displayed by the existing storefront.
+        // A fresh store must never inherit another merchant's contact information.
+        // Existing Polaris installations keep their stored row unchanged.
         DB::table('mega_menu_settings')->insert([
             'id' => 1,
-            'instagram_url' => 'https://instagram.com/polariskursun',
-            'youtube_url' => 'https://youtube.com/@polariskursun',
-            'facebook_url' => 'https://facebook.com/polariskursun',
+            'instagram_url' => null,
+            'youtube_url' => null,
+            'facebook_url' => null,
             'x_url' => null,
-            'whatsapp_number' => '905462629002',
+            'whatsapp_number' => null,
             'whatsapp_message' => null,
-            'footer_text' => 'POLARIS KURŞUN • TÜRKİYE',
+            'footer_text' => '',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
