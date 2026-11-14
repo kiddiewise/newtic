@@ -6,6 +6,15 @@
   <div class="checkout-card"><h1>Merhaba, {{ $user->name }}</h1><p>{{ $user->email }}</p>
     <form method="POST" action="{{ route('account.logout') }}">@csrf<button type="submit" class="checkout-outline-action">Güvenli çıkış yap</button></form>
   </div>
+  @if(!$user->email_verified_at)
+  <div class="checkout-card">
+    <h2>E-posta adresini doğrula</h2>
+    <p class="checkout-muted">Sipariş ve güvenlik bildirimlerini alabilmen için e-posta adresini doğrulayabilirsin.</p>
+    <form method="POST" action="{{ route('account.email.resend') }}">@csrf
+      <button type="submit" class="checkout-outline-action">Doğrulama bağlantısı gönder</button>
+    </form>
+  </div>
+  @endif
   <div class="checkout-card">
     <div class="checkout-card-heading"><h2>Adres defterim</h2><a href="{{ route('account.addresses.create') }}">+ Adres ekle</a></div>
     @forelse($addresses as $address)
