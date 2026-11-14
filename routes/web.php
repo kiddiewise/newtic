@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
 use App\Http\Controllers\Admin\GoogleCustomerLoginController;
 use App\Http\Controllers\Admin\AuthVisualController;
+use App\Http\Controllers\Admin\EmailCenterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
@@ -51,6 +52,7 @@ Route::delete('/sepet/urun/{product}', [CartController::class, 'remove'])->name(
 Route::post('/sepet/temizle', [CartController::class, 'clear'])->name('cart.clear');
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountEmailController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\CheckoutController;
 
@@ -58,6 +60,15 @@ Route::get('/giris', [AccountController::class, 'loginPage'])->name('account.log
 Route::post('/giris', [AccountController::class, 'login'])->middleware('throttle:6,1')->name('account.login.submit');
 Route::get('/uye-ol', [AccountController::class, 'registerPage'])->name('account.register');
 Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('throttle:5,1')->name('account.register.submit');
+Route::get('/sifremi-unuttum', [AccountEmailController::class, 'forgot'])->name('account.password.forgot');
+Route::post('/sifremi-unuttum', [AccountEmailController::class, 'sendReset'])->middleware('throttle:3,1')->name('account.password.send');
+Route::get('/sifre-yenile/{token}', [AccountEmailController::class, 'resetForm'])->name('account.password.reset');
+Route::post('/sifre-yenile', [AccountEmailController::class, 'reset'])->middleware('throttle:5,1')->name('account.password.update');
+Route::get('/eposta/dogrula/{id}/{hash}', [AccountEmailController::class, 'verify'])
+    ->middleware('throttle:8,1')->name('account.email.verify');
+Route::post('/eposta/dogrulama-yeniden', [AccountEmailController::class, 'resend'])
+    ->middleware(['auth','throttle:3,1'])->name('account.email.resend');
+
 Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
 Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
@@ -123,6 +134,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::get('/eposta-bildirimler', [EmailCenterController::class, 'index'])->name('email-center.index');
+    Route::patch('/eposta-bildirimler', [EmailCenterController::class, 'save'])->middleware('throttle:8,1')->name('email-center.save');
+    Route::post('/eposta-bildirimler/test', [EmailCenterController::class, 'test'])->middleware('throttle:3,1')->name('email-center.test');
+    Route::post('/eposta-bildirimler/process', [EmailCenterController::class, 'process'])->middleware('throttle:4,1')->name('email-center.process');
+    Route::post('/eposta-bildirimler/{emailDelivery}/retry', [EmailCenterController::class, 'retry'])->middleware('throttle:5,1')->name('email-center.retry');
     Route::get('/google-giris', [GoogleCustomerLoginController::class, 'edit'])->name('google-login.edit');
     Route::patch('/google-giris', [GoogleCustomerLoginController::class, 'update'])->middleware('throttle:8,1')->name('google-login.update');
     Route::patch('/google-giris/gorseller', [AuthVisualController::class, 'update'])->middleware('throttle:6,1')->name('google-login.images');

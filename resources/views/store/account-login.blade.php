@@ -18,6 +18,7 @@
           <h1>Tekrar hoş geldin<span>.</span></h1>
           <p>{{ $authNext === 'cart' && $favoriteId ? 'Bu ürünü favorilerine eklemek için giriş yap.' : ($authNext === 'wishlist' ? 'Favorilerini görmek için giriş yap.' : ($authNext === 'review' ? 'Deneyimini paylaşmak için hesabına giriş yap.' : 'Siparişlerini, favorilerini ve adreslerini tek yerden yönet.')) }}</p>
         </div>
+        @if(session('success'))<div class="checkout-success" role="status">{{ session('success') }}</div>@endif
         @if($errors->any())<div class="checkout-error auth-error" role="alert">{{ $errors->first() }}</div>@endif
         @include('store.partials.social-auth')
         <form method="POST" action="{{ route('account.login.submit') }}" class="checkout-form auth-fields">
@@ -27,6 +28,7 @@
           @if($authNext === 'cart' && $favoriteId)<input type="hidden" name="favorite" value="{{ $favoriteId }}">@endif
           <label class="checkout-field"><span>E-posta adresi</span><input name="email" type="email" value="{{ old('email') }}" required maxlength="255" autocomplete="email" placeholder="ornek@eposta.com"></label>
           <label class="checkout-field"><span>Şifre</span><input name="password" type="password" required autocomplete="current-password" placeholder="Şifreni gir"></label>
+          <p style="text-align:right;margin:0"><a href="{{ route('account.password.forgot') }}">Şifremi unuttum</a></p>
           <button class="checkout-action auth-submit" type="submit">Giriş yap <span aria-hidden="true">→</span></button>
         </form>
         <p class="checkout-secondary auth-switch">Hesabın yok mu? <a href="{{ route('account.register', $authParams) }}">Hemen üye ol</a></p>

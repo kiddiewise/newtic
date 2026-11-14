@@ -220,6 +220,19 @@
     </section>
     @endif
     <section class="admin-panel">
+      <h2>Bildirim ve e-posta geçmişi</h2>
+      <p class="admin-description">Siparişe ilişkin müşteri ve yönetici e-postalarının gönderim durumu. SMTP sağlayıcısının teslimat garantisi değildir.</p>
+      @forelse($emailDeliveries as $delivery)
+        <div class="admin-detail-line">
+          <span>{{ \App\Models\EmailSetting::EVENTS[$delivery->event] ?? $delivery->event }} · {{ $delivery->created_at?->format('d.m.Y H:i') }}</span>
+          <strong>{{ ['sent'=>'Gönderildi','pending'=>'Sırada','processing'=>'İşleniyor','retry'=>'Tekrar denenecek','failed'=>'Başarısız','skipped'=>'Atlandı'][$delivery->status] ?? $delivery->status }}</strong>
+        </div>
+      @empty
+        <p class="admin-description">Bu sipariş için henüz bir e-posta kaydı bulunmuyor.</p>
+      @endforelse
+      <a class="admin-secondary" href="{{ route('admin.email-center.index') }}">E-posta bildirim merkezine git</a>
+    </section>
+    <section class="admin-panel">
       <h2>Operasyon bilgileri</h2>
       <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart (Test)' : 'Havale / EFT' }}</strong></div>
       <div class="admin-detail-line"><span>Ödeme durumu</span>
