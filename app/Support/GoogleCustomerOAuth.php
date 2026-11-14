@@ -4,6 +4,9 @@ namespace App\Support;
 
 use App\Models\GoogleLoginSetting;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -11,7 +14,8 @@ final class GoogleCustomerOAuth
 {
     private const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
     private const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-    private const VERIFY_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo';
+    private const JWKS_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/certs';
+    private const JWKS_CACHE = 'newtic.google.oauth.jwks';
 
     public function authorizationUrl(GoogleLoginSetting $settings, string $state, string $nonce, string $verifier): string
     {
@@ -51,12 +55,10 @@ final class GoogleCustomerOAuth
             throw new RuntimeException('Google kimlik doğrulaması tamamlanamadı. Yeniden deneyin.');
         }
 
-        $verification = Http::acceptJson()->timeout(12)->withOptions(['allow_redirects' => false])
-            ->get(self::VERIFY_ENDPOINT, ['id_token' => (string) $response->json('id_token')]);
-        if (!$verification->successful()) {
-            throw new RuntimeException('Google kimlik doğrulaması geçersiz. Yeniden deneyin.');
-        }
-        $claims = (array) $verification->json();
+        // Verify the JWT signature locally with Google's trusted public keys.
+        // Google's tokeninfo endpoint is for debugging and is not intended
+        // as a production authentication dependency.
+        $claims = $this->verifiedClaims((string) $response->json('id_token'));
         $verified = $claims['email_verified'] ?? false;
         $verified = $verified === true || $verified === 'true' || $verified === '1' || $verified === 1;
         $issuer = (string) ($claims['iss'] ?? '');
@@ -82,4 +84,38 @@ final class GoogleCustomerOAuth
             'name' => Str::limit($name !== '' ? $name : strstr($email, '@', true), 160, ''),
         ];
     }
+
+    /** @return array<string,mixed> */
+    private function verifiedClaims(string $token): array
+    {
+        try {
+            return (array) JWT::decode($token, JWK::parseKeySet($this->googleKeys(), 'RS256'));
+        } catch (\UnexpectedValueException $exception) {
+            // Google rotates signing keys. Refresh once on missing/old kid.
+            Cache::forget(self::JWKS_CACHE);
+            try {
+                return (array) JWT::decode($token, JWK::parseKeySet($this->googleKeys(), 'RS256'));
+            } catch (\Throwable $exception) {
+                throw new RuntimeException('Google oturum imzası doğrulanamadı. Yeniden deneyin.');
+            }
+        } catch (\Throwable $exception) {
+            throw new RuntimeException('Google oturum imzası doğrulanamadı. Yeniden deneyin.');
+        }
+    }
+
+    /** @return array{keys:array} */
+    private function googleKeys(): array
+    {
+        return Cache::remember(self::JWKS_CACHE, now()->addMinutes(30), function (): array {
+            $response = Http::acceptJson()->timeout(8)->withOptions(['allow_redirects' => false])
+                ->get(self::JWKS_ENDPOINT);
+            $keys = $response->json('keys');
+            if (!$response->successful() || !is_array($keys) || count($keys) < 1) {
+                throw new RuntimeException('Google imza anahtarlarına erişilemedi. Girişi yeniden deneyin.');
+            }
+
+            return ['keys' => $keys];
+        });
+    }
+
 }
