@@ -27,6 +27,13 @@ final class EmailSetting extends Model
         'customer_password_reset' => 'Müşteri · Şifre yenileme',
     ];
 
+    public static function defaultEvents(): array
+    {
+        // Invite to write public reviews requires separate merchant approval;
+        // do not enable it merely by switching on operational emails.
+        return array_values(array_diff(array_keys(self::EVENTS), ['customer_review_invite']));
+    }
+
     protected $fillable = [
         'enabled', 'smtp_host', 'smtp_port', 'smtp_scheme', 'smtp_username',
         'smtp_password', 'from_address', 'from_name', 'reply_to',
@@ -66,7 +73,7 @@ final class EmailSetting extends Model
     {
         if (!array_key_exists($event, self::EVENTS)) return false;
         $allowed = $this->events;
-        return in_array($event, is_array($allowed) ? $allowed : array_keys(self::EVENTS), true);
+        return in_array($event, is_array($allowed) ? $allowed : self::defaultEvents(), true);
     }
 
     public function adminRecipients(): array
