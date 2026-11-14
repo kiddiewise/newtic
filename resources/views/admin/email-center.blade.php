@@ -47,11 +47,11 @@
       <small>Yeni sipariş, ödeme bildirimi, kargo istisnası ve yorum onayı e-postaları buraya gider.</small>
     </label>
     <div class="admin-panel-title" style="margin-top:25px"><h2>Hangi olaylarda e-posta gönderilsin?</h2></div>
-    <p class="admin-description">Bir olayı kapatırsanız henüz gönderilmemiş bildirimleri de durdurursunuz. Yorum davetleri yalnızca teslim edilmiş, üye hesaplı siparişlerde bir kere hazırlanır.</p>
+    <p class="admin-description">Bir olayı kapatırsanız henüz gönderilmemiş bildirimleri de durdurursunuz. Yorum davetleri yalnızca teslim edilmiş, üye hesaplı siparişlerde bir kere hazırlanır. <strong>Yorum davetleri ilk kurulumda kapalıdır; yasal/iletişim politikası kontrolünden sonra ayrıca işaretleyin.</strong></p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px;margin:14px 0">
       @foreach(\App\Models\EmailSetting::EVENTS as $code=>$label)
         <label style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid #e1e6ee;border-radius:9px">
-          <input type="checkbox" name="events[]" value="{{ $code }}" @checked(in_array($code, old('events',$settings->events ?? array_keys(\App\Models\EmailSetting::EVENTS)),true))>
+          <input type="checkbox" name="events[]" value="{{ $code }}" @checked(in_array($code, old('events',$settings->events ?? \App\Models\EmailSetting::defaultEvents()),true))>
           <span style="font-size:13px">{{ $label }}</span>
         </label>
       @endforeach
