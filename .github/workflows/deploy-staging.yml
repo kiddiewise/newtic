@@ -26,8 +26,19 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
           coverage: none
+      - name: Validate locked dependency versions before install
+        run: |
+          set -euo pipefail
+          test -s composer.lock
+          composer validate --strict --no-check-publish
+          grep -Fq '"name": "firebase/php-jwt"' composer.lock
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Verify Google OAuth signature-verification dependencies
+        run: |
+          set -euo pipefail
+          composer check-platform-reqs --no-dev --no-interaction
+          php -r 'require "vendor/autoload.php"; if (!class_exists("Firebase\\JWT\\JWT") || !class_exists("Firebase\\JWT\\JWK")) exit(1);'
       - name: Configure isolated test environment
         run: |
           cp .env.example .env

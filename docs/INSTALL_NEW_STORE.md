@@ -57,8 +57,25 @@ Sipariş bildirimleri ve parola sıfırlama için ayrıca e-posta altyapısı ge
     bash scripts/install-production.sh --install
 
 İlk komut güvenli, salt-okunur ön kontroldür; dosya/DB değiştirmez.
-İkinci komut Composer, asset derlemesi, benzersiz APP_KEY, migration, storage
-ve Laravel cache hazırlığını yapar. Demo seeder'ı çalıştırmaz.
+İkinci komut, GitHub'da sürüm kontrolündeki `composer.lock` üzerinden tüm PHP
+bağımlılıklarını (Google girişindeki `firebase/php-jwt` dahil) otomatik kurar,
+PHP uzantılarını ve oturum imzası doğrulama sınıflarını kontrol eder. Ardından
+asset derlemesi, benzersiz APP_KEY, migration, storage ve Laravel cache
+hazırlığını yapar. Demo seeder'ı çalıştırmaz.
+
+**Yeni domainlerde JWT veya başka Composer paketlerini elle kurmayın.**
+Paket sürümleri yalnızca geliştirme dalında `composer.json` +
+`composer.lock` birlikte güncellenerek, CI testlerinden geçirilerek yayınlanır.
+Kurulum ön kontrolü bu dosyalardan biri eksik veya tutarsızsa güvenle durur.
+PHP/Composer araçlarının hosting üzerinde ilk kez hazır edilmesi gerekir;
+sonrası yukarıdaki kurulum betiğince yürütülür.
+
+Google Cloud OAuth yapılandırması paket kurulumundan ayrıdır. Her mağazanın
+HTTPS domainine karşılık gelen **tam** `https://MAGAZA-DOMAINI/auth/google/callback`
+URI adresini Google Cloud > Clients > Authorized redirect URIs içinde
+yetkilendirin. Admin > Google Giriş panelinden o mağazaya ait Client ID ve
+Client Secret'ı kaydedin. Geçici test domainleri için Google Cloud test
+kullanıcısı gerekir; gerçek domainin OAuth yayın ayarları ayrıca yapılır.
 
 Bu ilk kurulum altyapısıdır, var olan müşteri için otomatik sürüm güncelleme
 veya veritabanı taşıma aracı değildir.
