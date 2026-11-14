@@ -165,6 +165,27 @@ final class EmailComposer
                 $action = ['title' => 'Yorumunuzu görüntüle',
                     'url' => route('product.show', $review->product->slug).'#urun-yorumlari'];
                 break;
+            case 'customer_email_verification':
+                if (!$user || $user->is_admin || $user->email_verified_at) return null;
+                $subject = 'E-posta adresinizi doğrulayın · '.$brand;
+                $heading = 'E-posta adresinizi doğrulayın';
+                $body = 'Hesabınız için e-posta adresinizi doğrulamak üzere aşağıdaki güvenli bağlantıyı kullanın. Bağlantı 60 dakika geçerlidir.';
+                $action = ['title'=>'E-posta adresimi doğrula', 'url'=>url(
+                    URL::temporarySignedRoute('account.email.verify', now()->addMinutes(60),
+                    ['id'=>$user->id,'hash'=>sha1(strtolower($user->email))], absolute: false)
+                )];
+                break;
+            case 'customer_password_reset':
+                if (!$user || $user->is_admin || !$delivery->secret_payload
+                    || $delivery->created_at?->lt(now()->subMinutes(55))) return null;
+                $subject = 'Şifrenizi yenileyin · '.$brand;
+                $heading = 'Şifre yenileme isteğiniz';
+                $body = 'Hesabınız için şifre yenileme talebi aldık. Bu işlemi siz başlatmadıysanız mesajı görmezden gelebilirsiniz. Bağlantı 60 dakika geçerlidir.';
+                $action = ['title'=>'Yeni şifre belirle', 'url'=>route('account.password.reset', [
+                    'token'=>$delivery->secret_payload, 'email'=>$user->email,
+                ])];
+                $note = 'Şifre sıfırlama bağlantısını kimseyle paylaşmayın. Bu e-postaya yanıt vererek şifre değiştiremezsiniz.';
+                break;
             case 'customer_welcome':
                 if (!$user || $user->is_admin) return null;
                 $subject = 'Hoş geldiniz · '.$brand;
