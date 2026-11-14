@@ -29,7 +29,7 @@ class MegaNavigationTest extends TestCase
 
         $this->get('/')->assertOk()
             ->assertSee('data-mega-menu')
-            ->assertSee('polaris-mega-menu')
+            ->assertSee('store-mega-menu')
             ->assertSee('mega-menu-shell')
             ->assertSee('data-mega-toggle')
             ->assertSee('data-mega-close')
