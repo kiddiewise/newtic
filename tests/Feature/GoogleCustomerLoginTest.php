@@ -206,7 +206,7 @@ final class GoogleCustomerLoginTest extends TestCase
         $images = $appearance->auth_image_paths;
         $this->assertCount(2, $images);
         foreach ($images as $path) Storage::disk('public')->assertExists(substr($path, 8));
-        IlluminateSupportFacadesAuth::logout();
+        auth()->logout();
         $html = $this->get(route('account.login'))->assertOk()->getContent();
         $this->assertSame(2, substr_count($html, 'data-auth-slide aria-hidden='));
         $this->assertStringContainsString('data-auth-slideshow', $html);
