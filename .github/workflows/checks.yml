@@ -29,8 +29,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate locked dependency versions before install
+        run: |
+          set -euo pipefail
+          test -s composer.lock
+          composer validate --strict --no-check-publish
+          grep -Fq '"name": "firebase/php-jwt"' composer.lock
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Verify Google OAuth signature-verification dependencies
+        run: |
+          set -euo pipefail
+          composer check-platform-reqs --no-dev --no-interaction
+          php -r 'require "vendor/autoload.php"; if (!class_exists("Firebase\\JWT\\JWT") || !class_exists("Firebase\\JWT\\JWK")) exit(1);'
       - name: Configure test environment
         run: |
           cp .env.example .env
@@ -44,6 +55,7 @@ jobs:
         run: |
           bash -n scripts/install-production.sh
           bash -n scripts/prepare-hostinger-webroot.sh
+          bash -n scripts/deploy-staging.sh
           echo "Portable installer scripts parse successfully"
       - name: Exercise brand-independent installer preflight
         run: |
