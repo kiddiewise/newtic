@@ -1,0 +1,39 @@
+name: Bootstrap locked PHP dependencies
+
+on:
+  push:
+    branches:
+      - feat/composer-dependency-deploy-fix
+
+permissions:
+  contents: write
+
+jobs:
+  create-composer-lock:
+    if: ${{ hashFiles('composer.lock') == '' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd, openssl
+          coverage: none
+      - name: Resolve exact Composer versions once
+        run: composer update --no-install --no-interaction --prefer-dist --no-progress
+      - name: Validate dependency lock
+        run: |
+          composer validate --strict --no-check-publish
+          test -s composer.lock
+          composer install --no-interaction --prefer-dist --no-progress
+          php -r 'require "vendor/autoload.php"; if (!class_exists("Firebase\\JWT\\JWT") || !class_exists("Firebase\\JWT\\JWK")) exit(1);'
+      - name: Commit generated lock to feature branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add composer.lock
+          git commit -m 'chore: lock Composer dependency versions'
+          git push origin HEAD:refs/heads/feat/composer-dependency-deploy-fix
