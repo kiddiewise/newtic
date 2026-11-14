@@ -20,6 +20,7 @@ final class EmailComposer
         $event = $delivery->event;
         $action = null;
         $lines = [];
+        $productsForReview = [];
         $brand = StoreIdentity::name();
         $note = 'Bu e-posta siparişiniz veya hesabınız hakkında bilgilendirme amacıyla gönderilmiştir. Şifrenizi ve ödeme bilgilerinizi e-posta yoluyla paylaşmayın.';
         $orderUrl = $order ? ($order->user_id
@@ -150,7 +151,14 @@ final class EmailComposer
                 $subject = 'Satın aldığınız ürünleri değerlendirmek ister misiniz?';
                 $heading = 'Ürünlerinizi nasıl buldunuz?';
                 $body = 'Ürünlerinizi teslim almanızın üzerinden birkaç gün geçti. Deneyiminizi diğer alıcılarla paylaşmak ister misiniz?';
-                foreach ($products->take(5) as $product) $lines[] = $product->name;
+                foreach ($products->take(5) as $product) {
+                    $lines[] = $product->name;
+                    $productsForReview[] = [
+                        'name' => $product->name,
+                        'url' => route('product.show', $product->slug).'#urun-yorumlari',
+                        'image' => $product->image_path ? asset($product->image_path) : null,
+                    ];
+                }
                 $action = ['title' => 'İlk ürünü değerlendir',
                     'url' => route('product.show', $products->first()->slug).'#urun-yorumlari'];
                 $note = 'Bu mesaj yalnızca satın alma deneyimiyle ilgili tek seferlik bir değerlendirme davetidir. Kampanya veya ürün tanıtımı içermez.';
@@ -196,6 +204,7 @@ final class EmailComposer
             default:
                 return null;
         }
-        return compact('subject','heading','body','lines','action','brand','note');
+        return compact('subject','heading','body','lines','action','brand','note')
+            + ['productsForReview'=>$productsForReview];
     }
 }
