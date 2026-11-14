@@ -64,6 +64,10 @@ final class StoreIdentityIsolationTest extends TestCase
 
         $this->assertSame('Sinay Design', StoreIdentity::name());
         $this->assertSame(['Sinay', 'Design'], StoreIdentity::wordmark());
+        $this->assertSame('Diğer ürün seçenekleri', StoreIdentity::alternativesLabel($product));
+        $weightProduct = clone $product;
+        $weightProduct->name = 'Surf Kurşun 125 gr';
+        $this->assertSame('Diğer gramaj seçenekleri', StoreIdentity::alternativesLabel($weightProduct));
 
         $home = $this->get('https://sinaydesign.com/')->assertOk()->getContent();
         $this->assertStringContainsString('Sinay Design', $home);
