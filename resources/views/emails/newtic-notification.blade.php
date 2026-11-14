@@ -7,7 +7,27 @@
     <tr><td style="padding:32px 30px">
       <h1 style="margin:0 0 16px;font-size:23px;color:#092037">{{ $mailData['heading'] }}</h1>
       <p style="margin:0 0 20px;font-size:15px;line-height:1.65;color:#424769">{{ $mailData['body'] }}</p>
-      @if(count($mailData['lines']))
+      @if(!empty($mailData['productsForReview']))
+        <div style="margin:16px 0">
+          @foreach($mailData['productsForReview'] as $product)
+          <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="border:1px solid #e9edf3;border-radius:10px;margin-bottom:10px">
+            <tr>
+              @if($product['image'])
+              <td style="padding:12px;width:75px;vertical-align:middle">
+                <img src="{{ $product['image'] }}" width="70" height="70" alt="" style="width:70px;height:70px;object-fit:contain">
+              </td>
+              @endif
+              <td style="padding:12px;vertical-align:middle;font-size:14px">
+                <strong>{{ $product['name'] }}</strong>
+                <p style="margin:7px 0;color:#c4780b;letter-spacing:2px">☆☆☆☆☆</p>
+                <a href="{{ $product['url'] }}" style="font-size:13px;color:#092037;text-decoration:underline;font-weight:600">Ürünü değerlendir</a>
+              </td>
+            </tr>
+          </table>
+          @endforeach
+        </div>
+      @endif
+      @if(count($mailData['lines']) && empty($mailData['productsForReview']))
       <div style="background:#f5f7fa;border-radius:10px;padding:16px 18px;margin-bottom:20px">
         @foreach($mailData['lines'] as $line)
           <p style="margin:6px 0;font-size:14px;line-height:1.6;color:#092037">{{ $line }}</p>
