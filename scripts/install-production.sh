@@ -18,8 +18,11 @@ note() { printf '%s\n' "$*"; }
 test -f artisan && test -f composer.json && test -f .env.example ||
   fail "Run this command inside a NEWTIC checkout."
 test -f .env || fail "Missing .env. Copy .env.example and configure THIS store before proceeding."
+test -s composer.lock || fail "Missing composer.lock: use a reviewed, fully locked NEWTIC release."
 command -v php >/dev/null 2>&1 || fail "PHP CLI 8.3+ is required."
 command -v composer >/dev/null 2>&1 || fail "Composer is required."
+composer validate --strict --no-check-publish >/dev/null ||
+  fail "composer.json and composer.lock are inconsistent."
 
 php -r 'if (PHP_VERSION_ID < 80300) {fwrite(STDERR, "PHP 8.3+ required\n"); exit(1);}
 foreach (["pdo_mysql", "mbstring", "openssl", "fileinfo", "xml", "ctype", "tokenizer"] as $e) {
@@ -74,6 +77,9 @@ fi
 
 mkdir -p storage/{app/public,framework/cache/data,framework/sessions,framework/views,logs} bootstrap/cache
 composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+composer check-platform-reqs --no-dev --no-interaction
+php -r 'require "vendor/autoload.php"; foreach (["Firebase\\JWT\\JWT", "Firebase\\JWT\\JWK"] as $class) { if (!class_exists($class)) { fwrite(STDERR, "Missing required JWT class: ".$class.PHP_EOL); exit(1); } }' ||
+  fail "Missing required Google login signature verification package."
 
 if [[ -z "$(env_value APP_KEY)" ]]; then
   php artisan key:generate --force --no-interaction
