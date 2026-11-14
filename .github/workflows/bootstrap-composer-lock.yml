@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   create-composer-lock:
-    if: ${{ hashFiles('composer.lock') == '' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -21,15 +20,22 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd, openssl
           coverage: none
+      - name: Check whether lockfile already exists
+        id: lock
+        run: |
+          if test -f composer.lock; then echo 'missing=false' >> "$GITHUB_OUTPUT"; else echo 'missing=true' >> "$GITHUB_OUTPUT"; fi
       - name: Resolve exact Composer versions once
+        if: steps.lock.outputs.missing == 'true'
         run: composer update --no-install --no-interaction --prefer-dist --no-progress
       - name: Validate dependency lock
+        if: steps.lock.outputs.missing == 'true'
         run: |
           composer validate --strict --no-check-publish
           test -s composer.lock
           composer install --no-interaction --prefer-dist --no-progress
           php -r 'require "vendor/autoload.php"; if (!class_exists("Firebase\\JWT\\JWT") || !class_exists("Firebase\\JWT\\JWK")) exit(1);'
       - name: Commit generated lock to feature branch
+        if: steps.lock.outputs.missing == 'true'
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
