@@ -8,6 +8,11 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// Process a bounded transactional email outbox once a minute. No persistent
+// queue worker is required on typical Hostinger shared plans. Disabled until
+// SMTP is verified and an administrator explicitly enables sending.
+Schedule::command('email:process --limit=25')->everyMinute()->withoutOverlapping(3);
+
 // Reconcile missed per-shipment callbacks; canceled/failed/draft never callback.
 // Requires a 1-minute Laravel cron runner, or the equivalent 15-minute direct
 // shipping:sync cron configured on staging Hostinger. Never runs on live domains.
