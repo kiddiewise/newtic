@@ -60,7 +60,8 @@ final class EmailComposer
                 $action = ['title' => 'Siparişi yönet', 'url' => route('admin.orders.show', $order)];
                 break;
             case 'customer_payment_notice':
-                if (!$order) return null;
+                if (!$order || !$order->paymentNotifications()->whereKey($delivery->reference_id)
+                    ->where('status', 'pending')->exists()) return null;
                 $subject = 'Ödeme bildiriminiz alındı · '.$order->order_number;
                 $heading = 'Bildiriminiz kontrol sırasında';
                 $body = 'Havale/EFT bildiriminizi aldık. Banka hareketleri kontrol edildikten sonra ödeme durumunuz güncellenecektir.';
@@ -113,6 +114,13 @@ final class EmailComposer
                 $heading = 'Siparişiniz teslim edildi';
                 $body = 'Siparişinizin teslimat süreci tamamlandı. Bizi tercih ettiğiniz için teşekkür ederiz.';
                 $action = ['title' => 'Siparişimi görüntüle', 'url' => $orderUrl];
+                break;
+            case 'customer_payment_failed':
+                if (!$order || $order->status !== 'cancelled' || $order->payment_method !== 'paytr') return null;
+                $subject = 'Kart ödemeniz tamamlanamadı · '.$order->order_number;
+                $heading = 'Kart ödemeniz başarısız oldu';
+                $body = 'Kartlı ödeme işleminiz tamamlanamadığı için bu sipariş kapatıldı. Tahsilat yapılmış olarak işaretlenmedi. Yeni bir sipariş oluşturabilirsiniz.';
+                $action = ['title' => 'Mağazaya dön', 'url' => route('home')];
                 break;
             case 'customer_cancelled':
                 if (!$order || $order->status !== 'cancelled') return null;
