@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Favorilerim | Polaris Kurşun')
+@section('title', 'Favorilerim | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main id="content" class="container wishlist-page">
   <div class="wishlist-heading">

@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Ürün arama | Polaris Kurşun')
+@section('title', 'Ürün arama | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="container inner-page" id="content">
   <nav class="breadcrumbs" aria-label="İçerik yolu"><a href="{{ route('home') }}">Ana sayfa</a><span>/</span><span>Ürünler</span></nav>

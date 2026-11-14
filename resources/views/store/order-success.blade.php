@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', $tracking['title'].' | Polaris Kurşun')
+@section('title', $tracking['title'].' | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="checkout-shell checkout-success-page" id="content">
   <div class="checkout-top"><a href="{{ route('home') }}" aria-label="Ana sayfa">‹</a><strong>Sipariş Bilgileri</strong><span></span></div>

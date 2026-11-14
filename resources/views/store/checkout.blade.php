@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Siparişi Tamamla | Polaris Kurşun')
+@section('title', 'Siparişi Tamamla | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 @php $checkoutIsTest = (bool) config('newtic.checkout_test_mode', true); @endphp
 <main class="checkout-shell checkout-page" id="content">
