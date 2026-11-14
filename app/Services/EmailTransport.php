@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\EmailSetting;
 use Illuminate\Support\Facades\Mail;
 
-final class EmailTransport
+class EmailTransport
 {
     public function send(EmailSetting $settings, string $destination, array $payload, ?string $name = null): void
     {
