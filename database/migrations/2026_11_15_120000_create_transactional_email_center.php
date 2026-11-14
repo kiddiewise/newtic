@@ -35,6 +35,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->string('recipient_email');
             $table->string('recipient_name')->nullable();
+            $table->text('secret_payload')->nullable();
             $table->string('status', 20)->default('pending')->index();
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('available_at')->index();
