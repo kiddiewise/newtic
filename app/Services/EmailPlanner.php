@@ -54,6 +54,11 @@ final class EmailPlanner
             'cancelled' => 'customer_cancelled',
             default => null,
         };
+        // A failed PAYTR callback is an unsuccessful payment, not a refund.
+        if ($order->status === 'cancelled' && $order->payment_method === 'paytr'
+            && $order->paytrAttempts()->where('status', 'failed')->exists()) {
+            $event = 'customer_payment_failed';
+        }
         if ($event) $this->queue($event, $order->customer_email, $order);
         if ($order->status === 'completed' && $order->user_id !== null
             && $order->shippingShipment?->remote_status === 'delivered') {
