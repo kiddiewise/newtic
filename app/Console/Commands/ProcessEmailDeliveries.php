@@ -51,6 +51,13 @@ final class ProcessEmailDeliveries extends Command
                     $skipped++;
                     continue;
                 }
+                // Never flush a long-disabled store's stale customer emails.
+                $old = $item->created_at?->lt(now()->subDays($item->event === 'customer_review_invite' ? 21 : 7));
+                if ($old) {
+                    $item->update(['status'=>'skipped','last_error'=>'ExpiredOutboxMessage','secret_payload'=>null]);
+                    $skipped++;
+                    continue;
+                }
                 $payload = $composer->build($item->load(['order','user']));
                 if (!$payload) {
                     $item->update(['status'=>'skipped','last_error'=>'EventNoLongerApplicable','secret_payload'=>null]);
