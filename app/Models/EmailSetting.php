@@ -23,6 +23,8 @@ final class EmailSetting extends Model
         'customer_review_invite' => 'Müşteri · Teslimat sonrası yorum daveti',
         'customer_review_approved' => 'Müşteri · Yorum onaylandı',
         'customer_welcome' => 'Müşteri · Üyelik hoş geldiniz',
+        'customer_email_verification' => 'Müşteri · E-posta doğrulama',
+        'customer_password_reset' => 'Müşteri · Şifre yenileme',
     ];
 
     protected $fillable = [
