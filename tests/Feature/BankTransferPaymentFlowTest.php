@@ -38,6 +38,12 @@ class BankTransferPaymentFlowTest extends TestCase
 
     private function order(): Order
     {
+        // A temporary active bank is needed only to create the historical
+        // order. If no bank was active before, restore that state after place().
+        $temporary = null;
+        if (!BankAccount::query()->where('is_active', true)->exists()) {
+            $temporary = $this->bank('TR060006100519786457841327', true);
+        }
         $category = Category::query()->first() ?? Category::create([
             'name' => 'Surf kurşun', 'slug' => 'surf-kursun', 'is_active' => true,
         ]);
@@ -65,6 +71,7 @@ class BankTransferPaymentFlowTest extends TestCase
             'invoice_type' => 'individual',
         ])->assertRedirect()->assertSessionHasNoErrors();
 
+        if ($temporary) $temporary->update(['is_active' => false]);
         return Order::query()->firstOrFail();
     }
 

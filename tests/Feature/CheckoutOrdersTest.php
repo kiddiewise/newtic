@@ -8,12 +8,25 @@ use App\Models\PaymentNotification;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\BankAccount;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CheckoutOrdersTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // These cases exercise successful checkout, so supply a real active
+        // payment fixture. Separate tests verify checkout without any IBAN.
+        BankAccount::create([
+            'bank_name' => 'Test Bankası', 'account_holder' => 'Polaris Kurşun',
+            'iban' => 'TR330006100519786457841326',
+            'sort_order' => 0, 'is_active' => true,
+        ]);
+    }
 
     private function product(string $sku = 'SURF-75', string $price = '500.00', int $stock = 10): Product
     {

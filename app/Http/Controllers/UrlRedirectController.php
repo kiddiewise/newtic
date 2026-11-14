@@ -18,6 +18,14 @@ final class UrlRedirectController extends Controller
         } catch (\InvalidArgumentException) {
             abort(404);
         }
+        // Laravel fallback routes otherwise turn wrong-method requests to
+        // known POST/PATCH/DELETE endpoints into 404 instead of proper 405.
+        foreach (\Illuminate\Support\Facades\Route::getRoutes() as $route) {
+            if (($route->isFallback ?? false) || in_array('GET', $route->methods(), true)) continue;
+            if ($route->matches($request, false)) {
+                return response('', 405)->header('Allow', implode(', ', $route->methods()));
+            }
+        }
         $entry = UrlRedirect::query()->where('old_path', $path)
             ->where('is_active', true)->first();
         if (!$entry) abort(404);
