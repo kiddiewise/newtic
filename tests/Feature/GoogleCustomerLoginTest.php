@@ -36,17 +36,16 @@ final class GoogleCustomerLoginTest extends TestCase
         return $settings;
     }
 
-    private function fakeGoogle(array $overrides = []): void
+    private function fakeGoogle(string $nonce, array $overrides = []): void
     {
         Http::fake([
             'https://oauth2.googleapis.com/token' => Http::response(['id_token' => 'signed-google-token'], 200),
-            'https://oauth2.googleapis.com/tokeninfo*' => function () use ($overrides) {
-                $session = session('google_customer_oauth');
+            'https://oauth2.googleapis.com/tokeninfo*' => function () use ($overrides, $nonce) {
                 return Http::response(array_merge([
                     'aud' => self::CLIENT_ID,
                     'iss' => 'https://accounts.google.com',
                     'exp' => (string) now()->addMinutes(45)->timestamp,
-                    'nonce' => $session['nonce'] ?? null,
+                    'nonce' => $nonce,
                     'email_verified' => 'true',
                     'sub' => '11223344556677889900',
                     'email' => 'customer@example.com',
@@ -88,9 +87,9 @@ final class GoogleCustomerLoginTest extends TestCase
     public function test_google_customer_registration_verifies_identity_and_preserves_wishlist_intent(): void
     {
         $this->enable();
-        $this->fakeGoogle();
         $this->get(route('account.google.start', ['next' => 'wishlist']))->assertRedirect();
         $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce']);
         $this->assertNotEmpty($pending['nonce']);
         $this->assertNotEmpty($pending['verifier']);
 
@@ -119,9 +118,9 @@ final class GoogleCustomerLoginTest extends TestCase
     public function test_repeated_google_login_uses_same_subject_without_creating_new_account(): void
     {
         $this->enable();
-        $this->fakeGoogle();
         $this->get(route('account.google.start'))->assertRedirect();
         $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce']);
         $this->get(route('account.google.callback', [
             'state' => $pending['state'], 'code' => 'valid-code',
         ]))->assertRedirect();
@@ -130,6 +129,7 @@ final class GoogleCustomerLoginTest extends TestCase
         $this->post(route('account.logout'))->assertRedirect();
         $this->get(route('account.google.start'))->assertRedirect();
         $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce']);
         $this->get(route('account.google.callback', [
             'state' => $pending['state'], 'code' => 'another-code',
         ]))->assertRedirect(route('account.index'));
@@ -142,9 +142,9 @@ final class GoogleCustomerLoginTest extends TestCase
     {
         $user = User::factory()->create(['email' => 'customer@example.com']);
         $this->enable();
-        $this->fakeGoogle();
         $this->get(route('account.google.start'))->assertRedirect();
         $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce']);
         $this->get(route('account.google.callback', [
             'state' => $pending['state'], 'code' => 'valid-code',
         ]))->assertRedirect(route('account.login'))->assertSessionHasErrors('google');
@@ -165,9 +165,9 @@ final class GoogleCustomerLoginTest extends TestCase
         ]))->assertRedirect(route('account.login'))->assertSessionHasErrors('google');
         Http::assertNothingSent();
 
-        $this->fakeGoogle(['email_verified' => 'false']);
         $this->get(route('account.google.start'))->assertRedirect();
         $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce'], ['email_verified' => 'false']);
         $this->get(route('account.google.callback', [
             'state' => $pending['state'], 'code' => 'valid-code',
         ]))->assertRedirect(route('account.login'))->assertSessionHasErrors('google');
@@ -205,7 +205,7 @@ final class GoogleCustomerLoginTest extends TestCase
         $html = $this->get(route('account.login'))->assertOk()->getContent();
         $this->assertSame(2, substr_count($html, 'data-auth-slide aria-hidden='));
         $this->assertStringContainsString('data-auth-slideshow', $html);
-        $this->assertStringContainsString('portrait', $this->get(route('admin.google-login.edit'))->assertOk()->getContent()) === false;
+        $this->get(route('admin.google-login.edit'))->assertOk()->assertSee('1600 × 2000');
 
         $this->patch(route('admin.google-login.images'), ['remove' => [0]])
             ->assertSessionHasNoErrors();
