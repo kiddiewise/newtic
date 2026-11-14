@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
 use App\Http\Controllers\Admin\GoogleCustomerLoginController;
 use App\Http\Controllers\Admin\AuthVisualController;
+use App\Http\Controllers\Admin\EmailCenterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
@@ -123,6 +124,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::get('/eposta-bildirimler', [EmailCenterController::class, 'index'])->name('email-center.index');
+    Route::patch('/eposta-bildirimler', [EmailCenterController::class, 'save'])->middleware('throttle:8,1')->name('email-center.save');
+    Route::post('/eposta-bildirimler/test', [EmailCenterController::class, 'test'])->middleware('throttle:3,1')->name('email-center.test');
+    Route::post('/eposta-bildirimler/process', [EmailCenterController::class, 'process'])->middleware('throttle:4,1')->name('email-center.process');
+    Route::post('/eposta-bildirimler/{emailDelivery}/retry', [EmailCenterController::class, 'retry'])->middleware('throttle:5,1')->name('email-center.retry');
     Route::get('/google-giris', [GoogleCustomerLoginController::class, 'edit'])->name('google-login.edit');
     Route::patch('/google-giris', [GoogleCustomerLoginController::class, 'update'])->middleware('throttle:8,1')->name('google-login.update');
     Route::patch('/google-giris/gorseller', [AuthVisualController::class, 'update'])->middleware('throttle:6,1')->name('google-login.images');
