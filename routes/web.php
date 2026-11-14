@@ -12,6 +12,7 @@ use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\GoogleMerchantFeedController;
 use App\Http\Controllers\SeoSitemapController;
 use App\Http\Controllers\UrlRedirectController as PublicUrlRedirectController;
+use App\Http\Middleware\ResolveCatalogRedirect;
 use App\Http\Controllers\Admin\UrlRedirectController as AdminUrlRedirectController;
 use App\Http\Controllers\Admin\SeoSettingsController;
 use App\Http\Controllers\Admin\GoogleMerchantController;
@@ -27,8 +28,8 @@ Route::get('/sitemap/products/{page}.xml', [SeoSitemapController::class, 'produc
     ->whereNumber('page')->name('seo.sitemap.products');
 Route::get('/google/merchant-products.xml', GoogleMerchantFeedController::class)
     ->middleware('throttle:30,1')->name('google-merchant.feed');
-Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->name('category.show');
-Route::get('/urun/{slug}', [CatalogController::class, 'product'])->name('product.show');
+Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->middleware(ResolveCatalogRedirect::class)->name('category.show');
+Route::get('/urun/{slug}', [CatalogController::class, 'product'])->middleware(ResolveCatalogRedirect::class)->name('product.show');
 Route::get('/ara/oneriler', [CatalogController::class, 'suggestions'])->middleware('throttle:60,1')->name('search.suggest');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
 
