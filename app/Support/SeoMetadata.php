@@ -105,7 +105,7 @@ final class SeoMetadata
             $category = Category::query()->where('slug', (string) $request->route('slug'))->first();
             if ($category && CategoryHierarchy::visible($category)) {
                 $title = trim((string) ($category->seo_title ?: $category->name.' | '.$suffix));
-                $description = trim((string) ($category->seo_description ?: $category->description ?: $category->name.' ürün çeşitleri, gramaj seçenekleri ve güncel fiyatları.'));
+                $description = trim((string) ($category->seo_description ?: $category->description ?: $category->name.' ürün çeşitleri, modelleri ve güncel fiyatları.'));
                 $image = self::image($request, $category->image_path) ?: $image;
                 $canonical = self::url($request, 'kategori/'.$category->slug);
                 $page = filter_var($request->query('page', 1), FILTER_VALIDATE_INT);

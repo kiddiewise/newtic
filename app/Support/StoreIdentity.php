@@ -37,6 +37,15 @@ final class StoreIdentity
         return $description !== '' ? $description : self::name($settings).' online mağazasında ürünleri keşfedin.';
     }
 
+    public static function alternativesLabel(Product $product): string
+    {
+        // Weight-based catalogues may retain their familiar gramage wording.
+        // Other industries receive a neutral product-choice label instead.
+        return preg_match('/\d+\s*(?:gr(?:am)?|g|kg)\b/iu', (string) $product->name)
+            ? 'Diğer gramaj seçenekleri'
+            : 'Diğer ürün seçenekleri';
+    }
+
     public static function productBrand(Product $product): string
     {
         $brand = trim((string) $product->google_brand);
