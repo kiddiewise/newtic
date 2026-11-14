@@ -195,7 +195,7 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
             $this->assertStringNotContainsString('class="social-auth-button" type="button" disabled', $html);
         }
 
-        AppModelsGoogleLoginSetting::current()->update([
+        \App\Models\GoogleLoginSetting::current()->update([
             'client_id' => '123456-social.apps.googleusercontent.com',
             'client_secret' => 'only-server-side',
             'enabled' => true,
