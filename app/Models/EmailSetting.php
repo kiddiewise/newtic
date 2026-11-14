@@ -14,6 +14,7 @@ final class EmailSetting extends Model
         'admin_payment_notice' => 'Yönetici · Havale kontrol bekliyor',
         'customer_payment_verified' => 'Müşteri · Ödeme onaylandı',
         'customer_payment_rejected' => 'Müşteri · Havale bildirimi reddedildi',
+        'customer_payment_failed' => 'Müşteri · Kart ödemesi başarısız',
         'customer_order_shipped' => 'Müşteri · Kargoya verildi',
         'customer_out_for_delivery' => 'Müşteri · Dağıtıma çıktı',
         'customer_delivered' => 'Müşteri · Teslim edildi',
