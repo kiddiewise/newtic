@@ -16,6 +16,10 @@ final class StoreIdentityIsolationTest extends TestCase
 
     public function test_fresh_install_has_no_other_merchants_contact_details_and_starts_private(): void
     {
+        // Running default seeders must not import another shop's demo data.
+        $this->seed();
+        $this->assertDatabaseCount('products', 0);
+
         $menu = MegaMenuSetting::current();
         $this->assertNull($menu->instagram_url);
         $this->assertNull($menu->youtube_url);
