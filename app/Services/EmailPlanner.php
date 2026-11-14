@@ -16,7 +16,7 @@ final class EmailPlanner
     public function queue(
         string $event, string $recipient, ?Order $order = null,
         ?User $user = null, ?int $referenceId = null,
-        ?Carbon $dueAt = null, string $suffix = ''
+        ?Carbon $dueAt = null, string $suffix = '', ?string $secretPayload = null
     ): void {
         $settings = EmailSetting::current();
         if (!$settings->active() || !$settings->allows($event)) return;
@@ -33,6 +33,7 @@ final class EmailPlanner
             'reference_id' => $referenceId, 'recipient_email' => strtolower(trim($recipient)),
             'recipient_name' => $order?->customer_name ?? $user?->name,
             'status' => 'pending', 'attempts' => 0, 'available_at' => $dueAt ?? now(),
+            'secret_payload' => $secretPayload,
         ]);
     }
 
@@ -105,7 +106,25 @@ final class EmailPlanner
 
     public function welcome(User $user): void
     {
-        if (!$user->is_admin) $this->queue('customer_welcome', $user->email, null, $user);
+        if ($user->is_admin) return;
+        $this->queue('customer_welcome', $user->email, null, $user);
+        if (!$user->email_verified_at) $this->verification($user, 'initial');
+    }
+
+    public function verification(User $user, string $unique): void
+    {
+        if (!$user->is_admin && !$user->email_verified_at) {
+            $this->queue('customer_email_verification', $user->email, null, $user, null, null, $unique);
+        }
+    }
+
+    public function passwordReset(User $user, string $token): void
+    {
+        // Password broker tokens are encrypted at rest, expire independently
+        // of the outbox and are cleared as soon as processed.
+        if ($user->is_admin) return;
+        $this->queue('customer_password_reset', $user->email,
+            null, $user, null, null, hash('sha256', $token), $token);
     }
 
     private function admins(string $event, ?Order $order, ?int $referenceId = null, string $suffix = ''): void
