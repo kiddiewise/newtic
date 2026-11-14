@@ -187,18 +187,24 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
         $this->assertDatabaseCount('shop_announcements', 0);
     }
 
-    public function test_social_login_shows_original_colored_logos_but_is_disabled(): void
+    public function test_google_is_the_only_configurable_social_login_without_false_buttons(): void
     {
         foreach ([route('account.login'), route('account.register')] as $route) {
-            $html = $this->get($route)->assertOk()
-                ->assertSee('Google')
-                ->assertSee('Facebook')
-                ->assertSee('Yakında')
-                ->getContent();
+            $html = $this->get($route)->assertOk()->getContent();
+            $this->assertStringNotContainsString('Facebook ile giriş', $html);
+            $this->assertStringNotContainsString('class="social-auth-button" type="button" disabled', $html);
+        }
 
+        AppModelsGoogleLoginSetting::current()->update([
+            'client_id' => '123456-social.apps.googleusercontent.com',
+            'client_secret' => 'only-server-side',
+            'enabled' => true,
+        ]);
+        foreach ([route('account.login'), route('account.register')] as $route) {
+            $html = $this->get($route)->assertOk()->assertSee('Google ile devam et')->getContent();
             $this->assertStringContainsString('fill="#EA4335"', $html);
-            $this->assertStringContainsString('fill="#0866FF"', $html);
-            $this->assertSame(2, substr_count($html, 'class="social-auth-button" type="button" disabled'));
+            $this->assertStringNotContainsString('fill="#0866FF"', $html);
+            $this->assertSame(1, substr_count($html, 'class="auth-google-button"'));
         }
     }
 }
