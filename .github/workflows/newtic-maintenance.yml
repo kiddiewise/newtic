@@ -1,0 +1,49 @@
+name: NEWTIC staging maintenance
+
+on:
+  schedule:
+    # May run late; commands recheck eligibility and are idempotent.
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-staging-maintenance
+  cancel-in-progress: false
+
+jobs:
+  scheduled-operations:
+    if: vars.NEWTIC_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Prepare Hostinger SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || exit 1
+          test -n "$KNOWN_HOSTS" || exit 1
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Expire unpaid bank orders and reconcile staging integrations
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            -o ConnectTimeout=15 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          cd "$APP"
+          test "$(git branch --show-current)" = "main" || { echo "Staging not on main; skip"; exit 0; }
+          test -f .env || exit 1
+          php artisan orders:expire-unpaid --limit=50
+          php artisan shipping:sync --limit=8
+          php artisan merchant:sync --steps=4
+          REMOTE

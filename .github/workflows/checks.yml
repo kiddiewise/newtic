@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'feat/**'
+      - main
 
 permissions:
   contents: read
@@ -63,13 +64,13 @@ jobs:
       - name: Run tests
         run: php artisan test
       - name: Package verified frontend for staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set -euo pipefail
           test -f public/build/manifest.json
           tar -czf newtic-build.tar.gz -C public build
       - name: Prepare staging SSH credentials
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
           KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
@@ -83,7 +84,7 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Diagnose Hostinger 504 before publishing
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set +e
           echo "=== External HTTP availability before publish ==="
@@ -111,7 +112,7 @@ jobs:
           REMOTE
           exit 0
       - name: Release verified build to Hostinger staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
@@ -134,7 +135,7 @@ jobs:
             sleep 7
           done
       - name: Verify storefront, admin login and compiled admin stylesheet
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/phase-01-foundation-homepage' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
           set -euo pipefail
           SITE="https://powderblue-dinosaur-538060.hostingersite.com"

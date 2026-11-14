@@ -2,7 +2,8 @@
 # NEWTIC staging-only release script. Runs on Hostinger after authenticated SSH.
 set -Eeuo pipefail
 
-BRANCH="feat/phase-01-foundation-homepage"
+BRANCH="main"
+LEGACY_BRANCH="feat/phase-01-foundation-homepage"
 BASE="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com"
 APP="$BASE/newtic"
 WEB="$BASE/public_html"
@@ -25,7 +26,8 @@ if ! grep -Fxq "DB_DATABASE=u880685189_newtic" "$APP/.env"; then
   echo "Refusing to deploy: expected isolated NEWTIC database not configured"
   exit 1
 fi
-if [ "$(git -C "$APP" branch --show-current)" != "$BRANCH" ]; then
+CURRENT_BRANCH="$(git -C "$APP" branch --show-current)"
+if [ "$CURRENT_BRANCH" != "$BRANCH" ] && [ "$CURRENT_BRANCH" != "$LEGACY_BRANCH" ]; then
   echo "Refusing to deploy: unexpected checked-out branch"
   exit 1
 fi
@@ -43,11 +45,16 @@ cp -a "$APP/public/build/." "$WEB/build/"
 
 cd "$APP"
 git fetch --no-tags origin "$BRANCH"
-# Manual staging releases can point at a commit on a feature branch. Fetch the
-# exact verified commit as well as the protected base branch so the fast-forward
-# check below can resolve it without broadening the server checkout.
 git fetch --no-tags origin "$NEWTIC_EXPECTED_SHA"
-git merge --ff-only "$NEWTIC_EXPECTED_SHA"
+# Main must contain the installed staging revision; never rewind the shop.
+if ! git merge-base --is-ancestor "$(git rev-parse HEAD)" "$NEWTIC_EXPECTED_SHA"; then
+  echo "Refusing to deploy: main is not a descendant of the installed revision"; exit 1
+fi
+if [ "$(git branch --show-current)" = "$LEGACY_BRANCH" ]; then
+  git switch -C "$BRANCH" "$NEWTIC_EXPECTED_SHA"
+else
+  git merge --ff-only "$NEWTIC_EXPECTED_SHA"
+fi
 if [ "$(git rev-parse HEAD)" != "$NEWTIC_EXPECTED_SHA" ]; then
   echo "Refusing to deploy: checkout does not match compiled assets"
   exit 1
@@ -75,32 +82,34 @@ php artisan migrate --force
 php artisan optimize:clear
 php artisan view:cache
 
-# Staging-only, read-only shipping reconciliation. Kargo Entegratör does not
-# send callbacks for canceled/failed/draft states. Preserve every pre-existing
-# cron entry; never replace or edit any other application job.
-CRON_MARKER="# NEWTIC_STAGING_SHIPPING_SYNC"
+# Hostinger crontab may be unavailable on shared accounts. If it exists,
+# install the Laravel scheduler; GitHub scheduled maintenance is the fallback.
+CRON_MARKER="# NEWTIC_STAGING_LARAVEL_SCHEDULER"
+LEGACY_CRON_MARKER="# NEWTIC_STAGING_SHIPPING_SYNC"
 if command -v crontab >/dev/null 2>&1; then
   CURRENT_CRON="$(mktemp)"
   (crontab -l 2>/dev/null || true) > "$CURRENT_CRON"
+  if grep -Fq "$LEGACY_CRON_MARKER" "$CURRENT_CRON"; then
+    grep -Fv "$LEGACY_CRON_MARKER" "$CURRENT_CRON" > "$CURRENT_CRON.new" || true
+    mv "$CURRENT_CRON.new" "$CURRENT_CRON"
+  fi
   if grep -Fq "$CRON_MARKER" "$CURRENT_CRON"; then
-    echo "NEWTIC staging shipping cron already installed"
+    echo "NEWTIC scheduler already installed"
   else
     PHP_BIN="$(command -v php)"
     if test -n "$PHP_BIN" && test -x "$PHP_BIN"; then
-      # Every 15 minutes; only artisan shipping:sync. The PHP command itself
-      # independently refuses any host other than NEWTIC staging.
-      printf '\n*/15 * * * * cd "%s" && "%s" artisan shipping:sync --limit=20 --no-ansi >/dev/null 2>&1 %s\n' \
+      printf '\n* * * * * cd "%s" && "%s" artisan schedule:run --no-ansi >/dev/null 2>&1 %s\n' \
         "$APP" "$PHP_BIN" "$CRON_MARKER" >> "$CURRENT_CRON"
       if crontab "$CURRENT_CRON"; then
-        echo "NEWTIC staging shipping cron installed: every 15 minutes"
+        echo "NEWTIC scheduler installed"
       else
-        echo "WARNING: cron could not be installed; configure staging cron in hPanel"
+        echo "WARNING: host cron could not be installed; GitHub maintenance fallback applies"
       fi
     fi
   fi
   rm -f "$CURRENT_CRON"
 else
-  echo "WARNING: crontab not available; configure staging cron in hPanel"
+  echo "NOTICE: SSH crontab unavailable. GitHub Actions maintenance runs every 30 minutes; hPanel Cron Jobs may also be configured."
 fi
 
 echo "NEWTIC staging deployed: $NEWTIC_EXPECTED_SHA"
