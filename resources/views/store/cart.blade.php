@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Sepet | Polaris Kurşun')
+@section('title', 'Sepet | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 
 <header class="cart-mobile-header" aria-label="Sepet üst menüsü">
@@ -14,7 +14,7 @@
   <nav class="breadcrumbs cart-breadcrumbs" aria-label="İçerik yolu"><a href="{{ route('home') }}">Ana sayfa</a><span>/</span><span>Sepet</span></nav>
 
   <div class="cart-page-heading">
-    <div><p class="eyebrow">POLARIS KURŞUN</p><h1>Sepet <span>({{ $cart['count'] }} Ürün)</span></h1></div>
+    <div><p class="eyebrow">{{ mb_strtoupper(\App\Support\StoreIdentity::name(), 'UTF-8') }}</p><h1>Sepet <span>({{ $cart['count'] }} Ürün)</span></h1></div>
     <a href="{{ route('search') }}">Alışverişe devam et <span aria-hidden="true">›</span></a>
   </div>
 

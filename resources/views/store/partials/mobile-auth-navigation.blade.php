@@ -5,15 +5,15 @@
   $authAppearance = \App\Models\ShopAppearance::current();
 @endphp
 <header class="mobile-auth-header" aria-label="Üyelik ekranı üst menüsü">
-  <a href="{{ route('home') }}" class="mobile-auth-brand" aria-label="Polaris Kurşun ana sayfa">
+  <a href="{{ route('home') }}" class="mobile-auth-brand" aria-label="{{ \App\Support\StoreIdentity::name() }} ana sayfa">
     @if($authAppearance->mobile_logo_path)
-      <img src="{{ asset($authAppearance->mobile_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
+      <img src="{{ asset($authAppearance->mobile_logo_path) }}" alt="{{ \App\Support\StoreIdentity::name() }}" width="156" height="48">
     @elseif($authAppearance->desktop_logo_path)
-      <img src="{{ asset($authAppearance->desktop_logo_path) }}" alt="Polaris Kurşun" width="156" height="48">
+      <img src="{{ asset($authAppearance->desktop_logo_path) }}" alt="{{ \App\Support\StoreIdentity::name() }}" width="156" height="48">
     @else
       <span class="mobile-auth-fallback">
         <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M7 19c5-10 14-13 22-7-4 0-7 2-9 6 4-2 7-2 10 0-8 1-14 6-18 12-2-4-3-8-5-11Z" fill="currentColor"/></svg>
-        <span><strong>POLARIS</strong><small>KURŞUN</small></span>
+        <span><strong>{{ mb_strtoupper(\App\Support\StoreIdentity::wordmark()[0], 'UTF-8') }}</strong>@if(\App\Support\StoreIdentity::wordmark()[1])<small>{{ mb_strtoupper(\App\Support\StoreIdentity::wordmark()[1], 'UTF-8') }}</small>@endif</span>
       </span>
     @endif
   </a>

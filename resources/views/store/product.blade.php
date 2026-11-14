@@ -66,7 +66,7 @@
     </div>
 
     <div class="detail-intro pdp-intro">
-      <p class="eyebrow pdp-brand">POLARIS KURŞUN</p>
+      <p class="eyebrow pdp-brand">{{ mb_strtoupper(\App\Support\StoreIdentity::productBrand($product), 'UTF-8') }}</p>
       <h1>{{ $product->name }}</h1>
       @if($product->discount_percent > 0)
         <div class="detail-original-price pdp-original-price">
@@ -215,13 +215,13 @@
   <section class="pdp-description-section" aria-labelledby="pdp-description-title">
     <h2 id="pdp-description-title">Ürün açıklaması</h2>
     <div class="pdp-description-copy" id="pdp-description-content" data-description-content>
-      <p>{!! nl2br(e($product->description ?: 'Polaris Kurşun balıkçılık ekipmanları koleksiyonundan.')) !!}</p>
+      <p>{!! nl2br(e($product->description ?: 'Ürün bilgileri yakında eklenecek.')) !!}</p>
     </div>
     <button type="button" class="pdp-description-toggle" data-description-toggle aria-expanded="false" aria-controls="pdp-description-content">
       Daha fazla göster <span aria-hidden="true">⌄</span>
     </button>
     <div class="pdp-specifications">
-      <div><span>Marka</span><strong>Polaris Kurşun</strong></div>
+      <div><span>Marka</span><strong>{{ \App\Support\StoreIdentity::productBrand($product) }}</strong></div>
       <div><span>Stok kodu</span><strong>{{ $product->sku }}</strong></div>
       <div><span>Kategori</span><a href="{{ route('category.show', $product->category->slug) }}">{{ $product->category->name }}</a></div>
     </div>

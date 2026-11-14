@@ -1,5 +1,5 @@
 @extends('layouts.store')
-@section('title', 'Üye Ol | Polaris Kurşun')
+@section('title', 'Üye Ol | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 @php
   $authNext = in_array(request('next'), ['checkout', 'wishlist', 'cart', 'review'], true) ? request('next') : '';
@@ -10,7 +10,7 @@
   @include('store.partials.mobile-auth-navigation')
   <div class="checkout-top"><a href="{{ route('account.login', array_filter(['next' => $authNext, 'favorite' => $authNext === 'cart' ? $favoriteId : '', 'review_product' => $authNext === 'review' ? $reviewProduct : ''])) }}" aria-label="Geri dön">‹</a><strong>Üyelik Oluştur</strong><span></span></div>
   <div class="checkout-card">
-    <h1>Polaris hesabını oluştur</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Ücretsiz hesap oluştur, seçtiğin ürünü favorilerine ekleyelim.' : 'Birden fazla adres kaydet, geçmiş siparişlerini takip et.' }}</p>
+    <h1>Mağaza hesabını oluştur</h1><p>{{ $authNext === 'cart' && $favoriteId ? 'Ücretsiz hesap oluştur, seçtiğin ürünü favorilerine ekleyelim.' : 'Birden fazla adres kaydet, geçmiş siparişlerini takip et.' }}</p>
     @include('store.partials.social-auth')
     <form method="POST" action="{{ route('account.register.submit') }}" class="checkout-form">
       @csrf
