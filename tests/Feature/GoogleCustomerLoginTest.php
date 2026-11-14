@@ -38,23 +38,57 @@ final class GoogleCustomerLoginTest extends TestCase
         return $settings;
     }
 
+    private array $googleOverrides = [];
+
+    private static ?array $rsa = null;
+
+    private static function signingKey(): array
+    {
+        if (self::$rsa !== null) return self::$rsa;
+        $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048]);
+        if (!$key || !openssl_pkey_export($key, $private)) {
+            throw new \RuntimeException('Test RSA signing key could not be generated.');
+        }
+        $details = openssl_pkey_get_details($key);
+        $b64url = fn ($binary) => rtrim(strtr(base64_encode($binary), '+/', '-_'), '=');
+        return self::$rsa = [
+            'private' => $private,
+            'public' => [
+                'kty' => 'RSA', 'kid' => 'test-signing-key', 'alg' => 'RS256',
+                'use' => 'sig',
+                'n' => $b64url($details['rsa']['n']),
+                'e' => $b64url($details['rsa']['e']),
+            ],
+        ];
+    }
+
     private function fakeGoogle(string $nonce, array $overrides = []): void
     {
         $this->googleNonce = $nonce;
+        $this->googleOverrides = $overrides;
+        $keys = self::signingKey();
         Http::fake([
-            'https://oauth2.googleapis.com/token' => Http::response(['id_token' => 'signed-google-token'], 200),
-            'https://oauth2.googleapis.com/tokeninfo*' => function () use ($overrides) {
-                return Http::response(array_merge([
+            'https://oauth2.googleapis.com/token' => function () use ($keys) {
+                $claims = array_merge([
                     'aud' => self::CLIENT_ID,
                     'iss' => 'https://accounts.google.com',
-                    'exp' => (string) now()->addMinutes(45)->timestamp,
+                    'iat' => now()->timestamp,
+                    'exp' => now()->addMinutes(45)->timestamp,
                     'nonce' => $this->googleNonce,
-                    'email_verified' => 'true',
+                    'email_verified' => true,
                     'sub' => '11223344556677889900',
                     'email' => 'customer@example.com',
                     'name' => 'Google Customer',
-                ], $overrides), 200);
+                ], $this->googleOverrides);
+                return Http::response([
+                    'id_token' => \Firebase\JWT\JWT::encode(
+                        $claims, $keys['private'], 'RS256', $keys['public']['kid']
+                    ),
+                ], 200);
             },
+            'https://www.googleapis.com/oauth2/v3/certs' => Http::response(
+                ['keys' => [$keys['public']]], 200
+            ),
         ]);
     }
 
