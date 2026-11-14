@@ -47,18 +47,18 @@ final class ProcessEmailDeliveries extends Command
             if (!$item) continue;
             try {
                 if (!$settings->allows($item->event)) {
-                    $item->update(['status'=>'skipped','last_error'=>'EventDisabled']);
+                    $item->update(['status'=>'skipped','last_error'=>'EventDisabled','secret_payload'=>null]);
                     $skipped++;
                     continue;
                 }
                 $payload = $composer->build($item->load(['order','user']));
                 if (!$payload) {
-                    $item->update(['status'=>'skipped','last_error'=>'EventNoLongerApplicable']);
+                    $item->update(['status'=>'skipped','last_error'=>'EventNoLongerApplicable','secret_payload'=>null]);
                     $skipped++;
                     continue;
                 }
                 $transport->send($settings, $item->recipient_email, $payload, $item->recipient_name);
-                $item->update(['status'=>'sent','sent_at'=>now(),'last_error'=>null]);
+                $item->update(['status'=>'sent','sent_at'=>now(),'last_error'=>null,'secret_payload'=>null]);
                 $sent++;
             } catch (\Throwable $error) {
                 $again = $item->attempts < 5;
@@ -67,6 +67,7 @@ final class ProcessEmailDeliveries extends Command
                     'status' => $again ? 'retry' : 'failed',
                     'available_at' => now()->addMinutes($minutes),
                     'last_error' => class_basename($error),
+                    'secret_payload' => $again ? $item->secret_payload : null,
                 ]);
                 $failed++;
             }
