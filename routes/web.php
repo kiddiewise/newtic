@@ -52,6 +52,7 @@ Route::delete('/sepet/urun/{product}', [CartController::class, 'remove'])->name(
 Route::post('/sepet/temizle', [CartController::class, 'clear'])->name('cart.clear');
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountEmailController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\CheckoutController;
 
@@ -59,6 +60,15 @@ Route::get('/giris', [AccountController::class, 'loginPage'])->name('account.log
 Route::post('/giris', [AccountController::class, 'login'])->middleware('throttle:6,1')->name('account.login.submit');
 Route::get('/uye-ol', [AccountController::class, 'registerPage'])->name('account.register');
 Route::post('/uye-ol', [AccountController::class, 'register'])->middleware('throttle:5,1')->name('account.register.submit');
+Route::get('/sifremi-unuttum', [AccountEmailController::class, 'forgot'])->name('account.password.forgot');
+Route::post('/sifremi-unuttum', [AccountEmailController::class, 'sendReset'])->middleware('throttle:3,1')->name('account.password.send');
+Route::get('/sifre-yenile/{token}', [AccountEmailController::class, 'resetForm'])->name('account.password.reset');
+Route::post('/sifre-yenile', [AccountEmailController::class, 'reset'])->middleware('throttle:5,1')->name('account.password.update');
+Route::get('/eposta/dogrula/{id}/{hash}', [AccountEmailController::class, 'verify'])
+    ->middleware('throttle:8,1')->name('account.email.verify');
+Route::post('/eposta/dogrulama-yeniden', [AccountEmailController::class, 'resend'])
+    ->middleware(['auth','throttle:3,1'])->name('account.email.resend');
+
 Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
 Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
