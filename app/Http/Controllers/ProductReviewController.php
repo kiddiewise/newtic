@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductReview;
 use App\Support\CategoryHierarchy;
 use App\Support\ProductReviewEligibility;
+use App\Services\EmailPlanner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -56,6 +57,11 @@ class ProductReviewController extends Controller
             'order_id', 'rating', 'body', 'status', 'is_test',
             'moderated_at', 'moderated_by', 'updated_at',
         ]);
+
+        // Eloquent upsert bypasses model events, so alert moderators explicitly.
+        $pendingReview = ProductReview::query()->where('user_id', $request->user()->id)
+            ->where('product_id', $product->id)->first();
+        if ($pendingReview) app(EmailPlanner::class)->reviewSubmitted($pendingReview);
 
         return redirect()->route('product.show', $product->slug)
             ->withFragment('urun-yorumlari')
