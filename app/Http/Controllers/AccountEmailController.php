@@ -24,7 +24,7 @@ final class AccountEmailController extends Controller
     {
         $data = $request->validate(['email' => ['required','email','max:255']]);
         $settings = EmailSetting::current();
-        if (!$settings->active()) {
+        if (!$settings->active() || !$settings->allows('customer_password_reset')) {
             return back()->withErrors(['email' => 'Şifre sıfırlama e-postası şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.']);
         }
         // Always return the same response to avoid disclosing registered emails.
@@ -79,6 +79,9 @@ final class AccountEmailController extends Controller
     {
         $user = $request->user();
         if (!$user || $user->is_admin) abort(403);
+        if (!EmailSetting::current()->active() || !EmailSetting::current()->allows('customer_email_verification')) {
+            return back()->withErrors(['email' => 'E-posta doğrulama bağlantısı şu anda gönderilemiyor.']);
+        }
         if ($user->email_verified_at) return back()->with('success', 'E-posta adresiniz zaten doğrulanmış.');
         $planner->verification($user, (string) Str::uuid());
         return back()->with('success', 'E-posta servisi etkinse doğrulama bağlantısı yeniden sıraya alındı.');
