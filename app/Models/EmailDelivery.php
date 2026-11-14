@@ -9,12 +9,13 @@ final class EmailDelivery extends Model
 {
     protected $fillable = [
         'dedupe_key','event','order_id','user_id','reference_id',
-        'recipient_email','recipient_name','status','attempts',
+        'recipient_email','recipient_name','secret_payload','status','attempts',
         'available_at','processing_at','sent_at','last_error',
     ];
     protected $casts = [
         'available_at' => 'datetime', 'processing_at' => 'datetime',
         'sent_at' => 'datetime', 'attempts' => 'integer',
+        'secret_payload' => 'encrypted',
     ];
 
     public function order(): BelongsTo
