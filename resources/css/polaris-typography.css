@@ -1,0 +1,329 @@
+/*
+ * NEWTIC / Polaris Kurşun typography system
+ * Body and UI: Montserrat, 400 regular / 500 medium
+ * Titles: Plus Jakarta Sans, 600 semibold / 700 for primary page headings
+ *
+ * Loaded last so the new light corporate theme keeps its visual hierarchy.
+ * Layout, colors, accessibility messages and functional sticky controls stay intact.
+ */
+:root{
+  --polaris-font-heading:"Plus Jakarta Sans",sans-serif;
+  --polaris-font-body:"Montserrat",sans-serif;
+  --polaris-weight-regular:400;
+  --polaris-weight-medium:500;
+  --polaris-weight-semibold:600;
+  --polaris-weight-bold:700;
+}
+html,body,body.admin-body{
+  font-family:var(--polaris-font-body);
+  font-weight:400;
+  font-synthesis:none;
+}
+body :is(button,input,select,textarea,option,legend,label),
+body :is(p,small,li,dt,dd,blockquote,time){
+  font-family:var(--polaris-font-body);
+}
+body :is(h1,h2,h3,h4,h5,h6){
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+  letter-spacing:-.027em;
+  text-wrap:pretty;
+}
+body :is(h1){font-weight:700;letter-spacing:-.04em}
+body :is(p,li,blockquote,dd,dt){font-weight:400;letter-spacing:0}
+body :is(strong,b){font-weight:600}
+
+/* Brand masthead, page headings and navigation labels. */
+.brand-words strong,.footer-brand,
+body.is-auth .mobile-auth-brand strong,
+.mega-menu-brand,
+.mobile-site-header .mega-menu-shell .mega-menu-brand>span:last-child,
+.admin-sidebar-brand,
+.admin-login-brand strong{
+  font-family:var(--polaris-font-heading);
+  font-weight:700;
+  letter-spacing:-.035em;
+}
+.brand-words small,.admin-sidebar-brand small,
+.mobile-site-header .mega-menu-shell .mega-menu-brand>span:last-child small{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.section-heading h2,.page-intro h1,
+.shop-section:not(.category-section) .section-heading h2,
+.pdp-intro h1,.pdp-mobile-heading,
+.checkout-card h1,.checkout-card h2,
+.review-write-heading h3,.review-list-head h3,
+.pdp-reviews-topline h2,.mega-hero h2,
+.mega-section-title h3,.mega-social-head h3,
+.cart-sheet-heading h2,.quick-cart-heading h2,
+.admin-page-heading h1,.admin-panel-title h2,
+.admin-login-panel>h1{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+  letter-spacing:-.035em;
+}
+.page-intro h1,.pdp-intro h1,.checkout-card h1,.admin-page-heading h1{
+  font-weight:700;
+}
+.eyebrow,.review-eyebrow,.mega-hero-eyebrow,
+.mega-section-title>div>span,.mega-social-head>span,
+.checkout-form-intro>span,.checkout-section-title>span,
+.checkout-stage-label,.admin-eyebrow,.admin-menu-caption,
+.quick-cart-section-kicker,.quick-cart-eyebrow,.payment-eyebrow{
+  font-family:var(--polaris-font-body);
+  font-weight:600;
+  letter-spacing:.07em;
+}
+.section-all,.section-all span,
+.mobile-menu-heading,.mobile-menu-panel a,
+.mobile-category-pills a,.mobile-category-pills button,
+.mobile-bottom-nav a,.mobile-nav-disabled,
+.mobile-site-header .mega-menu-shell .mega-tree-all,
+.mobile-site-header .mega-menu-shell .mega-all-products,
+.mobile-site-header .mega-social-grid a,
+.mega-category-copy strong,.mega-menu-footnote{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.mobile-category-pills .mobile-pill.is-active,
+.mobile-category-pills .mobile-pill-home.is-active,
+.mobile-bottom-nav a[aria-current="page"]{
+  font-weight:600;
+}
+
+/* Product list and cards: softer information hierarchy. */
+.product-card-brand,.product-card-name,.product-card-rating,
+.category-name,.category-card .category-name,
+.category-child-card strong,.reassurance-strip strong,
+.product-card-views{
+  font-family:var(--polaris-font-body);
+}
+.product-card-brand,.category-card .category-name,
+.category-name,.category-child-card strong{font-weight:500}
+.product-card-name{font-weight:600;line-height:1.5;letter-spacing:-.008em}
+.product-card-bottom>strong,.product-card-price,
+.product-card-rating strong,.detail-price,.pdp-price,
+.pdp-sticky-price,.cart-mobile-price,.cart-grand-total dd{
+  font-family:var(--polaris-font-heading);
+  font-weight:700;
+  letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;
+}
+.product-card-rating-count,.product-card-views,
+.product-card-rating-test,.pdp-rating-test-tag,.review-test-label,
+.product-demo-pill{font-family:var(--polaris-font-body);font-weight:500}
+.product-card-action,.product-card-action-label,
+.desktop-site-header .header-cart-link,
+.header-search button,.search-inline button,
+.quick-cart-view-cart,.quick-cart-related-head>a{
+  font-family:var(--polaris-font-body);
+  font-weight:600;
+  letter-spacing:0;
+}
+.product-discount-pill,.detail-discount-pill,
+.pdp-discount-pill,.pdp-discount-badge,
+.product-card-discount,.pdp-gallery-discount{
+  font-family:var(--polaris-font-body);
+  font-weight:600;
+}
+
+/* Product detail and sticky buying strip: don't reintroduce crowded labels. */
+.pdp-desktop-purchase-head strong,.pdp-specifications strong,
+.pdp-order-item .order-item-info a,.pdp-desktop-more,
+.pdp-in-stock,.pdp-out-of-stock,
+.pdp-description-toggle,.pdp-current-product-note button{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.pdp-desktop-add,.pdp-sheet-footer>button,
+.pdp-sticky-actions .pdp-sticky-add,
+.pdp-desktop-stepper button,.pdp-sticky-actions .pdp-sticky-stepper button,
+.pdp-stepper button,.pdp-sticky-choose>span{
+  font-family:var(--polaris-font-body);
+  font-weight:600;
+}
+.pdp-sticky-stepper output,.pdp-desktop-stepper output,
+.pdp-order-item .quantity-field input,
+.pdp-sticky-actions .pdp-sticky-stepper output,
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-stepper output{
+  font-family:var(--polaris-font-heading);
+  font-weight:600!important;
+  letter-spacing:-.03em;
+}
+.pdp-desktop-variant>label,.pdp-variant-field>span,
+.pdp-sticky-actions .pdp-sticky-variant-title,
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-variant-title{
+  font-family:var(--polaris-font-body);
+  font-weight:600!important;
+  letter-spacing:0;
+}
+.pdp-desktop-variant>select,.pdp-variant-field select,
+.pdp-sticky-actions.has-variant .pdp-sticky-variant select,
+.pdp-sticky-bar .pdp-sticky-actions.has-variant .pdp-sticky-variant select{
+  font-family:var(--polaris-font-body);
+  font-weight:500!important;
+  letter-spacing:0;
+}
+.pdp-sticky-bar > .pdp-sticky-gramages,
+.pdp-sticky-gramages>span,
+.pdp-sticky-gramages[data-scroll-ribbon]>span{
+  font-family:var(--polaris-font-body);
+  font-weight:600!important;
+}
+.pdp-sticky-bar .pdp-sticky-actions .pdp-sticky-quick-name{font-weight:500!important}
+.pdp-sticky-variant-total,.pdp-sticky-actions .pdp-sticky-variant-total{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+}
+.pdp-description-copy,.detail-intro p,
+.pdp-sheet-heading>div>p:last-child{font-weight:400;line-height:1.75}
+
+/* Cart / checkout / account: calm but unmistakable CTA hierarchy. */
+.cart-page-heading h1,.checkout-top strong,
+.checkout-card-heading h2,.checkout-card-heading h3,
+.checkout-success-hero h1,.order-tracking-hero h1{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+}
+.cart-item-name,.checkout-order-item strong,.checkout-price-line strong,
+.checkout-bottom-bar>div strong,.quick-cart-footer-total strong,
+.checkout-price-line.is-total strong{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+  letter-spacing:-.02em;
+}
+.cart-totals>div.cart-grand-total,
+.cart-grand-total dt,.checkout-price-line.is-total{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+}
+.cart-primary,.cart-checkout-disabled,.cart-checkout-action,
+.cart-mobile-summary-open,.cart-mobile-summary-trigger,
+.checkout-action,.checkout-login-link,.checkout-outline-action,
+.checkout-bottom-bar>button,.checkout-inline-link,
+.checkout-secondary a,.checkout-card-heading>a,
+.cart-sheet-continue,.account-address-row>a,
+.account-address-actions a{
+  font-family:var(--polaris-font-body);
+  font-weight:600;
+}
+.checkout-steps>a,.checkout-steps>span,
+.checkout-steps>[aria-current="step"],
+.checkout-steps>a span,.checkout-steps>span span,
+.checkout-status,.payment-status-pill,
+.payment-review-status strong{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.checkout-steps>[aria-current="step"],.checkout-status{font-weight:600}
+.checkout-field,.checkout-form>.checkout-field,
+.checkout-invoice-options label,.checkout-check,
+.checkout-form label,.account-auth-shell label{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.checkout-field input,.checkout-field select,.checkout-field textarea,
+.checkout-extra-section textarea,.checkout-form input,
+.checkout-form select,.checkout-form textarea,
+.checkout-form input::placeholder,.checkout-form textarea::placeholder{
+  font-family:var(--polaris-font-body);
+  font-weight:400;
+}
+.checkout-bottom-bar>div strong,.quick-cart-footer-total strong{font-variant-numeric:tabular-nums}
+body.is-auth .mobile-auth-tabs a,
+body.is-auth .mobile-auth-tabs a.is-active,
+.social-auth-button .social-provider-name,
+body.is-auth .account-auth-shell>.checkout-card h1{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+body.is-auth .account-auth-shell>.checkout-card h1{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+}
+body.is-auth .mobile-auth-tabs a.is-active{font-weight:600}
+
+/* Tracking, ratings and review form: medium rather than ultra-bold. */
+.order-tracking-heading h2,.review-score>strong,
+.review-list-head h3,.review-write-heading h3,
+.review-card-person strong,.review-empty strong,
+.review-count-pill,.review-own-status strong{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+}
+.review-score>strong{font-weight:700}
+.review-primary-action,.review-outline-action,.order-review-link,
+.review-text-label,.review-rating-set legend,
+.review-form-bottom>span,.review-distribution-row>span,
+.review-card-person small,.review-count-pill,
+.review-avatar,.review-preview-note span{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.review-primary-action,.review-outline-action,.review-rating-set legend{font-weight:600}
+.review-form textarea,.review-card-body{font-family:var(--polaris-font-body);font-weight:400}
+.review-rating-caption[data-selected="true"]{font-weight:500}
+
+/* Admin retains a work-focused interface, but no all-heavy visual texture. */
+body.admin-body{
+  font-family:var(--polaris-font-body);
+  font-weight:400;
+}
+.admin-sidebar-brand,.admin-topbar-heading strong,.admin-page-heading h1,
+.admin-panel-title h2,.admin-panel h2,.admin-kpi>strong,
+.admin-login-panel h1,.admin-metric strong{
+  font-family:var(--polaris-font-heading);
+  font-weight:600;
+  letter-spacing:-.025em;
+}
+.admin-sidebar-brand,.admin-page-heading h1{font-weight:700}
+.admin-menu-caption,.admin-side-link,.admin-side-link>span,
+.admin-side-count,.admin-top-badge,
+.admin-sidebar-user strong,.admin-help-card a,
+.admin-kpi-label,.admin-kpi small,.admin-kpi strong,
+.admin-action-grid a,.admin-table-link,
+.admin-data-table thead,.admin-data-table th,
+.admin-review-product,.admin-review-pending-count,
+.admin-filter-pill,.admin-stock-item>span,.admin-stock-badge,
+.admin-state-pill,.admin-text-link,.admin-payment-record-head strong{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+  letter-spacing:0;
+}
+.admin-menu-caption,.admin-kpi-label{font-weight:500;letter-spacing:.045em}
+.admin-side-link.is-active,.admin-filter-pill.is-active{font-weight:600}
+.admin-kpi strong,.admin-metric strong{
+  font-family:var(--polaris-font-heading);
+  font-weight:700;
+}
+.admin-primary,.admin-secondary,.admin-danger,
+.admin-editor-actions button,.admin-form label,
+.admin-form input,.admin-form select,.admin-form textarea,
+.admin-form button{
+  font-family:var(--polaris-font-body);
+  font-weight:500;
+}
+.admin-primary,.admin-secondary,.admin-danger{font-weight:600}
+.admin-form input,.admin-form select,.admin-form textarea{
+  font-weight:400;
+  letter-spacing:0;
+}
+.admin-page-heading p,.admin-description,.admin-panel p,
+.admin-detail-line,.admin-review-body,.admin-data-table td,
+.admin-kpi small,.admin-help-card p{
+  font-family:var(--polaris-font-body);
+  font-weight:400;
+}
+.admin-global-search input{font-family:var(--polaris-font-body);font-weight:400}
+.admin-review-rating strong{font-family:var(--polaris-font-heading);font-weight:600}
+@media(max-width:760px){
+  .pdp-price,.cart-mobile-price{font-weight:700}
+  .product-card-name{font-weight:500}
+  .product-card-action,.pdp-sticky-actions .pdp-sticky-add{font-weight:600}
+  body.is-auth .social-auth-button .social-provider-name{font-weight:500}
+  .mobile-menu-heading{font-weight:600}
+}
+@media(prefers-reduced-motion:reduce){
+  /* Typography itself introduces no motion. Existing animations respect this preference. */
+}

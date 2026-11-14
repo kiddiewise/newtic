@@ -1,9 +1,6 @@
 name: Deploy NEWTIC staging
 
 on:
-  push:
-    branches:
-      - feat/phase-01-foundation-homepage
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,151 @@
+name: Tests and assets
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'feat/**'
+      - main
+
+permissions:
+  contents: read
+
+# Keep the most recent staging run queued while an ongoing release completes.
+# This avoids concurrent Hostinger deployments from rapid UI commits.
+concurrency:
+  group: newtic-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Configure test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+      - name: Install and compile frontend
+        run: |
+          npm install --ignore-scripts
+          npm run build
+      - name: Test Turkish phone formatter
+        run: node --test tests/js/*.test.mjs
+      - name: Verify admin CSS is present in compiled Vite assets
+        run: |
+          set -euo pipefail
+          test -f public/build/manifest.json
+          find public/build/assets -maxdepth 1 -name '*.css' -print -quit | grep -q . || { echo "No built CSS assets"; exit 1; }
+          grep -RFlq --include='*.css' '.admin-app-shell' public/build/assets || { echo "Admin layout CSS missing from build"; exit 1; }
+          grep -RFlq --include='*.css' '.admin-icon' public/build/assets || { echo "Admin icon size CSS missing from build"; exit 1; }
+          echo "Admin styles successfully bundled"
+      - name: Save prebuilt Vite assets for Hostinger (no Node required on server)
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-vite-build
+          path: public/build/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Run migrations
+        run: php artisan migrate --env=testing --force
+      - name: Compile every Blade view
+        run: php artisan view:cache
+      - name: Run tests
+        run: php artisan test
+      - name: Package verified frontend for staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        run: |
+          set -euo pipefail
+          test -f public/build/manifest.json
+          tar -czf newtic-build.tar.gz -C public build
+      - name: Prepare staging SSH credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || { echo "Missing SSH deploy key"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "Missing verified known_hosts"; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Diagnose Hostinger 504 before publishing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        run: |
+          set +e
+          echo "=== External HTTP availability before publish ==="
+          for path in / /admin/login /sepet; do
+            curl -sS -L --max-time 12 -o /dev/null \
+              -w "route=$path code=%{http_code} connect=%{time_connect}s ttfb=%{time_starttransfer}s total=%{time_total}s\\n" \
+              "https://powderblue-dinosaur-538060.hostingersite.com$path"
+          done
+          echo "=== Hostinger SSH runtime summary (no secrets) ==="
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o BatchMode=yes -o ConnectTimeout=12 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set +e
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          cd "$APP" || exit 0
+          echo "time=$(date -u +%FT%TZ)"
+          echo "revision=$(git rev-parse --short HEAD)"
+          echo "load:"; uptime
+          echo "disk:"; df -h "$HOME" | tail -1
+          echo "runtime:"; timeout 12 php artisan about --only=environment
+          echo "database:"; timeout 12 php artisan migrate:status | tail -5
+          echo "error classes in last Laravel log lines (no raw messages):"
+          if test -f storage/logs/laravel.log; then
+            tail -n 250 storage/logs/laravel.log | grep -Eo '(PDOException|QueryException|ConnectionException|ErrorException|FatalError|Allowed memory size|SQLSTATE\\[[A-Z0-9]+\\])' | sort | uniq -c | tail -10
+          fi
+          REMOTE
+          exit 0
+      - name: Release verified build to Hostinger staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 -o ConnectionAttempts=1)
+          SCP=(scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 -o ConnectionAttempts=1)
+          REMOTE="u880685189@147.79.123.121"
+          for attempt in 1 2 3; do
+            echo "Hostinger deploy attempt $attempt/3"
+            if "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy' \
+              && "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz" \
+              && "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh; then
+              echo "Hostinger deploy complete"
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Hostinger SSH unavailable after 3 attempts"
+              exit 1
+            fi
+            sleep 7
+          done
+      - name: Verify storefront, admin login and compiled admin stylesheet
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        run: |
+          set -euo pipefail
+          SITE="https://powderblue-dinosaur-538060.hostingersite.com"
+          curl --fail --show-error --silent --location --retry 3 "$SITE/" -o homepage.html
+          grep -Fqi "POLARIS" homepage.html
+          curl --fail --show-error --silent --location --retry 3 "$SITE/admin/login" -o admin-login.html
+          grep -Fq "NEWTIC" admin-login.html
+          ASSET=$(node -e "const m=require('./public/build/manifest.json'); process.stdout.write(m['resources/css/app.css'].file)")
+          test -n "$ASSET"
+          curl --fail --show-error --silent --location --retry 3 "$SITE/build/$ASSET" -o deployed-admin.css
+          grep -Fq '.admin-app-shell' deployed-admin.css
+          grep -Fq '.admin-icon' deployed-admin.css
+          echo "Staging storefront, admin login and published admin stylesheet verified"

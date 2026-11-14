@@ -1,0 +1,71 @@
+/* Festive order confirmation: short one-time visual delight, no interaction blocked. */
+.checkout-success-hero .checkout-success-mark{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  place-items:center;
+  width:88px;
+  height:88px;
+  margin:0 auto 18px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 20%,#fffdf3 0%,#fff2cd 46%,#e3f7ee 100%);
+  box-shadow:0 0 0 8px #e8f8f17a,0 12px 30px #1c7d6724;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:45px;
+  line-height:1;
+  color:inherit;
+  transform:rotate(-7deg);
+}
+.checkout-success-hero .checkout-success-mark::before,
+.checkout-success-hero .checkout-success-mark::after{
+  position:absolute;
+  z-index:-1;
+  font-size:23px;
+  line-height:1;
+  color:#e5a841;
+  content:"✦";
+  pointer-events:none;
+}
+.checkout-success-hero .checkout-success-mark::before{top:-6px;left:-19px;transform:rotate(-16deg)}
+.checkout-success-hero .checkout-success-mark::after{right:-18px;bottom:0;color:#35b8ad;transform:rotate(19deg)}
+.checkout-success-hero .checkout-success-mark.is-celebrating{
+  animation:newtic-party-pop 850ms cubic-bezier(.2,.84,.28,1.35) both;
+}
+.newtic-confetti-layer{
+  position:fixed;
+  inset:0;
+  z-index:450;
+  overflow:hidden;
+  pointer-events:none;
+  contain:layout style paint;
+}
+.newtic-confetti-piece{
+  position:absolute;
+  width:var(--piece-width,7px);
+  height:var(--piece-height,12px);
+  opacity:0;
+  pointer-events:none;
+  will-change:transform,opacity;
+  animation:newtic-confetti-burst var(--duration,2850ms) cubic-bezier(.2,.7,.26,1) var(--delay,0ms) forwards;
+}
+@keyframes newtic-party-pop{
+  0%{opacity:.2;transform:scale(.48) rotate(-25deg)}
+  55%{opacity:1;transform:scale(1.17) rotate(13deg)}
+  76%{transform:scale(.96) rotate(-10deg)}
+  100%{opacity:1;transform:scale(1) rotate(-7deg)}
+}
+@keyframes newtic-confetti-burst{
+  0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.75)}
+  6%{opacity:1}
+  33%{opacity:1;transform:translate3d(var(--burst-x),var(--burst-y),0) rotate(var(--half-spin)) scale(1)}
+  75%{opacity:1}
+  100%{opacity:0;transform:translate3d(var(--fall-x),var(--fall-y),0) rotate(var(--full-spin)) scale(.7)}
+}
+@media(max-width:760px){
+  .checkout-success-hero .checkout-success-mark{width:82px;height:82px;font-size:43px}
+}
+@media(prefers-reduced-motion:reduce){
+  .checkout-success-hero .checkout-success-mark.is-celebrating,
+  .newtic-confetti-piece{animation:none!important}
+  .newtic-confetti-layer{display:none!important}
+}

@@ -1,0 +1,39 @@
+name: Staging website visual audit
+
+on:
+  push:
+    branches:
+      - feat/phase-01-foundation-homepage
+    paths:
+      - '.github/workflows/staging-visual-audit.yml'
+      - 'scripts/staging-visual-audit.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test prerequisites
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Inspect publicly available staging pages
+        env:
+          STAGING_URL: https://powderblue-dinosaur-538060.hostingersite.com
+        run: node scripts/staging-visual-audit.mjs
+      - name: Upload audit report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-live-audit
+          path: staging-audit/
+          if-no-files-found: warn
+          retention-days: 3

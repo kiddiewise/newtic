@@ -1,0 +1,71 @@
+/* PAYTR test-only checkout. Montserrat for UI, Jakarta Sans for headings. */
+.paytr-payment-choices{display:grid;gap:11px;margin-top:13px}
+.paytr-method-option{position:relative;display:flex;align-items:center;gap:12px;min-height:74px;border:1.5px solid #dfe4eb;border-radius:14px;padding:13px 15px;background:#fff;cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.paytr-method-option:hover{border-color:#bfc6d8;background:#fbfbfd}
+.paytr-method-option:has(input:checked){background:#fff8f1;border-color:#f68220;box-shadow:0 0 0 3px #f6822011}
+.paytr-method-option:has(input:focus-visible){outline:3px solid #d96810;outline-offset:2px}
+.paytr-method-option input{position:absolute;opacity:0;width:1px;height:1px}
+.paytr-method-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:12px;background:#f1f3f8;color:#424769}
+.paytr-method-icon .ui-icon{width:24px;height:24px;stroke:currentColor;fill:none}
+.paytr-method-option:has(input:checked) .paytr-method-icon{background:#ffe5ca;color:#092037}
+.paytr-method-copy{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0;color:#092037}
+.paytr-method-copy strong{font-size:13px;font-weight:600}
+.paytr-method-copy small{font-size:11px;font-weight:400;color:#68778d;line-height:1.5}
+.paytr-method-check{display:grid;place-items:center;flex:none;width:22px;height:22px;border:1px solid #cad2df;border-radius:50%;background:#fff;color:transparent}
+.paytr-method-check .ui-icon{width:14px;height:14px;stroke:currentColor;fill:none}
+.paytr-method-option:has(input:checked) .paytr-method-check{background:#f68220;border-color:#f68220;color:#092037}
+.checkout-action:not(:disabled),.checkout-bottom-bar>button:not(:disabled){color:#092037!important}
+.paytr-payment-page{max-width:1130px}
+.paytr-checkout-heading{margin-bottom:18px}
+.paytr-checkout-heading h1{font-family:"Plus Jakarta Sans",sans-serif;color:#092037;font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:-.035em;margin:9px 0 7px}
+.paytr-checkout-heading>p{font-size:12px;color:#6e7d90;margin:0;line-height:1.7}
+.paytr-test-tag{display:inline-flex;align-items:center;gap:6px;border:1px solid #f1c598;background:#fff1e2;border-radius:99px;color:#88501e;font-size:10px;font-weight:600;padding:7px 10px}
+.paytr-test-tag svg,.paytr-secure-note svg,.paytr-iframe-top svg{width:17px;height:17px;stroke:currentColor;fill:none}
+.paytr-checkout-grid{grid-template-columns:minmax(0,1.7fr) minmax(260px,.95fr)}
+.paytr-iframe-panel{min-width:0}
+.paytr-iframe-top{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.paytr-iframe-top>span:first-child{display:inline-flex;align-items:center;gap:6px;color:#092037;font-size:12px;font-weight:600}
+.paytr-test-indicator{font-size:10px;background:#eef1f7;border-radius:8px;color:#424769;padding:6px 9px}
+.paytr-iframe-panel h2{font-family:"Plus Jakarta Sans",sans-serif;font-size:18px;font-weight:600}
+.paytr-frame-viewport{min-height:520px;background:#fff;border:1px solid #edf0f4;border-radius:12px;overflow:hidden}
+.paytr-secure-note{display:flex;gap:7px;align-items:center;color:#597185;font-size:11px;line-height:1.6;margin:12px 0 0}
+.paytr-iframe-help{border-top:1px solid #e7ebf1;margin-top:16px;padding-top:14px}
+.paytr-iframe-help strong{font-size:12px;color:#092037}
+.paytr-iframe-help p{font-size:11px;line-height:1.6;color:#66778b}
+.paytr-iframe-help .checkout-outline-action{font-size:12px;font-weight:500}
+.paytr-order-number{font-size:11px;color:#73859a;font-weight:500;overflow-wrap:anywhere}
+.paytr-test-disclaimer{background:#fff4e9;color:#83501f!important;border-radius:11px;padding:11px;font-size:11px!important;line-height:1.65!important}
+.paytr-token-error{display:flex;align-items:flex-start;gap:12px;border:1px solid #f4cdb2;background:#fff5ef;border-radius:14px;padding:15px;color:#874422}
+.paytr-token-error>.ui-icon{width:22px;height:22px;stroke:currentColor;fill:none;flex:none}
+.paytr-token-error strong{font-size:13px}
+.paytr-token-error p{font-size:11px;line-height:1.6;margin:6px 0 0;color:#895e48}
+.paytr-retry-cta{margin-top:12px}
+.paytr-processing-notice{display:flex;gap:10px;align-items:flex-start;border-radius:13px;background:#f1f4fa;color:#424769;padding:14px;margin:13px 0}
+.paytr-processing-notice>.ui-icon{width:22px;height:22px;flex:none;stroke:currentColor;fill:none}
+.paytr-processing-notice strong{font-size:12px;color:#092037}
+.paytr-processing-notice p{font-size:11px;color:#64778b;line-height:1.55;margin:5px 0 0}
+.paytr-order-status{scroll-margin-top:90px}
+.paytr-test-control{display:flex;align-items:center;gap:15px;flex-wrap:wrap;max-width:940px}
+.paytr-test-control>div:first-child{flex:1;min-width:240px}
+.paytr-test-control h2{font-family:"Plus Jakarta Sans",sans-serif;font-weight:600;font-size:19px;margin:7px 0;color:#092037}
+.paytr-test-control p{font-size:11px;color:#66788b;line-height:1.6;margin:0}
+.paytr-test-control form{margin:0}
+.paytr-test-control .admin-primary,.paytr-test-control .admin-secondary{min-height:44px}
+.paytr-test-disabled{font-size:11px;color:#8a6b50}
+.paytr-callback-box{display:flex;flex-direction:column;gap:7px;width:100%;background:#f7f8fb;border:1px solid #e2e6f0;padding:13px;border-radius:12px}
+.paytr-callback-box>strong{font-size:12px;color:#092037;font-weight:600}
+.paytr-callback-box code{display:block;font-family:ui-monospace,monospace;font-size:11px;color:#424769;white-space:normal;overflow-wrap:anywhere}
+.paytr-callback-box small{font-size:11px;color:#66778b;line-height:1.6}
+@media(max-width:760px){
+ .paytr-method-option{min-height:70px;padding:10px 12px}
+ .paytr-method-copy strong{font-size:12px}
+ .paytr-method-copy small{font-size:10px}
+ .paytr-method-icon{height:39px;width:39px}
+ .paytr-checkout-grid{grid-template-columns:minmax(0,1fr)}
+ .paytr-iframe-panel,.paytr-order-summary{padding:16px 12px}
+ .paytr-frame-viewport{min-height:440px}
+ .paytr-checkout-heading{padding:0 4px}
+ .paytr-checkout-heading h1{font-size:22px}
+ .paytr-test-control form,.paytr-test-control form button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.paytr-method-option{transition:none}}

@@ -1,0 +1,131 @@
+/* NEWTIC 2026: live order tracking, not a static order-received receipt */
+.checkout-success-page{max-width:920px}
+.order-tracking-hero{
+  --stage-bg:#eef9f3;
+  --stage-ink:#0e785d;
+  --stage-border:#cceadf;
+  position:relative;
+  overflow:hidden;
+  padding:29px 22px 25px;
+  border-color:#e0eaeb;
+  background:radial-gradient(ellipse at 50% 4%,var(--stage-bg) 0%,#fff 62%);
+}
+.order-tracking-hero.stage-payment_review,
+.order-tracking-hero.stage-pending_payment,
+.order-tracking-hero.stage-payment_rejected{
+  --stage-bg:#fff7e8;--stage-ink:#9c691f;--stage-border:#f0dfba
+}
+.order-tracking-hero.stage-payment_review{--stage-bg:#edf8fb;--stage-ink:#146a83;--stage-border:#cce3ed}
+.order-tracking-hero.stage-payment_rejected,
+.order-tracking-hero.stage-cancelled{
+  --stage-bg:#fff0f0;--stage-ink:#a33c47;--stage-border:#f4d4d7
+}
+.order-tracking-hero.stage-preparing{--stage-bg:#eaf5ff;--stage-ink:#236d9e;--stage-border:#c9e0f4}
+.order-tracking-hero.stage-shipped,
+.order-tracking-hero.stage-out_for_delivery{--stage-bg:#ebf8fb;--stage-ink:#0c8190;--stage-border:#c3e8ea}
+.order-tracking-hero h1{font-size:clamp(21px,3vw,29px);margin:8px 0 9px;color:#173743}
+.checkout-card .order-stage-description{max-width:550px;margin:0 auto 13px;color:#617c82;font-size:13px;line-height:1.65}
+.checkout-card .order-stage-number{margin:0 0 12px;font-size:12px;color:#6a848b}
+.order-stage-status{
+  background:var(--stage-bg);
+  border:1px solid var(--stage-border);
+  color:var(--stage-ink);
+  padding:8px 14px;
+  font-size:12px;
+  font-weight:830
+}
+.order-stage-mark{
+  display:grid;
+  place-items:center;
+  width:88px;
+  height:88px;
+  margin:0 auto 19px;
+  position:relative;
+  background:var(--stage-bg);
+  border:1px solid var(--stage-border);
+  box-shadow:0 0 0 9px color-mix(in srgb,var(--stage-bg) 40%,transparent);
+  border-radius:28px;
+  color:var(--stage-ink)
+}
+.order-stage-mark svg{
+  display:block;
+  width:48px;
+  height:48px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.65;
+  stroke-linecap:round;
+  stroke-linejoin:round
+}
+.order-stage-thumb{border-radius:50%;font-size:48px;line-height:1;animation:order-thumb-arrive 850ms cubic-bezier(.18,.85,.2,1.18) both}
+.order-stage-package svg{animation:order-prepare-float 2.8s ease-in-out infinite}
+.order-stage-review svg{animation:order-review-pulse 2.5s ease-in-out infinite}
+.order-stage-truck svg{width:62px;height:62px;animation:order-truck-roll 1.2s ease-in-out infinite}
+.order-truck-wind{position:absolute;left:-13px;top:29px;width:23px;height:18px;animation:order-wind 1s ease-in-out infinite;background:repeating-linear-gradient(to bottom,transparent 0 4px,currentColor 4px 6px,transparent 6px 9px);mask-image:linear-gradient(to right,transparent,#000)}
+.stage-completed .order-stage-thumb{box-shadow:0 0 0 8px #e6f7ed,0 10px 26px #08684e17}
+@keyframes order-thumb-arrive{0%{opacity:0;transform:translateY(16px) scale(.6) rotate(-20deg)}65%{opacity:1;transform:translateY(-5px) scale(1.12) rotate(5deg)}100%{opacity:1;transform:none}}
+@keyframes order-prepare-float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+@keyframes order-review-pulse{0%,100%{opacity:.78;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes order-truck-roll{0%,100%{transform:translateX(-3px) translateY(1px)}48%{transform:translateX(5px) translateY(-2px)}}
+@keyframes order-wind{0%{transform:translateX(6px);opacity:.15}40%{opacity:.85}100%{transform:translateX(-7px);opacity:0}}
+.order-tracking-timeline{padding:21px 20px 22px}
+.order-tracking-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:17px}
+.order-tracking-heading h2{margin:5px 0 0;font-size:18px}
+.order-tracking-heading>svg{height:25px;width:25px;fill:none;stroke:#0d897e;stroke-width:1.8}
+.order-tracking-refresh{display:inline-flex;align-items:center;gap:6px;border:1px solid #d9e9e7;background:#f4faf9;color:#176e72;border-radius:10px;min-height:40px;padding:8px 11px;font-size:11.5px;font-weight:800;cursor:pointer}
+.order-tracking-refresh svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9}
+.order-tracking-refresh:focus-visible{outline:3px solid #0b8c85;outline-offset:2px}
+.order-tracking-steps{list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0;padding:5px 0 0}
+.order-tracking-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center}
+.order-tracking-step:not(:last-child)::after{content:"";position:absolute;top:17px;left:calc(50% + 20px);width:calc(100% - 40px);height:3px;border-radius:10px;background:#dfe9e8}
+.order-tracking-step.is-done:not(:last-child)::after{background:#0ca888}
+.order-step-point{position:relative;z-index:2;display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;border:2px solid #d8e5e5;background:#f7f9f9;color:#869ca2;font-size:12px;font-weight:820}
+.order-step-point svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4}
+.order-tracking-step.is-done .order-step-point{background:#0aa788;border-color:#0aa788;color:white}
+.order-tracking-step.is-current .order-step-point{background:#e5f7f3;border-color:#0ca88a;color:#087d6c;box-shadow:0 0 0 4px #0ca88a18}
+.order-tracking-step.is-stopped .order-step-point{background:#faf2f2;border-color:#eddee0;color:#b8a4a5}
+.order-step-text{display:block;font-size:10.8px;line-height:1.4;font-weight:730;color:#87989e;max-width:100%;overflow-wrap:normal}
+.order-tracking-step.is-done .order-step-text{color:#216b62}
+.order-tracking-step.is-current .order-step-text{color:#116f67;font-weight:860}
+.checkout-card .order-tracking-note{margin:14px 0 0;padding:11px 13px;background:#eef8f7;border-radius:10px;color:#527f83;font-size:11.5px;line-height:1.5}
+.order-tracking-note.is-cancelled{background:#fff0ef!important;color:#9d4851!important}
+.order-tracking-note.is-active{display:flex;align-items:center;gap:8px}
+.order-tracking-note svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;flex:none}
+.payment-status-pill.is-cancelled{background:#fff0f0;color:#9c404a}
+.order-shipping-card{scroll-margin-top:90px;border-color:#cfe7e5}
+.order-shipping-card .order-tracking-heading{margin-bottom:10px}
+.checkout-card .order-shipping-description{font-size:12.5px;margin:0 0 13px;color:#5f7e85}
+.order-shipping-line{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #e5eeee;padding:13px 0;font-size:12px}
+.order-shipping-line>span{color:#738a90}
+.order-shipping-line>strong,.order-shipping-line>div>strong{color:#173c43;font-weight:820;overflow-wrap:anywhere;text-align:right}
+.order-shipping-line>div{display:flex;align-items:center;gap:7px;min-width:0}
+.order-shipping-line .payment-copy-button{width:36px;height:36px;border-radius:9px}
+.checkout-card .order-shipping-pending{border-radius:10px;padding:11px 12px;background:#f3f8f8;color:#687e83;font-size:12px;margin:10px 0}
+.order-shipping-card .checkout-outline-action{gap:8px;text-decoration:none}
+.order-shipping-card .checkout-outline-action svg,.order-tracking-cta svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.order-tracking-cta{margin-top:7px}
+#payment-instructions-title{scroll-margin-top:105px}
+.order-tracking-timeline,.order-shipping-card{scroll-margin-top:90px}
+@media(max-width:760px){
+ .order-tracking-hero{padding:24px 15px 20px}
+ .order-tracking-hero h1{font-size:22px}
+ .order-stage-mark{width:77px;height:77px;margin-bottom:17px}
+ .order-stage-mark svg{width:43px;height:43px}
+ .order-stage-truck svg{width:57px;height:57px}
+ .order-stage-thumb{font-size:42px}
+ .order-tracking-timeline{padding:17px 12px 20px}
+ .order-tracking-heading h2{font-size:16px}
+ .order-tracking-steps{gap:0}
+ .order-step-point{width:30px;height:30px}
+ .order-tracking-step:not(:last-child)::after{top:14px;left:calc(50% + 17px);width:calc(100% - 34px);height:2px}
+ .order-step-text{font-size:9.4px;line-height:1.3;word-break:normal}
+ .order-shipping-line{align-items:flex-start}
+ .order-shipping-line>span{min-width:85px}
+}
+@media(max-width:360px){
+ .order-step-text{font-size:8.5px}
+ .order-tracking-refresh{font-size:10px;min-height:36px;padding:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .order-stage-thumb,.order-stage-package svg,.order-stage-review svg,.order-stage-truck svg,.order-truck-wind{animation:none!important;transition:none!important;transform:none!important}
+}

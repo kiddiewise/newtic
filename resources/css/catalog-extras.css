@@ -1,0 +1,65 @@
+/* NEWTIC product catalog administration and storefront improvements */
+.admin-main-nav{display:flex;gap:9px;max-width:1120px;margin:0 auto;padding:12px 20px 0;overflow-x:auto}
+.admin-main-nav a{white-space:nowrap;border-radius:10px;padding:11px 17px;background:#e9f2f3;color:#36616a;font-size:13px;font-weight:750}
+.admin-main-nav a.is-active{background:#0a828b;color:#fff}
+.admin-heading-actions{gap:20px;flex-wrap:wrap}
+.admin-heading-actions .admin-primary,.admin-heading-actions .admin-secondary{align-self:center}
+.admin-quick-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.admin-quick-links a{background:#fff;border:1px solid #dce9e9;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:7px}
+.admin-quick-links strong{font-size:14px;color:#117a7f}.admin-quick-links small{color:#7a909a;font-size:12px}
+.admin-form select,.admin-form textarea,.admin-catalog-search input{background:#fff;width:100%;color:#213b47;border:1px solid #d5e1e5;border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit}
+.admin-form textarea{resize:vertical}
+.admin-form label small{font-size:11px;color:#778e99;font-weight:400}
+.admin-form-actions{align-items:center;gap:12px;flex-wrap:wrap}
+.admin-catalog-row{display:flex;align-items:center;gap:17px;padding:15px 0;border-top:1px solid #edf1f2}
+.admin-catalog-row:last-child{border-bottom:1px solid #edf1f2}
+.admin-catalog-photo{flex:none;width:70px;height:70px;object-fit:contain;border-radius:11px;background:#f0f6f7}
+.admin-catalog-info{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.admin-catalog-info>strong{font-weight:770;font-size:14px}
+.admin-catalog-info>small{font-size:12px;color:#788a94}
+.admin-catalog-stats{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:#8495a0}
+.admin-catalog-stats strong{font-size:14px;color:#0b7c80}.admin-catalog-stats s{color:#8a989d}
+.admin-sale-tag{background:#dff4ec;color:#0d7555;border-radius:7px;padding:4px 7px;font-size:11px;font-weight:800}
+.admin-catalog-search{display:flex;gap:10px;margin:0 0 25px}
+.admin-catalog-search input{flex:1;min-width:0}
+.admin-discount-preview{background:#e7f6f2;color:#0b7564;padding:12px 15px;border-radius:12px;font-size:13px;font-weight:700}
+.admin-discount-preview.is-invalid{background:#ffeced;color:#b3454a}
+.admin-category-preview{width:115px;height:115px;object-fit:contain;background:#f3f8f8;border-radius:14px}
+.admin-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}
+.admin-photo-tile{position:relative;display:flex;flex-direction:column;gap:8px;border:1px solid #e6ecee;border-radius:14px;padding:9px}
+.admin-photo-tile img{width:100%;aspect-ratio:1;object-fit:contain;background:#f4f7f7;border-radius:9px}
+.admin-photo-tile form button{width:100%}
+.admin-cover-label{position:absolute;top:16px;left:16px;background:#d5f1e9;border-radius:7px;padding:4px 7px;font-size:10px;font-weight:800;color:#0c7355}
+.admin-metric{display:flex;gap:14px;align-items:center}
+.admin-metric strong{font-size:32px;color:#0a828b}
+.admin-metric span{font-size:12px;color:#7c8e9a}
+.product-discount-pill,.detail-discount-pill{position:absolute;z-index:2;top:12px;right:12px;background:#d63047;color:#fff;font-weight:850;border-radius:9px;padding:7px 9px;font-size:.78rem;letter-spacing:.005em}
+.product-card-old-price{display:block;color:#96a2aa;font-size:.78rem;margin-top:auto;padding-top:10px}
+.product-card-old-price + .product-card-bottom{margin-top:0;padding-top:4px}
+.product-card-old-price + .product-card-bottom strong{color:#c62441}
+.product-card-views{color:#81959d;font-size:.68rem;margin-top:9px}
+.detail-gallery{min-width:0}
+.detail-art{position:relative}
+.detail-thumbnails{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.detail-thumbnails button{border:2px solid #e0e9eb;border-radius:11px;padding:3px;background:#fff;cursor:pointer;width:75px;height:75px}
+.detail-thumbnails button[aria-pressed="true"]{border-color:#0a828b}
+.detail-thumbnails button img{width:100%;height:100%;object-fit:contain;border-radius:7px}
+.detail-discount-pill{top:17px;left:17px;right:auto;font-size:.76rem}
+.product-view-counter{display:inline-flex;align-items:center;margin-top:12px;gap:6px;padding:6px 10px;border-radius:20px;background:#eef6f5;color:#52717b;font-size:.76rem}
+.detail-original-price{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:23px}
+.detail-original-price s{color:#94a2a9;font-size:1rem}
+.detail-original-price span{color:#c72e48;font-weight:800;font-size:.8rem}
+.detail-original-price + .detail-price{margin-top:6px;color:#bb2742}
+.order-discount{color:#c52c48;font-weight:800;font-size:.7rem}
+@media(max-width:710px){
+  .admin-main-nav{padding:10px 12px 0;gap:7px}
+  .admin-main-nav a{padding:9px 12px;font-size:12px}
+  .admin-quick-links{grid-template-columns:1fr;gap:8px}
+  .admin-quick-links a{padding:13px}
+  .admin-heading-actions{align-items:stretch}
+  .admin-catalog-row{gap:9px;flex-wrap:wrap}
+  .admin-catalog-photo{width:58px;height:58px}
+  .admin-catalog-info{flex-basis:calc(100% - 79px)}
+  .admin-catalog-row>a.admin-secondary{margin-left:auto}
+  .product-discount-pill{top:8px;right:8px;padding:5px 7px;font-size:.7rem}
+}

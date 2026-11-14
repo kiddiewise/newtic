@@ -1,0 +1,23 @@
+.google-merchant-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.google-merchant-overview .admin-panel{min-width:0}
+.google-merchant-overview h2{font-size:21px;font-weight:820;margin:8px 0}
+.google-merchant-section{margin-bottom:18px}
+.google-merchant-section .admin-panel-title{margin-bottom:12px}
+.google-merchant-section .admin-description{font-size:12.5px;line-height:1.65;margin:8px 0 16px}
+.google-merchant-form{max-width:680px;display:grid;gap:13px;margin-top:16px}
+.google-merchant-form label{display:grid;gap:6px}
+.google-merchant-form input,.google-merchant-form select{width:100%}
+.google-merchant-form button{justify-self:start}
+.google-merchant-actions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.google-merchant-uri{display:grid;gap:8px;padding:12px 14px;border:1px solid #dae7e8;background:#f5faf9;border-radius:11px;margin:12px 0;min-width:0}
+.google-merchant-uri code,.google-merchant-uri a{font-size:12px;overflow-wrap:anywhere;word-break:break-word;color:#105c65}
+.google-merchant-uri strong{font-size:12px;color:#3c6470}
+.google-merchant-progress{margin:16px 0;padding:14px;border:1px solid #dce8e9;border-radius:12px;background:#f7fbfb}
+.google-merchant-progress strong{color:#204d5d}
+.google-merchant-progress p{font-size:12px;margin:6px 0;color:#466672}
+.google-merchant-errors{margin:16px 0}
+.google-merchant-errors h3{font-size:14px}
+.google-merchant-errors p{border-bottom:1px solid #e2e9eb;font-size:12px;padding:8px 0;color:#8c4150}
+.google-merchant-autosync{display:grid;gap:9px;padding-top:14px;border-top:1px solid #e1eaed}
+.google-merchant-autosync small{font-size:11px;line-height:1.65;color:#677d85}
+@media(max-width:840px){.google-merchant-overview{grid-template-columns:1fr}.google-merchant-section{padding:16px}.google-merchant-actions{flex-direction:column}.google-merchant-actions button{width:100%}}

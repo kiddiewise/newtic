@@ -1,0 +1,28 @@
+/* Gallery desktop controls: overlay the photo, never cover pastel badge ribbons. */
+.pdp-gallery .pdp-gallery-arrow{
+  display:none;position:absolute;top:50%;z-index:6;align-items:center;justify-content:center;
+  width:44px;height:44px;padding:0;border:1px solid #dce7eb;border-radius:50%;
+  background:rgba(255,255,255,.96);color:#173e53;box-shadow:0 4px 15px rgba(10,33,49,.13);
+  transform:translateY(-50%);cursor:pointer;transition:background .16s ease,box-shadow .16s ease;
+}
+.pdp-gallery .pdp-gallery-arrow svg{width:23px;height:23px;stroke:currentColor}
+.pdp-gallery .pdp-gallery-arrow:focus-visible{outline:3px solid #4d8796;outline-offset:3px}
+.pdp-gallery .pdp-gallery-arrow:hover{background:#fff;box-shadow:0 5px 19px rgba(10,33,49,.21)}
+.pdp-gallery .pdp-gallery-prev{left:14px}
+.pdp-gallery .pdp-gallery-next{right:14px}
+@media(min-width:761px){
+  .pdp-gallery .pdp-gallery-arrow{display:flex}
+}
+@media(max-width:760px){
+  .pdp-gallery .pdp-gallery-arrow{display:none!important}
+  .pdp-gallery .pdp-art{touch-action:pan-y;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+  .pdp-gallery .pdp-art [data-product-main-image]{
+    pointer-events:none;-webkit-user-drag:none;will-change:transform;
+    transition:transform .18s ease-out;
+  }
+  .pdp-gallery .pdp-art.is-pinching [data-product-main-image]{transition:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .pdp-gallery .pdp-art [data-product-main-image]{transition:none!important}
+  .pdp-gallery .pdp-gallery-arrow{transition:none}
+}

@@ -1,0 +1,35 @@
+/* NEWTIC SEO workspace: clear mobile-first controls with a compact editorial hierarchy. */
+.seo-overview{margin-bottom:18px}
+.seo-overview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.seo-overview-heading h2{font-size:20px;font-weight:800;margin:6px 0}
+.seo-overview-heading p{font-size:12px;color:#496673;line-height:1.5}
+.seo-overview-heading code{overflow-wrap:anywhere}
+.seo-status-dot{font-size:10px;letter-spacing:.08em;font-weight:800;border:1px solid transparent;border-radius:5px;padding:7px 10px}
+.seo-status-dot.is-private{background:#f9eadd;color:#86531c;border-color:#ebd3af}
+.seo-status-dot.is-public{background:#e0f6eb;color:#236142;border-color:#bce9cc}
+.seo-notice{padding:12px 14px;background:#f5f7fa;border-left:3px solid #b3bec8;color:#3a5462;font-size:12px;line-height:1.65;margin:14px 0 2px}
+.seo-admin-main>.admin-panel{margin-bottom:18px}
+.seo-robots-switches{display:grid;gap:12px}
+.seo-switch{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid #e1e9ec;border-radius:12px;background:#fbfdfd}
+.seo-switch input[type=checkbox]{width:19px;height:19px;accent-color:#1c7866;flex:none;margin-top:2px}
+.seo-switch span{display:grid;gap:5px;line-height:1.45}
+.seo-switch strong{font-size:13px;color:#234655}
+.seo-switch small{font-size:11.5px;color:#68808d}
+.seo-link-grid{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.seo-link-grid .admin-secondary{white-space:normal;overflow-wrap:anywhere}
+.seo-social-preview{display:grid;justify-items:start;gap:11px}
+.seo-social-preview img{border:1px solid #dce7ea;border-radius:9px;max-width:100%;height:auto;object-fit:contain;background:#f5f9f9}
+.seo-page-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.seo-page-item{padding:13px;border:1px solid #e1e9ed;border-radius:12px;display:grid;gap:10px;min-width:0}
+.seo-page-item strong{font-size:13px;color:#214656}
+.seo-page-item label{display:grid;gap:6px;font-size:11.5px;color:#566f7b;font-weight:650}
+.seo-page-item input,.seo-page-item textarea{width:100%;min-width:0;border:1px solid #d6e2e5;border-radius:8px;padding:10px;background:white;color:#213d4a;font:inherit}
+.seo-save-bar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 0 22px;padding:16px 18px;background:#eef6f4;border:1px solid #d3e5df;border-radius:13px}
+.seo-save-bar p{font-size:12px;color:#466a66;line-height:1.5;margin:0}
+.seo-save-bar button{flex:none}
+.seo-audit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.seo-audit-grid>div{display:grid;gap:7px;border:1px solid #e1e9ed;border-radius:10px;padding:14px;min-width:0}
+.seo-audit-grid strong{font-size:23px;color:#234d61}
+.seo-audit-grid span{font-size:11.5px;color:#637c86;line-height:1.5}
+@media(max-width:920px){.seo-audit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.seo-page-grid,.seo-audit-grid{grid-template-columns:1fr}.seo-save-bar{flex-direction:column;align-items:stretch}.seo-save-bar button{width:100%}.seo-overview-heading h2{font-size:18px}}
