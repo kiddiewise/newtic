@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\EmailDelivery;
 use App\Console\Commands\ExpireUnpaidBankOrders;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\OrderStatusChange;
@@ -62,6 +63,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
+        $emailDeliveries = EmailDelivery::query()->where('order_id', $order->id)->latest('id')->limit(15)->get();
         $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts',
             'shippingShipment.carrier', 'shippingShipment.warehouse', 'shippingShipment.provider',
             'shippingShipment.events', 'statusChanges.user']);
@@ -84,7 +86,7 @@ class OrderController extends Controller
         return view('admin.orders.show', compact(
             'order','allowed','shippingProvider','shippingCarriers',
             'shippingWarehouses','shippingTestAllowed', 'paymentVerified',
-            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice'
+            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice','emailDeliveries'
         ));
     }
 
