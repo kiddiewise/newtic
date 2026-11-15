@@ -24,7 +24,20 @@ use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\MarketingUnsubscribeController;
 use App\Http\Controllers\MarketingPreferenceController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SetupWizardController;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
+
+// Only a brand-new, CLI-authorized and empty shop may access these routes.
+// Once installed, every /install route returns 404 and cannot be reopened.
+Route::prefix('install')->name('install.')->group(function () {
+    Route::get('/', [SetupWizardController::class,'index'])->name('index');
+    Route::post('/access', [SetupWizardController::class,'unlock'])
+        ->middleware('throttle:10,1')->name('unlock');
+    Route::get('/checks', [SetupWizardController::class,'checks'])->name('checks');
+    Route::get('/details', [SetupWizardController::class,'details'])->name('details');
+    Route::post('/finish', [SetupWizardController::class,'finish'])
+        ->middleware('throttle:5,1')->name('finish');
+});
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/robots.txt', [SeoSitemapController::class, 'robots'])->name('seo.robots');
