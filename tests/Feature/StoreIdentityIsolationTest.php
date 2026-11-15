@@ -110,5 +110,22 @@ final class StoreIdentityIsolationTest extends TestCase
         $this->assertStringContainsString('already exists', $webroot);
         $this->assertStringContainsString('APP/public/index.php', $webroot);
         $this->assertStringNotContainsString('rm -rf', $webroot);
+
+        // Hostinger disables PHP exec(); storage:link previously stopped
+        // installation AFTER all migrations had already succeeded.
+        $this->assertStringNotContainsString('php artisan storage:link', $install);
+        $this->assertStringContainsString('ln -s', $install);
+        $this->assertStringContainsString('newtic-revision.txt', $install);
+
+        // Sinay first demonstrated that Apache may return 404 for static symlinks.
+        // Every fresh customer now gets physical CSS/JS and upload directories.
+        $this->assertStringContainsString('NEWTIC_PUBLIC_STORAGE_ROOT', $webroot);
+        $this->assertStringContainsString('cp -a', $webroot);
+        $this->assertStringNotContainsString('ln -s "$APP/public/build"', $webroot);
+        $this->assertStringNotContainsString('ln -s "$APP/public/assets"', $webroot);
+        $this->assertStringContainsString('newtic-revision.txt', $webroot);
+        $this->assertStringContainsString('NEWTIC_PUBLIC_STORAGE_ROOT', file_get_contents(base_path('config/filesystems.php')));
+        $this->assertFileExists(base_path('scripts/verify-public-assets.sh'));
+        $this->assertFileExists(base_path('scripts/publish-webroot-assets.sh'));
     }
 }

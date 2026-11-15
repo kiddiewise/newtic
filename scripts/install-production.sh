@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 # Fresh isolated NEWTIC deployment. Not a GUI installation wizard.
-# Usage: bash scripts/install-production.sh --check | --install
+# Usage: bash scripts/install-production.sh --check | --install [--assets-bundle /path/to/newtic-install-assets.tar.gz]
 set -Eeuo pipefail
 umask 027
 
 APP="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$APP"
 MODE="${1:---check}"
-if [[ "$MODE" != "--check" && "$MODE" != "--install" || $# -ne 1 ]]; then
-  echo "Usage: bash scripts/install-production.sh --check | --install" >&2
+ASSET_BUNDLE=""
+if [[ "$MODE" == "--check" && $# -eq 1 ]]; then
+  :
+elif [[ "$MODE" == "--install" && $# -eq 1 ]]; then
+  :
+elif [[ "$MODE" == "--install" && $# -eq 3 && "$2" == "--assets-bundle" ]]; then
+  ASSET_BUNDLE="$3"
+else
+  echo "Usage: bash scripts/install-production.sh --check | --install [--assets-bundle /path/to/newtic-install-assets.tar.gz]" >&2
   exit 2
 fi
 
@@ -85,18 +92,66 @@ if [[ -z "$(env_value APP_KEY)" ]]; then
   php artisan key:generate --force --no-interaction
 fi
 
+# New stores can use the matching precompiled GitHub Actions archive when
+# shared Hostinger SSH offers PHP/Composer but not Node.js/npm.
+if [[ ! -f public/build/manifest.json && -n "$ASSET_BUNDLE" ]]; then
+  test -f "$ASSET_BUNDLE" || fail "Frontend bundle not found: $ASSET_BUNDLE"
+  command -v tar >/dev/null 2>&1 || fail "tar is required for the verified frontend bundle."
+  tar -tzf "$ASSET_BUNDLE" >/dev/null || fail "Unreadable frontend bundle."
+  if tar -tzf "$ASSET_BUNDLE" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+    fail "Unsafe frontend archive paths."
+  fi
+  if tar -tzf "$ASSET_BUNDLE" | grep -Ev '^(build/|build$)' | grep -q .; then
+    fail "Frontend archive contains unexpected files outside build/."
+  fi
+  if tar -tvzf "$ASSET_BUNDLE" | grep -Eq '^[lh]'; then
+    fail "Frontend archive must not contain links."
+  fi
+  tar -tzf "$ASSET_BUNDLE" | grep -Fxq 'build/newtic-revision.txt' ||
+    fail "Frontend archive lacks matching revision metadata."
+  EXPECTED="$(git rev-parse HEAD)"
+  BUNDLE_REVISION="$(tar -xOf "$ASSET_BUNDLE" build/newtic-revision.txt)"
+  [[ "$BUNDLE_REVISION" == "$EXPECTED" ]] ||
+    fail "Frontend build does not match this Git commit; download the assets from its successful CI run."
+  tar -xzf "$ASSET_BUNDLE" -C public
+fi
+
 if [[ ! -f public/build/manifest.json ]]; then
   command -v npm >/dev/null 2>&1 ||
-    fail "Vite assets missing and npm unavailable. Supply verified matching public/build assets or Node 22+."
-  note "Compiling storefront assets."
+    fail "Vite assets missing and npm unavailable. Download this Git commit's newtic-install-assets artifact from GitHub Actions."
+  note "Compiling storefront assets with npm."
   npm install --ignore-scripts --no-audit --no-fund
   npm run build
+  git rev-parse HEAD > public/build/newtic-revision.txt
 fi
 
 test -f public/build/manifest.json || fail "Compiled Vite manifest missing."
+test -s public/build/newtic-revision.txt ||
+  fail "Missing frontend revision marker. Use a fresh CI build or compile from this Git commit."
+[[ "$(cat public/build/newtic-revision.txt)" == "$(git rev-parse HEAD)" ]] ||
+  fail "Frontend build revision differs from checked-out NEWTIC code."
+APP="$APP" php -r '
+$m = json_decode(file_get_contents(getenv("APP")."/public/build/manifest.json"), true);
+if (!is_array($m)) exit(1);
+foreach (["resources/css/app.css" => "css", "resources/js/app.js" => "js"] as $name => $ext) {
+    $file = $m[$name]["file"] ?? null;
+    if (!is_string($file) || !preg_match("~^assets/[A-Za-z0-9._-]+\\.".$ext."$~D", $file)) exit(2);
+    if (!is_file(getenv("APP")."/public/build/".$file)) exit(3);
+}
+' || fail "Compiled stylesheet/script files are missing or manifest is invalid."
 php artisan config:clear
 php artisan migrate --force --no-interaction
-php artisan storage:link --no-interaction
+# Hostinger often disables PHP exec(). Using the shell ln command avoids
+# Laravel Filesystem's exec() fallback and preserves any valid existing link.
+TARGET="$APP/storage/app/public"
+if [[ -L public/storage ]]; then
+  [[ "$(readlink -f public/storage)" == "$TARGET" ]] ||
+    fail "Existing public/storage symlink points outside this installation."
+elif [[ -e public/storage ]]; then
+  fail "public/storage already exists as a real file/directory; refusing to overwrite user uploads."
+else
+  ln -s "$TARGET" public/storage || fail "Cannot create public/storage symlink."
+fi
 php artisan view:cache
 php artisan config:cache
 

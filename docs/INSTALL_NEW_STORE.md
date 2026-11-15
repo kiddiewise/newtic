@@ -1,181 +1,167 @@
-# NEWTIC – Yeni bağımsız mağaza kurulumu
+# NEWTIC – Her müşteriye bağımsız Hostinger kurulumu (Model A)
 
-Bu rehber Sinay Design gibi farklı marka/domain için sıfırdan NEWTIC kurulmasını anlatır.
-Polaris ürünleri, müşterileri ve şifreleri kopyalanmaz. Güvenli tarayıcı kurulum sihirbazı v1.0 mevcuttur;
-canlı ödeme/kargo etkinleştirmesi bu aşamada yoktur.
+Bu doküman tek bir müşteriye değil, herhangi bir yeni domain için ilk kuruluma
+uygulanır. Polaris, Sinay veya başka mağazanın kullanıcıları ve ürünleri asla
+taşınmaz. Her kurulumda ayrı hosting/dizin, MySQL, APP_KEY, SMTP ve ödeme/kargo
+bilgileri vardır.
 
-## 1. Gereksinimler
+## Ön hazırlık
 
-- Boş domain ve boş webroot, çalışan HTTPS sertifikası.
-- PHP CLI ve web PHP 8.3+; pdo_mysql, mbstring, openssl, fileinfo,
-  xml, ctype, tokenizer uzantıları; Composer; ayrı MySQL veritabanı.
-- Node.js 22+ ile npm veya doğru commit'e ait test edilmiş public/build dosyaları.
-- SSH erişimi; uygulama public_html klasörünün DIŞINDA bulunmalıdır.
-- Kaynak yalnızca GitHub main. Eski scripts/deploy-staging.sh bu amaçla kullanılmaz.
+- Geçerli HTTPS sertifikalı yeni domain ve BOŞ public_html.
+- PHP CLI/web 8.3+, Composer, Git, gerekli PHP uzantıları.
+- Yeni, boş ve sadece bu müşteriye ait MySQL veritabanı.
+- Laravel proje klasörü kesinlikle public_html dışında.
+- Hostinger'de Node.js gerekmez; GitHub Actions derlenmiş Vite paketi verir.
+- Mevcut public_html dosyaları veya Hostinger default.php varsa önce yedekleyin.
+  Script mevcut site dosyalarının üzerine ASLA yazmaz.
 
-## 2. Temiz kod ve mağaza ayarları
+Örnek klasörler (MUSTERI-DOMAINI kısmını gerçek domainle değiştirin):
 
-    cd ~/domains/sinaydesign.com
+    ~/domains/MUSTERI-DOMAINI/newtic/
+    ~/domains/MUSTERI-DOMAINI/public_html/
+
+## 1. GitHub kaynak kodları
+
+    cd ~/domains/MUSTERI-DOMAINI
     git clone --branch main --single-branch https://github.com/kiddiewise/newtic.git newtic
     cd newtic
     cp .env.example .env
+    chmod 600 .env
+    nano .env
 
-Her müşteri için yeni MySQL kullanıcısı/veritabanı tanımlayın. Başka mağazanın
-.env, APP_KEY, SQL, depolama veya ödeme/kargo anahtarlarını KOPYALAMAYIN.
+Her müşterinin kendi ayarları:
 
-Örnek .env (gerçek DB şifreleri yalnızca sunucuda saklanır):
-
-    APP_NAME="Sinay Design"
+    APP_NAME="Müşteri Mağazası"
     APP_ENV=production
+    APP_KEY=
     APP_DEBUG=false
-    APP_URL=https://sinaydesign.com
+    APP_URL=https://MUSTERI-DOMAINI
 
     DB_CONNECTION=mysql
     DB_HOST=127.0.0.1
     DB_PORT=3306
-    DB_DATABASE=<YENI_VERITABANI>
-    DB_USERNAME=<YENI_KULLANICI>
+    DB_DATABASE=<MUSTERI_YENI_DB>
+    DB_USERNAME=<MUSTERI_DB_USER>
     DB_PASSWORD=<GIZLI_SIFRE>
 
     SESSION_DRIVER=database
     CACHE_STORE=database
     QUEUE_CONNECTION=database
-
-    NEWTIC_CHECKOUT_TEST_MODE=true
     MAIL_MAILER=log
 
-Yeni kurulumda APP_KEY boş bırakılır. Kurulum yalnızca boşsa benzersiz anahtar
-oluşturur. Mevcut mağazanın anahtarını ASLA değiştirmeyin.
-APP_DEBUG=false ve HTTPS zorunludur.
+    NEWTIC_CHECKOUT_TEST_MODE=true
+    NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
+    NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
+    NEWTIC_SHIPPING_DUMMY_ENABLED=false
+    NEWTIC_MARKETING_SEND_ENABLED=false
 
-E-posta merkezi kendi şifrelenmiş SMTP ayarlarını kullanır. MAIL_MAILER=log
-varsayılanı diğer Laravel e-postalarını kapalı tutar. Yönetici SMTP testini
-geçip açıkça etkinleştirmeden otomatik müşteri e-postası gönderilmez.
+APP_KEY ilk kurulumda boş kalır ve bir defa otomatik üretilir. Var olan
+mağazanın anahtarı daha sonra asla değiştirilmez. Sırları GitHub'a,
+loglara veya sohbete yapıştırmayın.
 
-## 3. Ön kontrol ve kurulum
+## 2. Ön kontrol
 
     bash scripts/install-production.sh --check
+
+Bu komut .env, PHP sürümü ve gerekli ayarları değiştirmeden denetler.
+İlk gerçek veritabanı tabloları --install sırasında oluşturulur.
+
+## 3. Vite CSS/JS kurulum: iki seçenek
+
+### Node.js sunucuda bulunuyorsa
+
     bash scripts/install-production.sh --install
 
-İlk komut güvenli, salt-okunur ön kontroldür; dosya/DB değiştirmez.
-İkinci komut, GitHub'da sürüm kontrolündeki `composer.lock` üzerinden tüm PHP
-bağımlılıklarını (Google girişindeki `firebase/php-jwt` dahil) otomatik kurar,
-PHP uzantılarını ve oturum imzası doğrulama sınıflarını kontrol eder. Ardından
-asset derlemesi, benzersiz APP_KEY, migration, storage ve Laravel cache
-hazırlığını yapar. Demo seeder'ı çalıştırmaz.
+### Hostinger'de Node.js bulunmuyorsa
 
-**Yeni domainlerde JWT veya başka Composer paketlerini elle kurmayın.**
-Paket sürümleri yalnızca geliştirme dalında `composer.json` +
-`composer.lock` birlikte güncellenerek, CI testlerinden geçirilerek yayınlanır.
-Kurulum ön kontrolü bu dosyalardan biri eksik veya tutarsızsa güvenle durur.
-PHP/Composer araçlarının hosting üzerinde ilk kez hazır edilmesi gerekir;
-sonrası yukarıdaki kurulum betiğince yürütülür.
+1. GitHub kiddiewise/newtic -> Actions -> Tests and assets -> kullanılan
+   main commit için başarılı çalışmayı açın.
+2. Artifacts içinden newtic-install-assets dosyasını indirin.
+3. İndirilen ZIP'in içindeki newtic-install-assets.tar.gz dosyasını
+   Hostinger File Manager üzerinden newtic/ klasörüne yükleyin.
+4. Aşağıdaki komutu kullanın:
 
-Google Cloud OAuth yapılandırması paket kurulumundan ayrıdır. Her mağazanın
-HTTPS domainine karşılık gelen **tam** `https://MAGAZA-DOMAINI/auth/google/callback`
-URI adresini Google Cloud > Clients > Authorized redirect URIs içinde
-yetkilendirin. Admin > Google Giriş panelinden o mağazaya ait Client ID ve
-Client Secret'ı kaydedin. Geçici test domainleri için Google Cloud test
-kullanıcısı gerekir; gerçek domainin OAuth yayın ayarları ayrıca yapılır.
+    bash scripts/install-production.sh --install --assets-bundle "$PWD/newtic-install-assets.tar.gz"
 
-Bu ilk kurulum altyapısıdır, var olan müşteri için otomatik sürüm güncelleme
-veya veritabanı taşıma aracı değildir. Kurulum SSH ve tarayıcı olarak iki kademelidir:
-SSH sunucuyu, Composer/DB/.env/APP_KEY hazırlığını tamamlar; kurulum sihirbazı ise
-mağaza ismi, ilk yönetici hesabı ve güvenli kilitlemeyi yapar.
+Paketin içindeki build/ otomatik newtic/public/build/ klasörüne açılır;
+newtic/app/public/build diye bir yol YOKTUR. Arşiv bu Git commit'ine
+ait SHA etiketi taşır. Yanlış sürümün CSS/JS dosyaları reddedilir.
 
-## 4. Web kökü (document root)
+Bu kurulum Composer paketlerini lock dosyasından yükler, benzersiz APP_KEY,
+migrations, view/config cache işlemlerini yapar. PHP exec() fonksiyonu
+kapalı Hostinger sunucularında artisan storage:link çağırmaz; gerekirse
+denetimli şekilde shell ln -s kullanır. Mevcut kullanıcı dosyalarını silmez.
 
-Tercih edilen domain kökü: <uygulama>/public.
-Hostinger zorunlu public_html kullanıyorsa yalnızca BOŞ webrootta:
+## 4. BOŞ webroot'a yayınlama
 
-    bash scripts/prepare-hostinger-webroot.sh --webroot "/home/USER/domains/sinaydesign.com/public_html"
+Domainin document root'u doğrudan uygulamanın public/ klasörü ise
+webroot betiği gerekli değildir. Hostinger ayrık public_html kullanıyorsa:
 
-Mevcut index.php, .htaccess, build/assets/storage girişlerini
-ÜZERİNE YAZMAZ; dosya silmez. Hostinger karşılama dosyası veya eski site
-varsa önce yedekleyip elle inceleyin.
-Uygulama .env, vendor ve private kodu internete açılmaz.
+    bash scripts/prepare-hostinger-webroot.sh --webroot "$HOME/domains/MUSTERI-DOMAINI/public_html"
 
-## 5. Tarayıcı kurulum sihirbazı – ilk yönetici ve marka kimliği
+Yeni webroot scripti static build, assets ve uploads storage klasörlerini
+webroot'a FİZİKSEL olarak kopyalar; bunlara symlink oluşturmaz. Hostinger
+static symlink nedeniyle CSS/JS dosyalarına HTTP 404 döndürebiliyor.
+İlk kurulum scripti bunu engeller.
 
-**Önemli sıralama:** DNS/webroot'u gerçek ziyaretçilere açmadan ÖNCE
-`bash scripts/install-production.sh --install` ile sunucu, veritabanı ve
-migration hazırlığını tamamlayın. Ardından yalnızca gizli SSH oturumunda:
+Sistem yeni .env içine NEWTIC_PUBLIC_STORAGE_ROOT ayarını otomatik
+ekler; bu klasör public_html/storage olur. Yeni görsel yüklemeleri de
+gerçek public_html/storage altına kaydedilir. Uygulamanın .env, vendor,
+.git, storage/app/private gibi dosyaları webroot dışında kalır.
+
+Webroot doluysa script durur; mevcut siteyi silmez veya üzerine yazmaz.
+
+## 5. HTTPS üzerinden dosya doğrulaması (zorunlu)
+
+    bash scripts/verify-public-assets.sh
+
+Bu komut gerçek HTTPS adresinden CSS ve JavaScript dosyalarını GET ile
+indirerek sunucudaki aynı dosyalarla birebir karşılaştırır. 404, yanlış
+mimetype/HTML yönlendirmesi, eski önbellek veya sürüm uyuşmazlığını yakalar.
+Fiziksel public uploads varsa geçici test dosyasının HTTPS erişimini
+de kontrol edip dosyayı siler.
+
+Başarılı sonuç: NEWTIC_PUBLIC_ASSETS_OK: https://MUSTERI-DOMAINI
+
+Bu sonuç olmadan ilk kurulumu tamam kabul etmeyin.
+
+## 6. Görsel ilk kurulum sihirbazı
+
+Yalnız boş ve henüz kurulmamış mağazada:
 
     php artisan newtic:setup-token
 
-Bu komut yalnızca **boş ve daha önce kurulmamış** NEWTIC mağazasında çalışır;
-60+ karakterlik tahmin edilemeyen bir kurulum anahtarını sadece terminale yazar.
-Gerçek anahtarın yalnız SHA-256 özeti, 2 saatlik süresiyle birlikte
-`storage/app/private/newtic-setup/pending.json` dosyasına kaydedilir.
-Anahtarı GitHub, logs, ekran görüntüsü, e-posta veya bu sohbete göndermeyin.
+Telefondan Hostinger File Manager kullanacak yöneticiler için:
 
-Sonra `https://sinaydesign.com/install` sayfasını açın:
+    php artisan newtic:setup-token --private-file
 
-1. SSH'de gösterilen anahtarı yapıştırın. Yanlış denemeler kısıtlıdır.
-2. Sunucu, HTTPS, veritabanı, boş mağaza, PHP uzantıları, dosya izinleri,
-   test ödeme modu ve gerçek kargo güvenlik koşullarının tamamını doğrulayın.
-3. Mağaza adını, ilk yönetici ad/e-postasını ve güçlü şifreyi girin;
-   güvenli test modu onayını verin.
-4. Kurulum tamamlanınca yönetici paneline giriş yapılır ve kurulum sayfası
-   **kalıcı olarak kilitlenir**. Mağaza kurulurken başka ziyaretçiler
-   HTTP 503 "Mağaza hazırlanıyor" görür ve sipariş/üyelik oluşturamaz.
+İkinci seçenekte 2 saatlik tek kullanımlık kod yalnızca özel dosyada olur:
+newtic/storage/app/private/newtic-setup/mobile-install-code.txt
+Bu kodu paylaşmayın. Sonra https://MUSTERI-DOMAINI/install açın.
+Kurulum kodu, sunucu kontrolleri, mağaza adı ve ilk yönetici bilgileriyle
+ilk kurulumu tamamlayın. Ardından /install kalıcı olarak 404 döner.
 
-Sihirbaz APP_KEY'i yeniden üretmez, başka mağazadan ürün veya müşteri
-taşımaz. İlk kurulum `newtic_installations` veritabanı kaydıyla atomik
-kilitlenir; ek gizli dosya kilidi de yazılır. Tamamlanan `/install` 404
-döndürür. Zaman aşımında kurulum bitmemişse SSH'de
-`php artisan newtic:setup-token` komutu ile yeni anahtar oluşturun.
+Gerçek PAYTR tahsilatı, kargo ve kampanya gönderimi ile SEO indeksleme
+varsayılan kapalıdır. Bunlar ayrı kabul testlerinden sonra açılır.
 
-`newtic:admin` komutu yalnızca ayrı, kasıtlı manuel kurtarma için tutulur;
-normal ilk kurulumda **kullanılmamalı**.
+## 7. Diğer zorunlu işletim kontrolleri
 
-Admin > SEO Ayarları: mağaza adı, meta bilgiler, indeksleme.
-Admin > Logolar: markanın masaüstü ve mobil logosu.
-Ana sayfa, sosyal bağlantılar, WhatsApp, kategoriler bu mağazaya özeldir.
+Her mağazanın bağımsız Cron Jobs kaydında, gerçek PHP ve uygulama yoluyla
+her dakika php artisan schedule:run çalıştırın. SMTP, Google OAuth
+(callback: https://MUSTERI-DOMAINI/auth/google/callback), banka, kargo,
+PAYTR, Merchant Center ve SEO ayarlarını o müşteriye özel yapılandırın.
+SPF/DKIM/DMARC ve onay kayıtları olmadan toplu e-posta açmayın.
 
-Yeni mağaza varsayılan olarak noindex kullanır; gerçek içerik ve SEO
-kontrol edilmeden kapatmayın. Hostinger geçici domainleri zorunlu noindex.
-Polaris ürünleri, WhatsApp numarası ve sosyal linkleri yeni kuruluma gelmez.
+## 8. Sonraki sürümlerde CSS/JS tekrar yayınlanmalı
 
-## 6. E-posta ve müşteri bildirimleri
+Güvenle test edilip güncellenmiş aynı SHA'lı kod ve Vite derlemesinden sonra:
 
-Admin > E-posta ve Bildirimler üzerinden bu mağazaya ait SMTP gönderici
-bilgilerini tanımlayın, test e-postasını doğrulayın ve yalnız gerekli
-bildirimleri açın. Ayarlar varsayılan olarak kapalıdır; şifreli SMTP parolası
-asla depolar arasında kopyalanmaz. Google giriş ve Merchant bağlantılarından
-bağımsızdır. Test ortamında bütün e-postalar yalnızca tanımlı test alıcısına
-yönlenir. SPF/DKIM/DMARC ayarlarını her müşteri domaininde doğrulayın.
-Tam işlem ve hukuki değerlendirme listesi: docs/EMAIL_NOTIFICATIONS.md.
+    bash scripts/publish-webroot-assets.sh --webroot "$HOME/domains/MUSTERI-DOMAINI/public_html"
+    bash scripts/verify-public-assets.sh
 
-## 7. Zamanlanmış görevler
+Yayınlama yalnızca build ve assets içeriğini yeniler. Müşteri uploads
+klasörünü, kullanıcıları, siparişleri, DB ve .env dosyasını değiştirmez.
 
-Her yeni müşterinin kendi Hostinger Cron Jobs ayarında HER DAKİKA çalıştırın
-(PHP yolunu ve dizini bu hesaba göre değiştirin):
-
-    cd /home/USER/domains/sinaydesign.com/newtic && /usr/bin/php artisan schedule:run >/dev/null 2>&1
-
-GitHub bakım iş akışı sadece eski Polaris staging'e bağlıdır, diğer
-müşterilerin cron görevi değildir.
-
-## 8. Yayına geçiş kontrolleri
-
-- HTTPS, admin login, yetki, gizli .env koruması, storage izinleri.
-- Marka adı/logo, SEO, Merchant, tüm vitrin ve mobil menüler.
-- Ürünler/gramajlar, sepet, sipariş, stok, IBAN, Excel, 301 yönlendirmeler.
-- E-posta altyapısı mevcuttur ama varsayılan kapalıdır; SMTP testi, DNS
-  ve gerçek müşteri ileti onayları kontrol edilmeden otomatik gönderimleri açmayın.
-- PAYTR gerçek kart tahsilatı ve gerçek kargo gönderileri yeni domainlerde
-  bilerek kapalıdır; canlı entegrasyon testleri ayrıca gerekli.
-- Search Console, Merchant Center, robots/sitemap/canonical yeni domainde
-  kontrol edilir; yalnızca onay sonrası indeksleme açılır.
-- Gerçek MySQL yoğunluk testleri, mobil/masaüstü ve yedek/geri dönüş tatbikatı.
-
-## Güncellemeler ve yol haritası
-
-Bu komutlar temiz yeni kurulum içindir. Müşteri bazlı sürüm yükseltme ve
-geri dönüş planı farklı bir geliştirme gerektirir.
-
-Kurulum sihirbazı v1.0 yalnızca temiz ilk kurulum ve ilk yönetici içindir.
-SMTP, PAYTR, Google giriş, kargo, katalog ve SEO yönetim panelinden kurulur.
-Müşteri bazlı otomatik yazılım güncelleme/geri alma ve ilerideki kişiselleştirilmiş
-ürün ihtiyaçları bu ilk sihirbaz kapsamının dışındadır.
+Bu araçlar ilk kurulum ve derleme yayınlama içindir. Tüm müşteri
+sitelerine otomatik sürüm güncelleme/geri dönüş ayrı geliştirme konusudur;
+Sinay'a özel CI ve Polaris staging betikleri başka domainlerde kullanılmaz.

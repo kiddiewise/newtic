@@ -19,6 +19,21 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: newtic_ci_root_only
+          MYSQL_DATABASE: newtic_fresh_ci
+          MYSQL_USER: newtic_install_ci
+          MYSQL_PASSWORD: newtic_ci_temporary_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pnewtic_ci_root_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=8
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -51,12 +66,15 @@ jobs:
         run: |
           npm install --ignore-scripts
           npm run build
+          printf '%s\n' "$GITHUB_SHA" > public/build/newtic-revision.txt
       - name: Verify portable installer and webroot scripts
         run: |
           bash -n scripts/install-production.sh
           bash -n scripts/prepare-hostinger-webroot.sh
+          bash -n scripts/verify-public-assets.sh
           bash -n scripts/deploy-staging.sh
-          echo "Portable installer scripts parse successfully"
+          bash tests/install/test-hostinger-webroot.sh
+          echo "Portable installer scripts and isolated first-install webroot tests passed"
       - name: Exercise brand-independent installer preflight
         run: |
           set -euo pipefail
@@ -94,6 +112,69 @@ jobs:
         run: php artisan view:cache
       - name: Run tests
         run: php artisan test
+      - name: End-to-end blank MySQL first install with Hostinger PHP exec disabled
+        run: |
+          set -euo pipefail
+          tar -czf newtic-smoke-assets.tar.gz -C public build
+          rm -r public/build
+          cp .env.example .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          cat >> .env <<'CONFIG'
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=newtic_fresh_ci
+          DB_USERNAME=newtic_install_ci
+          DB_PASSWORD=newtic_ci_temporary_only
+          NEWTIC_CHECKOUT_TEST_MODE=true
+          NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
+          NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
+          NEWTIC_SHIPPING_DUMMY_ENABLED=false
+          NEWTIC_MARKETING_SEND_ENABLED=false
+          CONFIG
+          mkdir -p "$RUNNER_TEMP/newtic-noexec-bin"
+          PHP_REAL="$(command -v php)"
+          cat > "$RUNNER_TEMP/newtic-noexec-bin/php" <<'NOEXEC'
+          #!/usr/bin/env bash
+          exec "$NEWTIC_PHP_REAL" -d disable_functions=exec "$@"
+          NOEXEC
+          chmod 755 "$RUNNER_TEMP/newtic-noexec-bin/php"
+          export NEWTIC_PHP_REAL="$PHP_REAL"
+          export PATH="$RUNNER_TEMP/newtic-noexec-bin:$PATH"
+          php -r 'if (function_exists("exec")) exit(1);'
+          bash scripts/install-production.sh --check
+          bash scripts/install-production.sh --install --assets-bundle "$PWD/newtic-smoke-assets.tar.gz"
+          test -L public/storage
+          php artisan migrate:status | grep -F 'create_newtic_installations_table'
+          WEBROOT="$RUNNER_TEMP/newtic-fresh-webroot"
+          mkdir -p "$WEBROOT"
+          bash scripts/prepare-hostinger-webroot.sh --webroot "$WEBROOT"
+          test -f "$WEBROOT/build/manifest.json"
+          test ! -L "$WEBROOT/build"
+          test ! -L "$WEBROOT/storage"
+          test -d "$WEBROOT/storage"
+          php artisan newtic:setup-token --private-file
+          test -s storage/app/private/newtic-setup/mobile-install-code.txt
+          echo "PASS: real MySQL migrations, disabled PHP exec, Node-free assets, physical webroot and first setup key."
+          tar -xzf newtic-smoke-assets.tar.gz -C public
+      - name: Prepare reproducible first-install asset bundle (main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          test "$(cat public/build/newtic-revision.txt)" = "$GITHUB_SHA"
+          test -s public/build/manifest.json
+          tar -czf newtic-install-assets.tar.gz -C public build
+          tar -tzf newtic-install-assets.tar.gz | grep -Fx 'build/newtic-revision.txt'
+      - name: Upload portable first-install bundle for merchants without Node.js
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-install-assets
+          path: newtic-install-assets.tar.gz
+          if-no-files-found: error
+          retention-days: 14
       - name: Package verified frontend for staging
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
