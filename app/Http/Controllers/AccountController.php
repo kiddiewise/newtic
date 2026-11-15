@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Product;
+use App\Models\MarketingContact;
+use App\Services\MarketingConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,10 +52,14 @@ class AccountController extends Controller
             'next' => ['nullable','in:checkout,wishlist,cart,review'],
             'review_product' => ['nullable','string','max:200'],
             'favorite' => ['nullable','integer','min:1'],
+            'marketing_opt_in'=>['nullable','boolean'],
         ]);
         $user = User::create([
             'name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'],
         ]);
+        if ($request->boolean('marketing_opt_in')) {
+            app(MarketingConsentService::class)->request($user->email,'customer_registration',$user);
+        }
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -98,7 +104,8 @@ class AccountController extends Controller
         $addresses = $user->addresses()->orderByDesc('is_default')->latest()->get();
         $orders = $user->orders()->with('shippingShipment')->latest()->limit(15)->get();
 
-        return view('store.account', compact('user','addresses','orders'));
+        $marketingContact=MarketingContact::query()->where('email',mb_strtolower($user->email))->first();
+        return view('store.account', compact('user','addresses','orders','marketingContact'));
     }
 
     public function logout(Request $request): RedirectResponse
