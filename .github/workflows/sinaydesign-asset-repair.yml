@@ -1,0 +1,72 @@
+name: Repair Sinay Design storefront assets
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sinaydesign-asset-repair.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-sinay-public-assets
+  cancel-in-progress: false
+
+jobs:
+  repair-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate non-destructive static asset repair
+        run: |
+          set -euo pipefail
+          bash -n scripts/publish-sinay-public-assets.sh
+          grep -Fq 'DB_DATABASE=u880685189_sinay_newtic' scripts/publish-sinay-public-assets.sh
+          grep -Fq 'APP_URL=https://sinaydesign.com' scripts/publish-sinay-public-assets.sh
+      - name: Set up existing verified Hostinger connection
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Diagnose Vite CSS before change
+        run: |
+          set -euo pipefail
+          REMOTE=u880685189@147.79.123.121
+          CSS=$(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 "$REMOTE" "php -r 'echo json_decode(file_get_contents(\"/home/u880685189/domains/sinaydesign.com/newtic/public/build/manifest.json\"), true)[\"resources/css/app.css\"][\"file\"];'")
+          test -n "$CSS"
+          echo "Compiled stylesheet URL: /build/$CSS"
+          curl -sSL --max-time 20 -o /dev/null -w 'BEFORE CSS: HTTP %{http_code}, mime %{content_type}, bytes %{size_download}\n' "https://sinaydesign.com/build/$CSS" || true
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 "$REMOTE" 'ls -ld ~/domains/sinaydesign.com/public_html/build ~/domains/sinaydesign.com/public_html/assets'
+      - name: Copy only verified static assets into Sinay public_html
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 \
+            u880685189@147.79.123.121 'bash -se' < scripts/publish-sinay-public-assets.sh
+      - name: Verify exact CSS, JS and storefront via public HTTPS
+        run: |
+          set -euo pipefail
+          REMOTE=u880685189@147.79.123.121
+          CSS=$(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 "$REMOTE" "php -r 'echo json_decode(file_get_contents(\"/home/u880685189/domains/sinaydesign.com/newtic/public/build/manifest.json\"), true)[\"resources/css/app.css\"][\"file\"];'")
+          JS=$(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 "$REMOTE" "php -r 'echo json_decode(file_get_contents(\"/home/u880685189/domains/sinaydesign.com/newtic/public/build/manifest.json\"), true)[\"resources/js/app.js\"][\"file\"];'")
+          test -n "$CSS" && test -n "$JS"
+          curl -fsSL --max-time 25 --retry 2 "https://sinaydesign.com/build/$CSS" -o /tmp/sinay.css
+          curl -fsSL --max-time 25 --retry 2 "https://sinaydesign.com/build/$JS" -o /tmp/sinay.js
+          test "$(wc -c </tmp/sinay.css)" -gt 10000
+          test "$(wc -c </tmp/sinay.js)" -gt 1000
+          grep -Fq '.admin-quick-links' /tmp/sinay.css
+          grep -Fq '.site-header' /tmp/sinay.css
+          echo "AFTER: compiled storefront+admin CSS and JavaScript served over HTTPS."
+          curl -fsSL --max-time 25 --retry 2 'https://sinaydesign.com/' -o /tmp/sinay-home.html
+          grep -Fq 'Sinay Design' /tmp/sinay-home.html
+          echo "AFTER: Sinay Design homepage served successfully."
