@@ -16,6 +16,12 @@ return [
     'paytr_card_payments_enabled' => (bool) env('NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED', parse_url((string) env('APP_URL'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com'),
     'paytr_webhooks_enabled' => (bool) env('NEWTIC_PAYTR_WEBHOOKS_ENABLED', parse_url((string) env('APP_URL'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com'),
 
+    // Live bulk campaigns require a deliberate server-level release decision
+    // AND admin marketing/IYS settings. Preview domains always redirect mail
+    // to one safe test inbox; never use this flag to bypass consent records.
+    'marketing_live_enabled' => (bool) env('NEWTIC_MARKETING_SEND_ENABLED', false),
+    'marketing_daily_limit' => max(1, min(2000, (int) env('NEWTIC_MARKETING_DAILY_LIMIT', 100))),
+
     // Dummy Kargo can be explicitly opted into by an admin only on staging.
     // Every real DHL/other-carrier shipment remains hard-disabled here.
     'shipping_dummy_enabled' => (bool) env('NEWTIC_SHIPPING_DUMMY_ENABLED', parse_url((string) env('APP_URL'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com'),
