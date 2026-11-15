@@ -12,7 +12,7 @@ final class PreventUnfinishedStoreAccess
     public function handle(Request $request, Closure $next): Response
     {
         $installer = app(StoreInstaller::class);
-        if ($installer->hasPending() && !$installer->installed()
+        if ($installer->hasPending() && $installer->tokenFingerprint() !== null && !$installer->installed()
             && !$request->is('install', 'install/*')) {
             return response()->view('setup.waiting', [], 503)
                 ->header('Cache-Control', 'no-store, private')

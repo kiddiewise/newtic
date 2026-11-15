@@ -152,6 +152,40 @@ final class SetupWizardTest extends TestCase
         $this->get(route('install.checks'))->assertNotFound();
     }
 
+    public function test_private_file_token_supports_mobile_hosting_setup_without_outputting_secret(): void
+    {
+        $this->artisan('newtic:setup-token', ['--private-file' => true])->assertSuccessful();
+
+        $file = $this->tempSetupDirectory.'/mobile-install-code.txt';
+        $this->assertFileExists($file);
+        $token = trim(File::get($file));
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/D', $token);
+        $this->assertTrue(app(StoreInstaller::class)->validToken($token));
+        $this->assertStringNotContainsString($token, File::get($this->tempSetupDirectory.'/pending.json'));
+
+        $this->post(route('install.unlock'), ['setup_token' => $token])
+            ->assertRedirect(route('install.checks'));
+        $this->post(route('install.finish'), $this->details())
+            ->assertRedirect(route('admin.index'));
+        $this->assertFileDoesNotExist($file);
+    }
+
+    public function test_private_file_token_is_rotated_and_expires(): void
+    {
+        $this->artisan('newtic:setup-token', ['--private-file' => true])->assertSuccessful();
+        $file = $this->tempSetupDirectory.'/mobile-install-code.txt';
+        $first = trim(File::get($file));
+        $this->artisan('newtic:setup-token', ['--private-file' => true])->assertSuccessful();
+        $second = trim(File::get($file));
+
+        $this->assertNotSame($first, $second);
+        $this->assertFalse(app(StoreInstaller::class)->validToken($first));
+        $this->assertTrue(app(StoreInstaller::class)->validToken($second));
+        $this->travel(3)->hours();
+        $this->assertFalse(app(StoreInstaller::class)->validToken($second));
+        $this->get(route('home'))->assertOk();
+    }
+
     public function test_missing_db_installation_record_is_not_confused_with_a_completed_store(): void
     {
         $installer=app(StoreInstaller::class);

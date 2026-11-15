@@ -7,12 +7,19 @@ use Illuminate\Console\Command;
 
 final class PrepareSetupWizard extends Command
 {
-    protected $signature = 'newtic:setup-token';
+    protected $signature = 'newtic:setup-token {--private-file : Save the short-lived code to a hosting-account-only file instead of printing it}';
     protected $description = 'Print one short-lived first-install unlock code for a pristine, isolated NEWTIC store.';
 
     public function handle(StoreInstaller $installer): int
     {
         try {
+            if ($this->option('private-file')) {
+                $installer->issuePrivateFileToken();
+                $this->info('Private installation code file created for the hosting file manager.');
+                $this->line('Path: newtic/storage/app/private/newtic-setup/mobile-install-code.txt');
+                $this->line('Code expires after 2 hours and the file is removed after setup completes.');
+                return self::SUCCESS;
+            }
             $token = $installer->issueToken();
         } catch (\Throwable $e) {
             $this->error('Kurulum anahtarı oluşturulamadı: '.$e->getMessage());
