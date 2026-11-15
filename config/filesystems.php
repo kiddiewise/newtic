@@ -40,7 +40,10 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Hostinger sites with a separate public_html may block symbolic links.
+            // Fresh stores can use a real public_html/storage directory instead.
+            // Existing installs keep their original storage path unless configured.
+            'root' => env('NEWTIC_PUBLIC_STORAGE_ROOT', storage_path('app/public')),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
