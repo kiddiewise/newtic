@@ -29,6 +29,11 @@
           <label class="checkout-field"><span>E-posta adresi</span><input name="email" type="email" maxlength="255" autocomplete="email" required value="{{ old('email') }}" placeholder="ornek@eposta.com"></label>
           <label class="checkout-field"><span>Şifre (en az 8 karakter)</span><input name="password" type="password" minlength="8" autocomplete="new-password" required placeholder="Güçlü bir şifre oluştur"></label>
           <label class="checkout-field"><span>Şifre tekrarı</span><input name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required placeholder="Şifreni tekrar gir"></label>
+          <label class="checkout-check">
+            <input type="checkbox" name="marketing_opt_in" value="1" @checked(old('marketing_opt_in'))>
+            <span><strong>İsteğe bağlı kampanya ve fırsat e-postalarını almak istiyorum.</strong>
+              <small>Üyelik için zorunlu değildir. İstediğim zaman ücretsiz çıkabilirim; İYS onayı ayrıca doğrulanır.</small></span>
+          </label>
           <button class="checkout-action auth-submit" type="submit">Hesabımı oluştur <span aria-hidden="true">→</span></button>
         </form>
         <p class="checkout-secondary auth-switch">Zaten üye misin? <a href="{{ route('account.login', $authParams) }}">Giriş yap</a></p>
