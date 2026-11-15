@@ -272,8 +272,15 @@ class CheckoutController extends Controller
         }, 3);
 
         if ($request->boolean('marketing_opt_in')) {
-            app(MarketingConsentService::class)->request($order->customer_email,
-                'checkout_optional_consent', $order->user);
+            try {
+                app(MarketingConsentService::class)->request($order->customer_email,
+                    'checkout_optional_consent', $order->user);
+            } catch (\Throwable $e) {
+                // Optional marketing storage must never interrupt a committed order.
+                \Illuminate\Support\Facades\Log::warning('Marketing preference capture unavailable', [
+                    'exception'=>class_basename($e),
+                ]);
+            }
         }
         if ($newUser) {
             Auth::login($newUser);
