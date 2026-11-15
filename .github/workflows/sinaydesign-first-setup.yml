@@ -1,0 +1,85 @@
+name: Activate Sinay Design first-install wizard
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sinaydesign-first-setup.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-sinay-first-setup
+  cancel-in-progress: false
+
+jobs:
+  enable-setup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate dependencies and installer source
+        run: |
+          set -euo pipefail
+          bash -n scripts/bootstrap-sinaydesign-wizard.sh
+          composer validate --strict --no-check-publish
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+          touch database/database.sqlite
+          php artisan migrate --env=testing --force
+          php artisan test --filter=SetupWizardTest
+      - name: Compile and verify matching frontend without Node on Hostinger
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          test -s public/build/manifest.json
+          grep -RFlq --include='*.css' '.admin-app-shell' public/build/assets
+          tar -czf sinay-vite-build.tar.gz -C public build
+      - name: Configure verified Hostinger SSH credentials
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY"
+          test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Transfer compiled assets ONLY to protected Sinay deployment directory
+        run: |
+          set -euo pipefail
+          REMOTE="u880685189@147.79.123.121"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20 "$REMOTE" \
+            'test -f ~/domains/sinaydesign.com/newtic/.env && mkdir -p ~/domains/sinaydesign.com/newtic/.deploy'
+          scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            sinay-vite-build.tar.gz "$REMOTE:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-vite-build.tar.gz"
+      - name: Enable locked Sinay first-run wizard (setup code NEVER printed)
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          REMOTE="u880685189@147.79.123.121"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20 "$REMOTE" \
+            "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/bootstrap-sinaydesign-wizard.sh
+      - name: Verify public setup page (never request or print secret)
+        run: |
+          set -euo pipefail
+          curl -fsSL --max-time 20 --retry 2 https://sinaydesign.com/install -o /tmp/newtic-install-preview.html
+          grep -Fq "Mağazanız için ilk adım." /tmp/newtic-install-preview.html
+          echo "Sinay Design setup wizard publicly reachable. Unlock requires the private hPanel file code."
