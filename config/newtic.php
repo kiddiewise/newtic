@@ -1,6 +1,8 @@
 <?php
 
 return [
+    // Protected server-side first-install wizard state. Never put this inside public_html.
+    'install_private_directory' => storage_path('app/private/newtic-setup'),
     /*
      * Until real payment credentials and fulfillment workflows are verified,
      * treat all orders as test records regardless of the configured hostname.
