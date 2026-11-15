@@ -1,8 +1,8 @@
 # NEWTIC – Yeni bağımsız mağaza kurulumu
 
 Bu rehber Sinay Design gibi farklı marka/domain için sıfırdan NEWTIC kurulmasını anlatır.
-Polaris ürünleri, müşterileri ve şifreleri kopyalanmaz. Grafik kurulum sihirbazı
-ve canlı ödeme/kargo etkinleştirmesi bu aşamada yoktur.
+Polaris ürünleri, müşterileri ve şifreleri kopyalanmaz. Güvenli tarayıcı kurulum sihirbazı v1.0 mevcuttur;
+canlı ödeme/kargo etkinleştirmesi bu aşamada yoktur.
 
 ## 1. Gereksinimler
 
@@ -79,7 +79,9 @@ Client Secret'ı kaydedin. Geçici test domainleri için Google Cloud test
 kullanıcısı gerekir; gerçek domainin OAuth yayın ayarları ayrıca yapılır.
 
 Bu ilk kurulum altyapısıdır, var olan müşteri için otomatik sürüm güncelleme
-veya veritabanı taşıma aracı değildir.
+veya veritabanı taşıma aracı değildir. Kurulum SSH ve tarayıcı olarak iki kademelidir:
+SSH sunucuyu, Composer/DB/.env/APP_KEY hazırlığını tamamlar; kurulum sihirbazı ise
+mağaza ismi, ilk yönetici hesabı ve güvenli kilitlemeyi yapar.
 
 ## 4. Web kökü (document root)
 
@@ -93,9 +95,39 @@ Mevcut index.php, .htaccess, build/assets/storage girişlerini
 varsa önce yedekleyip elle inceleyin.
 Uygulama .env, vendor ve private kodu internete açılmaz.
 
-## 5. İlk yönetici ve marka kimliği
+## 5. Tarayıcı kurulum sihirbazı – ilk yönetici ve marka kimliği
 
-    php artisan newtic:admin
+**Önemli sıralama:** DNS/webroot'u gerçek ziyaretçilere açmadan ÖNCE
+`bash scripts/install-production.sh --install` ile sunucu, veritabanı ve
+migration hazırlığını tamamlayın. Ardından yalnızca gizli SSH oturumunda:
+
+    php artisan newtic:setup-token
+
+Bu komut yalnızca **boş ve daha önce kurulmamış** NEWTIC mağazasında çalışır;
+60+ karakterlik tahmin edilemeyen bir kurulum anahtarını sadece terminale yazar.
+Gerçek anahtarın yalnız SHA-256 özeti, 2 saatlik süresiyle birlikte
+`storage/app/private/newtic-setup/pending.json` dosyasına kaydedilir.
+Anahtarı GitHub, logs, ekran görüntüsü, e-posta veya bu sohbete göndermeyin.
+
+Sonra `https://sinaydesign.com/install` sayfasını açın:
+
+1. SSH'de gösterilen anahtarı yapıştırın. Yanlış denemeler kısıtlıdır.
+2. Sunucu, HTTPS, veritabanı, boş mağaza, PHP uzantıları, dosya izinleri,
+   test ödeme modu ve gerçek kargo güvenlik koşullarının tamamını doğrulayın.
+3. Mağaza adını, ilk yönetici ad/e-postasını ve güçlü şifreyi girin;
+   güvenli test modu onayını verin.
+4. Kurulum tamamlanınca yönetici paneline giriş yapılır ve kurulum sayfası
+   **kalıcı olarak kilitlenir**. Mağaza kurulurken başka ziyaretçiler
+   HTTP 503 "Mağaza hazırlanıyor" görür ve sipariş/üyelik oluşturamaz.
+
+Sihirbaz APP_KEY'i yeniden üretmez, başka mağazadan ürün veya müşteri
+taşımaz. İlk kurulum `newtic_installations` veritabanı kaydıyla atomik
+kilitlenir; ek gizli dosya kilidi de yazılır. Tamamlanan `/install` 404
+döndürür. Zaman aşımında kurulum bitmemişse SSH'de
+`php artisan newtic:setup-token` komutu ile yeni anahtar oluşturun.
+
+`newtic:admin` komutu yalnızca ayrı, kasıtlı manuel kurtarma için tutulur;
+normal ilk kurulumda **kullanılmamalı**.
 
 Admin > SEO Ayarları: mağaza adı, meta bilgiler, indeksleme.
 Admin > Logolar: markanın masaüstü ve mobil logosu.
@@ -143,5 +175,7 @@ müşterilerin cron görevi değildir.
 Bu komutlar temiz yeni kurulum içindir. Müşteri bazlı sürüm yükseltme ve
 geri dönüş planı farklı bir geliştirme gerektirir.
 
-Sonraki aşama: e-posta altyapısı. Daha sonra canlı ödeme/kargo kabul
-süreçleri. En son: kolay kullanımlı kurulum sihirbazı.
+Kurulum sihirbazı v1.0 yalnızca temiz ilk kurulum ve ilk yönetici içindir.
+SMTP, PAYTR, Google giriş, kargo, katalog ve SEO yönetim panelinden kurulur.
+Müşteri bazlı otomatik yazılım güncelleme/geri alma ve ilerideki kişiselleştirilmiş
+ürün ihtiyaçları bu ilk sihirbaz kapsamının dışındadır.
