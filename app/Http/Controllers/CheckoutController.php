@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
 use App\Models\Order;
+use App\Services\MarketingConsentService;
 use App\Models\PaytrPaymentAttempt;
 use App\Models\Product;
 use App\Models\StoreSetting;
@@ -81,6 +82,7 @@ class CheckoutController extends Controller
             'checkout_token' => ['required', 'uuid'],
             'payment_method' => ['required', Rule::in($allowedMethods)],
             'save_address' => ['nullable', 'boolean'],
+            'marketing_opt_in' => ['nullable', 'boolean'],
             'create_account' => ['nullable', 'boolean'],
             'account_password' => ['required_if:create_account,1', 'nullable', Password::min(8)],
         ]));
@@ -269,6 +271,10 @@ class CheckoutController extends Controller
             return $order;
         }, 3);
 
+        if ($request->boolean('marketing_opt_in')) {
+            app(MarketingConsentService::class)->request($order->customer_email,
+                'checkout_optional_consent', $order->user);
+        }
         if ($newUser) {
             Auth::login($newUser);
             $request->session()->regenerate();
