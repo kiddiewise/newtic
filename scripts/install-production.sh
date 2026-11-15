@@ -102,6 +102,8 @@ php artisan config:cache
 
 note "NEWTIC installed on this isolated database."
 note "Next: serve Laravel public/ or configure an empty Hostinger webroot."
-note "Next: php artisan newtic:admin (interactive strong admin credentials)."
+note "Next: php artisan newtic:setup-token (run in a PRIVATE SSH terminal; keep the code secret)."
+note "Next: open $SITE_URL/install and create this store's first administrator."
+note "Fallback manual provisioning only: php artisan newtic:admin."
 note "Payments and real shipping remain closed until separately tested and approved."
 note "Schedule php artisan schedule:run every minute in this account's hPanel cron."
