@@ -58,7 +58,13 @@ class AccountController extends Controller
             'name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'],
         ]);
         if ($request->boolean('marketing_opt_in')) {
-            app(MarketingConsentService::class)->request($user->email,'customer_registration',$user);
+            try {
+                app(MarketingConsentService::class)->request($user->email,'customer_registration',$user);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Marketing preference capture unavailable', [
+                    'exception'=>class_basename($e),
+                ]);
+            }
         }
         Auth::login($user);
         $request->session()->regenerate();
