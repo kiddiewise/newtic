@@ -117,6 +117,8 @@ final class StoreInstaller
 
         $token = bin2hex(random_bytes(32));
         File::ensureDirectoryExists($this->directory(), 0700, true);
+        // Any previous private copy becomes invalid as soon as a new token is issued.
+        File::delete($this->path('mobile-install-code.txt'));
         $old = umask(0077);
         try {
             $written = File::put($this->path('pending.json'), json_encode([
@@ -130,6 +132,27 @@ final class StoreInstaller
         }
 
         return $token;
+    }
+
+    /**
+     * A temporary, private file for installers without SSH access (mobile hPanel).
+     * This file is NEVER served over HTTP or uploaded to build artifacts.
+     * The file is readable only to the hosting account, and removed on completion.
+     */
+    public function issuePrivateFileToken(): void
+    {
+        $token = $this->issueToken();
+        $old = umask(0077);
+        try {
+            $written = File::put($this->path('mobile-install-code.txt'), $token."\n");
+            if ($written === false) {
+                File::delete($this->path('pending.json'));
+                throw new \RuntimeException('Could not write private setup code file.');
+            }
+            @chmod($this->path('mobile-install-code.txt'), 0600);
+        } finally {
+            umask($old);
+        }
     }
 
     private function tokenRecord(): ?array
@@ -222,6 +245,7 @@ final class StoreInstaller
             File::put($this->path('installed.lock'), 'NEWTIC installed '.now()->toIso8601String());
             @chmod($this->path('installed.lock'), 0600);
             File::delete($this->path('pending.json'));
+            File::delete($this->path('mobile-install-code.txt'));
         } finally {
             umask($old ?? 0077);
         }
