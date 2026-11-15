@@ -128,6 +128,33 @@ final class TransactionalEmailCenterTest extends TestCase
         $this->assertSame(1, EmailDelivery::where('event','admin_shipping_exception')->count());
     }
 
+    public function test_carrier_failure_notifies_customer_and_admin_without_claiming_refund(): void
+    {
+        $this->enable();
+        $order = $this->makeOrder();
+        $order->update(['status'=>'preparing']);
+        $shipment = $this->addShipment($order);
+        $shipment->update(['remote_status'=>'failed']);
+
+        $this->assertSame(1, EmailDelivery::where('event','customer_shipping_exception')->count());
+        $this->assertSame(1, EmailDelivery::where('event','admin_shipping_exception')->count());
+        $notice = EmailDelivery::where('event','customer_shipping_exception')->firstOrFail();
+        $mail = app(EmailComposer::class)->build($notice->load('order'));
+        $this->assertNotNull($mail);
+        $this->assertStringContainsString('ödeme', mb_strtolower($mail['body']));
+        $this->assertSame('preparing',$order->fresh()->status);
+    }
+
+    public function test_cancelled_bank_order_notifies_customer_once(): void
+    {
+        $this->enable();
+        $order = $this->makeOrder();
+        $order->update(['status'=>'cancelled']);
+        $this->assertSame(1,EmailDelivery::where('event','customer_cancelled')->count());
+        $order->update(['customer_name'=>'Updated']);
+        $this->assertSame(1,EmailDelivery::where('event','customer_cancelled')->count());
+    }
+
     public function test_worker_uses_safe_preview_address_and_never_sends_stale_messages(): void
     {
         $this->enable();

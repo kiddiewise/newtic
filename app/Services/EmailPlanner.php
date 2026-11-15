@@ -89,6 +89,11 @@ final class EmailPlanner
     {
         if (!$shipment->wasChanged('remote_status')) return;
         if (in_array($shipment->remote_status, ['on_return','returned','canceled','failed'], true)) {
+            if ($shipment->order && $shipment->order->status !== 'cancelled') {
+                $this->queue('customer_shipping_exception', $shipment->order->customer_email,
+                    $shipment->order, null, $shipment->id, null,
+                    $shipment->remote_status.'|'.(string)$shipment->last_callback_time);
+            }
             $this->admins('admin_shipping_exception', $shipment->order, $shipment->id,
                 $shipment->remote_status.'|'.(string)$shipment->last_callback_time);
         }

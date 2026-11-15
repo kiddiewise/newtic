@@ -24,6 +24,19 @@
     @endforelse
     <a href="{{ route('account.addresses.index') }}" class="checkout-outline-action">Tüm adreslerim</a>
   </div>
+  <div class="checkout-card">
+    <h2>Kampanya e-posta tercihim</h2>
+    <p class="checkout-muted">Sipariş ve kargo mesajlarından ayrıdır. Reklam iletilerine katılmak zorunda değilsin.</p>
+    <p>{{ $marketingContact?->eligibleToSend() ? 'İYS doğrulanmış kampanya aboneliği açık.' :
+        ($marketingContact?->status === 'pending' ? 'İzniniz kaydedildi; İYS doğrulaması bekleniyor.' :
+        'Kampanya e-postası gönderimi kapalı.') }}</p>
+    <form method="POST" action="{{ route('account.marketing.preference') }}">
+      @csrf <input type="hidden" name="subscribe" value="{{ $marketingContact && !$marketingContact->unsubscribed_at && $marketingContact->status !== 'suppressed' ? '0' : '1' }}">
+      <button type="submit" class="checkout-outline-action">
+        {{ $marketingContact && !$marketingContact->unsubscribed_at && $marketingContact->status !== 'suppressed' ? 'Kampanya e-postalarını durdur' : 'Kampanya e-postalarına izin ver' }}
+      </button>
+    </form>
+  </div>
   <div class="checkout-card"><h2>Siparişlerim</h2>
     @forelse($orders as $order)
       <a href="{{ route('checkout.success', $order) }}" class="account-order-row">

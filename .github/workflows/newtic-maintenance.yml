@@ -44,6 +44,7 @@ jobs:
           test "$(git branch --show-current)" = "main" || { echo "Staging not on main; skip"; exit 0; }
           test -f .env || exit 1
           php artisan email:process --limit=25
+          php artisan marketing:process --limit=10
           php artisan orders:expire-unpaid --limit=50
           php artisan shipping:sync --limit=8
           php artisan merchant:sync --steps=4

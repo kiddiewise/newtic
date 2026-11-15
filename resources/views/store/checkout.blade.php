@@ -110,6 +110,11 @@
           </section>
         @endauth
 
+        <label class="checkout-check">
+          <input type="checkbox" name="marketing_opt_in" value="1" @checked(old('marketing_opt_in'))>
+          <span>Kampanya ve indirimlerle ilgili e-posta almak istiyorum.
+            <small>Bu tercih isteğe bağlıdır; sipariş ve teslimat bildirimleri ayrıca gönderilir. İstediğim zaman ücretsiz çıkabilirim.</small></span>
+        </label>
         <section class="checkout-payment-method">
           <div class="checkout-section-title"><span>ÖDEME</span><h2>Ödeme yöntemi</h2></div>
 <div class="paytr-payment-choices" role="radiogroup" aria-label="Ödeme yöntemi">

@@ -129,6 +129,17 @@ final class EmailComposer
                 $body = 'Siparişinizin durumu iptal edildi olarak güncellendi. Ödeme/iade bilgileri için mağazamızla iletişime geçebilirsiniz.';
                 $action = ['title' => 'Siparişimi görüntüle', 'url' => $orderUrl];
                 break;
+            case 'customer_shipping_exception':
+                if (!$order || $order->status === 'cancelled' || !$order->shippingShipment
+                    || !ShippingStatus::isException($order->shippingShipment->remote_status)) return null;
+                $subject = 'Kargo durumunuz hakkında bilgi · '.$order->order_number;
+                $heading = 'Gönderinizle ilgili bir durum oluştu';
+                $body = ShippingStatus::description($order->shippingShipment->remote_status)
+                    .' Bu bilgilendirme siparişinizin ödemesinin iade edildiği veya siparişinizin iptal edildiği anlamına gelmez.'
+                    .' Gerekli durumlarda mağazamız sizinle iletişime geçecektir.';
+                $lines[] = 'Kargo durumu: '.ShippingStatus::label($order->shippingShipment->remote_status);
+                $action = ['title' => 'Sipariş ve kargoyu takip et', 'url' => $orderUrl];
+                break;
             case 'admin_shipping_exception':
                 if (!$order || !$order->shippingShipment
                     || !ShippingStatus::isException($order->shippingShipment->remote_status)) return null;

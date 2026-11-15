@@ -20,6 +20,7 @@ final class EmailSetting extends Model
         'customer_delivered' => 'Müşteri · Teslim edildi',
         'customer_cancelled' => 'Müşteri · Sipariş iptal edildi',
         'admin_shipping_exception' => 'Yönetici · Kargo sorunu / iade',
+        'customer_shipping_exception' => 'Müşteri · Kargoda sorun / iade',
         'admin_review_pending' => 'Yönetici · İncelenecek ürün yorumu',
         'customer_review_invite' => 'Müşteri · Teslimat sonrası yorum daveti',
         'customer_review_approved' => 'Müşteri · Yorum onaylandı',
