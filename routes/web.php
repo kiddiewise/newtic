@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\GoogleMerchantController;
 use App\Http\Controllers\Admin\GoogleCustomerLoginController;
 use App\Http\Controllers\Admin\AuthVisualController;
 use App\Http\Controllers\Admin\EmailCenterController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
+use App\Http\Controllers\MarketingUnsubscribeController;
+use App\Http\Controllers\MarketingPreferenceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\MegaMenuSettingsController;
 
@@ -71,6 +74,10 @@ Route::post('/eposta/dogrulama-yeniden', [AccountEmailController::class, 'resend
 
 Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
 Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
+Route::get('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'show'])->middleware('throttle:30,1')->name('marketing.unsubscribe.show');
+Route::post('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'unsubscribe'])->middleware('throttle:10,1')->name('marketing.unsubscribe');
+Route::post('/hesabim/kampanya-tercihim', [MarketingPreferenceController::class,'update'])->middleware(['auth','throttle:5,1'])->name('account.marketing.preference');
+
 Route::post('/cikis', [AccountController::class, 'logout'])->middleware('auth')->name('account.logout');
 
 // Separate, sessionless endpoint. Explicit server-side gate remains OFF by default.
@@ -134,6 +141,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
+    Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');
+    Route::get('/kampanya-eposta/yeni', [MarketingCampaignController::class,'create'])->name('marketing.create');
+    Route::post('/kampanya-eposta', [MarketingCampaignController::class,'store'])->middleware('throttle:8,1')->name('marketing.store');
+    Route::get('/kampanya-eposta/alici-listesi', [MarketingCampaignController::class,'contacts'])->name('marketing.contacts');
+    Route::post('/kampanya-eposta/alici-listesi', [MarketingCampaignController::class,'saveContact'])->middleware('throttle:12,1')->name('marketing.contact.store');
+    Route::post('/kampanya-eposta/alici-listesi/{contact}/durdur', [MarketingCampaignController::class,'suppress'])->middleware('throttle:12,1')->name('marketing.contact.suppress');
+    Route::patch('/kampanya-eposta/kurumsal', [MarketingCampaignController::class,'settings'])->middleware('throttle:6,1')->name('marketing.settings');
+    Route::get('/kampanya-eposta/{campaign}', [MarketingCampaignController::class,'edit'])->name('marketing.edit');
+    Route::patch('/kampanya-eposta/{campaign}', [MarketingCampaignController::class,'update'])->middleware('throttle:8,1')->name('marketing.update');
+    Route::get('/kampanya-eposta/{campaign}/onizle', [MarketingCampaignController::class,'preview'])->name('marketing.preview');
+    Route::post('/kampanya-eposta/{campaign}/test', [MarketingCampaignController::class,'test'])->middleware('throttle:3,1')->name('marketing.test');
+    Route::post('/kampanya-eposta/{campaign}/baslat', [MarketingCampaignController::class,'launch'])->middleware('throttle:3,1')->name('marketing.launch');
+    Route::post('/kampanya-eposta/{campaign}/duraklat', [MarketingCampaignController::class,'pause'])->middleware('throttle:6,1')->name('marketing.pause');
+    Route::post('/kampanya-eposta/{campaign}/devam', [MarketingCampaignController::class,'resume'])->middleware('throttle:6,1')->name('marketing.resume');
+    Route::post('/kampanya-eposta/{campaign}/iptal', [MarketingCampaignController::class,'cancel'])->middleware('throttle:6,1')->name('marketing.cancel');
     Route::get('/eposta-bildirimler', [EmailCenterController::class, 'index'])->name('email-center.index');
     Route::patch('/eposta-bildirimler', [EmailCenterController::class, 'save'])->middleware('throttle:8,1')->name('email-center.save');
     Route::post('/eposta-bildirimler/test', [EmailCenterController::class, 'test'])->middleware('throttle:3,1')->name('email-center.test');
