@@ -14,6 +14,7 @@ final class MarketingConsentService
         // Explicit unchecked-by-default consent is only provisional. In particular,
         // it never grants send permission without separate IYS verification.
         $contact = MarketingContact::query()->firstOrCreate(['email'=>$email]);
+        if ($contact->eligibleToSend()) return; // Keep an already verified, unrevoked grant.
         $contact->fill([
             'user_id'=>$user?->id ?? $contact->user_id,
             'name'=>$user?->name ?? $contact->name,
