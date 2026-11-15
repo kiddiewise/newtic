@@ -15,12 +15,24 @@ kontrolü, ardından kurulumu çalıştırın:
 
     bash scripts/install-production.sh --check
     bash scripts/install-production.sh --install
-    php artisan newtic:admin
 
-Laravel public dizini webroot olmalıdır. Hostinger planlarında
-public_html zorunluysa boş bir webrootta
-scripts/prepare-hostinger-webroot.sh kullanılabilir. Mevcut sitelerin
-dosyaları hiçbir kurulum betiği tarafından otomatik silinmez.
+Hostinger'de Node.js/npm yoksa GitHub Actions'ın aynı main commit için
+ürettiği newtic-install-assets paketiyle kurulum yapılabilir:
+
+    bash scripts/install-production.sh --install --assets-bundle "$PWD/newtic-install-assets.tar.gz"
+
+Hostinger boş public_html kullanıyorsa CSS/JS, sabit görseller ve yüklemeler
+gerçek fiziksel dizinlere yayımlanır; sunucunun takip edemediği static
+symlink'lere güvenilmez:
+
+    bash scripts/prepare-hostinger-webroot.sh --webroot "$HOME/domains/MUSTERI-DOMAINI/public_html"
+    bash scripts/verify-public-assets.sh
+    php artisan newtic:setup-token
+
+Son komut kısa ömürlü kurulum kodu verir. Tarayıcıda ilgili domainin
+/install adresini açarak mağaza adı ve ilk yöneticiyi oluşturun.
+Bilgisayarsız kurulum için --private-file seçeneği vardır.
+Mevcut web sitesi dosyaları hiçbir ilk kurulum betiği tarafından silinmez.
 
 ## Marka bağımsızlığı
 
@@ -47,8 +59,9 @@ domaininde güvenli test moduna sınırlandırılmıştır. Yeni mağaza kurulum
 gerçek ödeme/kargo izni anlamına gelmez. Havale/EFT yalnızca aktif banka
 hesabı varsa görünür; ödeme bekleyen siparişlerin stok süresi kontrol edilir.
 
-**E-posta altyapısı ve grafik kurulum sihirbazı bu aşamaya dahil değildir.**
-Gerçek müşteri e-postaları için ayrıca geliştirme ve onay gereklidir.
+İlk mağaza için güvenli tarayıcı kurulum sihirbazı ve isteğe bağlı
+SMTP/e-posta yönetimi hazırdır. Gerçek müşteri bildirimleri, toplu kampanya
+gönderimleri ve canlı ödeme/kargo, her mağazada ayrı onay ve test gerektirir.
 
 ## Tarihçe / önceki uygulama
 
