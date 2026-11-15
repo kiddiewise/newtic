@@ -47,9 +47,11 @@ Mevcut web sitesi dosyaları hiçbir ilk kurulum betiği tarafından silinmez.
 
 ## Ürün iş kuralları
 
-Her gramaj/SKU ayrı ürün, ayrı URL, ayrı fiyat ve stok olarak kalır.
-Ürün detayında aynı ana kategorideki diğer ürünler bağımsız miktarlarla
-sepete eklenebilir. Opsiyonlar ve yorumlar ürün bazında yönetilir.
+Polaris Kurşun için kullanılan gramaj/SKU bazlı ayrı ürün ve kategori içinden
+çoklu ürün seçme davranışı mevcut mağazada korunur. Bu iş kuralı **yeni her
+mağazaya zorunlu gramaj modeli olarak uygulanmaz**. Diğer müşterilerin
+ürün ve kategori verileri kendi kurulumlarının veritabanında oluşturulur;
+sektöre özel ürün UX özellikleri ayrı geliştirilir.
 
 ## Güvenli ödeme ve kargo durumu
 
