@@ -81,7 +81,7 @@ final class StoreInstaller
             'Uygulama şifreleme anahtarı' => filled(config('app.key')),
             'Üretim ayarları' => $test || (app()->environment('production') && !config('app.debug')),
             'Güvenli ve bağımsız domain' => (bool) $domainIsSafe
-                && ($test || ($request && $request->isSecure() && strcasecmp($request->getHost(), $host) === 0)),
+                && ($test || !$request || ($request->isSecure() && strcasecmp($request->getHost(), $host) === 0)), 
             'MySQL bağlantısı ve tablolar' => $dbOk && ($test || config('database.default') === 'mysql'),
             'Yeni, boş mağaza veritabanı' => $fresh,
             'Dosya yazma izinleri' => is_writable(storage_path('app'))
@@ -109,7 +109,7 @@ final class StoreInstaller
             throw new \RuntimeException('Setup requires an empty NEWTIC database without existing accounts.');
         }
         if (!$this->ready()) {
-            throw new \RuntimeException('NEW TIC server prerequisites failed. Review --check and environment configuration.');
+            throw new \RuntimeException('NEWTIC server prerequisites failed. Review installation preflight configuration.');
         }
         if ($this->hasLock()) {
             throw new \RuntimeException('Store already installed.');
@@ -119,10 +119,11 @@ final class StoreInstaller
         File::ensureDirectoryExists($this->directory(), 0700, true);
         $old = umask(0077);
         try {
-            File::put($this->path('pending.json'), json_encode([
+            $written = File::put($this->path('pending.json'), json_encode([
                 'digest' => hash('sha256', $token),
                 'expires' => now()->addHours(2)->getTimestamp(),
             ], JSON_THROW_ON_ERROR));
+            if ($written === false) throw new \RuntimeException('Unable to write private setup token.');
             @chmod($this->path('pending.json'), 0600);
         } finally {
             umask($old);
