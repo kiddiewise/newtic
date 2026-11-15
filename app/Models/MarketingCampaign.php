@@ -10,7 +10,7 @@ final class MarketingCampaign extends Model
 {
     protected $fillable = [
         'created_by','title','body','banner_path','button_text','button_url',
-        'status','launched_at','finished_at',
+        'status','launched_at','finished_at','last_contact_id','resume_status',
     ];
 
     protected $casts = ['launched_at'=>'datetime','finished_at'=>'datetime'];
