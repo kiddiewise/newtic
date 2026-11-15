@@ -179,6 +179,16 @@ final class MarketingCampaignsTest extends TestCase
         $this->assertSame('completed',$campaign->fresh()->status);
     }
 
+    public function test_guest_checkout_cannot_restore_an_address_that_unsubscribed(): void
+    {
+        $contact = $this->contact('withdrawn@example.com',true);
+        $service = app(\App\Services\MarketingConsentService::class);
+        $service->revoke($contact);
+        $service->request($contact->email,'checkout_optional_consent',null);
+        $this->assertNotNull($contact->fresh()->unsubscribed_at);
+        $this->assertSame('unsubscribed',$contact->fresh()->status);
+    }
+
     public function test_optional_account_opt_in_is_pending_until_iys_is_confirmed(): void
     {
         $this->post(route('account.register.submit'),[
