@@ -7,6 +7,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        Schema::create('marketing_settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('business_name', 180)->nullable();
+            $table->string('business_identifier', 100)->nullable();
+            $table->string('contact_email', 255)->nullable();
+            $table->text('business_address')->nullable();
+            $table->string('iys_service_provider_id', 120)->nullable();
+            $table->timestamp('iys_checked_at')->nullable();
+            $table->boolean('enabled')->default(false);
+            $table->timestamps();
+        });
+
         Schema::create('marketing_contacts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -34,6 +46,8 @@ return new class extends Migration {
             $table->string('status', 24)->default('draft')->index();
             $table->timestamp('launched_at')->nullable();
             $table->timestamp('finished_at')->nullable();
+            $table->unsignedBigInteger('last_contact_id')->default(0);
+            $table->string('resume_status', 24)->nullable();
             $table->timestamps();
         });
 
@@ -58,5 +72,6 @@ return new class extends Migration {
         Schema::dropIfExists('marketing_campaign_deliveries');
         Schema::dropIfExists('marketing_campaigns');
         Schema::dropIfExists('marketing_contacts');
+        Schema::dropIfExists('marketing_settings');
     }
 };
