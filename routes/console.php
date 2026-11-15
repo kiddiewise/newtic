@@ -12,6 +12,9 @@ Artisan::command('inspire', function () {
 // queue worker is required on typical Hostinger shared plans. Disabled until
 // SMTP is verified and an administrator explicitly enables sending.
 Schedule::command('email:process --limit=25')->everyMinute()->withoutOverlapping(3);
+// Marketing is completely separate from transactional delivery. A strict
+// SMTP/merchant/IYS gate and bounded recipient batches prevent bursts.
+Schedule::command('marketing:process --limit=10')->everyMinute()->withoutOverlapping(5);
 
 // Reconcile missed per-shipment callbacks; canceled/failed/draft never callback.
 // Requires a 1-minute Laravel cron runner, or the equivalent 15-minute direct
