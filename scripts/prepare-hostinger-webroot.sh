@@ -29,6 +29,10 @@ test -s "$APP/public/build/manifest.json" && test -d "$APP/public/build/assets" 
 test -d "$APP/public/assets" && test -d "$APP/storage/app/public" ||
   fail "Public assets or storage source directory missing."
 
+UNEXPECTED_SYMLINK="$(find "$APP/public/build" "$APP/public/assets" "$APP/storage/app/public" -type l -print -quit)"
+[[ -z "$UNEXPECTED_SYMLINK" ]] ||
+  fail "Source files include a symbolic link ($UNEXPECTED_SYMLINK); refusing to publish external paths."
+
 # Hostinger default.php, another site's index or existing uploads must
 # be backed up and inspected, never silently replaced.
 EXISTING="$(find "$WEBROOT" -mindepth 1 -maxdepth 1 ! -name '.well-known' -print -quit)"
@@ -66,6 +70,13 @@ mkdir "$STAGE/build" "$STAGE/assets" "$STAGE/storage"
 cp -a "$APP/public/build/." "$STAGE/build/"
 cp -a "$APP/public/assets/." "$STAGE/assets/"
 cp -a "$APP/storage/app/public/." "$STAGE/storage/"
+# Upload storage must never run executable scripts even when under public_html.
+cat > "$STAGE/storage/.htaccess" <<'HTACCESS'
+Options -Indexes
+<FilesMatch "\\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh)$">
+    Require all denied
+</FilesMatch>
+HTACCESS
 find "$STAGE" -type d -exec chmod 755 {} +
 find "$STAGE" -type f -exec chmod 644 {} +
 
