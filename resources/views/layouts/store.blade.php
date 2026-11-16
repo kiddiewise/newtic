@@ -322,7 +322,7 @@
               @if($mark->verification_url)</a>@endif
             </span>
           @empty
-            <span>VISA</span><span>Mastercard</span><span>TROY</span>
+            <span>Güvenli kartlı ödeme</span>
           @endforelse
         </div>
         <p>Bu internet sitesindeki ödeme hizmetleri PAYTR Ödeme ve Elektronik Para Kuruluşu A.Ş. tarafından sağlanmaktadır.
