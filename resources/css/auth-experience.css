@@ -12,6 +12,8 @@ body.is-auth{
 body.is-auth :is(.site-header,.desktop-site-header,.mobile-site-header,.site-footer,.mobile-bottom-nav,.mobile-search-row){
   display:none!important;
 }
+/* Explicit legacy selectors are also kept for existing mobile-auth guards. */
+body.is-auth .site-footer,body.is-auth .mobile-bottom-nav{display:none!important}
 body.is-auth .account-auth-shell{max-width:1240px;width:100%;margin:0 auto;padding:36px 28px 58px}
 body.is-auth .account-auth-shell .auth-experience{
   display:grid;grid-template-columns:minmax(0,.98fr) minmax(0,1.02fr);
