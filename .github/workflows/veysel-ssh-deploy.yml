@@ -1,0 +1,73 @@
+name: SSH deploy Veysel Elektrik temporary website
+
+on:
+  push:
+    branches:
+      - ops/veysel-elektrik-deploy
+    paths:
+      - .github/workflows/veysel-ssh-deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: veysel-elektrik-hostinger-ssh
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Configure existing verified Hostinger SSH access
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$DEPLOY_KEY"
+          test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/veysel-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/veysel-deploy ~/.ssh/known_hosts
+      - name: Clone private Veysel repo and install in exact isolated domain
+        env:
+          VEYSEL_SHA: cf6eada0ee3bfc00846f1340614276dc49bfe262
+        run: |
+          set -Eeuo pipefail
+          SSH=(ssh -p 65002 -i ~/.ssh/veysel-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20)
+          REMOTE="u880685189@147.79.123.121"
+          "${SSH[@]}" "$REMOTE" "VEYSEL_SHA=$VEYSEL_SHA bash -se" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          DOMAIN="super-darkgreen-kudu-81.hostingersite.com"
+          BASE="$HOME/domains/$DOMAIN"
+          APP="$BASE/veysel-elektrik"
+          test -d "$BASE/public_html" || { echo "Target website absent; refusing deployment"; exit 1; }
+          export GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=yes"
+          if [ ! -e "$APP" ]; then
+            git clone --branch main --single-branch git@github.com:kiddiewise/veysel-elektrik.git "$APP"
+          else
+            test -d "$APP/.git" || { echo "Existing app directory is not a git checkout"; exit 1; }
+            git -C "$APP" diff --exit-code --quiet || { echo "Tracked local edits exist; aborting"; exit 1; }
+            git -C "$APP" fetch --no-tags origin main
+            git -C "$APP" merge --ff-only origin/main
+          fi
+          CURRENT="$(git -C "$APP" rev-parse HEAD)"
+          [ "$CURRENT" = "$VEYSEL_SHA" ] || { echo "Unexpected Veysel source SHA"; exit 1; }
+          bash -n "$APP/scripts/deploy-hostinger.sh"
+          bash "$APP/scripts/deploy-hostinger.sh"
+          REMOTE_SCRIPT
+      - name: Verify live PHP homepage and key service pages
+        run: |
+          set -Eeuo pipefail
+          BASE="https://super-darkgreen-kudu-81.hostingersite.com"
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE/" -o /tmp/veysel-home.html
+          grep -Fqi "Veysel Elektrik" /tmp/veysel-home.html
+          for PATH in /up /hizmetler /hizmet-bolgeleri /iletisim /robots.txt /sitemap.xml; do
+            curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE$PATH" -o /dev/null
+            echo "Verified $PATH"
+          done
+          echo "VEYSEL_PUBLIC_SITE_OK"
