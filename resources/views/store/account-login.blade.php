@@ -28,7 +28,7 @@
           @if($authNext === 'cart' && $favoriteId)<input type="hidden" name="favorite" value="{{ $favoriteId }}">@endif
           <label class="checkout-field"><span>E-posta adresi</span><input name="email" type="email" value="{{ old('email') }}" required maxlength="255" autocomplete="email" placeholder="ornek@eposta.com"></label>
           <label class="checkout-field"><span>Şifre</span><input name="password" type="password" required autocomplete="current-password" placeholder="Şifreni gir"></label>
-          <p style="text-align:right;margin:0"><a href="{{ route('account.password.forgot') }}">Şifremi unuttum</a></p>
+          <p class="auth-forgot-row"><a class="auth-forgot-link" href="{{ route('account.password.forgot') }}">Şifremi unuttum</a></p>
           <button class="checkout-action auth-submit" type="submit">Giriş yap <span aria-hidden="true">→</span></button>
         </form>
         <p class="checkout-secondary auth-switch">Hesabın yok mu? <a href="{{ route('account.register', $authParams) }}">Hemen üye ol</a></p>
