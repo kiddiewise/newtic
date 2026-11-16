@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MerchantLegalPage;
 use App\Models\MerchantLegalProfile;
+use App\Models\MerchantFooterMark;
 use App\Support\LegalReadiness;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
