@@ -37,7 +37,11 @@ final class LegalReadiness
     {
         $missing = [];
         if (!MerchantLegalProfile::current()->ready()) $missing[] = 'Satıcı ünvanı, adres, telefon ve e-posta';
-        foreach (MerchantLegalPage::PAYTR_PAGES as $slug) {
+        $required = array_unique(array_merge(MerchantLegalPage::PAYTR_PAGES, [
+            'on-bilgilendirme-formu', 'kvkk-aydinlatma',
+            'cerez-politikasi', 'islem-rehberi', 'uyelik-sozlesmesi',
+        ]));
+        foreach ($required as $slug) {
             if (!MerchantLegalPage::published($slug)) {
                 $missing[] = MerchantLegalPage::LABELS[$slug];
             }
