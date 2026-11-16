@@ -34,6 +34,21 @@ final class LegalReadiness
         return $missing;
     }
 
+    public static function checkoutSignature(): string
+    {
+        if (!self::checkoutReady()) return '';
+
+        $profile = MerchantLegalProfile::current();
+        $pages = MerchantLegalPage::checkoutDocuments();
+
+        return hash('sha256', implode('|', array_merge([
+            (string) $profile->legal_name,
+            (string) $profile->registered_address,
+            (string) $profile->contact_email,
+            (string) $profile->contact_phone,
+        ], array_map(fn ($slug) => $pages[$slug]->revisionHash(), MerchantLegalPage::CHECKOUT_DOCUMENTS))));
+    }
+
     public static function orderSnapshot(): array
     {
         $profile = MerchantLegalProfile::current();
