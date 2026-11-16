@@ -41,6 +41,55 @@
     <div class="admin-form-actions"><button type="submit" class="admin-primary">Satıcı bilgilerini kaydet</button></div>
   </form>
 </div>
+<section class="admin-panel" id="footer-isaretleri">
+  <div class="admin-panel-title"><h2>Ödeme, güven ve uygulama görselleri</h2></div>
+  <p class="admin-description">Visa, Mastercard, TROY, PAYTR, TR GO veya meslek derneği logolarını yalnızca kullanım yetkin varsa ekle. Gerçek bir sertifika, üyelik veya aktif ödeme hizmeti olmadan görsel gösterme. Yeni mağazalarda hiçbiri varsayılan olarak yüklenmez.</p>
+  <form method="POST" action="{{ route('admin.legal.marks.store') }}" enctype="multipart/form-data" class="admin-form admin-settings-grid">
+    @csrf
+    <label>Görsel türü
+      <select name="type" required>
+        @foreach($markTypes as $type => $label)
+          <option value="{{ $type }}" @selected(old('type') === $type)>{{ $label }}</option>
+        @endforeach
+      </select>
+    </label>
+    <label>Görsel açıklaması
+      <input name="title" required maxlength="100" placeholder="Örn. izinli ödeme kuruluşu logosu" value="{{ old('title') }}">
+    </label>
+    <label>Görsel seç (PNG/JPG/WebP, 2 MB)
+      <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
+    </label>
+    <label>Doğrulama veya resmi mağaza bağlantısı (HTTPS)
+      <input type="url" name="verification_url" maxlength="500" placeholder="https://" value="{{ old('verification_url') }}">
+      <small>Güven damgaları ve mobil uygulamalar için zorunlu. Ödeme markasında varsa resmi link ekleyin.</small>
+    </label>
+    <label>Gösterim sırası
+      <input type="number" name="sort_order" min="0" max="9999" value="{{ old('sort_order', 0) }}">
+    </label>
+    <label class="admin-check admin-full">
+      <input type="checkbox" name="authorization_confirmed" value="1" required>
+      Görseli yayınlamak için geçerli kullanım hakkımın, gerçek üyeliğimin veya aktif ödeme hizmeti yetkimin bulunduğunu doğruluyorum.
+    </label>
+    <div class="admin-form-actions"><button type="submit" class="admin-primary">İzinli görseli ekle</button></div>
+  </form>
+  @if($marks->isNotEmpty())
+    <div class="legal-admin-marks">
+      @foreach($marks as $mark)
+        <div class="legal-admin-mark">
+          <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="90" height="46" loading="lazy">
+          <div>
+            <strong>{{ $mark->title }}</strong>
+            <small>{{ $markTypes[$mark->type] ?? $mark->type }}</small>
+          </div>
+          <form method="POST" action="{{ route('admin.legal.marks.destroy', $mark) }}">
+            @csrf @method('DELETE')
+            <button class="admin-secondary" type="submit">Kaldır</button>
+          </form>
+        </div>
+      @endforeach
+    </div>
+  @endif
+</section>
 <div class="legal-admin-document-list">
   @foreach($pageLabels as $slug => $label)
     @php $document = $pages[$slug] ?? null; @endphp
