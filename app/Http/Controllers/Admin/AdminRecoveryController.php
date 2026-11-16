@@ -7,7 +7,7 @@ use App\Services\AdminRecoveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\View\View;
+use Illuminate\Http\Response;
 
 final class AdminRecoveryController extends Controller
 {
