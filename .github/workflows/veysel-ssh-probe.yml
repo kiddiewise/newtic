@@ -1,0 +1,36 @@
+name: Veysel Elektrik SSH preflight
+
+on:
+  push:
+    branches:
+      - ops/veysel-elektrik-deploy
+    paths:
+      - .github/workflows/veysel-ssh-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Authenticate to Hostinger (never print secrets)
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || { echo "::error::SSH deploy key missing"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "::error::SSH known hosts missing"; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/veysel-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/veysel-deploy ~/.ssh/known_hosts
+      - name: Confirm exact hosting directory and runtime without changing anything
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/veysel-deploy -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            u880685189@147.79.123.121 'set -eu; SITE="$HOME/domains/super-darkgreen-kudu-81.hostingersite.com"; test -d "$SITE/public_html" || { echo "::error::Target domain is not present in this Hostinger account"; exit 1; }; echo "SSH_OK"; echo "TARGET_DOMAIN_EXISTS"; php -v | head -1; composer --version; command -v git; ls -A "$SITE/public_html" | head -12'
