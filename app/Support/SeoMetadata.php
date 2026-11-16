@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SeoSetting;
+use App\Models\MerchantLegalPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Support\StoreIdentity;
@@ -101,6 +102,13 @@ final class SeoMetadata
                     ],
                 ],
             ];
+        } elseif ($route === 'legal.show') {
+            $legalPage = MerchantLegalPage::published((string) $request->route('slug'));
+            if ($legalPage) {
+                $title = $legalPage->title.' | '.$suffix;
+                $description = Str::limit(trim((string) $legalPage->body), 160, '');
+                $canonical = self::url($request, 'kurumsal/'.$legalPage->slug);
+            }
         } elseif ($route === 'category.show') {
             $category = Category::query()->where('slug', (string) $request->route('slug'))->first();
             if ($category && CategoryHierarchy::visible($category)) {
