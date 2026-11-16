@@ -117,6 +117,7 @@ Route::prefix('hesabim')->name('account.')->middleware('auth')->group(function (
 });
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\AdminRecoveryController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CategoryBannerController;
@@ -144,6 +145,13 @@ use App\Http\Controllers\Admin\PaymentNotificationController as AdminPaymentNoti
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
+// Admin recovery requires a short-lived CLI-created secret in private server storage.
+// It is independent of customer password reset and unavailable by default.
+Route::get('/admin/kurtarma', [AdminRecoveryController::class, 'show'])
+    ->name('admin.recovery.show');
+Route::post('/admin/kurtarma', [AdminRecoveryController::class, 'reset'])
+    ->middleware('throttle:5,1')
+    ->name('admin.recovery.reset');
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'login'])
     ->middleware('throttle:5,1')->name('admin.login.submit');
