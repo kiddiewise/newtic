@@ -7,6 +7,20 @@ use App\Models\MerchantLegalProfile;
 
 final class LegalReadiness
 {
+    public static function membershipNotice(): ?array
+    {
+        $page = MerchantLegalPage::published('uyelik-sozlesmesi');
+        if (!$page) return null;
+
+        return [
+            'acknowledged_at' => now()->toIso8601String(),
+            'title' => $page->title,
+            'version' => $page->version,
+            'sha256' => $page->revisionHash(),
+            'body' => $page->body,
+        ];
+    }
+
     public static function checkoutReady(): bool
     {
         if (!MerchantLegalProfile::current()->ready()) return false;
