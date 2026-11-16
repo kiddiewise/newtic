@@ -243,6 +243,7 @@
   $merchantTrustMarks = \App\Models\MerchantFooterMark::visible('trust');
   $merchantAppMarks = \App\Models\MerchantFooterMark::visible('app');
   $livePaytr = !config('newtic.checkout_test_mode', true)
+      && config('newtic.paytr_card_payments_enabled', false)
       && $merchantLegal->show_paytr_disclosure
       && \App\Models\PaytrSetting::query()->where('is_enabled', true)->first()?->hasCredentials();
 @endphp
