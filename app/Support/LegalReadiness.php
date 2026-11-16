@@ -46,9 +46,6 @@ final class LegalReadiness
                 $missing[] = MerchantLegalPage::LABELS[$slug];
             }
         }
-        if (!MerchantLegalPage::published('on-bilgilendirme-formu')) {
-            $missing[] = MerchantLegalPage::LABELS['on-bilgilendirme-formu'];
-        }
         return $missing;
     }
 
