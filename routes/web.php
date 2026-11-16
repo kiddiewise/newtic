@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\Admin\LegalSettingsController;
+use App\Http\Controllers\Admin\FooterMarkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
@@ -40,6 +43,9 @@ Route::prefix('install')->name('install.')->group(function () {
 });
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/kurumsal/{slug}', [LegalPageController::class, 'show'])
+    ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
+    ->name('legal.show');
 Route::get('/robots.txt', [SeoSitemapController::class, 'robots'])->name('seo.robots');
 Route::get('/sitemap.xml', [SeoSitemapController::class, 'index'])->name('seo.sitemap');
 Route::get('/sitemap/pages.xml', [SeoSitemapController::class, 'pages'])->name('seo.sitemap.pages');
@@ -87,6 +93,10 @@ Route::post('/eposta/dogrulama-yeniden', [AccountEmailController::class, 'resend
 
 Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
 Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
+Route::get('/auth/google/uyelik-onayi', [GoogleCustomerAuthController::class, 'review'])
+    ->name('account.google.review');
+Route::post('/auth/google/uyelik-onayi', [GoogleCustomerAuthController::class, 'confirmRegistration'])
+    ->middleware('throttle:5,1')->name('account.google.review.submit');
 Route::get('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'show'])->middleware('throttle:30,1')->name('marketing.unsubscribe.show');
 Route::post('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'unsubscribe'])->middleware('throttle:10,1')->name('marketing.unsubscribe');
 Route::post('/hesabim/kampanya-tercihim', [MarketingPreferenceController::class,'update'])->middleware(['auth','throttle:5,1'])->name('account.marketing.preference');
@@ -159,6 +169,16 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
     ->middleware('auth')->name('admin.logout');
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
+    Route::get('/yasal-sayfalar', [LegalSettingsController::class, 'index'])->name('legal.index');
+    Route::post('/yasal-sayfalar/footer-gorseli', [FooterMarkController::class, 'store'])
+        ->middleware('throttle:10,1')->name('legal.marks.store');
+    Route::delete('/yasal-sayfalar/footer-gorseli/{footerMark}', [FooterMarkController::class, 'destroy'])
+        ->name('legal.marks.destroy');
+    Route::patch('/yasal-sayfalar/satici', [LegalSettingsController::class, 'saveProfile'])
+        ->name('legal.profile');
+    Route::patch('/yasal-sayfalar/{slug}', [LegalSettingsController::class, 'savePage'])
+        ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
+        ->name('legal.page');
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');

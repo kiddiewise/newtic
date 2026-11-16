@@ -84,6 +84,7 @@ import './product-reviews.js';
 import './live-search.js';
 
 import './infinite-catalog.js';
+import './cookie-preferences.js';
 
 import './catalog-import.js';
 

@@ -236,26 +236,143 @@
 </div>
 @endif
 
-<footer class="site-footer">
-  <div class="container footer-grid">
-    <div>
+@php
+  $merchantLegal = \App\Models\MerchantLegalProfile::current();
+  $publishedLegalPages = \App\Models\MerchantLegalPage::publishedLinks();
+  $merchantPaymentMarks = \App\Models\MerchantFooterMark::visible('payment');
+  $merchantTrustMarks = \App\Models\MerchantFooterMark::visible('trust');
+  $merchantAppMarks = \App\Models\MerchantFooterMark::visible('app');
+  $livePaytr = !config('newtic.checkout_test_mode', true)
+      && config('newtic.paytr_card_payments_enabled', false)
+      && $merchantLegal->show_paytr_disclosure
+      && \App\Models\PaytrSetting::query()->where('is_enabled', true)->first()?->hasCredentials();
+@endphp
+<footer class="site-footer legal-site-footer">
+  <div class="container legal-footer-primary">
+    <div class="legal-footer-brand-col">
       <a class="footer-brandmark" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
         @if($shopAppearance->desktop_logo_path || $shopAppearance->mobile_logo_path)
           <img src="{{ asset($shopAppearance->desktop_logo_path ?: $shopAppearance->mobile_logo_path) }}" alt="{{ $storeName }}" width="170" height="54" loading="lazy">
         @else
-          <span class="footer-brand-fallback">
-            <x-store-icon name="shopping-bag" />
-            <span><strong>POLARIS</strong><small>KURŞUN</small></span>
+          <span class="footer-brand-fallback"><x-store-icon name="shopping-bag" />
+            <span><strong>{{ mb_strtoupper($brandTop, 'UTF-8') }}</strong>
+              @if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif
+            </span>
           </span>
         @endif
       </a>
       <p>{{ $storeDescription }}</p>
     </div>
-    <div><strong>Keşfet</strong><a href="{{ route('home') }}">Ana sayfa</a><a href="{{ route('search') }}">Ürünler</a></div>
-    <div><strong>Bilgilendirme</strong><p>@if(config('newtic.checkout_test_mode', true)) Sipariş işlemleri test modundadır. Gerçek kart tahsilatı yapılmaz. @else Ödeme ve teslimat bilgileri sipariş adımında gösterilir. @endif</p></div>
+
+    <div class="legal-footer-col">
+      <strong>Kurumsal</strong>
+      @foreach(['hakkimizda','iletisim','islem-rehberi','uyelik-sozlesmesi'] as $slug)
+        @if(isset($publishedLegalPages[$slug]))
+          <a href="{{ route('legal.show',$slug) }}">{{ $publishedLegalPages[$slug]->title }}</a>
+        @endif
+      @endforeach
+      <a href="{{ route('search') }}">Tüm ürünler</a>
+    </div>
+
+    <div class="legal-footer-col">
+      <strong>Yardım Merkezi</strong>
+      @foreach(['on-bilgilendirme-formu','mesafeli-satis-sozlesmesi','teslimat-ve-iade'] as $slug)
+        @if(isset($publishedLegalPages[$slug]))
+          <a href="{{ route('legal.show',$slug) }}">{{ $publishedLegalPages[$slug]->title }}</a>
+        @endif
+      @endforeach
+      <a href="{{ route('account.index') }}">Siparişlerim</a>
+    </div>
+
+    <div class="legal-footer-col">
+      <strong>Gizlilik & KVKK</strong>
+      @foreach(['kvkk-aydinlatma','gizlilik-politikasi','cerez-politikasi'] as $slug)
+        @if(isset($publishedLegalPages[$slug]))
+          <a href="{{ route('legal.show',$slug) }}">{{ $publishedLegalPages[$slug]->title }}</a>
+        @endif
+      @endforeach
+      <button class="legal-cookie-open" type="button" data-open-cookie-preferences>Çerez tercihleri</button>
+    </div>
+
+    <div class="legal-footer-col legal-footer-service">
+      <strong>Müşteri Hizmetleri</strong>
+      @if($merchantLegal->contact_phone)
+        <a class="legal-footer-phone" href="tel:{{ preg_replace('/[^0-9+]/','',$merchantLegal->contact_phone) }}">{{ $merchantLegal->contact_phone }}</a>
+      @endif
+      @if($merchantLegal->contact_email)
+        <a href="mailto:{{ $merchantLegal->contact_email }}">{{ $merchantLegal->contact_email }}</a>
+      @endif
+      @if($merchantLegal->support_hours)<small>{{ $merchantLegal->support_hours }}</small>@endif
+      @if($merchantLegal->legal_name)<small>{{ $merchantLegal->legal_name }}</small>@endif
+      @if($merchantLegal->registered_address)<small>{{ $merchantLegal->registered_address }}</small>@endif
+      @if($merchantLegal->mersis_number)<small>MERSİS: {{ $merchantLegal->mersis_number }}</small>@endif
+      @if($merchantLegal->kep_address)<small>KEP: {{ $merchantLegal->kep_address }}</small>@endif
+    </div>
   </div>
-  <div class="container footer-bottom">© {{ date('Y') }} {{ $storeName }} · Tüm hakları saklıdır</div>
+
+  <div class="container legal-footer-secondary">
+    <div class="legal-footer-trust">
+      <strong>Ödeme Yöntemleri</strong>
+      @if($livePaytr)
+        <div class="legal-footer-brand-badges" aria-label="Kartlı ödeme">
+          @forelse($merchantPaymentMarks as $mark)
+            <span class="legal-footer-mark">
+              @if($mark->verification_url)<a href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">@endif
+                <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="112" height="42" loading="lazy">
+              @if($mark->verification_url)</a>@endif
+            </span>
+          @empty
+            <span>Güvenli kartlı ödeme</span>
+          @endforelse
+        </div>
+        <p>Bu internet sitesindeki ödeme hizmetleri PAYTR Ödeme ve Elektronik Para Kuruluşu A.Ş. tarafından sağlanmaktadır.
+          <a href="https://www.paytr.com/" target="_blank" rel="noopener noreferrer">PAYTR</a>
+        </p>
+      @else
+        <p>Etkin ödeme seçenekleri siparişin ödeme adımında gösterilir.</p>
+      @endif
+    </div>
+    <div class="legal-footer-trust">
+      <strong>Alışveriş Bilgileri</strong>
+      <p>Sepet, ödeme ve teslimat ayrıntılarını siparişi onaylamadan önce kontrol edebilirsiniz.</p>
+      @if(config('newtic.checkout_test_mode',true))
+        <p class="legal-footer-test">Test modu: Gerçek kart tahsilatı yapılmaz.</p>
+      @endif
+    </div>
+    <div class="legal-footer-trust">
+      @if($merchantTrustMarks->isNotEmpty())
+        <strong>Doğrulanabilir işaretler</strong>
+        <div class="legal-footer-brand-badges legal-footer-trust-marks">
+          @foreach($merchantTrustMarks as $mark)
+            <a class="legal-footer-mark" href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">
+              <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="112" height="42" loading="lazy">
+            </a>
+          @endforeach
+        </div>
+      @else
+        <strong>Bizi Takip Edin</strong>
+      @endif
+      <div class="legal-footer-social">
+        @if($megaMenuSettings->instagram_url)<a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>@endif
+        @if($megaMenuSettings->youtube_url)<a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer">YouTube</a>@endif
+        @if($megaMenuSettings->facebook_url)<a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook</a>@endif
+        @if($megaMenuSettings->x_url)<a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer">X</a>@endif
+      </div>
+      @if($merchantAppMarks->isNotEmpty())
+        <div class="legal-footer-app-links" aria-label="Resmi mobil uygulamalar">
+          @foreach($merchantAppMarks as $mark)
+            <a class="legal-footer-mark" href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">
+              <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="125" height="44" loading="lazy">
+            </a>
+          @endforeach
+        </div>
+      @endif
+    </div>
+  </div>
+  <div class="container footer-bottom legal-footer-bottom">© {{ date('Y') }} {{ $storeName }} · Tüm hakları saklıdır · NEWTIC</div>
 </footer>
+@include('store.partials.cookie-preferences')
+
 <nav class="mobile-bottom-nav" aria-label="Mobil gezinme">
   <a href="{{ route('home') }}"><x-store-icon name="house" /><span>Ana sayfa</span></a>
   <a href="{{ route('search') }}"><x-store-icon name="grid-2x2" /><span>Ürünler</span></a>

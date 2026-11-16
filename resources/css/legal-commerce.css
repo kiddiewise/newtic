@@ -1,0 +1,78 @@
+/* Shared, merchant-neutral compliance pages and footer. No image-based trust claims. */
+.legal-site-footer{background:#f7f9fa;color:#092037;border-top:1px solid #e6edf0}
+.legal-site-footer .container{max-width:1320px}
+.legal-footer-primary{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr)) 1.35fr;gap:24px;padding-top:50px;padding-bottom:42px}
+.legal-footer-brand-col .footer-brandmark{margin-bottom:12px}
+.legal-footer-brand-col p{color:#586e7b;line-height:1.65;margin:12px 0 0;font-size:12px}
+.legal-footer-brand-col .footer-brand-fallback strong{font-family:"Plus Jakarta Sans",sans-serif}
+.legal-footer-col{display:flex;flex-direction:column;align-items:flex-start;gap:11px;min-width:0}
+.legal-footer-col>strong,.legal-footer-trust>strong{font-size:13px;font-weight:700;color:#092037;font-family:"Plus Jakarta Sans",sans-serif;line-height:1.4;margin:0 0 7px}
+.legal-footer-col a,.legal-footer-col small,.legal-cookie-open{display:block;color:#607481;font-size:12px;line-height:1.55;text-decoration:none;overflow-wrap:anywhere}
+.legal-footer-col a:hover,.legal-cookie-open:hover{text-decoration:underline;color:#092037}
+.legal-cookie-open{border:0;background:none;padding:0;font-family:inherit;cursor:pointer;text-align:left}
+.legal-footer-service .legal-footer-phone{font-size:19px;font-weight:750;color:#092037}
+.legal-footer-secondary{display:grid;grid-template-columns:1.1fr 1.1fr 1fr;gap:30px;padding-top:31px;padding-bottom:28px;border-top:1px solid #dfe8ec}
+.legal-footer-trust p{max-width:340px;font-size:12px;color:#607481;line-height:1.6;margin:10px 0}
+.legal-footer-brand-badges,.legal-footer-social{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.legal-footer-brand-badges span{display:flex;align-items:center;justify-content:center;padding:10px 13px;min-height:38px;background:#fff;border-radius:7px;border:1px solid #e3e9ed;font-weight:700;font-size:12px;letter-spacing:.02em}
+.legal-footer-social a{display:inline-flex;align-items:center;border:1px solid #e2e9ed;border-radius:50px;padding:8px 12px;background:#fff;color:#092037;font-size:12px;text-decoration:none}
+.legal-footer-test{font-weight:700}
+.legal-footer-bottom{border-top:1px solid #dfe8ec;padding-top:21px;padding-bottom:24px;font-size:11px;color:#708493}
+.legal-content-shell{max-width:950px!important;padding-top:38px;padding-bottom:70px}
+.legal-breadcrumb{display:flex;gap:9px;color:#6e8491;font-size:12px;margin:0 0 20px}
+.legal-breadcrumb a{color:#0b415d}
+.legal-paper{background:#fff;border:1px solid #e0e9ee;border-radius:19px;padding:clamp(24px,4vw,44px);margin-bottom:20px;box-shadow:0 15px 40px #09203708}
+.legal-paper-label{font-size:11px;font-weight:750;letter-spacing:.13em;color:#557e8a}
+.legal-paper h1{font-family:"Plus Jakarta Sans",sans-serif;font-weight:750;font-size:clamp(26px,4vw,39px);margin:10px 0}
+.legal-paper h2{font-size:21px;margin:0 0 22px}
+.legal-paper-meta{color:#78909d;font-size:12px;margin-bottom:26px}
+.legal-paper-body{font-size:14px;line-height:1.95;color:#3e5362;white-space:pre-wrap;overflow-wrap:anywhere}
+.legal-contact-details dl{display:grid;grid-template-columns:140px 1fr;gap:12px 20px;font-size:14px}
+.legal-contact-details dt{font-weight:700}.legal-contact-details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.legal-admin-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;list-style:none;padding:0}
+.legal-admin-checklist li{background:#fdf3ec;border:1px solid #f4d8c5;padding:10px;border-radius:10px;font-size:12px}
+.legal-admin-checklist li::before{content:"!";margin-right:10px;font-weight:700;color:#d06d3d}
+.legal-admin-document-bottom{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.legal-admin-document-bottom>.admin-check{margin-right:auto}
+.legal-checkout-info{background:#f5f8fa;border:1px solid #dce8ef;border-radius:13px;padding:17px;margin:19px 0}
+.legal-checkout-info h3{font-weight:750;font-size:14px;margin:0 0 13px}
+.legal-checkout-ack{display:flex;gap:10px}
+.legal-checkout-ack a,.legal-mini-note a{color:#0b526a;text-decoration:underline;text-underline-offset:2px}
+.legal-checkout-ack small,.legal-mini-note{display:block;color:#627d88;font-size:11px;line-height:1.6;margin-top:6px}
+.legal-checkout-caution{font-size:12px;color:#9c4b27;line-height:1.6}
+.newtic-cookie-banner[hidden],.newtic-cookie-dialog[hidden]{display:none!important}
+.newtic-cookie-banner{position:fixed;bottom:0;left:0;right:0;z-index:150;background:#092037;color:#fff;padding:14px 0;box-shadow:0 -10px 30px #0003}
+.newtic-cookie-inner{display:flex;align-items:center;justify-content:space-between;gap:28px}
+.newtic-cookie-inner strong{color:#fff;font-size:13px;font-weight:700}
+.newtic-cookie-inner p{color:#e1e8ee;font-size:12px;line-height:1.65;margin:5px 0 0}
+.newtic-cookie-inner a{color:#fff;text-decoration:underline}
+.newtic-cookie-actions,.newtic-cookie-dialog-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.newtic-cookie-actions button{border:1px solid #fff;border-radius:9px;padding:10px 13px;min-width:100px;background:#fff;color:#092037;font-weight:700;font-size:12px;cursor:pointer}
+.newtic-cookie-actions button:hover{background:#edf5f9;color:#092037}
+.newtic-cookie-dialog{width:min(94vw,510px);border:1px solid #dde6eb;border-radius:18px;padding:0;color:#092037;box-shadow:0 35px 90px #0004}
+.newtic-cookie-dialog::backdrop{background:#09203790}
+.newtic-cookie-dialog-content{padding:27px}
+.newtic-cookie-dialog h2{font-size:24px;font-weight:750;margin:0 0 8px}
+.newtic-cookie-dialog p{font-size:13px;color:#5d7580;line-height:1.6}
+.newtic-cookie-setting{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 0;border-bottom:1px solid #e3eaee}
+.newtic-cookie-setting strong,.newtic-cookie-setting small{display:block}
+.newtic-cookie-setting strong{font-size:14px}.newtic-cookie-setting small{font-size:11px;color:#728792;margin-top:3px}
+.newtic-cookie-setting input{width:20px;height:20px;accent-color:#092037}
+.newtic-cookie-dialog .newtic-cookie-hint{font-size:11px}
+.newtic-cookie-dialog-actions{justify-content:flex-end;margin-top:18px}
+.newtic-cookie-dialog-actions button{border-radius:9px;padding:11px 14px;border:1px solid #cbdce3;background:white;color:#092037;cursor:pointer;font-weight:700}
+.newtic-cookie-dialog-actions button:last-child{background:#092037;color:#fff}
+@media(max-width:1100px){.legal-footer-primary{grid-template-columns:repeat(3,minmax(0,1fr))}.legal-footer-brand-col{grid-column:span 3;max-width:460px}.legal-footer-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:670px){.legal-footer-primary{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 16px;padding-top:34px}.legal-footer-brand-col{grid-column:span 2}.legal-footer-service{grid-column:span 2}.legal-footer-secondary{grid-template-columns:1fr;gap:17px}.legal-footer-trust{padding-bottom:9px}.legal-content-shell{padding-top:20px;padding-bottom:50px}.legal-contact-details dl{grid-template-columns:1fr;gap:4px}.legal-contact-details dd{margin-bottom:10px}.newtic-cookie-inner{display:block}.newtic-cookie-actions{margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.newtic-cookie-actions button{min-width:0;padding:10px 6px;font-size:11px}.newtic-cookie-banner{bottom:0}}
+
+.legal-footer-mark{display:inline-flex;align-items:center;justify-content:center;min-height:43px;max-width:150px;padding:5px 10px;border:1px solid #e2e9ed;border-radius:8px;background:#fff;line-height:0}
+.legal-footer-mark a{display:inline-flex;align-items:center;justify-content:center}
+.legal-footer-brand-badges .legal-footer-mark{padding:5px 10px}
+.legal-footer-mark img{max-width:130px;max-height:45px;width:auto;height:auto;object-fit:contain}
+.legal-footer-app-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.legal-admin-marks{margin-top:18px;display:grid;gap:9px}
+.legal-admin-mark{display:flex;align-items:center;gap:15px;background:#f6fafb;border:1px solid #e3ebee;padding:10px;border-radius:12px}
+.legal-admin-mark img{max-width:90px;max-height:46px;object-fit:contain}
+.legal-admin-mark div{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.legal-admin-mark strong{font-size:13px}.legal-admin-mark small{color:#718591;font-size:11px}
+.legal-admin-mark form{margin:0}

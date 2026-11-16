@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\MerchantLegalPage;
 use App\Support\CategoryHierarchy;
 use App\Support\SeoMetadata;
 use Illuminate\Http\Request;
@@ -53,8 +54,17 @@ final class SeoSitemapController extends Controller
     public function pages(Request $request): Response
     {
         $this->publicOnly($request);
-        return $this->xml($this->begin('urlset', 'http://www.sitemaps.org/schemas/sitemap/0.9').
-            $this->entry(SeoMetadata::url($request)).'</urlset>');
+        $xml = $this->begin('urlset', 'http://www.sitemaps.org/schemas/sitemap/0.9').
+            $this->entry(SeoMetadata::url($request));
+        foreach (MerchantLegalPage::query()->where('is_published', true)->get() as $legalPage) {
+            if (!array_key_exists($legalPage->slug, MerchantLegalPage::LABELS)) continue;
+            $xml .= $this->entry(
+                SeoMetadata::url($request, 'kurumsal/'.$legalPage->slug),
+                $legalPage->updated_at?->toAtomString()
+            );
+        }
+
+        return $this->xml($xml.'</urlset>');
     }
 
     public function categories(Request $request): Response

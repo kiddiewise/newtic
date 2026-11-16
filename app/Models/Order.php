@@ -14,7 +14,7 @@ class Order extends Model
         'phone','address_label','city','district','street_address','invoice_type',
         'company_title','tax_office','tax_number','order_note','payment_method','status',
         'subtotal_cents','shipping_cents','total_cents','currency','is_test','placed_at',
-        'carrier_name','tracking_number','tracking_url',
+        'carrier_name','tracking_number','tracking_url','legal_acknowledgement',
     ];
 
     protected $casts = [
@@ -23,6 +23,7 @@ class Order extends Model
         'total_cents' => 'integer',
         'placed_at' => 'datetime',
         'is_test' => 'boolean',
+        'legal_acknowledgement' => 'array',
     ];
 
     public function shippingShipment(): HasOne

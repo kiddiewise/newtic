@@ -1,7 +1,11 @@
 @extends('layouts.store')
 @section('title', 'Siparişi Tamamla | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
-@php $checkoutIsTest = (bool) config('newtic.checkout_test_mode', true); @endphp
+@php
+  $checkoutIsTest = (bool) config('newtic.checkout_test_mode', true);
+  $legalCheckoutReady = \App\Support\LegalReadiness::checkoutReady();
+  $checkoutLegalRevision = $legalCheckoutReady ? \App\Support\LegalReadiness::checkoutSignature() : '';
+@endphp
 <main class="checkout-shell checkout-page" id="content">
   <div class="checkout-top"><a href="{{ route('cart.index') }}" data-checkout-return-cart aria-label="Sepete dön">‹</a><strong>Siparişi Tamamla</strong><span class="checkout-stage-label">2 / 3</span></div>
   <nav class="checkout-steps" aria-label="Sipariş aşamaları">
@@ -103,6 +107,13 @@
               <span><strong>Yeni üyelik oluştur</strong><small>Bir sonraki alışverişinde adreslerini ve siparişlerini hesabında gör.</small></span>
             </label>
             <div class="checkout-register-fields" data-create-account-fields @if(!old('create_account')) hidden @endif>
+              @if($membershipTerms = \App\Models\MerchantLegalPage::published('uyelik-sozlesmesi'))
+                <input type="hidden" name="membership_revision" value="{{ $membershipTerms->revisionHash() }}">
+                <label class="checkout-check legal-checkout-ack">
+                  <input type="checkbox" name="membership_accepted" value="1" data-membership-accept @checked(old('membership_accepted'))>
+                  <span><a href="{{ route('legal.show','uyelik-sozlesmesi') }}" target="_blank" rel="noopener noreferrer">Üyelik Koşulları</a>'nı okudum ve kabul ediyorum (yalnız yeni üyelik oluşturulursa zorunlu).</span>
+                </label>
+              @endif
               <label class="checkout-field"><span>Hesap şifresi (en az 8 karakter) *</span>
                 <input type="password" name="account_password" minlength="8" autocomplete="new-password">
               </label>
@@ -140,6 +151,27 @@
           </div>
           <p class="checkout-testing-note"><strong>{{ $checkoutIsTest ? 'Deneme ortamı:' : 'Önemli:' }}</strong>
           {{ $checkoutIsTest ? 'Bu geliştirme sitesinde oluşturulan siparişler test kaydıdır. Havale/EFT seçeneğini gerçek para göndermek için kullanmayın.' : 'Yalnızca listelenen etkin ödeme yöntemlerini kullanabilirsiniz.' }}</p>
+        </section>
+        <section class="legal-checkout-info" aria-label="Yasal bilgilendirmeler">
+          <h3>Bilgilendirme ve sözleşmeler</h3>
+          @if($legalCheckoutReady)
+            <input type="hidden" name="legal_revision" value="{{ $checkoutLegalRevision }}">
+            <label class="checkout-check legal-checkout-ack">
+              <input type="checkbox" name="legal_acknowledged" value="1" required @checked(old('legal_acknowledged'))>
+              <span>
+                <a target="_blank" rel="noopener noreferrer" href="{{ route('legal.show', 'on-bilgilendirme-formu') }}">Ön Bilgilendirme Formu</a>
+                ve <a target="_blank" rel="noopener noreferrer" href="{{ route('legal.show', 'mesafeli-satis-sozlesmesi') }}">Mesafeli Satış Sözleşmesi</a> içeriğini okudum, anladım ve siparişimi bu bilgilerle onaylıyorum.
+                <small>Siparişi onaylamak ödeme yükümlülüğü doğurur. Bilgilendirme tarih ve sürümü siparişinize kaydedilir.</small>
+              </span>
+            </label>
+          @else
+            <p class="legal-checkout-caution">
+              {{ $checkoutIsTest ? 'Test ortamı: Yasal sözleşmeler henüz yayınlanmadı; gerçek sipariş almadan önce mağazanın bu bölümü tamamlanmalıdır.' : 'Satıcı sözleşmeleri henüz yayınlanmadığı için canlı sipariş oluşturulamaz. Lütfen mağazayla iletişime geçin.' }}
+            </p>
+          @endif
+          @if(\App\Models\MerchantLegalPage::published('kvkk-aydinlatma'))
+            <p class="legal-mini-note">Kişisel verilerinizin işlenmesi hakkında <a href="{{ route('legal.show', 'kvkk-aydinlatma') }}" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a>'ni inceleyebilirsiniz. Pazarlama tercihi ayrı ve isteğe bağlıdır.</p>
+          @endif
         </section>
         <p class="checkout-privacy">Sipariş bilgileri yalnızca teslimat, faturalama ve sipariş yönetimi amacıyla alınır. Pazarlama izni otomatik verilmez.</p>
 <button class="checkout-action checkout-desktop-submit checkout-guarded-submit" type="submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'Güvenli Test Ödemesine Geç' : ($checkoutIsTest ? 'Deneme Siparişini Oluştur' : 'Siparişi Oluştur') }}</span></button>

@@ -51,6 +51,8 @@ document.querySelectorAll('[data-create-account]').forEach((checkbox) => {
   const toggle = () => {
     fields.hidden = !checkbox.checked;
     if (password) password.required = checkbox.checked;
+    const membership = fields.querySelector('[data-membership-accept]');
+    if (membership) membership.required = checkbox.checked;
   };
   checkbox.addEventListener('change', toggle);
   toggle();

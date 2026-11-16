@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\GoogleLoginSetting;
 use App\Models\User;
+use App\Models\MerchantLegalPage;
+use App\Support\LegalReadiness;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use App\Support\GoogleCustomerOAuth;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -68,6 +72,17 @@ final class GoogleCustomerAuthController extends Controller
         // linked user. An email match is NEVER sufficient to merge accounts.
         $user = User::query()->where('google_sub', $identity['sub'])->first();
         if (!$user) {
+            // New Google accounts must review current membership terms before
+            // account creation. Existing linked accounts can sign in normally.
+            if (MerchantLegalPage::published('uyelik-sozlesmesi')) {
+                $request->session()->put('google_customer_registration_review', [
+                    'identity' => $identity,
+                    'intent' => $pending['intent'] ?? [],
+                    'issued_at' => now()->timestamp,
+                ]);
+
+                return redirect()->route('account.google.review');
+            }
             $existingEmail = User::query()->whereRaw('LOWER(email) = ?', [$identity['email']])->exists();
             if ($existingEmail) {
                 return redirect()->route('account.login')
@@ -102,4 +117,71 @@ final class GoogleCustomerAuthController extends Controller
 
         return $accounts->afterAuthentication($request, (array) ($pending['intent'] ?? []));
     }
+
+    public function review(Request $request): View|RedirectResponse
+    {
+        $pending = $request->session()->get('google_customer_registration_review');
+        $page = MerchantLegalPage::published('uyelik-sozlesmesi');
+        if (!is_array($pending) || !$page ||
+            now()->timestamp - (int) ($pending['issued_at'] ?? 0) > 600) {
+            return redirect()->route('account.login')
+                ->withErrors(['google' => 'Google üyelik oturumu geçersiz veya süresi dolmuş. Yeniden deneyin.']);
+        }
+
+        return view('store.google-membership-review', ['page' => $page]);
+    }
+
+    public function confirmRegistration(Request $request, AccountController $accounts): RedirectResponse
+    {
+        $pending = $request->session()->get('google_customer_registration_review');
+        $page = MerchantLegalPage::published('uyelik-sozlesmesi');
+        if (!is_array($pending) || !$page ||
+            now()->timestamp - (int) ($pending['issued_at'] ?? 0) > 600
+            || !is_array($pending['identity'] ?? null)) {
+            return redirect()->route('account.login')
+                ->withErrors(['google' => 'Google üyelik oturumu geçersiz veya süresi dolmuş. Yeniden deneyin.']);
+        }
+
+        $validated = $request->validate([
+            'membership_accepted' => ['required', 'accepted'],
+            'membership_revision' => ['required', 'string', 'size:64'],
+        ]);
+        if (!hash_equals($page->revisionHash(), $validated['membership_revision'])) {
+            throw ValidationException::withMessages([
+                'membership_accepted' => 'Üyelik koşulları değişti. Lütfen yeni metni inceleyin.',
+            ]);
+        }
+
+        $identity = $pending['identity'];
+        if (!is_string($identity['sub'] ?? null) || !is_string($identity['email'] ?? null)
+            || !is_string($identity['name'] ?? null)
+            || User::query()->where('google_sub', $identity['sub'])->exists()
+            || User::query()->whereRaw('LOWER(email) = ?', [$identity['email']])->exists()) {
+            return redirect()->route('account.login')
+                ->withErrors(['google' => 'Bu hesap zaten var veya Google kimlik bilgileri geçersiz. Yeniden giriş yapın.']);
+        }
+
+        try {
+            $user = DB::transaction(function () use ($identity) {
+                return User::query()->create([
+                    'name' => $identity['name'],
+                    'email' => $identity['email'],
+                    'password' => Str::random(80),
+                    'google_sub' => $identity['sub'],
+                    'email_verified_at' => now(),
+                    'legal_notice' => LegalReadiness::membershipNotice(),
+                ]);
+            });
+        } catch (QueryException) {
+            return redirect()->route('account.login')
+                ->withErrors(['google' => 'Üyelik tamamlanamadı. Yeniden giriş yapın.']);
+        }
+
+        $request->session()->forget('google_customer_registration_review');
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return $accounts->afterAuthentication($request, (array) ($pending['intent'] ?? []));
+    }
+
 }

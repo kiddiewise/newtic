@@ -29,6 +29,17 @@
           <label class="checkout-field"><span>E-posta adresi</span><input name="email" type="email" maxlength="255" autocomplete="email" required value="{{ old('email') }}" placeholder="ornek@eposta.com"></label>
           <label class="checkout-field"><span>Şifre (en az 8 karakter)</span><input name="password" type="password" minlength="8" autocomplete="new-password" required placeholder="Güçlü bir şifre oluştur"></label>
           <label class="checkout-field"><span>Şifre tekrarı</span><input name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required placeholder="Şifreni tekrar gir"></label>
+          @if($membershipTerms = \App\Models\MerchantLegalPage::published('uyelik-sozlesmesi'))
+            <input type="hidden" name="membership_revision" value="{{ $membershipTerms->revisionHash() }}">
+            <label class="checkout-check legal-checkout-ack">
+              <input type="checkbox" name="membership_accepted" required value="1" @checked(old('membership_accepted'))>
+              <span><a href="{{ route('legal.show','uyelik-sozlesmesi') }}" target="_blank" rel="noopener noreferrer">Üyelik Koşulları</a>'nı okudum ve kabul ediyorum.</span>
+            </label>
+          @endif
+          @if(\App\Models\MerchantLegalPage::published('kvkk-aydinlatma'))
+            <p class="legal-mini-note">Üyelik işleminize ilişkin veri işleme faaliyetleri için
+              <a href="{{ route('legal.show','kvkk-aydinlatma') }}" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a>'ni inceleyebilirsiniz. Pazarlama izni zorunlu değildir.</p>
+          @endif
           <label class="checkout-check">
             <input type="checkbox" name="marketing_opt_in" value="1" @checked(old('marketing_opt_in'))>
             <span><strong>İsteğe bağlı kampanya ve fırsat e-postalarını almak istiyorum.</strong>

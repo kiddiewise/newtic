@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\LegalReadiness;
+use App\Models\MerchantLegalPage;
+
 use App\Models\BankAccount;
 use App\Models\Order;
 use App\Services\MarketingConsentService;
@@ -76,6 +79,20 @@ class CheckoutController extends Controller
             $bankAvailable ? 'bank_transfer' : null,
             $paytrAvailable ? 'paytr' : null,
         ]));
+        if (!config('newtic.checkout_test_mode', true) && LegalReadiness::requiredBeforeLive() !== []) {
+            throw ValidationException::withMessages([
+                'legal_acknowledged' => 'Bu mağazanın zorunlu kurumsal sayfaları ve satıcı bilgileri tamamlanmadan canlı sipariş kabul edilemez.',
+            ]);
+        }
+        $legalReady = LegalReadiness::checkoutReady();
+        $legalRequired = $legalReady || !config('newtic.checkout_test_mode', true);
+        if ($legalRequired && !$legalReady) {
+            throw ValidationException::withMessages([
+                'legal_acknowledged' => 'Satıcı kimliği ve zorunlu satış bilgilendirmeleri henüz tamamlanmadı. Canlı sipariş açılamaz.',
+            ]);
+        }
+        $membershipTerms = $request->boolean('create_account')
+            ? MerchantLegalPage::published('uyelik-sozlesmesi') : null;
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
             'email' => ['required', 'email', 'max:255'],
             'order_note' => ['nullable', 'string', 'max:2000'],
@@ -83,10 +100,24 @@ class CheckoutController extends Controller
             'payment_method' => ['required', Rule::in($allowedMethods)],
             'save_address' => ['nullable', 'boolean'],
             'marketing_opt_in' => ['nullable', 'boolean'],
+            'legal_acknowledged' => $legalRequired ? ['required', 'accepted'] : ['nullable', 'boolean'],
+            'legal_revision' => $legalRequired ? ['required', 'string', 'size:64'] : ['nullable', 'string'],
+            'membership_accepted' => $membershipTerms ? ['required', 'accepted'] : ['nullable', 'boolean'],
+            'membership_revision' => $membershipTerms ? ['required','string','size:64'] : ['nullable','string'],
             'create_account' => ['nullable', 'boolean'],
             'account_password' => ['required_if:create_account,1', 'nullable', Password::min(8)],
         ]));
 
+        if ($legalRequired && !hash_equals(LegalReadiness::checkoutSignature(), (string) ($validated['legal_revision'] ?? ''))) {
+            throw ValidationException::withMessages([
+                'legal_acknowledged' => 'Satış sözleşmesi veya satıcı bilgileri güncellendi. Lütfen ödeme sayfasını yenileyerek tekrar inceleyin.',
+            ]);
+        }
+        if ($membershipTerms && !hash_equals($membershipTerms->revisionHash(), (string) ($validated['membership_revision'] ?? ''))) {
+            throw ValidationException::withMessages([
+                'membership_accepted' => 'Üyelik koşulları değişti. Sipariş sayfasını yeniden açın.',
+            ]);
+        }
         $token = $validated['checkout_token'];
         if (hash_equals((string) $request->session()->get('checkout_last_token', ''), $token)
             && $request->session()->has('checkout_last_order')) {
@@ -122,7 +153,18 @@ class CheckoutController extends Controller
         $newUser = null;
         $method = $validated['payment_method'];
         $cartSnapshot = ShoppingCart::raw($request);
-        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, &$newUser) {
+        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, $legalRequired, $membershipTerms, &$newUser) {
+            $legalEvidence = null;
+            if ($legalRequired) {
+                if (!LegalReadiness::checkoutReady() ||
+                    !hash_equals(LegalReadiness::checkoutSignature(), (string) ($validated['legal_revision'] ?? ''))) {
+                    throw ValidationException::withMessages([
+                        'legal_acknowledged' => 'Yasal bilgilendirmeler güncellendi. Lütfen ödeme sayfasını yenileyin.',
+                    ]);
+                }
+                $legalEvidence = LegalReadiness::orderSnapshot();
+            }
+
             // Recheck inside the order transaction to prevent hidden/disabled
             // bank transfer requests from creating unpayable orders.
             if ($method === 'bank_transfer' && !BankAccount::query()->where('is_active', true)->exists()) {
@@ -197,8 +239,26 @@ class CheckoutController extends Controller
                     'name' => $address['full_name'],
                     'email' => $validated['email'],
                     'password' => $validated['account_password'],
+                    'legal_notice' => $membershipTerms ? LegalReadiness::membershipNotice() : null,
                 ]);
                 $newUser = $customer;
+            }
+
+            if ($legalEvidence !== null) {
+                // Capture the monetary offer actually committed under stock locks.
+                $legalEvidence['financial_summary'] = [
+                    'subtotal_cents' => $subtotal,
+                    'shipping_cents' => $shipping,
+                    'total_cents' => $subtotal + $shipping,
+                    'currency' => 'TRY',
+                    'products' => array_map(fn ($line) => [
+                        'sku' => $line['product']->sku,
+                        'name' => $line['product']->name,
+                        'quantity' => $line['qty'],
+                        'unit_cents' => $line['unitCents'],
+                        'option' => $line['optionValue'],
+                    ], $lines),
+                ];
             }
 
             $order = Order::create([
@@ -225,6 +285,7 @@ class CheckoutController extends Controller
                 'currency' => 'TRY',
                 'is_test' => (bool) config('newtic.checkout_test_mode', true),
                 'placed_at' => now(),
+                'legal_acknowledgement' => $legalEvidence,
             ]);
 
             foreach ($lines as $line) {
