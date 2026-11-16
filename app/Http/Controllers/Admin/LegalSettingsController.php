@@ -20,6 +20,8 @@ final class LegalSettingsController extends Controller
             'pages' => MerchantLegalPage::query()->get()->keyBy('slug'),
             'pageLabels' => MerchantLegalPage::LABELS,
             'missing' => LegalReadiness::requiredBeforeLive(),
+            'marks' => MerchantFooterMark::query()->orderBy('type')->orderBy('sort_order')->orderBy('id')->get(),
+            'markTypes' => MerchantFooterMark::TYPES,
         ]);
     }
 
