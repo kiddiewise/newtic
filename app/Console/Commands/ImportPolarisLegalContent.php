@@ -45,7 +45,8 @@ final class ImportPolarisLegalContent extends Command
         $created = [];
         $preserved = [];
         DB::transaction(function () use ($pages, &$created, &$preserved): void {
-            $profile = MerchantLegalProfile::query()->firstOrNew(['id' => 1]);
+            $profile = MerchantLegalProfile::query()->find(1) ?? new MerchantLegalProfile();
+            $profile->id = 1;
             foreach (PolarisLegalContent::profile() as $key => $value) {
                 // Never overwrite business details that an administrator
                 // already entered; unknown fields remain blank.
