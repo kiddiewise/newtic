@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GoogleLoginSetting;
+use App\Models\MerchantLegalPage;
 use App\Models\ShopAppearance;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -150,6 +151,46 @@ final class GoogleCustomerLoginTest extends TestCase
                 && filled($request['code_verifier'])
                 && $request['code'] === 'valid-code';
         });
+    }
+
+    public function test_first_google_registration_requires_published_membership_terms_without_marketing_consent(): void
+    {
+        $terms = MerchantLegalPage::query()->create([
+            'slug' => 'uyelik-sozlesmesi',
+            'title' => 'Üyelik Koşulları',
+            'body' => str_repeat('Üyelik hak ve yükümlülükleri hakkında bilgi. ', 9),
+            'version' => 1,
+            'is_published' => true,
+            'published_at' => now(),
+        ]);
+        $this->enable();
+        $this->get(route('account.google.start', ['next' => 'wishlist']))->assertRedirect();
+        $pending = session('google_customer_oauth');
+        $this->fakeGoogle($pending['nonce']);
+        $this->get(route('account.google.callback', [
+            'state' => $pending['state'], 'code' => 'valid-code',
+        ]))->assertRedirect(route('account.google.review'));
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('users', 0);
+        $this->get(route('account.google.review'))->assertOk()
+            ->assertSee('Üyelik koşullarını inceleyin.')
+            ->assertSee('membership_accepted');
+
+        $this->post(route('account.google.review.submit'), [
+            'membership_revision' => $terms->revisionHash(),
+        ])->assertSessionHasErrors('membership_accepted');
+
+        $this->post(route('account.google.review.submit'), [
+            'membership_accepted' => '1',
+            'membership_revision' => $terms->revisionHash(),
+        ])->assertRedirect(route('wishlist.index'))->assertSessionHasNoErrors();
+
+        $user = User::where('email', 'customer@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($terms->revisionHash(), $user->legal_notice['sha256']);
+        $this->assertDatabaseCount('marketing_contacts', 0);
+        $this->get(route('account.google.review'))->assertRedirect(route('account.login'));
     }
 
     public function test_repeated_google_login_uses_same_subject_without_creating_new_account(): void
