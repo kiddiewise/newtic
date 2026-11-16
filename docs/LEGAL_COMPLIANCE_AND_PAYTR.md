@@ -68,9 +68,10 @@ TCKN gibi gereksiz hassas kişisel bilgileri otomatik olarak footer'a basmaz.
 - Pazarlama e-posta izni **önceden seçili değildir**, üyelik şartı değildir.
 - Kampanya/IYS kayıtları ayrı kontrol edilir; onaysız müşteriye kampanya
   e-postası gönderilmez.
-- Google OAuth ile hesap açarken üyelik koşulu/aydınlatma ve kayıt kanıtı
-  ayrıca doğrulanmalıdır; mevcut Google kayıt akışına bu PR'da eklenmedi.
-  Bunun için satış öncesi ayrı Google consent gate ihtiyacı vardır.
+- İlk kez Google OAuth ile üye olanlara, varsa yayınlanmış üyelik koşulları
+  ayrı sayfada sunulur. Onayla birlikte tam metin/sürüm kullanıcıya kaydedilir;
+  mevcut Google hesabının tekrar girişinde ilave onay istenmez. KVKK
+  aydınlatması ayrıca görülebilir. Pazarlama onayına zorlanmaz.
 
 ## Sepet ve ödeme onayı
 
@@ -139,6 +140,13 @@ otomatik varsayılmamalıdır**. Yeni ürün sistemine ürün bazında
   sonraki geliştirme konusudur.
 - Mobil uygulama mağaza butonları yalnızca gerçek yayınlanmış iOS/
   Android uygulaması ve aktif mağaza linki varsa gösterilmelidir.
+- Yönetim panelinde doğrulanmış kullanım hakkı onayıyla ödeme kuruluşu,
+  güven/üyelik işareti ve mobil uygulama görselleri yüklenebilir.
+  Güven/üyelik işareti ile uygulama bağlantısında resmi HTTPS doğrulama
+  adresi zorunludur. Bu adresin gerçekliğini yazılım otomatik tescil
+  sorgulamasıyla doğrulamaz; sorumluluk mağaza yönetimine aittir.
+  Ödeme logo görselleri ancak gerçekten etkin canlı kart altyapısı varsa
+  footer'da görüntülenir. Varsayılan mağazada hiçbir güven işareti yoktur.
 
 ## İşletme dışı işlemler
 
