@@ -46,7 +46,7 @@ final class PolarisLegalContent
     }
 
     /**
-     * Legally reviewed source-backed adaptations, not assertions that
+     * Source-backed adaptations requiring merchant/legal review, not assertions that
      * the operator has completed ETBIS, IYS, trust-seal or PAYTR approvals.
      *
      * @return array<string, array{title:string,body:string}>
