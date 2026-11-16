@@ -11,6 +11,9 @@ use App\Models\Product;
 use App\Models\User;
 use App\Support\LegalReadiness;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\MerchantFooterMark;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 final class MerchantLegalComplianceTest extends TestCase
@@ -198,6 +201,51 @@ final class MerchantLegalComplianceTest extends TestCase
         $contract->update(['body' => str_repeat('Yeni metin. ', 40), 'version' => 2]);
         $this->assertSame(1, $order->fresh()->legal_acknowledgement['documents']['mesafeli-satis-sozlesmesi']['version']);
         $this->assertSame(1, $order->items()->count());
+    }
+
+    public function test_unverified_footer_marks_are_not_visible_and_only_authorized_admin_may_upload(): void
+    {
+        Storage::fake('public');
+        $payload = [
+            'type' => 'trust', 'title' => 'Örnek Doğrulanabilir İşaret',
+            'image' => UploadedFile::fake()->image('damga.png', 380, 140),
+            'verification_url' => 'https://example.test/certificate/123',
+            'authorization_confirmed' => 1,
+            'sort_order' => 5,
+        ];
+
+        $this->post(route('admin.legal.marks.store'), $payload)
+            ->assertRedirect(route('admin.login'));
+        $this->actingAs(User::factory()->create());
+        $this->post(route('admin.legal.marks.store'), $payload)->assertForbidden();
+        $this->assertDatabaseCount('merchant_footer_marks', 0);
+
+        $this->actingAs($this->admin());
+
+        $missingProof = $payload;
+        unset($missingProof['verification_url']);
+        $this->post(route('admin.legal.marks.store'), $missingProof)
+            ->assertSessionHasErrors('verification_url');
+        $this->assertDatabaseCount('merchant_footer_marks', 0);
+
+        $noPermission = $payload;
+        unset($noPermission['authorization_confirmed']);
+        $this->post(route('admin.legal.marks.store'), $noPermission)
+            ->assertSessionHasErrors('authorization_confirmed');
+        $this->assertDatabaseCount('merchant_footer_marks', 0);
+
+        $this->post(route('admin.legal.marks.store'), $payload)
+            ->assertRedirect(route('admin.legal.index'))->assertSessionHasNoErrors();
+        $this->assertCount(1, MerchantFooterMark::visible('trust'));
+        $mark = MerchantFooterMark::firstOrFail();
+        Storage::disk('public')->assertExists(substr($mark->image_path, strlen('storage/')));
+
+        $this->get(route('home'))->assertOk()
+            ->assertSee('Örnek Doğrulanabilir İşaret');
+        $this->delete(route('admin.legal.marks.destroy', $mark))
+            ->assertRedirect(route('admin.legal.index'))->assertSessionHasNoErrors();
+        Storage::disk('public')->assertMissing(substr($mark->image_path, strlen('storage/')));
+        $this->get(route('home'))->assertOk()->assertDontSee('Örnek Doğrulanabilir İşaret');
     }
 
     public function test_published_membership_terms_are_optional_for_guest_but_required_on_registration(): void
