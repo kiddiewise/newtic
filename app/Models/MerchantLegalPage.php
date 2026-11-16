@@ -32,6 +32,8 @@ final class MerchantLegalPage extends Model
 
     protected $fillable = ['slug', 'title', 'body', 'version', 'is_published', 'published_at'];
 
+    protected $attributes = ['version' => 1, 'is_published' => false];
+
     protected $casts = ['is_published' => 'boolean', 'published_at' => 'datetime'];
 
     public function revisionHash(): string
