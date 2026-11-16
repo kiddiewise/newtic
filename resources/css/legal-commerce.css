@@ -47,8 +47,8 @@
 .newtic-cookie-inner p{color:#e1e8ee;font-size:12px;line-height:1.65;margin:5px 0 0}
 .newtic-cookie-inner a{color:#fff;text-decoration:underline}
 .newtic-cookie-actions,.newtic-cookie-dialog-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.newtic-cookie-actions button{border:1px solid #bccdd7;border-radius:9px;padding:10px 13px;min-width:100px;background:transparent;color:#fff;font-weight:700;font-size:12px;cursor:pointer}
-.newtic-cookie-actions button:last-child{background:#fff;color:#092037}
+.newtic-cookie-actions button{border:1px solid #fff;border-radius:9px;padding:10px 13px;min-width:100px;background:#fff;color:#092037;font-weight:700;font-size:12px;cursor:pointer}
+.newtic-cookie-actions button:hover{background:#edf5f9;color:#092037}
 .newtic-cookie-dialog{width:min(94vw,510px);border:1px solid #dde6eb;border-radius:18px;padding:0;color:#092037;box-shadow:0 35px 90px #0004}
 .newtic-cookie-dialog::backdrop{background:#09203790}
 .newtic-cookie-dialog-content{padding:27px}
