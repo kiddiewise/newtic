@@ -71,7 +71,7 @@ final class LegalSettingsController extends Controller
             'published_at' => $publish ? ($changed || !$existing?->is_published ? now() : $existing->published_at) : null,
         ]);
 
-        return redirect()->route('admin.legal.index', ['#' => $slug])
+        return redirect()->route('admin.legal.index')->withFragment($slug)
             ->with('success', $publish ? 'Yasal sayfa yayınlandı. Metin hukuki onaydan geçirilmeli.' : 'Sayfa taslak olarak kaydedildi.');
     }
 }
