@@ -3,6 +3,7 @@
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\Admin\LegalSettingsController;
+use App\Http\Controllers\Admin\FooterMarkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
