@@ -107,6 +107,13 @@
               <span><strong>Yeni üyelik oluştur</strong><small>Bir sonraki alışverişinde adreslerini ve siparişlerini hesabında gör.</small></span>
             </label>
             <div class="checkout-register-fields" data-create-account-fields @if(!old('create_account')) hidden @endif>
+              @if($membershipTerms = \App\Models\MerchantLegalPage::published('uyelik-sozlesmesi'))
+                <input type="hidden" name="membership_revision" value="{{ $membershipTerms->revisionHash() }}">
+                <label class="checkout-check legal-checkout-ack">
+                  <input type="checkbox" name="membership_accepted" value="1" data-membership-accept @checked(old('membership_accepted'))>
+                  <span><a href="{{ route('legal.show','uyelik-sozlesmesi') }}" target="_blank" rel="noopener noreferrer">Üyelik Koşulları</a>'nı okudum ve kabul ediyorum (yalnız yeni üyelik oluşturulursa zorunlu).</span>
+                </label>
+              @endif
               <label class="checkout-field"><span>Hesap şifresi (en az 8 karakter) *</span>
                 <input type="password" name="account_password" minlength="8" autocomplete="new-password">
               </label>
