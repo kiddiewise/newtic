@@ -11,7 +11,7 @@ use Illuminate\Http\Response;
 
 final class AdminRecoveryController extends Controller
 {
-    public function show(AdminRecoveryService $recovery): View
+    public function show(AdminRecoveryService $recovery): Response
     {
         abort_unless($recovery->active(), 404);
 
