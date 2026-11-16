@@ -30,6 +30,7 @@
     ['label' => 'E-posta ve Bildirimler', 'name' => 'admin.email-center.index', 'active' => 'admin.email-center.*', 'icon' => 'mail'],
     ['label' => 'Kampanya E-postaları', 'name' => 'admin.marketing.index', 'active' => 'admin.marketing.*', 'icon' => 'mail'],
     ['label' => 'Google Giriş ve Üyelik', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
+    ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
     ['label' => 'SEO Ayarları', 'name' => 'admin.seo.edit', 'active' => 'admin.seo.*', 'icon' => 'search'],
     ['label' => '301 Yönlendirmeler', 'name' => 'admin.redirects.index', 'active' => 'admin.redirects.*', 'icon' => 'arrow-right'],
     ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
