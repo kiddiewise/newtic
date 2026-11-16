@@ -99,6 +99,14 @@ jobs:
           grep -RFlq --include='*.css' '.admin-app-shell' public/build/assets || { echo "Admin layout CSS missing from build"; exit 1; }
           grep -RFlq --include='*.css' '.admin-icon' public/build/assets || { echo "Admin icon size CSS missing from build"; exit 1; }
           echo "Admin styles successfully bundled"
+      - name: Verify new corporate login / registration CSS is shipped
+        run: |
+          set -euo pipefail
+          grep -RFlq --include='*.css' '.auth-artwork::after' public/build/assets || { echo "White image transition missing from compiled CSS"; exit 1; }
+          grep -RFlq --include='*.css' '.mobile-auth-tabs' public/build/assets || { echo "Mobile login/register tabs missing from compiled CSS"; exit 1; }
+          grep -RFlq --include='*.css' '.auth-google-button' public/build/assets || { echo "Google auth button styles missing"; exit 1; }
+          grep -RFlq --include='*.css' '.auth-forgot-link' public/build/assets || { echo "Password recovery link styling missing"; exit 1; }
+          echo "Navy-white login and image fade included in the compiled Vite bundle"
       - name: Save prebuilt Vite assets for Hostinger (no Node required on server)
         uses: actions/upload-artifact@v4
         with:
