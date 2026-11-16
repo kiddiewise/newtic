@@ -79,6 +79,11 @@ class CheckoutController extends Controller
             $bankAvailable ? 'bank_transfer' : null,
             $paytrAvailable ? 'paytr' : null,
         ]));
+        if (!config('newtic.checkout_test_mode', true) && LegalReadiness::requiredBeforeLive() !== []) {
+            throw ValidationException::withMessages([
+                'legal_acknowledged' => 'Bu mağazanın zorunlu kurumsal sayfaları ve satıcı bilgileri tamamlanmadan canlı sipariş kabul edilemez.',
+            ]);
+        }
         $legalReady = LegalReadiness::checkoutReady();
         $legalRequired = $legalReady || !config('newtic.checkout_test_mode', true);
         if ($legalRequired && !$legalReady) {
