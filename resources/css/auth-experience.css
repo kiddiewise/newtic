@@ -195,6 +195,7 @@ body.is-auth .auth-fields .auth-submit{
 body.is-auth .auth-fields .auth-submit:hover{background:#172e4f!important}
 body.is-auth .auth-fields .auth-submit:disabled{opacity:.62;cursor:not-allowed}
 body.is-auth .auth-fields .auth-submit span{color:#fff!important;font-size:17px;font-weight:500}
+body.is-auth .auth-forgot-row{text-align:right;margin:0!important;line-height:1.4}
 body.is-auth .auth-forgot-link{
   display:inline-block;color:#243b57!important;font-size:12px;font-weight:650;
   text-decoration:underline;text-decoration-color:#a2b1c2;text-underline-offset:4px;
