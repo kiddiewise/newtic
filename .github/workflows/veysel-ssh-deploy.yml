@@ -35,7 +35,7 @@ jobs:
           chmod 600 ~/.ssh/veysel-deploy ~/.ssh/known_hosts
       - name: Clone private Veysel repo and install in exact isolated domain
         env:
-          VEYSEL_SHA: cf6eada0ee3bfc00846f1340614276dc49bfe262
+          VEYSEL_SHA: ff0d644c13344794e7f2cccece4b1e5035fafcee
         run: |
           set -Eeuo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/veysel-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20)
@@ -65,7 +65,14 @@ jobs:
           set -Eeuo pipefail
           BASE="https://super-darkgreen-kudu-81.hostingersite.com"
           curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE/" -o /tmp/veysel-home.html
-          grep -Fqi "Veysel Elektrik" /tmp/veysel-home.html
+          grep -Fqi "Kurdal Elektrik" /tmp/veysel-home.html
+          ! grep -Fqi "Veysel Elektrik" /tmp/veysel-home.html
+          ! grep -Fqi "VEYSEL" /tmp/veysel-home.html
+          grep -Fq "Plus+Jakarta+Sans" /tmp/veysel-home.html
+          grep -Fq "Montserrat" /tmp/veysel-home.html
+          curl --fail --silent --show-error --location "$BASE/assets/css/site.css?v=2.0.0" -o /tmp/kurdal-site.css
+          grep -Fq '"Plus Jakarta Sans"' /tmp/kurdal-site.css
+          grep -Fq '"Montserrat"' /tmp/kurdal-site.css
           for ENDPOINT in /up /hizmetler /hizmet-bolgeleri /iletisim /robots.txt /sitemap.xml; do
             curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE$ENDPOINT" -o /dev/null
             echo "Verified $ENDPOINT"
