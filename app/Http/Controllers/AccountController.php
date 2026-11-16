@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\MerchantLegalPage;
+use App\Support\LegalReadiness;
+use Illuminate\Validation\ValidationException;
 use App\Models\Product;
 use App\Models\MarketingContact;
 use App\Services\MarketingConsentService;
@@ -45,7 +48,10 @@ class AccountController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        $membership = MerchantLegalPage::published('uyelik-sozlesmesi');
         $data = $request->validate([
+            'membership_accepted' => $membership ? ['required', 'accepted'] : ['nullable', 'boolean'],
+            'membership_revision' => $membership ? ['required','string', 'size:64'] : ['nullable', 'string'],
             'name' => ['required','string','min:3','max:160'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed',Password::min(8)],
@@ -54,8 +60,14 @@ class AccountController extends Controller
             'favorite' => ['nullable','integer','min:1'],
             'marketing_opt_in'=>['nullable','boolean'],
         ]);
+        if ($membership && !hash_equals($membership->revisionHash(), (string) $data['membership_revision'])) {
+            throw ValidationException::withMessages([
+                'membership_accepted' => 'Üyelik koşulları güncellendi. Sayfayı yeniden açıp okuyun.',
+            ]);
+        }
         $user = User::create([
             'name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'],
+            'legal_notice' => $membership ? LegalReadiness::membershipNotice() : null,
         ]);
         if ($request->boolean('marketing_opt_in')) {
             try {
