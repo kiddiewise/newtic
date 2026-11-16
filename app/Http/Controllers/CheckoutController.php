@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\LegalReadiness;
+use App\Models\MerchantLegalPage;
 
 use App\Models\BankAccount;
 use App\Models\Order;
@@ -85,6 +86,8 @@ class CheckoutController extends Controller
                 'legal_acknowledged' => 'Satıcı kimliği ve zorunlu satış bilgilendirmeleri henüz tamamlanmadı. Canlı sipariş açılamaz.',
             ]);
         }
+        $membershipTerms = $request->boolean('create_account')
+            ? MerchantLegalPage::published('uyelik-sozlesmesi') : null;
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
             'email' => ['required', 'email', 'max:255'],
             'order_note' => ['nullable', 'string', 'max:2000'],
@@ -94,6 +97,8 @@ class CheckoutController extends Controller
             'marketing_opt_in' => ['nullable', 'boolean'],
             'legal_acknowledged' => $legalRequired ? ['required', 'accepted'] : ['nullable', 'boolean'],
             'legal_revision' => $legalRequired ? ['required', 'string', 'size:64'] : ['nullable', 'string'],
+            'membership_accepted' => $membershipTerms ? ['required', 'accepted'] : ['nullable', 'boolean'],
+            'membership_revision' => $membershipTerms ? ['required','string','size:64'] : ['nullable','string'],
             'create_account' => ['nullable', 'boolean'],
             'account_password' => ['required_if:create_account,1', 'nullable', Password::min(8)],
         ]));
@@ -101,6 +106,11 @@ class CheckoutController extends Controller
         if ($legalRequired && !hash_equals(LegalReadiness::checkoutSignature(), (string) ($validated['legal_revision'] ?? ''))) {
             throw ValidationException::withMessages([
                 'legal_acknowledged' => 'Satış sözleşmesi veya satıcı bilgileri güncellendi. Lütfen ödeme sayfasını yenileyerek tekrar inceleyin.',
+            ]);
+        }
+        if ($membershipTerms && !hash_equals($membershipTerms->revisionHash(), (string) ($validated['membership_revision'] ?? ''))) {
+            throw ValidationException::withMessages([
+                'membership_accepted' => 'Üyelik koşulları değişti. Sipariş sayfasını yeniden açın.',
             ]);
         }
         $token = $validated['checkout_token'];
@@ -138,7 +148,7 @@ class CheckoutController extends Controller
         $newUser = null;
         $method = $validated['payment_method'];
         $cartSnapshot = ShoppingCart::raw($request);
-        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, $legalRequired, &$newUser) {
+        $order = DB::transaction(function () use ($request, $validated, $address, $token, $user, $method, $legalRequired, $membershipTerms, &$newUser) {
             $legalEvidence = null;
             if ($legalRequired) {
                 if (!LegalReadiness::checkoutReady() ||
@@ -224,6 +234,7 @@ class CheckoutController extends Controller
                     'name' => $address['full_name'],
                     'email' => $validated['email'],
                     'password' => $validated['account_password'],
+                    'legal_notice' => $membershipTerms ? LegalReadiness::membershipNotice() : null,
                 ]);
                 $newUser = $customer;
             }
