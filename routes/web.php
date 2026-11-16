@@ -92,6 +92,10 @@ Route::post('/eposta/dogrulama-yeniden', [AccountEmailController::class, 'resend
 
 Route::get('/auth/google', [GoogleCustomerAuthController::class, 'start'])->middleware('throttle:8,1')->name('account.google.start');
 Route::get('/auth/google/callback', [GoogleCustomerAuthController::class, 'callback'])->middleware('throttle:10,1')->name('account.google.callback');
+Route::get('/auth/google/uyelik-onayi', [GoogleCustomerAuthController::class, 'review'])
+    ->name('account.google.review');
+Route::post('/auth/google/uyelik-onayi', [GoogleCustomerAuthController::class, 'confirmRegistration'])
+    ->middleware('throttle:5,1')->name('account.google.review.submit');
 Route::get('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'show'])->middleware('throttle:30,1')->name('marketing.unsubscribe.show');
 Route::post('/kampanya/abonelikten-cik/{token}', [MarketingUnsubscribeController::class,'unsubscribe'])->middleware('throttle:10,1')->name('marketing.unsubscribe');
 Route::post('/hesabim/kampanya-tercihim', [MarketingPreferenceController::class,'update'])->middleware(['auth','throttle:5,1'])->name('account.marketing.preference');
