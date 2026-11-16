@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\Admin\LegalSettingsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
@@ -40,6 +42,9 @@ Route::prefix('install')->name('install.')->group(function () {
 });
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/kurumsal/{slug}', [LegalPageController::class, 'show'])
+    ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
+    ->name('legal.show');
 Route::get('/robots.txt', [SeoSitemapController::class, 'robots'])->name('seo.robots');
 Route::get('/sitemap.xml', [SeoSitemapController::class, 'index'])->name('seo.sitemap');
 Route::get('/sitemap/pages.xml', [SeoSitemapController::class, 'pages'])->name('seo.sitemap.pages');
@@ -159,6 +164,12 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
     ->middleware('auth')->name('admin.logout');
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::class])->group(function () {
+    Route::get('/yasal-sayfalar', [LegalSettingsController::class, 'index'])->name('legal.index');
+    Route::patch('/yasal-sayfalar/satici', [LegalSettingsController::class, 'saveProfile'])
+        ->name('legal.profile');
+    Route::patch('/yasal-sayfalar/{slug}', [LegalSettingsController::class, 'savePage'])
+        ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
+        ->name('legal.page');
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
