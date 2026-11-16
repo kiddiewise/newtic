@@ -1,0 +1,95 @@
+name: Recover Sinay Design admin securely
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sinaydesign-admin-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-sinay-admin-recovery
+  cancel-in-progress: false
+
+jobs:
+  prepare-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - name: Test admin recovery before touching Hostinger
+        run: |
+          set -euo pipefail
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --env=testing --force
+          php artisan test --filter=AdminRecoveryTest
+      - name: Configure existing verified Hostinger SSH credentials
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Prepare private admin reset code on Sinay Design without printing credentials
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20 \
+            u880685189@147.79.123.121 "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          APP="$HOME/domains/sinaydesign.com/newtic"
+          test "$HOME" = "/home/u880685189"
+          test -f "$APP/.env" && test -f "$APP/artisan"
+          test -f "$APP/storage/app/private/newtic-setup/installed.lock"
+          cd "$APP"
+          grep -Fxq 'APP_ENV=production' .env
+          grep -Fxq 'APP_DEBUG=false' .env
+          grep -Fxq 'APP_URL=https://sinaydesign.com' .env
+          grep -Fxq 'DB_CONNECTION=mysql' .env
+          grep -Fxq 'DB_DATABASE=u880685189_sinay_newtic' .env
+          grep -Fxq 'DB_USERNAME=u880685189_sinay_admin' .env
+          grep -q '^APP_KEY=base64:' .env
+          test "$(git branch --show-current)" = main
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$(git rev-parse HEAD)" "$NEWTIC_EXPECTED_SHA"
+          git merge --ff-only "$NEWTIC_EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$NEWTIC_EXPECTED_SHA"
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+          php artisan route:clear
+          php artisan view:cache
+          php artisan config:cache
+          # This action does not change an existing password, only writes a
+          # short-lived private recovery code for the hosting account owner.
+          php artisan newtic:admin-recovery --private-file
+          test -s storage/app/private/newtic-admin-recovery/private-admin-recovery.txt
+          test "$(stat -c '%a' storage/app/private/newtic-admin-recovery/private-admin-recovery.txt)" = "600"
+          echo 'SINAY_ADMIN_RECOVERY_READY: code stored in private Hostinger File Manager.'
+          REMOTE
+      - name: Confirm recovery form reachable over HTTPS without accessing secret
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 20 \
+            https://sinaydesign.com/admin/kurtarma -o /tmp/sinay-admin-recovery.html
+          grep -Fq 'Yönetici şifrenizi yenileyin.' /tmp/sinay-admin-recovery.html
+          echo "Sinay admin recovery form is available; private reset code was not shown."

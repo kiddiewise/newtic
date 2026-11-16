@@ -3,6 +3,8 @@
 return [
     // Protected server-side first-install wizard state. Never put this inside public_html.
     'install_private_directory' => storage_path('app/private/newtic-setup'),
+    // Deliberately server-private: admin recovery never lives under public_html.
+    'admin_recovery_private_directory' => storage_path('app/private/newtic-admin-recovery'),
     /*
      * Until real payment credentials and fulfillment workflows are verified,
      * treat all orders as test records regardless of the configured hostname.

@@ -5,6 +5,7 @@
     <div class="admin-panel admin-login-panel">
       <div class="admin-login-brand"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="bag" /></span><div><div class="admin-eyebrow">{{ \App\Support\StoreIdentity::name() }} · NEWTIC</div><strong>Yönetim Paneli</strong></div></div>
       <h1>Yönetim paneli</h1>
+      @if(session('success'))<div class="admin-alert admin-alert-success" role="status">{{ session('success') }}</div>@endif
       <p class="admin-description">Sipariş, ödeme bildirimi, ürün, stok ve mağaza yönetimi tek kontrol panelinde.</p>
       <form action="{{ route('admin.login.submit') }}" method="POST" class="admin-form">
         @csrf
