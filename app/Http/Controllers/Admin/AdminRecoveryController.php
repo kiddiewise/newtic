@@ -15,7 +15,10 @@ final class AdminRecoveryController extends Controller
     {
         abort_unless($recovery->active(), 404);
 
-        return view('admin.recovery');
+        return response()->view('admin.recovery')
+            ->header('Cache-Control', 'no-store, private')
+            ->header('X-Robots-Tag', 'noindex, nofollow, noarchive')
+            ->header('Referrer-Policy', 'no-referrer');
     }
 
     public function reset(Request $request, AdminRecoveryService $recovery): RedirectResponse
