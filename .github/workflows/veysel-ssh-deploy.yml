@@ -66,8 +66,8 @@ jobs:
           BASE="https://super-darkgreen-kudu-81.hostingersite.com"
           curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE/" -o /tmp/veysel-home.html
           grep -Fqi "Veysel Elektrik" /tmp/veysel-home.html
-          for PATH in /up /hizmetler /hizmet-bolgeleri /iletisim /robots.txt /sitemap.xml; do
-            curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE$PATH" -o /dev/null
-            echo "Verified $PATH"
+          for ENDPOINT in /up /hizmetler /hizmet-bolgeleri /iletisim /robots.txt /sitemap.xml; do
+            curl --fail --silent --show-error --location --retry 3 --retry-delay 3 "$BASE$ENDPOINT" -o /dev/null
+            echo "Verified $ENDPOINT"
           done
           echo "VEYSEL_PUBLIC_SITE_OK"
