@@ -1,0 +1,73 @@
+name: Publish Polaris legal pages to isolated staging
+
+on:
+  workflow_run:
+    workflows: ["Tests and assets"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: polaris-legal-staging-import
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare protected Hostinger SSH connection
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/newtic-deploy"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/newtic-deploy" "$HOME/.ssh/known_hosts"
+      - name: Safely import documents to Polaris staging DB only
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i "$HOME/.ssh/newtic-deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 \
+            u880685189@147.79.123.121 "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          test "$HOME" = "/home/u880685189"
+          test -f "$APP/artisan" && test -f "$APP/.env"
+          cd "$APP"
+          grep -Fxq 'APP_ENV=production' .env
+          grep -Fxq 'APP_URL=https://powderblue-dinosaur-538060.hostingersite.com' .env
+          grep -Fxq 'DB_CONNECTION=mysql' .env
+          grep -Fxq 'DB_DATABASE=u880685189_newtic' .env
+          grep -Fxq 'NEWTIC_CHECKOUT_TEST_MODE=true' .env
+          test "$(git rev-parse HEAD)" = "$NEWTIC_EXPECTED_SHA" || {
+            echo "Incorrect staging code revision. Refusing data changes."
+            exit 1
+          }
+          php artisan newtic:polaris-legal --publish --no-ansi
+          REMOTE
+      - name: Verify all ten published pages and footer over HTTPS
+        run: |
+          set -euo pipefail
+          SITE="https://powderblue-dinosaur-538060.hostingersite.com"
+          SLUGS="hakkimizda iletisim gizlilik-politikasi kvkk-aydinlatma uyelik-sozlesmesi mesafeli-satis-sozlesmesi on-bilgilendirme-formu teslimat-ve-iade cerez-politikasi islem-rehberi"
+          for slug in $SLUGS; do
+            curl --fail --show-error --silent --location --retry 2 "$SITE/kurumsal/$slug" -o "/tmp/polaris-$slug.html"
+            grep -Fq "Polaris" "/tmp/polaris-$slug.html"
+            echo "PUBLISHED_OK: $slug"
+          done
+          curl --fail --show-error --silent --location --retry 2 "$SITE/" -o /tmp/polaris-footer.html
+          grep -Fq 'Mesafeli Satış Sözleşmesi' /tmp/polaris-footer.html
+          grep -Fq 'KVKK Aydınlatma Metni' /tmp/polaris-footer.html
+          grep -Fq 'Gizlilik Politikası' /tmp/polaris-footer.html
+          echo "POLARIS_LEGAL_PUBLISHED: 10 published pages and footer verified."
