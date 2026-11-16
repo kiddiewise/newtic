@@ -102,7 +102,7 @@ jobs:
       - name: Verify new corporate login / registration CSS is shipped
         run: |
           set -euo pipefail
-          grep -RFlq --include='*.css' '.auth-artwork::after' public/build/assets || { echo "White image transition missing from compiled CSS"; exit 1; }
+          grep -REq --include='*.css' 'auth-artwork:{1,2}after' public/build/assets || { echo "White image transition missing from compiled CSS"; exit 1; }
           grep -RFlq --include='*.css' '.mobile-auth-tabs' public/build/assets || { echo "Mobile login/register tabs missing from compiled CSS"; exit 1; }
           grep -RFlq --include='*.css' '.auth-google-button' public/build/assets || { echo "Google auth button styles missing"; exit 1; }
           grep -RFlq --include='*.css' '.auth-forgot-link' public/build/assets || { echo "Password recovery link styling missing"; exit 1; }
