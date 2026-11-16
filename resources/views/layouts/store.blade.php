@@ -239,6 +239,9 @@
 @php
   $merchantLegal = \App\Models\MerchantLegalProfile::current();
   $publishedLegalPages = \App\Models\MerchantLegalPage::publishedLinks();
+  $merchantPaymentMarks = \App\Models\MerchantFooterMark::visible('payment');
+  $merchantTrustMarks = \App\Models\MerchantFooterMark::visible('trust');
+  $merchantAppMarks = \App\Models\MerchantFooterMark::visible('app');
   $livePaytr = !config('newtic.checkout_test_mode', true)
       && $merchantLegal->show_paytr_disclosure
       && \App\Models\PaytrSetting::query()->where('is_enabled', true)->first()?->hasCredentials();
@@ -311,7 +314,15 @@
       <strong>Ödeme Yöntemleri</strong>
       @if($livePaytr)
         <div class="legal-footer-brand-badges" aria-label="Kartlı ödeme">
-          <span>VISA</span><span>Mastercard</span><span>TROY</span>
+          @forelse($merchantPaymentMarks as $mark)
+            <span class="legal-footer-mark">
+              @if($mark->verification_url)<a href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">@endif
+                <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="112" height="42" loading="lazy">
+              @if($mark->verification_url)</a>@endif
+            </span>
+          @empty
+            <span>VISA</span><span>Mastercard</span><span>TROY</span>
+          @endforelse
         </div>
         <p>Bu internet sitesindeki ödeme hizmetleri PAYTR Ödeme ve Elektronik Para Kuruluşu A.Ş. tarafından sağlanmaktadır.
           <a href="https://www.paytr.com/" target="_blank" rel="noopener noreferrer">PAYTR</a>
@@ -328,13 +339,33 @@
       @endif
     </div>
     <div class="legal-footer-trust">
-      <strong>Bizi Takip Edin</strong>
+      @if($merchantTrustMarks->isNotEmpty())
+        <strong>Doğrulanabilir işaretler</strong>
+        <div class="legal-footer-brand-badges legal-footer-trust-marks">
+          @foreach($merchantTrustMarks as $mark)
+            <a class="legal-footer-mark" href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">
+              <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="112" height="42" loading="lazy">
+            </a>
+          @endforeach
+        </div>
+      @else
+        <strong>Bizi Takip Edin</strong>
+      @endif
       <div class="legal-footer-social">
         @if($megaMenuSettings->instagram_url)<a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>@endif
         @if($megaMenuSettings->youtube_url)<a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer">YouTube</a>@endif
         @if($megaMenuSettings->facebook_url)<a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook</a>@endif
         @if($megaMenuSettings->x_url)<a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer">X</a>@endif
       </div>
+      @if($merchantAppMarks->isNotEmpty())
+        <div class="legal-footer-app-links" aria-label="Resmi mobil uygulamalar">
+          @foreach($merchantAppMarks as $mark)
+            <a class="legal-footer-mark" href="{{ $mark->verification_url }}" target="_blank" rel="noopener noreferrer">
+              <img src="{{ asset($mark->image_path) }}" alt="{{ $mark->title }}" width="125" height="44" loading="lazy">
+            </a>
+          @endforeach
+        </div>
+      @endif
     </div>
   </div>
   <div class="container footer-bottom legal-footer-bottom">© {{ date('Y') }} {{ $storeName }} · Tüm hakları saklıdır · NEWTIC</div>
