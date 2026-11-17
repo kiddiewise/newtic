@@ -40,3 +40,5 @@
   .showcase-countdown{font-size:.75rem}
 }
 @media(prefers-reduced-motion:reduce){.showcase-products .showcase-product-track{scroll-behavior:auto!important}}
+
+.showcase-products [hidden], .showcase-dialog[hidden]{display:none!important}
