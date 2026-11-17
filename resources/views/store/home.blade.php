@@ -35,11 +35,8 @@
         </div>
       </section>
     @elseif($section->type === \App\Models\HomeSection::TYPE_CATEGORIES && $section->categories->isNotEmpty())
-      <section class="container shop-section category-section" aria-labelledby="section-{{ $section->id }}">
-        <div class="section-heading">
-          <div><p class="eyebrow">KEŞFET</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Kategoriler' }}</h2></div>
-          <a class="section-all" href="{{ route('search') }}">Tüm ürünler <span aria-hidden="true">↗</span></a>
-        </div>
+      <section class="container shop-section category-section" aria-label="Ürün kategorileri">
+        
         <div class="category-grid">
           @foreach($section->categories as $category)
             <a class="category-card" href="{{ route('category.show', $category->slug) }}">
@@ -51,15 +48,29 @@
         </div>
       </section>
     @elseif($section->type === \App\Models\HomeSection::TYPE_PRODUCTS && $section->products->isNotEmpty())
-      <section class="container shop-section" aria-labelledby="section-{{ $section->id }}">
+      <section class="container shop-section showcase-products" aria-labelledby="section-{{ $section->id }}">
         <div class="section-heading">
-          <div><p class="eyebrow">ÖNE ÇIKANLAR</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Popüler Ürünler' }}</h2></div>
+          <div class="showcase-heading-copy"><p class="eyebrow">ÖNE ÇIKANLAR</p><h2 id="section-{{ $section->id }}">{{ $section->title ?: 'Popüler Ürünler' }}</h2>
+            @if(data_get($section->settings, 'countdown_ends_at'))
+              @php
+                $countdownEnd = \Illuminate\Support\Carbon::createFromFormat('Y-m-d\TH:i', data_get($section->settings, 'countdown_ends_at'), 'Europe/Istanbul');
+                $countdownTimestamp = $countdownEnd?->timestamp;
+              @endphp
+              @if($countdownTimestamp && $countdownTimestamp > now()->timestamp)
+                <div class="showcase-countdown" data-showcase-countdown data-end="{{ $countdownTimestamp * 1000 }}"><span>{{ data_get($section->settings, 'countdown_label') ?: 'Kampanyanın bitmesine:' }}</span><time aria-label="Kalan süre" data-countdown-text></time></div>
+              @endif
+            @endif
+          </div>
           <a class="section-all" href="{{ route('search') }}">Tümünü gör <span aria-hidden="true">↗</span></a>
         </div>
-        <div class="product-grid">
+        <div class="showcase-carousel-wrap" data-showcase-carousel>
+          <button type="button" class="showcase-arrow showcase-arrow-prev" data-carousel-prev aria-label="Önceki ürünler">‹</button>
+          <div class="product-grid showcase-product-track" data-carousel-track tabindex="0" role="region" aria-roledescription="carousel" aria-label="{{ $section->title ?: 'Ürünler' }}">
           @foreach($section->products as $product)
             @include('store.partials.product-card', ['product' => $product])
           @endforeach
+          </div>
+          <button type="button" class="showcase-arrow showcase-arrow-next" data-carousel-next aria-label="Sonraki ürünler">›</button>
         </div>
       </section>
     @elseif($section->type === \App\Models\HomeSection::TYPE_BANNER && $section->slides->isNotEmpty())
