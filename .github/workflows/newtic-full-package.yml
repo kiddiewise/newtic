@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           composer validate --strict --no-check-publish
           composer install --prefer-dist --no-interaction --no-progress
-          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --ignore-scripts --no-audit --no-fund
           npm run build
           cp .env.example .env
           php artisan key:generate
@@ -64,6 +64,7 @@ jobs:
           mkdir -p "$PKG"
           git archive --format=tar HEAD | tar -xf - -C "$PKG"
           cp -a vendor "$PKG/vendor"
+          cp package-lock.json "$PKG/package-lock.json"
           cp -a public/build "$PKG/public/build"
           printf '%s\n' "$GITHUB_SHA" > "$PKG/RELEASE_REVISION.txt"
           test -s "$PKG/vendor/autoload.php"
