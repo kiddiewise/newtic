@@ -5,6 +5,7 @@ use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\Admin\LegalSettingsController;
 use App\Http\Controllers\Admin\FooterMarkController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentNotificationController;
@@ -43,6 +44,9 @@ Route::prefix('install')->name('install.')->group(function () {
 });
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/kategori/{slug}', [BlogController::class, 'category'])->name('blog.category');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/kurumsal/{slug}', [LegalPageController::class, 'show'])
     ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
     ->name('legal.show');
@@ -50,6 +54,7 @@ Route::get('/robots.txt', [SeoSitemapController::class, 'robots'])->name('seo.ro
 Route::get('/sitemap.xml', [SeoSitemapController::class, 'index'])->name('seo.sitemap');
 Route::get('/sitemap/pages.xml', [SeoSitemapController::class, 'pages'])->name('seo.sitemap.pages');
 Route::get('/sitemap/categories.xml', [SeoSitemapController::class, 'categories'])->name('seo.sitemap.categories');
+Route::get('/sitemap/blog.xml', [SeoSitemapController::class, 'blog'])->name('seo.sitemap.blog');
 Route::get('/sitemap/products/{page}.xml', [SeoSitemapController::class, 'products'])
     ->whereNumber('page')->name('seo.sitemap.products');
 Route::get('/google/merchant-products.xml', GoogleMerchantFeedController::class)
@@ -133,6 +138,9 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CategoryBannerController;
 use App\Http\Controllers\Admin\CategoryImageController;
 use App\Http\Controllers\Admin\HomeSectionController;
+use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\BlogBlockController;
 use App\Http\Controllers\Admin\HomeSlideController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCsvController;
@@ -180,6 +188,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
         ->whereIn('slug', array_keys(\App\Models\MerchantLegalPage::LABELS))
         ->name('legal.page');
     Route::get('/', [HomeSectionController::class, 'index'])->name('index');
+    Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.posts.index');
+    Route::get('/blog/kategoriler', [BlogCategoryController::class, 'index'])->name('blog.categories.index');
+    Route::post('/blog/kategoriler', [BlogCategoryController::class, 'store'])->name('blog.categories.store');
+    Route::patch('/blog/kategoriler/{category}', [BlogCategoryController::class, 'update'])->name('blog.categories.update');
+    Route::delete('/blog/kategoriler/{category}', [BlogCategoryController::class, 'destroy'])->name('blog.categories.destroy');
+    Route::get('/blog/yeni', [BlogPostController::class, 'create'])->name('blog.posts.create');
+    Route::post('/blog/yazilar', [BlogPostController::class, 'store'])->name('blog.posts.store');
+    Route::get('/blog/yazilar/{post}/duzenle', [BlogPostController::class, 'edit'])->name('blog.posts.edit');
+    Route::patch('/blog/yazilar/{post}', [BlogPostController::class, 'update'])->name('blog.posts.update');
+    Route::delete('/blog/yazilar/{post}', [BlogPostController::class, 'destroy'])->name('blog.posts.destroy');
+    Route::post('/blog/yazilar/{post}/bloklar', [BlogBlockController::class, 'store'])->name('blog.blocks.store');
+    Route::patch('/blog/yazilar/{post}/bloklar/{block}', [BlogBlockController::class, 'update'])->name('blog.blocks.update');
+    Route::post('/blog/yazilar/{post}/bloklar/{block}/move', [BlogBlockController::class, 'move'])->name('blog.blocks.move');
+    Route::delete('/blog/yazilar/{post}/bloklar/{block}', [BlogBlockController::class, 'destroy'])->name('blog.blocks.destroy');
+    Route::patch('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'updateImage'])->name('blog.images.update');
+    Route::delete('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'destroyImage'])->name('blog.images.destroy');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
     Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');

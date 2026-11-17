@@ -92,6 +92,7 @@
 <nav class="desktop-nav" aria-label="Ana gezinme">
     <div class="container nav-content">
       <a href="{{ route('home') }}">Ana sayfa</a>
+      <a href="{{ route('blog.index') }}">Blog</a>
       @foreach($navigationCategories->take(7) as $navigationCategory)
         <a href="{{ route('category.show', $navigationCategory->slug) }}">{{ $navigationCategory->name }}</a>
       @endforeach
@@ -133,6 +134,10 @@
           <nav class="mega-category-list" aria-label="Ürün kategorileri">
             @include('store.partials.category-menu-items', ['items' => $navigationCategories, 'level' => 0])
           </nav>
+          <a class="mega-all-products" href="{{ route('blog.index') }}">
+            <span class="mega-all-products-icon" aria-hidden="true">✳</span>
+            Blog ve Rehber <span aria-hidden="true">↗</span>
+          </a>
           <a class="mega-all-products" href="{{ route('search') }}">
             <span class="mega-all-products-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
             Tüm ürünler <span aria-hidden="true">↗</span>
@@ -263,6 +268,7 @@
         @endif
       @endforeach
       <a href="{{ route('search') }}">Tüm ürünler</a>
+      <a href="{{ route('blog.index') }}">Blog & Rehber</a>
     </div>
 
     <div class="legal-footer-col">

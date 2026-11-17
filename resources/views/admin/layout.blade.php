@@ -42,6 +42,7 @@
     ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
     ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
     ['label' => 'Vitrin Yönetimi', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
+    ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],
     ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
     ['label' => 'Logolar', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
     ['label' => 'Menüler', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.*', 'icon' => 'menu', 'children' => [

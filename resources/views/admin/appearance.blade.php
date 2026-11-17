@@ -20,7 +20,7 @@
     <label class="admin-full">
       Masaüstü logo dosyası
       <input type="file" name="desktop_logo" accept="image/png,image/jpeg,image/webp,image/avif">
-      <small>Öneri: şeffaf PNG veya WebP, yatay oran 4:1, örnek 800×200 px. En çok 5 MB.</small>
+      <small><strong>Önerilen: 800 × 200 px</strong> (4:1 yatay). Şeffaf PNG veya WebP; en çok 5 MB. Önemli logo öğelerini kenarlardan uzak tutun.</small>
     </label>
     <label class="admin-check admin-full"><input type="checkbox" name="remove_desktop_logo" value="1"> Masaüstü logosunu kaldır ve varsayılana dön</label>
     <div class="admin-full admin-brand-preview">
@@ -34,7 +34,7 @@
     <label class="admin-full">
       Mobil logo dosyası
       <input type="file" name="mobile_logo" accept="image/png,image/jpeg,image/webp,image/avif">
-      <small>Öneri: kare ve şeffaf PNG veya WebP, örnek 320×320 px. En çok 5 MB.</small>
+      <small><strong>Önerilen: 320 × 320 px</strong> (1:1 kare). Şeffaf PNG veya WebP; en çok 5 MB.</small>
     </label>
     <label class="admin-check admin-full"><input type="checkbox" name="remove_mobile_logo" value="1"> Mobil logosunu kaldır ve varsayılana dön</label>
     <div class="admin-form-actions"><button class="admin-primary" type="submit">Logoları kaydet</button></div>

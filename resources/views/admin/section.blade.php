@@ -27,6 +27,7 @@
     <div class="admin-panel">
       <div class="admin-panel-title"><h2>{{ $section->type === 'slider' ? 'Slider görselleri' : 'Banner görselleri' }}</h2><span>{{ $section->slides->count() }} görsel</span></div>
       <p class="admin-description">Her banner yalnız görselden oluşur. Üzerine ek başlık, açıklama veya buton yerleştirilmez. Mobil görsel eklemezseniz masaüstü görseli kullanılır.</p>
+      <div class="blog-admin-media-spec">{{ $section->type === 'slider' ? 'Ana slider masaüstü: 1800 × 700 px (18:7) · mobil: 1510 × 852 px (755:426).' : 'Yatay kampanya bannerları: 1460 × 400 px (3,65:1) · mobil: 1460 × 400 px.' }} Tercihen WebP/AVIF ve 150–400 KB. Görseller kırpılabildiği için önemli öğeleri ortalayın.</div>
       @foreach($section->slides as $slide)
         <article class="admin-slide-item">
           <img src="{{ $slide->desktop_image_url }}" alt="Banner {{ $loop->iteration }}" width="280" height="112" loading="lazy">
@@ -51,6 +52,7 @@
       <div class="admin-panel-title"><h2>Yeni banner yükle</h2></div>
       <form action="{{ route('admin.slides.store', $section) }}" method="POST" enctype="multipart/form-data" class="admin-form admin-settings-grid">
         @csrf
+        <p class="admin-description admin-full"><strong>Önerilen görsel boyutu:</strong> {{ $section->type === 'slider' ? 'Masaüstü 1800 × 700 px · mobil 1510 × 852 px.' : 'Masaüstü ve mobil 1460 × 400 px.' }} Her görsel en çok 5 MB. Dosya biçimi WebP önerilir.</p>
         <label>Masaüstü görseli (zorunlu)<input type="file" name="desktop_image" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
         <label>Mobil görseli (isteğe bağlı)<input type="file" name="mobile_image" accept="image/jpeg,image/png,image/webp,image/avif"></label>
         <label class="admin-full">Bağlantı adresi (isteğe bağlı)<input name="link_url" type="url" maxlength="2048" placeholder="https://..."></label>

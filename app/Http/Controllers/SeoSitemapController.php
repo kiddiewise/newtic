@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\MerchantLegalPage;
+use App\Models\BlogPost;
+use App\Models\BlogCategory;
 use App\Support\CategoryHierarchy;
 use App\Support\SeoMetadata;
 use Illuminate\Http\Request;
@@ -40,6 +42,9 @@ final class SeoSitemapController extends Controller
             SeoMetadata::url($request, 'sitemap/pages.xml'),
             SeoMetadata::url($request, 'sitemap/categories.xml'),
         ];
+        if (BlogPost::published()->where('seo_noindex', false)->exists()) {
+            $items[] = SeoMetadata::url($request, 'sitemap/blog.xml');
+        }
         $pages = (int) ceil(Product::query()->where('is_active', true)->where('is_demo', false)->count() / self::PAGE_SIZE);
         for ($i = 1; $i <= $pages; ++$i) {
             $items[] = SeoMetadata::url($request, 'sitemap/products/'.$i.'.xml');
@@ -79,6 +84,30 @@ final class SeoSitemapController extends Controller
                 $category->updated_at?->toAtomString()
             );
         }
+
+        return $this->xml($xml.'</urlset>');
+    }
+
+    public function blog(Request $request): Response
+    {
+        $this->publicOnly($request);
+        $xml = $this->begin('urlset', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+        $xml .= $this->entry(SeoMetadata::url($request, 'blog'));
+        foreach (BlogCategory::query()->where('is_active', true)->get() as $category) {
+            if (!$category->posts()->published()->where('seo_noindex', false)->exists()) continue;
+            $xml .= $this->entry(
+                SeoMetadata::url($request, 'blog/kategori/'.$category->slug),
+                $category->updated_at?->toAtomString()
+            );
+        }
+        BlogPost::published()->where('seo_noindex', false)->orderBy('id')->chunkById(500, function ($posts) use (&$xml, $request) {
+            foreach ($posts as $post) {
+                $xml .= $this->entry(
+                    SeoMetadata::url($request, 'blog/'.$post->slug),
+                    $post->updated_at?->toAtomString()
+                );
+            }
+        });
 
         return $this->xml($xml.'</urlset>');
     }

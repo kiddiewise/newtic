@@ -87,6 +87,13 @@
     <section class="container empty-home"><span class="empty-symbol" aria-hidden="true">✦</span><p class="eyebrow">{{ mb_strtoupper($storeName, 'UTF-8') }}</p><h1>Yeni bir deneyim hazırlanıyor.</h1><p>Ürünlerimiz ve koleksiyonlarımız yakında burada.</p></section>
   @endforelse
 
+  @if($latestPosts->isNotEmpty())
+    <section class="container blog-home-section" aria-labelledby="home-blog-heading">
+      <div class="blog-section-heading"><div><span class="blog-public-kicker">REHBER & İLHAM</span><h2 id="home-blog-heading">Blogdan son yazılar</h2></div><a href="{{ route('blog.index') }}">Tüm yazılar ↗</a></div>
+      <div class="blog-cards-grid">@foreach($latestPosts->take(3) as $post)<x-blog-card :post="$post" />@endforeach</div>
+    </section>
+  @endif
+
   <section class="container reassurance-strip" aria-label="{{ $storeName }} alışveriş avantajları">
     <div><span class="benefit-icon" aria-hidden="true">◇</span><div><strong>Özenli ürün seçkisi</strong><small>Özenle sunulan ürünler</small></div></div>
     <div><span class="benefit-icon" aria-hidden="true">◎</span><div><strong>Kolay ürün keşfi</strong><small>Mobil odaklı alışveriş</small></div></div>
