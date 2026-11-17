@@ -61,6 +61,8 @@ class HomeSectionController extends Controller
             'sort_order' => ['required', 'integer', 'min:0', 'max:10000'],
             'is_active' => ['sometimes', 'boolean'],
             'interval_ms' => ['nullable', 'integer', 'min:2500', 'max:15000'],
+            'countdown_label' => ['nullable', 'string', 'max:100'],
+            'countdown_ends_at' => ['nullable', 'date_format:Y-m-d\\TH:i'],
         ]);
         $section->update([
             'title' => $data['title'] ?? null,
@@ -68,7 +70,12 @@ class HomeSectionController extends Controller
             'is_active' => (bool) ($data['is_active'] ?? false),
             'settings' => $section->type === HomeSection::TYPE_SLIDER
                 ? ['interval_ms' => $data['interval_ms'] ?? 5500]
-                : ($section->settings ?? []),
+                : ($section->type === HomeSection::TYPE_PRODUCTS
+                    ? array_merge($section->settings ?? [], [
+                        'countdown_label' => trim($data['countdown_label'] ?? ''),
+                        'countdown_ends_at' => $data['countdown_ends_at'] ?? null,
+                    ])
+                    : ($section->settings ?? [])),
         ]);
 
         return back()->with('success', 'Bölüm ayarları kaydedildi.');
