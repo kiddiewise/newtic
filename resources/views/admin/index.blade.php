@@ -30,17 +30,22 @@
   </div>
   <div class="admin-panel">
     <div class="admin-panel-title"><h2>Yeni vitrin bloğu</h2></div>
+    <button class="admin-primary" type="button" data-showcase-open aria-haspopup="dialog" aria-controls="showcase-dialog">+ Blok ekle</button>
+    <dialog id="showcase-dialog" class="showcase-dialog" aria-labelledby="showcase-dialog-title">
+      <div class="showcase-dialog-heading"><h3 id="showcase-dialog-title">Yeni blok ekle</h3><button type="button" class="admin-secondary" data-showcase-close aria-label="Pencereyi kapat">✕</button></div>
+      <p>Eklemek istediğiniz vitrin alanını seçin. İçerik eklenene kadar ana sayfada görünmez.</p>
     <form class="admin-add-section" action="{{ route('admin.sections.store') }}" method="POST">
       @csrf
       <label>Blok türü
         <select name="type" required>
           <option value="slider">Tam genişlik görsel slider</option>
           <option value="categories">Kategoriler</option>
-          <option value="products">Popüler ürünler</option>
+          <option value="products">Ürün carousel (yatay kaydırmalı)</option>
           <option value="banner">Yatay kampanya bannerları</option>
         </select>
       </label>
-      <button class="admin-primary" type="submit">Blok ekle</button>
+      <button class="admin-primary" type="submit">Bloğu oluştur</button>
     </form>
+    </dialog>
   </div>
 @endsection

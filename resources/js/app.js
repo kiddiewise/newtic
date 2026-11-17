@@ -91,3 +91,5 @@ import './catalog-import.js';
 import './google-merchant-admin.js';
 
 import './auth-experience.js';
+
+import './homepage-showcase.js';

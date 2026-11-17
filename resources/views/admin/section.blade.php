@@ -14,6 +14,11 @@
       @if($section->type === 'slider')
         <label>Otomatik geçiş süresi (ms)<input name="interval_ms" type="number" min="2500" max="15000" value="{{ data_get($section->settings, 'interval_ms', 5500) }}"></label>
       @endif
+      @if($section->type === 'products')
+        <label>Geri sayım yazısı (isteğe bağlı)<input name="countdown_label" type="text" maxlength="100" placeholder="Kampanyanın bitmesine:" value="{{ old('countdown_label', data_get($section->settings, 'countdown_label', '')) }}"></label>
+        <label>Kampanya bitiş tarihi (isteğe bağlı)<input name="countdown_ends_at" type="datetime-local" value="{{ old('countdown_ends_at', data_get($section->settings, 'countdown_ends_at', '')) }}"></label>
+        <p class="admin-description admin-full">Bitiş tarihi boş bırakılırsa geri sayım gösterilmez. Tarih Türkiye saatine göre değerlendirilir; süre dolduğunda sayaç gizlenir, ürünler görünmeye devam eder.</p>
+      @endif
       <label class="admin-check"><input type="checkbox" name="is_active" value="1" @checked($section->is_active)>Bu bölüm yayında olsun</label>
       <div class="admin-form-actions"><button type="submit" class="admin-primary">Ayarları kaydet</button></div>
     </form>
@@ -59,7 +64,7 @@
       $selected = $isCategory ? $section->categories : $section->products;
     @endphp
     <div class="admin-panel">
-      <div class="admin-panel-title"><h2>{{ $isCategory ? 'Görünecek kategoriler' : 'Popüler ürünler' }}</h2></div>
+      <div class="admin-panel-title"><h2>{{ $isCategory ? 'Görünecek kategoriler' : 'Carousel ürünleri' }}</h2></div>
       <p class="admin-description">Kutucuğu işaretlediğiniz kayıtları vitrinde gösteririz. Sıra numarası küçük olan önce görünür. Pasif kayıtlar listeye eklenemez.</p>
       <form action="{{ route('admin.sections.selections', $section) }}" method="POST">
         @csrf @method('PUT')
