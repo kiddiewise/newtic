@@ -116,9 +116,10 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
         $this->assertDatabaseCount('shop_announcements', 2);
         $this->assertEquals([2, 3], ShopAnnouncement::orderBy('sort_order')->pluck('sort_order')->all());
         $this->get('/')->assertOk()
-            ->assertSee('announcement-ticker')
-            ->assertSee('1000 TL üzeri kargo bedava')
-            ->assertSee('Yeni surf kurşunları geldi');
+            ->assertDontSee('announcement-ticker')
+            ->assertDontSee('1000 TL üzeri kargo bedava')
+            ->assertDontSee('Yeni surf kurşunları geldi');
+        $this->assertSame(2, ShopAnnouncement::visible()->count());
 
         $this->get(route('admin.announcements.index'))->assertOk()
             ->assertSee('Yönetilen duyurular');
@@ -143,8 +144,10 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
 
             $this->assertStringNotContainsString('Öğle kampanyası', $this->get('/')->getContent());
             Carbon::setTestNow(Carbon::parse('2026-11-10 11:00:00', 'Europe/Istanbul')->utc());
-            $this->get('/')->assertSee('Öğle kampanyası');
+            $this->assertSame(1, ShopAnnouncement::visible()->count());
+            $this->get('/')->assertDontSee('Öğle kampanyası');
             Carbon::setTestNow(Carbon::parse('2026-11-10 12:01:00', 'Europe/Istanbul')->utc());
+            $this->assertSame(0, ShopAnnouncement::visible()->count());
             $this->assertStringNotContainsString('Öğle kampanyası', $this->get('/')->getContent());
         } finally {
             Carbon::setTestNow();
@@ -181,7 +184,8 @@ class StorefrontBrandingAndAnnouncementsTest extends TestCase
         $this->patch(route('admin.announcements.update', $notice), [
             'message'=>'Yeni duyuru','is_active'=>'1','sort_order'=>0,
         ])->assertSessionHasNoErrors();
-        $this->get('/')->assertSee('Yeni duyuru');
+        $this->assertSame(1, ShopAnnouncement::visible()->count());
+        $this->get('/')->assertDontSee('Yeni duyuru');
 
         $this->delete(route('admin.announcements.destroy', $notice))->assertRedirect();
         $this->assertDatabaseCount('shop_announcements', 0);
