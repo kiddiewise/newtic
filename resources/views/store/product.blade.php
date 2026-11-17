@@ -185,9 +185,16 @@
             </label>
           @endif
           @if($categoryProduct->requires_customer_photos)
-            <div class="pdp-customer-photos" data-customer-photos data-product-id="{{ $categoryProduct->id }}">
+            @php
+              $existingPhotoOptions = $categoryProduct->options->filter(fn ($option) =>
+                \App\Support\CartCustomerPhotos::hasValid(request(), \App\Support\ShoppingCart::key($categoryProduct->id, $option->id))
+              )->pluck('id')->implode(',');
+              $existingPlainPhotos = \App\Support\CartCustomerPhotos::hasValid(request(), \App\Support\ShoppingCart::key($categoryProduct->id));
+            @endphp
+            <div class="pdp-customer-photos" data-customer-photos data-product-id="{{ $categoryProduct->id }}"
+              data-existing-photo-options="{{ $existingPhotoOptions }}" data-existing-plain-photos="{{ $existingPlainPhotos ? '1' : '0' }}">
               <label for="customer-photos-{{ $categoryProduct->id }}" class="pdp-customer-photos-label">
-                <x-store-icon name="image" />
+                <x-store-icon name="camera" />
                 <span><strong>Fotoğraf(lar) yükle <em>· Zorunlu</em></strong><small>1–8 fotoğraf · JPG, PNG, WebP, AVIF · her biri en fazla 5 MB</small></span>
               </label>
               <input id="customer-photos-{{ $categoryProduct->id }}" type="file" form="pdp-cart-form"
@@ -195,6 +202,7 @@
                 accept="image/jpeg,image/png,image/webp,image/avif" multiple
                 aria-label="{{ $categoryProduct->name }} için fotoğraf veya fotoğraflar seç">
               <small class="pdp-customer-photos-status" data-customer-photo-status aria-live="polite">Henüz fotoğraf seçilmedi.</small>
+              <div class="pdp-customer-photos-previews" data-photo-previews aria-label="Seçilen fotoğraflar" hidden></div>
             </div>
           @endif
           <div class="pdp-stepper" aria-label="{{ $categoryProduct->name }} adedi">

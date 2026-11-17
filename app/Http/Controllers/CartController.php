@@ -76,7 +76,7 @@ class CartController extends Controller
 
         $keys = [];
         $incomingPhotos = [];
-        $allPhotos = $request->file('customer_photos', []);
+        $allPhotos = $request->file('customer_photos', []) ?? [];
         // Reject tampered uploads for other products or unselected quantities.
         foreach ($allPhotos as $photoProductId => $files) {
             if (!ctype_digit((string) $photoProductId) || !isset($requested[(int) $photoProductId])
