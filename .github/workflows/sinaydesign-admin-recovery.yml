@@ -1,4 +1,5 @@
 name: Recover Sinay Design admin securely
+# Authorized Sinay admin self-recovery: generate a private one-time code; never print credentials.
 
 on:
   push:
