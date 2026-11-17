@@ -22,6 +22,30 @@
           <small>{{ match($section->type){'slider'=>'Görsel slider','categories'=>'Kategoriler','products'=>'Ürün seçkisi',default=>'Banner alanı'} }} · Sıra: {{ $section->sort_order }}</small>
         </div>
         <span class="admin-status {{ $section->is_active ? 'is-active' : '' }}">{{ $section->is_active ? 'Aktif' : 'Pasif' }}</span>
+        <div class="admin-section-actions" aria-label="{{ $section->title ?: 'Başlıksız' }} için blok işlemleri">
+          <form method="POST" action="{{ route('admin.sections.move', $section) }}">
+            @csrf
+            <input type="hidden" name="direction" value="up">
+            <button class="admin-section-action" type="submit" aria-label="{{ $section->title ?: 'Başlıksız' }} bloğunu yukarı taşı" title="Bir sıra yukarı taşı" @disabled($loop->first)>
+              <x-admin-icon name="arrow-up" />
+            </button>
+          </form>
+          <form method="POST" action="{{ route('admin.sections.move', $section) }}">
+            @csrf
+            <input type="hidden" name="direction" value="down">
+            <button class="admin-section-action" type="submit" aria-label="{{ $section->title ?: 'Başlıksız' }} bloğunu aşağı taşı" title="Bir sıra aşağı taşı" @disabled($loop->last)>
+              <x-admin-icon name="arrow-down" />
+            </button>
+          </form>
+          <form method="POST" action="{{ route('admin.sections.destroy', $section) }}"
+                onsubmit="return confirm('Bu vitrin bloğu ve ona bağlı tüm görsel/ürün seçimleri silinsin mi? Bu işlem geri alınamaz.')">
+            @csrf
+            @method('DELETE')
+            <button class="admin-section-action admin-section-action-delete" type="submit" aria-label="{{ $section->title ?: 'Başlıksız' }} bloğunu sil" title="Bloğu sil">
+              <x-admin-icon name="trash-2" />
+            </button>
+          </form>
+        </div>
         <a class="admin-secondary" href="{{ route('admin.sections.edit', $section) }}">Düzenle</a>
       </div>
     @empty

@@ -298,6 +298,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/sections', [HomeSectionController::class, 'store'])->name('sections.store');
     Route::get('/sections/{section}/edit', [HomeSectionController::class, 'edit'])->name('sections.edit');
     Route::patch('/sections/{section}', [HomeSectionController::class, 'update'])->name('sections.update');
+    Route::post('/sections/{section}/move', [HomeSectionController::class, 'move'])->name('sections.move');
+    Route::delete('/sections/{section}', [HomeSectionController::class, 'destroy'])->name('sections.destroy');
     Route::put('/sections/{section}/selections', [HomeSectionController::class, 'selection'])->name('sections.selections');
     Route::post('/sections/{section}/slides', [HomeSlideController::class, 'store'])->name('slides.store');
     Route::patch('/sections/{section}/slides/{slide}', [HomeSlideController::class, 'update'])->name('slides.update');
