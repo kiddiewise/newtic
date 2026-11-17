@@ -1,0 +1,92 @@
+name: NEWTIC immutable full package
+
+on:
+  push:
+    branches:
+      - release/newtic-full-2026-11-17
+
+permissions:
+  contents: write
+
+concurrency:
+  group: newtic-release-full-2026-11-17
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: newtic_ci_root_only
+          MYSQL_DATABASE: newtic_fresh_ci
+          MYSQL_USER: newtic_install_ci
+          MYSQL_PASSWORD: newtic_ci_temporary_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pnewtic_ci_root_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and test verified NEWTIC source
+        run: |
+          set -euo pipefail
+          composer validate --strict --no-check-publish
+          composer install --prefer-dist --no-interaction --no-progress
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --env=testing --force
+          php artisan view:cache
+          php artisan test
+          test -s public/build/manifest.json
+          grep -RFlq --include='*.css' '.blog-card' public/build/assets
+      - name: Assemble full source plus compiled frontend and PHP vendor
+        run: |
+          set -euo pipefail
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+          PKG="$RUNNER_TEMP/newtic-full/newtic"
+          mkdir -p "$PKG"
+          git archive --format=tar HEAD | tar -xf - -C "$PKG"
+          cp -a vendor "$PKG/vendor"
+          cp -a public/build "$PKG/public/build"
+          printf '%s\n' "$GITHUB_SHA" > "$PKG/RELEASE_REVISION.txt"
+          test -s "$PKG/vendor/autoload.php"
+          test -s "$PKG/public/build/manifest.json"
+          test -s "$PKG/composer.lock"
+          test -s "$PKG/package-lock.json"
+          test ! -e "$PKG/.env"
+          tar -czf newtic-v2026.11.17-full.tar.gz -C "$RUNNER_TEMP/newtic-full" newtic
+          sha256sum newtic-v2026.11.17-full.tar.gz > SHA256SUMS.txt
+          tar -tzf newtic-v2026.11.17-full.tar.gz | grep -Fq 'newtic/public/build/manifest.json'
+      - name: Publish permanent GitHub release without overwriting an existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=newtic-v2026.11.17-full
+          test "$GITHUB_REPOSITORY" = "kiddiewise/newtic"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Tag exists; refusing to overwrite immutable release."
+            exit 1
+          fi
+          gh release create "$TAG" newtic-v2026.11.17-full.tar.gz SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title "NEWTIC Tam Paket - 17 Kasım 2026" \
+            --notes-file docs/releases/newtic-2026-11-17-full.md
+          gh release view "$TAG" --json tagName,url,assets
