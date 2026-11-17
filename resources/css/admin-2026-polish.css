@@ -71,3 +71,25 @@
  .admin-body .admin-search-result>span:nth-child(2){flex-basis:calc(100% - 65px)}
  .admin-body .admin-search-result>a{margin-left:auto}
 }
+
+/* Vitrin yönetimi: compact explicit up/down/delete actions, keyboard friendly. */
+.admin-body .admin-section-actions{display:flex;align-items:center;gap:6px;flex:none}
+.admin-body .admin-section-actions form{display:inline-flex;margin:0;padding:0}
+.admin-body .admin-section-actions .admin-section-action{
+  display:grid;place-items:center;flex:none;width:38px;height:38px;padding:0;
+  background:#f3f5f9;color:#092037;border:1px solid #e2e6ef;border-radius:10px;
+  cursor:pointer;transition:background-color .15s,border-color .15s;
+}
+.admin-body .admin-section-actions .admin-section-action .admin-icon{width:18px;height:18px}
+.admin-body .admin-section-actions .admin-section-action:hover:not(:disabled){background:#e8ecf5;border-color:#c7d1df}
+.admin-body .admin-section-actions .admin-section-action:focus-visible{outline:3px solid #f68220;outline-offset:2px}
+.admin-body .admin-section-actions .admin-section-action:disabled{opacity:.32;cursor:default}
+.admin-body .admin-section-actions .admin-section-action-delete{color:#b43e47;background:#fff6f6;border-color:#f3dfe1}
+.admin-body .admin-section-actions .admin-section-action-delete:hover:not(:disabled){background:#ffe8eb;border-color:#e9b3ba}
+@media(max-width:710px){
+  .admin-body .admin-section-actions{margin-left:auto}
+  .admin-body .admin-section-actions .admin-section-action{width:42px;height:42px}
+}
+@media(prefers-reduced-motion:reduce){
+  .admin-body .admin-section-actions .admin-section-action{transition:none}
+}
