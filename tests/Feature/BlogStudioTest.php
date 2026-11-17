@@ -31,7 +31,7 @@ class BlogStudioTest extends TestCase
         ]);
     }
 
-    private function post(BlogCategory $category, bool $published = false): BlogPost
+    private function makePost(BlogCategory $category, bool $published = false): BlogPost
     {
         return BlogPost::create([
             'title' => 'Kıyıdan Avlanmanın İncelikleri',
@@ -57,7 +57,7 @@ class BlogStudioTest extends TestCase
     public function test_non_admin_cannot_manage_blog(): void
     {
         $category = $this->category();
-        $post = $this->post($category);
+        $post = $this->makePost($category);
         $this->actingAs(User::factory()->create());
 
         $this->get(route('admin.blog.posts.index'))->assertForbidden();
@@ -134,7 +134,7 @@ class BlogStudioTest extends TestCase
     {
         Storage::fake('public');
         $category = $this->category();
-        $post = $this->post($category, true);
+        $post = $this->makePost($category, true);
         $this->actingAs($this->admin());
 
         $this->post(route('admin.blog.blocks.store', $post), [
@@ -214,7 +214,7 @@ class BlogStudioTest extends TestCase
     {
         SeoSetting::current()->update(['noindex' => false]);
         $category = $this->category();
-        $post = $this->post($category, true);
+        $post = $this->makePost($category, true);
         $draft = BlogPost::create(['title' => 'Taslak', 'slug' => 'taslak', 'is_published' => false]);
         $hidden = BlogPost::create([
             'title' => 'İndekslenmez', 'slug' => 'indekslenmez',
