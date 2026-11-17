@@ -1,0 +1,77 @@
+name: Publish protected Sinay Design legal pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sinaydesign-legal-publish.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinaydesign-legal-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - name: Test merchant-isolated policies and security guards
+        run: |
+          set -euo pipefail
+          bash -n scripts/publish-sinay-legal.sh
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --env=testing --force
+          php artisan test --filter=SinayLegalImportTest
+          php artisan test --filter=MerchantLegalComplianceTest
+          php artisan test --filter=PolarisLegalImportTest
+      - name: Configure existing Hostinger identity
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Backup and publish to the existing Sinay installation only
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20 \
+            u880685189@147.79.123.121 \
+            "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/publish-sinay-legal.sh
+      - name: Verify public policies, footer links and no unrelated brand
+        run: |
+          set -euo pipefail
+          SITE=https://sinaydesign.com
+          curl -fsSL --retry 3 --max-time 25 "$SITE/" -o /tmp/sinay-home.html
+          grep -Fq 'KVKK Aydınlatma Metni' /tmp/sinay-home.html
+          grep -Fq 'Teslimat, Cayma ve İade Koşulları' /tmp/sinay-home.html
+          for slug in hakkimizda iletisim kvkk-aydinlatma gizlilik-politikasi cerez-politikasi mesafeli-satis-sozlesmesi on-bilgilendirme-formu teslimat-ve-iade uyelik-sozlesmesi islem-rehberi; do
+            curl -fsSL --retry 3 --max-time 25 "$SITE/kurumsal/$slug" -o "/tmp/sinay-$slug.html"
+            grep -Fq 'Sinay Design' "/tmp/sinay-$slug.html"
+            if grep -Eiq 'polariskursun|zoka balık|küpe' "/tmp/sinay-$slug.html"; then
+              echo "Unexpected unrelated store text in $slug"
+              exit 1
+            fi
+          done
+          echo 'SINAY_LEGAL_VERIFIED: 10 policy pages publicly accessible, Sinay-specific content only.'
