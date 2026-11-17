@@ -59,14 +59,6 @@
 @endphp
 <a class="skip-link" href="#content">İçeriğe geç</a>
 <header class="site-header desktop-site-header">
-  @if($shopAnnouncements->isNotEmpty())
-    @include('store.partials.announcement-ticker')
-  @else
-  <div class="utility-bar"><div class="container utility-content">
-    <span>{{ \Illuminate\Support\Str::limit($storeDescription, 65) }}</span>
-    <span>{{ mb_strtoupper($storeName, 'UTF-8') }}</span>
-  </div></div>
-  @endif
   <div class="container header-main">
     <a class="brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
       @if($shopAppearance->desktop_logo_path)
@@ -96,18 +88,17 @@
       </a>
     </div>
   </div>
-  <nav class="desktop-nav" aria-label="Ana gezinme">
+</header>
+<nav class="desktop-nav" aria-label="Ana gezinme">
     <div class="container nav-content">
       <a href="{{ route('home') }}">Ana sayfa</a>
       @foreach($navigationCategories->take(7) as $navigationCategory)
         <a href="{{ route('category.show', $navigationCategory->slug) }}">{{ $navigationCategory->name }}</a>
       @endforeach
     </div>
-  </nav>
-</header>
+</nav>
 
-<header class="mobile-site-header {{ $shopAnnouncements->isNotEmpty() ? 'has-announcements' : '' }}" aria-label="Mobil mağaza üst menüsü">
-  @include('store.partials.announcement-ticker')
+<header class="mobile-site-header" aria-label="Mobil mağaza üst menüsü">
   <div class="mobile-topbar">
     <details class="mobile-menu" data-mega-menu>
       <summary aria-label="Kategoriler menüsünü aç" aria-controls="store-mega-menu" data-mega-toggle><x-store-icon name="menu" /></summary>
