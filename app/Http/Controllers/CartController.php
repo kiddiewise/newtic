@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Support\ShoppingCart;
+use App\Support\CartCustomerPhotos;
 use App\Support\QuickCartSheet;
 use App\Support\CategoryHierarchy;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,9 @@ class CartController extends Controller
             'items.*' => ['required', 'integer', 'min:0', 'max:999'],
             'options' => ['sometimes', 'array', 'max:100'],
             'options.*' => ['nullable', 'integer', 'min:1'],
+            'customer_photos' => ['sometimes', 'array', 'max:100'],
+            'customer_photos.*' => ['sometimes', 'array', 'max:8'],
+            'customer_photos.*.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
         ]);
 
         $requested = [];
@@ -71,6 +75,18 @@ class CartController extends Controller
             ->get()->keyBy('id');
 
         $keys = [];
+        $incomingPhotos = [];
+        $allPhotos = $request->file('customer_photos', []);
+        // Reject tampered uploads for other products or unselected quantities.
+        foreach ($allPhotos as $photoProductId => $files) {
+            if (!ctype_digit((string) $photoProductId) || !isset($requested[(int) $photoProductId])
+                || !is_array($files)) {
+                throw ValidationException::withMessages([
+                    'customer_photos' => 'Fotoğraf yalnızca seçilen ürün için yüklenebilir.',
+                ]);
+            }
+        }
+
         foreach ($requested as $id => $qty) {
             $product = $products->get($id);
             if (! $product || ! CategoryHierarchy::visible($product->category)) {
@@ -88,6 +104,26 @@ class CartController extends Controller
 
             $key = ShoppingCart::key($id, $option?->id);
             $keys[$id] = $key;
+            $files = $allPhotos[$id] ?? [];
+            if ($files && !$product->requires_customer_photos) {
+                throw ValidationException::withMessages([
+                    'customer_photos.'.$id => 'Bu ürün için müşteri fotoğrafı istenmiyor.',
+                ]);
+            }
+            if ($product->requires_customer_photos) {
+                $currentCount = count(CartCustomerPhotos::forKey($request, $key));
+                if (!$files && $currentCount === 0) {
+                    throw ValidationException::withMessages([
+                        'customer_photos.'.$id => $product->name.' için en az bir fotoğraf yükleyin.',
+                    ]);
+                }
+                if ($currentCount + count($files) > CartCustomerPhotos::MAX_PHOTOS) {
+                    throw ValidationException::withMessages([
+                        'customer_photos.'.$id => 'Bu ürün için en fazla 8 fotoğraf eklenebilir.',
+                    ]);
+                }
+                if ($files) $incomingPhotos[$key] = $files;
+            }
             $inCart = 0;
             foreach ($existing as $storedKey => $storedQty) {
                 $parts = ShoppingCart::parseKey($storedKey);
@@ -110,6 +146,7 @@ class CartController extends Controller
             throw ValidationException::withMessages(['items' => 'Sepette en fazla 100 farklı ürün bulunabilir.']);
         }
 
+        CartCustomerPhotos::addMany($request, $incomingPhotos);
         ShoppingCart::put($request, $existing);
 
         if ($request->expectsJson()) {
@@ -151,6 +188,7 @@ class CartController extends Controller
         $qty = (int) $data['quantity'];
         if ($qty === 0) {
             unset($items[$key]);
+            CartCustomerPhotos::forget($request, $key);
         } else {
             $otherQty = 0;
             foreach ($items as $storedKey => $storedQty) {
@@ -181,6 +219,7 @@ class CartController extends Controller
         $items = ShoppingCart::raw($request);
         $key = ShoppingCart::key($product->id, isset($data['option_id']) ? (int) $data['option_id'] : null);
         unset($items[$key]);
+        CartCustomerPhotos::forget($request, $key);
         ShoppingCart::put($request, $items);
 
         return redirect()->route('cart.index')->with('success', 'Ürün sepetten çıkarıldı.');

@@ -77,6 +77,11 @@
               <span class="cart-item-unit">{{ number_format($line['unit_cents'] / 100, 2, ',', '.') }} ₺ / adet</span>
             </div>
             <div class="cart-item-actions">
+              @if($item->requires_customer_photos)
+                <p class="customer-photo-cart-status">Müşteri fotoğrafı: {{ $line['customer_photo_count'] ?: 'eksik' }} adet
+                  @if(!$line['customer_photo_count'])<a href="{{ route('product.show', $item->slug) }}">Fotoğraf yükle</a>@endif
+                </p>
+              @endif
               <form class="cart-update-form cart-quantity-stepper" method="POST" action="{{ route('cart.update', $item) }}" data-cart-update-form>
                 @csrf @method('PATCH')
                 @if($line['option_id'])<input type="hidden" name="option_id" value="{{ $line['option_id'] }}">@endif

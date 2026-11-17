@@ -100,6 +100,7 @@ class ShoppingCart
                 'line_cents' => $lineCents,
                 'regular_cents' => $regularCents,
                 'savings_cents' => $lineSavings,
+                'customer_photo_count' => count(CartCustomerPhotos::forKey($request, $key)),
             ];
             $subtotalCents += $lineCents;
             $savingsCents += $lineSavings;
@@ -117,6 +118,7 @@ class ShoppingCart
         if ($raw !== $normalized) {
             self::put($request, $normalized);
         }
+        CartCustomerPhotos::prune($request, array_keys($normalized));
 
         $settings = StoreSetting::current();
         $thresholdCents = (int) round((float) $settings->free_shipping_threshold * 100);
@@ -155,6 +157,7 @@ class ShoppingCart
     public static function clear(Request $request): void
     {
         $request->session()->forget(self::SESSION_KEY);
+        CartCustomerPhotos::clear($request);
         $request->session()->put('product_picker_reset', true);
     }
 

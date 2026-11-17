@@ -135,7 +135,7 @@
   </div>
 
   {{-- The category products remain independent SKUs; both buttons submit the same secure form. --}}
-  <form id="pdp-cart-form" data-quick-add data-quick-product="{{ $product->id }}" method="POST" action="{{ route('cart.add') }}" autocomplete="off">@csrf</form>
+  <form id="pdp-cart-form" data-quick-add data-quick-product="{{ $product->id }}" method="POST" action="{{ route('cart.add') }}" enctype="multipart/form-data" autocomplete="off">@csrf</form>
   @if($errors->any())
     <div class="cart-flash is-error" role="alert">{{ $errors->first() }}</div>
   @endif
@@ -183,6 +183,19 @@
                 @endforeach
               </select>
             </label>
+          @endif
+          @if($categoryProduct->requires_customer_photos)
+            <div class="pdp-customer-photos" data-customer-photos data-product-id="{{ $categoryProduct->id }}">
+              <label for="customer-photos-{{ $categoryProduct->id }}" class="pdp-customer-photos-label">
+                <x-store-icon name="image" />
+                <span><strong>Fotoğraf(lar) yükle <em>· Zorunlu</em></strong><small>1–8 fotoğraf · JPG, PNG, WebP, AVIF · her biri en fazla 5 MB</small></span>
+              </label>
+              <input id="customer-photos-{{ $categoryProduct->id }}" type="file" form="pdp-cart-form"
+                name="customer_photos[{{ $categoryProduct->id }}][]" data-customer-photo-input
+                accept="image/jpeg,image/png,image/webp,image/avif" multiple
+                aria-label="{{ $categoryProduct->name }} için fotoğraf veya fotoğraflar seç">
+              <small class="pdp-customer-photos-status" data-customer-photo-status aria-live="polite">Henüz fotoğraf seçilmedi.</small>
+            </div>
           @endif
           <div class="pdp-stepper" aria-label="{{ $categoryProduct->name }} adedi">
             <button type="button" data-step-minus aria-label="{{ $categoryProduct->name }} azalt">−</button>

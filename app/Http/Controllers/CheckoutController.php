@@ -17,6 +17,7 @@ use App\Support\CategoryHierarchy;
 use App\Support\OrderTracking;
 use App\Support\PaytrTestAccess;
 use App\Support\ShoppingCart;
+use App\Support\CartCustomerPhotos;
 use App\Support\TurkeyProvinces;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -222,10 +223,13 @@ class CheckoutController extends Controller
                         'cart' => $product->name.' için toplam stok miktarı yeterli değil.',
                     ]);
                 }
+                if ($product->requires_customer_photos && !CartCustomerPhotos::hasValid($request, $key)) {
+                    throw ValidationException::withMessages(['cart' => $product->name.' için fotoğraf yükleyin ve sepeti güncelleyin.']);
+                }
                 $unitCents = (int) round((float) $product->price * 100);
                 $optionLabel = $option ? $product->option_label : null;
                 $optionValue = $option?->value;
-                $lines[] = compact('product', 'qty', 'unitCents', 'optionLabel', 'optionValue');
+                $lines[] = compact('product', 'qty', 'unitCents', 'optionLabel', 'optionValue', 'key');
                 $subtotal += $unitCents * $qty;
             }
             $settings = StoreSetting::current();
@@ -292,7 +296,7 @@ class CheckoutController extends Controller
                 $product = $line['product'];
                 $quantity = $line['qty'];
                 $unitCents = $line['unitCents'];
-                $order->items()->create([
+                $orderItem = $order->items()->create([
                     'product_id' => $product->id,
                     'sku' => $product->sku,
                     'product_name' => $product->name,
@@ -302,6 +306,10 @@ class CheckoutController extends Controller
                     'unit_price_cents' => $unitCents,
                     'line_total_cents' => $unitCents * $quantity,
                 ]);
+                $customerPhotos = CartCustomerPhotos::copyToOrder(
+                    $request, $line['key'], $order->id, $orderItem->id
+                );
+                if ($customerPhotos) $orderItem->update(['customer_photos' => $customerPhotos]);
                 if ($product->tracks_stock) {
                     $product->decrement('stock_quantity', $quantity);
                 }

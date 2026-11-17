@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\Storage;
 use App\Models\EmailDelivery;
 use App\Console\Commands\ExpireUnpaidBankOrders;
 use Illuminate\Support\Facades\Artisan;
@@ -21,6 +23,28 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    /** Photos are private order documents, never exposed under public/storage. */
+    public function customerPhoto(Order $order, OrderItem $item, int $index): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        abort_unless($item->order_id === $order->id, 404);
+        $photos = $item->customer_photos ?? [];
+        $photo = $photos[$index] ?? null;
+        $path = is_array($photo) ? ($photo['path'] ?? null) : null;
+        $prefix = 'customer-photos/orders/'.$order->id.'/'.$item->id.'/';
+        abort_unless(is_string($path) && str_starts_with($path, $prefix), 404);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $types = ['jpg'=>'image/jpeg', 'jpeg'=>'image/jpeg', 'png'=>'image/png', 'webp'=>'image/webp', 'avif'=>'image/avif'];
+        abort_unless(isset($types[$extension]) && Storage::disk('local')->exists($path), 404);
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => $types[$extension],
+            'Content-Disposition' => 'inline; filename="musteri-fotografi-'.($index+1).'.'.$extension.'"',
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'X-Content-Type-Options' => 'nosniff',
+            'Referrer-Policy' => 'no-referrer',
+        ]);
+    }
+
     private const CORRECTABLE_STATES = ['preparing','shipped','out_for_delivery','completed'];
 
     private const TRANSITIONS = [
