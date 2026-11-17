@@ -8,6 +8,7 @@ use App\Models\HomeSection;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -79,6 +80,50 @@ class HomeSectionController extends Controller
         ]);
 
         return back()->with('success', 'Bölüm ayarları kaydedildi.');
+    }
+
+    public function move(Request $request, HomeSection $section): RedirectResponse
+    {
+        $data = $request->validate([
+            'direction' => ['required', Rule::in(['up', 'down'])],
+        ]);
+
+        // Lock and normalize the complete sequence so duplicate/manual sort values
+        // never cause a move to skip a block or affect unrelated storefront data.
+        $moved = DB::transaction(function () use ($section, $data): bool {
+            $sections = HomeSection::query()
+                ->orderBy('sort_order')->orderBy('id')
+                ->lockForUpdate()->get();
+
+            $current = $sections->search(fn (HomeSection $item) => $item->id === $section->id);
+            abort_if($current === false, 404);
+
+            $neighbor = $current + ($data['direction'] === 'up' ? -1 : 1);
+            if ($neighbor < 0 || $neighbor >= $sections->count()) {
+                return false;
+            }
+
+            [$sections[$current], $sections[$neighbor]] = [$sections[$neighbor], $sections[$current]];
+
+            foreach ($sections as $position => $item) {
+                if ($item->sort_order !== $position) {
+                    $item->update(['sort_order' => $position]);
+                }
+            }
+
+            return true;
+        });
+
+        return redirect()->route('admin.index')
+            ->with('success', $moved ? 'Blok sırası otomatik kaydedildi.' : 'Blok zaten listenin sınırında.');
+    }
+
+    public function destroy(HomeSection $section): RedirectResponse
+    {
+        // Foreign keys cascade the block's slides and selections, not its products/categories.
+        $section->delete();
+
+        return redirect()->route('admin.index')->with('success', 'Vitrin bloğu silindi.');
     }
 
     public function selection(Request $request, HomeSection $section): RedirectResponse
