@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HomeSection;
+use App\Models\BlogPost;
 use App\Support\ProductReviewVisibility;
 use Illuminate\View\View;
 
@@ -20,6 +21,10 @@ class HomeController extends Controller
             ])
             ->get();
 
-        return view('store.home', compact('sections'));
+        // Empty blogs never add a placeholder section to the storefront.
+        $latestPosts = BlogPost::published()->with('category')
+            ->orderByDesc('published_at')->orderByDesc('id')->limit(4)->get();
+
+        return view('store.home', compact('sections', 'latestPosts'));
     }
 }

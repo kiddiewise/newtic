@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\SeoSetting;
 use App\Models\MerchantLegalPage;
+use App\Models\BlogPost;
+use App\Models\BlogCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Support\StoreIdentity;
@@ -108,6 +110,50 @@ final class SeoMetadata
                 $title = $legalPage->title.' | '.$suffix;
                 $description = Str::limit(trim((string) $legalPage->body), 160, '');
                 $canonical = self::url($request, 'kurumsal/'.$legalPage->slug);
+            }
+        } elseif ($route === 'blog.index') {
+            $title = 'Blog & Rehber | '.$suffix;
+            $description = 'Rehberler, ürün ipuçları ve faydalı bilgiler. '.$description;
+            $canonical = self::url($request, 'blog');
+            $page = filter_var($request->query('page', 1), FILTER_VALIDATE_INT);
+            if ($page && $page > 1) $canonical .= '?page='.$page;
+        } elseif ($route === 'blog.category') {
+            $category = BlogCategory::query()->where('slug', (string) $request->route('slug'))
+                ->where('is_active', true)->first();
+            if ($category) {
+                $title = $category->name.' | Blog | '.$suffix;
+                $description = trim((string) ($category->description ?: $category->name.' hakkındaki güncel yazılar ve rehberler.'));
+                $canonical = self::url($request, 'blog/kategori/'.$category->slug);
+                $page = filter_var($request->query('page', 1), FILTER_VALIDATE_INT);
+                if ($page && $page > 1) $canonical .= '?page='.$page;
+            } else {
+                $individualNoindex = true;
+            }
+        } elseif ($route === 'blog.show') {
+            $post = BlogPost::published()->where('slug', (string) $request->route('slug'))->first();
+            if ($post) {
+                $title = trim((string) ($post->seo_title ?: $post->title.' | '.$suffix));
+                $description = trim((string) ($post->seo_description ?: $post->excerpt ?: $post->title));
+                $canonical = self::url($request, 'blog/'.$post->slug);
+                $image = self::image($request, $post->featured_image_path) ?: $image;
+                $individualNoindex = (bool) $post->seo_noindex;
+                $ogType = 'article';
+                $structured = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'BlogPosting',
+                    'mainEntityOfPage' => $canonical,
+                    'url' => $canonical,
+                    'headline' => $post->title,
+                    'description' => $description,
+                    'inLanguage' => 'tr-TR',
+                    'datePublished' => $post->published_at?->toAtomString(),
+                    'dateModified' => $post->updated_at?->toAtomString(),
+                    'author' => ['@type' => 'Organization', 'name' => $post->author_name ?: StoreIdentity::name($setting)],
+                    'publisher' => ['@type' => 'Organization', 'name' => StoreIdentity::name($setting)],
+                ];
+                if ($image) $structured['image'] = [$image];
+            } else {
+                $individualNoindex = true;
             }
         } elseif ($route === 'category.show') {
             $category = Category::query()->where('slug', (string) $request->route('slug'))->first();

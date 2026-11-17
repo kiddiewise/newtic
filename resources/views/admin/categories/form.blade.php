@@ -60,7 +60,7 @@
     @endif
     <label class="admin-full">Alt kategori kartı için görsel (JPG, PNG, WebP, AVIF · en çok 4 MB)
       <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif">
-      <small>Bu, banner değil; kategori kutusunda kullanılan kare görseldir.</small>
+      <small><strong>Önerilen: 400 × 400 px</strong> (1:1 kare). Bu, banner değil; kategori kutusunda kullanılan görseldir.</small>
     </label>
     <div class="admin-form-actions">
       <a class="admin-secondary" href="{{ route('admin.categories.index') }}">Geri</a>
@@ -74,7 +74,7 @@
     <div class="admin-panel-title">
       <h2>Bu kategoriye özel bannerlar</h2><span>{{ $category->banners->count() }}/3</span>
     </div>
-    <p class="admin-description">Masaüstü ve mobil görseli ayrı yükleyebilirsin. Banner yoksa kategori doğrudan ürünleri gösterir. En fazla 3 banner eklenebilir.</p>
+    <p class="admin-description">Masaüstü ve mobil görseli ayrı yükleyebilirsin. <strong>Masaüstü: 1470 × 600 px (2,45:1) · mobil: 1280 × 720 px (16:9).</strong> Banner yoksa kategori doğrudan ürünleri gösterir. En fazla 3 banner eklenebilir.</p>
 
     @foreach($category->banners as $banner)
       <div class="admin-banner-edit-card">
@@ -125,11 +125,11 @@
         @csrf
         <label>Masaüstü bannerı *
           <input type="file" name="desktop_image" accept="image/jpeg,image/png,image/webp,image/avif" required>
-          <small>Geniş görsel önerilir (ör. 1200×500), en fazla 5 MB.</small>
+          <small>Önerilen: 1470 × 600 px (2,45:1) · en fazla 5 MB.</small>
         </label>
         <label>Mobil banner (isteğe bağlı)
           <input type="file" name="mobile_image" accept="image/jpeg,image/png,image/webp,image/avif">
-          <small>Mobil için 16:9 oranında ayrı görsel önerilir.</small>
+          <small>Önerilen: 1280 × 720 px (16:9).</small>
         </label>
         <label>Banner açıklaması
           <input name="alt_text" maxlength="190" placeholder="Örn. Sezon koleksiyonu">
