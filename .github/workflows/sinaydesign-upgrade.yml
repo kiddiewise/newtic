@@ -1,0 +1,74 @@
+name: Sinay Design verified NEWTIC upgrade
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/sinaydesign-upgrade.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinaydesign-newtic-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate and test before touching Sinay
+        run: |
+          set -euo pipefail
+          bash -n scripts/deploy-sinaydesign-upgrade.sh
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --env=testing --force
+          php artisan test
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          printf '%s\n' "$GITHUB_SHA" > public/build/newtic-revision.txt
+          tar -czf sinay-upgrade-build.tar.gz -C public build
+      - name: Configure existing Hostinger connection
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Upgrade existing installed Sinay with private backup
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          TARGET=u880685189@147.79.123.121
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" 'test -f ~/domains/sinaydesign.com/newtic/.env && mkdir -p ~/domains/sinaydesign.com/newtic/.deploy'
+          scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes sinay-upgrade-build.tar.gz "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-upgrade-build.tar.gz"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" "NEWTIC_EXPECTED_SHA=$SHA bash -se" < scripts/deploy-sinaydesign-upgrade.sh
+      - name: Verify Sinay homepage blog and admin are reachable
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/ -o sinay-home.html
+          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/blog -o sinay-blog.html
+          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/admin/login -o sinay-admin.html
+          grep -Fqi 'Sinay Design' sinay-home.html
+          grep -Fq 'blog-public-header' sinay-blog.html
+          grep -Fq 'NEWTIC' sinay-admin.html
+          echo 'Sinay Design storefront and new blog verified'
