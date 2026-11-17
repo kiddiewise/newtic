@@ -254,6 +254,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/items/{item}/photos/{index}', [AdminOrderController::class, 'customerPhoto'])
+        ->whereNumber('index')->name('orders.customer-photo');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::patch('/orders/{order}/status-correction', [AdminOrderController::class, 'correct'])->middleware('throttle:8,1')->name('orders.correct');
     Route::post('/orders/{order}/bank-verification-correction', [AdminOrderController::class, 'revokeBankVerification'])->middleware('throttle:4,1')->name('orders.revoke-bank-verification');

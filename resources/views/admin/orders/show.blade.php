@@ -33,6 +33,19 @@
       @foreach($order->items as $line)
         <div class="admin-order-row"><span><strong>{{ $line->product_name }}</strong><small>SKU: {{ $line->sku }} @if($line->option_value)· {{ $line->option_label }}: {{ $line->option_value }} @endif · {{ $line->quantity }} adet · Birim {{ number_format($line->unit_price_cents / 100, 2, ',', '.') }} ₺</small></span>
           <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
+        @if(!empty($line->customer_photos))
+          <div class="order-customer-photo-grid" aria-label="{{ $line->product_name }} için müşteri fotoğrafları">
+            <p class="admin-description">Müşteri tarafından yüklenen fotoğraflar ({{ count($line->customer_photos) }}): Yönetici erişimiyle görüntülenir.</p>
+            @foreach($line->customer_photos as $index => $photo)
+              <a href="{{ route('admin.orders.customer-photo', [$order, $line, $index]) }}"
+                 target="_blank" rel="noopener noreferrer" title="{{ $photo['name'] ?? 'Müşteri fotoğrafı' }}">
+                <img src="{{ route('admin.orders.customer-photo', [$order, $line, $index]) }}"
+                   alt="{{ $line->product_name }} müşteri fotoğrafı {{ $index + 1 }}" width="112" height="112" loading="lazy">
+                <small>Fotoğraf {{ $index + 1 }}</small>
+              </a>
+            @endforeach
+          </div>
+        @endif
       @endforeach
       <div class="checkout-price-line"><span>Ara toplam</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
       <div class="checkout-price-line"><span>Kargo</span><strong>{{ number_format($order->shipping_cents / 100, 2, ',', '.') }} ₺</strong></div>

@@ -99,6 +99,20 @@
       <p class="admin-description">75 gr, 100 gr ve 125 gr ürünlerini yine ayrı SKU olarak açarsın. Her ürünün kendi iğne seçenekleri olabilir. Şu an bütün iğne seçenekleri ürünün ortak stok adedini ve fiyatını kullanır.</p>
     </section>
     <section class="admin-panel admin-editor-section">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="image" /></span>
+        <div><h2>Müşteriden fotoğraf iste</h2><p>Karikatür biblo ve kişiye özel ürünler için</p></div>
+      </div>
+      <label class="admin-editor-toggle">
+        <input type="hidden" name="requires_customer_photos" value="0">
+        <input type="checkbox" name="requires_customer_photos" value="1"
+          @checked(old('requires_customer_photos', $product->requires_customer_photos ?? false))>
+        <span class="admin-toggle-track" aria-hidden="true"></span>
+        <span><strong>Satın alırken fotoğraf yüklenmesini zorunlu tut</strong>
+          <small>Açılırsa ürün detayında “Fotoğraf(lar) yükle” alanı çıkar. En az 1, en fazla 8 fotoğraf gerekir (JPG/PNG/WebP/AVIF, her biri en fazla 5 MB). Fotoğraflar yalnızca siparişin yöneticisine görünür.</small>
+        </span>
+      </label>
+    </section>
+    <section class="admin-panel admin-editor-section">
       <div class="admin-editor-heading">
         <span class="admin-editor-heading-icon is-purple"><x-admin-icon name="star" /></span>
         <div><h2>Ürün rozetleri</h2><p>Görselin hemen altındaki pastel renkli şeritleri seç.</p></div>

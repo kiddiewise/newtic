@@ -143,6 +143,7 @@ class ProductController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'option_label' => ['nullable', 'string', 'max:80'],
             'options_text' => ['nullable', 'string', 'max:3000'],
+            'requires_customer_photos' => ['sometimes', 'boolean'],
             'badge_ids' => ['sometimes', 'array', 'max:31'],
             'badge_ids.*' => ['nullable', 'integer', 'distinct', Rule::exists('product_badges', 'id')],
             'images' => ['sometimes', 'array', 'max:8'],
@@ -166,6 +167,7 @@ class ProductController extends Controller
             $data['stock_quantity'] = max(999, (int) $data['stock_quantity']);
         }
         $data['is_demo'] = false;
+        $data['requires_customer_photos'] = $request->boolean('requires_customer_photos');
         $data['seo_noindex'] = $request->boolean('seo_noindex');
 
         return $data;

@@ -95,3 +95,4 @@ import './auth-experience.js';
 import './homepage-showcase.js';
 
 import './blog-studio.js';
+import './customer-photo-upload.js';
