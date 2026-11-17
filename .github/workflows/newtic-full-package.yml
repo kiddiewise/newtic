@@ -74,7 +74,7 @@ jobs:
           test ! -e "$PKG/.env"
           tar -czf newtic-v2026.11.17-full.tar.gz -C "$RUNNER_TEMP/newtic-full" newtic
           sha256sum newtic-v2026.11.17-full.tar.gz > SHA256SUMS.txt
-          tar -tzf newtic-v2026.11.17-full.tar.gz | grep -Fq 'newtic/public/build/manifest.json'
+          tar -tzf newtic-v2026.11.17-full.tar.gz | grep -Fx 'newtic/public/build/manifest.json' >/dev/null
       - name: Publish permanent GitHub release without overwriting an existing tag
         env:
           GH_TOKEN: ${{ github.token }}
