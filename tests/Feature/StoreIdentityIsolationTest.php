@@ -74,7 +74,7 @@ final class StoreIdentityIsolationTest extends TestCase
         $this->assertStringContainsString('Dekorasyon ürünleri', $home);
         $this->assertStringNotContainsString('Polaris Kurşun', $home);
         $this->assertStringNotContainsString('polariskursun', $home);
-        $this->assertStringContainsString('#ui-shopping-bag', $home);
+        $this->assertStringContainsString('/assets/branding/newtic-logo.webp', $home);
         $this->assertStringContainsString('https://sinaydesign.com/', $home);
 
         $html = $this->get('https://sinaydesign.com/urun/seramik-vazo')->assertOk()->getContent();

@@ -57,7 +57,7 @@ final class AuthVisualPolishTest extends TestCase
         $this->assertStringContainsString("@import './auth-experience.css';", file_get_contents(resource_path('css/app.css')));
 
         $art = file_get_contents(resource_path('views/store/partials/auth-artwork.blade.php'));
-        $this->assertStringContainsString('ShopAppearance::current()->auth_image_paths', $art);
+        $this->assertStringContainsString('$authAppearance->auth_image_paths', $art);
         $this->assertStringContainsString('data-auth-slideshow', $art);
         $this->assertStringContainsString('auth-artwork-fallback', $art);
     }
