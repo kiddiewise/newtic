@@ -6,16 +6,8 @@
 @endphp
 <header class="mobile-auth-header" aria-label="Üyelik ekranı üst menüsü">
   <a href="{{ route('home') }}" class="mobile-auth-brand" aria-label="{{ \App\Support\StoreIdentity::name() }} ana sayfa">
-    @if($authAppearance->mobile_logo_path)
-      <img src="{{ asset($authAppearance->mobile_logo_path) }}" alt="{{ \App\Support\StoreIdentity::name() }}" width="156" height="48">
-    @elseif($authAppearance->desktop_logo_path)
-      <img src="{{ asset($authAppearance->desktop_logo_path) }}" alt="{{ \App\Support\StoreIdentity::name() }}" width="156" height="48">
-    @else
-      <span class="mobile-auth-fallback">
-        <x-store-icon name="shopping-bag" />
-        <span><strong>{{ mb_strtoupper(\App\Support\StoreIdentity::wordmark()[0], 'UTF-8') }}</strong>@if(\App\Support\StoreIdentity::wordmark()[1])<small>{{ mb_strtoupper(\App\Support\StoreIdentity::wordmark()[1], 'UTF-8') }}</small>@endif</span>
-      </span>
-    @endif
+    <img src="{{ asset($authAppearance->desktopLogo()) }}" alt="{{ \App\Support\StoreIdentity::name() }} logosu" width="156" height="40">
+
   </a>
   <a href="{{ route('home') }}" class="mobile-auth-close" aria-label="Üyelik ekranından çık"><x-store-icon name="x" /></a>
 </header>

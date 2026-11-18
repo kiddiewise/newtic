@@ -21,7 +21,7 @@ grep -Fq "$APP/public/index.php" "$WEBROOT/index.php" ||
   fail "This webroot belongs to another application. Refusing to deploy."
 test -s "$APP/public/build/manifest.json" && test -s "$APP/public/build/newtic-revision.txt" ||
   fail "Missing compiled frontend or immutable release marker."
-test "$(cat "$APP/public/build/newtic-revision.txt")" = "$(git -C "$APP" rev-parse HEAD)" ||
+test "$(cat "$APP/public/build/newtic-revision.txt")" = "$(if git -C "$APP" rev-parse --verify HEAD >/dev/null 2>&1; then git -C "$APP" rev-parse HEAD; else cat "$APP/.newtic-release-revision"; fi)" ||
   fail "Do not publish assets built for a different source revision."
 APP="$APP" php -r '
 $m = json_decode(file_get_contents(getenv("APP")."/public/build/manifest.json"), true);

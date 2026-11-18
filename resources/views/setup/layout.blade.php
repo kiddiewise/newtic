@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="referrer" content="no-referrer">
   <title>@yield('title', 'Yeni mağaza kurulumu') · NEWTIC</title>
+  <link rel="icon" type="image/webp" href="{{ asset('assets/branding/newtic-mark.webp') }}">
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
@@ -13,7 +14,7 @@
       font: 15px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh; }
     .container { width: min(100% - 32px, 760px); margin: 38px auto 60px; }
     .brand { display:flex;align-items:center;justify-content:space-between; margin-bottom:22px; }
-    .brand strong { font-size:21px;letter-spacing:-.8px; }
+    .brand img { display:block;width:min(180px,42vw);height:auto;max-height:54px;object-fit:contain; }
     .tag { border:1px solid #d8e3e9;border-radius:99px;padding:6px 12px;font-size:12px;letter-spacing:.4px; }
     .panel { background:white;border:1px solid #e0e7ec;border-radius:24px;
       padding:clamp(20px,5vw,38px);box-shadow:0 20px 60px rgba(9,32,55,.07); }
@@ -56,7 +57,7 @@
 <body>
   <div class="container">
     <div class="brand">
-      <strong>NewTic<span style="color:#6b9fa2">.</span></strong>
+      <img src="{{ asset('assets/branding/newtic-logo.webp') }}" width="180" height="45" alt="NEWTIC">
       <span class="tag">GÜVENLİ MAĞAZA KURULUMU</span>
     </div>
     <main class="panel">

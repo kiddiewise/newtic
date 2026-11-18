@@ -1,3 +1,4 @@
+@php $shopAppearance = \App\Models\ShopAppearance::current(); @endphp
 <!doctype html>
 <html lang="tr">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#092037">
+  <link rel="icon" type="image/webp" href="{{ asset($shopAppearance->compactLogo()) }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
@@ -41,9 +43,7 @@
 @php
   $headerCartCount = \App\Support\ShoppingCart::itemCount();
   $storeName = \App\Support\StoreIdentity::name();
-  [$brandTop, $brandBottom] = \App\Support\StoreIdentity::wordmark();
   $storeDescription = \App\Support\StoreIdentity::description();
-  $shopAppearance = \App\Models\ShopAppearance::current();
   $megaMenuSettings = \App\Models\MegaMenuSetting::current();
   $shopAnnouncements = \App\Models\ShopAnnouncement::query()->visible()->orderBy('sort_order')->orderBy('id')->limit(30)->get();
   $activeCategorySlugs = request()->routeIs('category.show') && isset($breadcrumbs)
@@ -61,12 +61,7 @@
 <header class="site-header desktop-site-header">
   <div class="container header-main">
     <a class="brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
-      @if($shopAppearance->desktop_logo_path)
-        <img class="store-logo store-logo-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="176" height="48">
-      @else
-        <span class="brand-symbol" aria-hidden="true"><x-store-icon name="shopping-bag" /></span>
-        <span class="brand-words"><strong>{{ mb_strtoupper($brandTop, 'UTF-8') }}</strong>@if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif</span>
-      @endif
+      <img class="store-logo store-logo-desktop" src="{{ asset($shopAppearance->desktopLogo()) }}" alt="{{ $storeName }} logosu" width="176" height="44">
     </a>
     <form class="header-search" action="{{ route('search') }}" method="get" role="search" data-search-suggest-form data-suggest-url="{{ route('search.suggest') }}">
       <x-store-icon name="search" />
@@ -109,12 +104,7 @@
             <x-store-icon name="x" />
           </button>
           <a class="mega-menu-brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
-            @if($shopAppearance->mobile_logo_path || $shopAppearance->desktop_logo_path)
-              <img class="store-logo store-logo-mega mega-brand-logo" src="{{ asset($shopAppearance->mobile_logo_path ?: $shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="135" height="43">
-            @else
-              <span class="mega-brand-icon"><x-store-icon name="shopping-bag" /></span>
-              <span>{{ mb_strtoupper($brandTop, 'UTF-8') }}@if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif</span>
-            @endif
+            <img class="store-logo store-logo-mega mega-brand-logo" src="{{ asset($shopAppearance->desktopLogo()) }}" alt="{{ $storeName }} logosu" width="148" height="42">
           </a>
           <a href="{{ route('cart.index') }}" class="mega-cart-link" aria-label="Sepetim, {{ $headerCartCount }} adet">
             <x-store-icon name="shopping-cart" />
@@ -187,13 +177,10 @@
       </div>
     </details>
     <a class="mobile-center-brand" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
-      @if($shopAppearance->mobile_logo_path)
-        <img class="store-logo store-logo-mobile" src="{{ asset($shopAppearance->mobile_logo_path) }}" alt="{{ $storeName }}" width="54" height="54">
-      @elseif($shopAppearance->desktop_logo_path)
-        <img class="store-logo store-logo-mobile store-logo-mobile-from-desktop" src="{{ asset($shopAppearance->desktop_logo_path) }}" alt="{{ $storeName }}" width="90" height="42">
+      @if($shopAppearance->mobile_logo_path || ! $shopAppearance->desktop_logo_path)
+        <img class="store-logo store-logo-mobile" src="{{ asset($shopAppearance->mobileLogo()) }}" alt="{{ $storeName }} logosu" width="54" height="54">
       @else
-        <span class="mobile-brand-mark" aria-hidden="true"><x-store-icon name="shopping-bag" /></span>
-        <span class="mobile-brand-name">{{ mb_strtoupper($storeName, 'UTF-8') }}</span>
+        <img class="store-logo store-logo-mobile store-logo-mobile-from-desktop" src="{{ asset($shopAppearance->desktopLogo()) }}" alt="{{ $storeName }} logosu" width="90" height="42">
       @endif
     </a>
     <div class="mobile-top-actions">
@@ -247,15 +234,7 @@
   <div class="container legal-footer-primary">
     <div class="legal-footer-brand-col">
       <a class="footer-brandmark" href="{{ route('home') }}" aria-label="{{ $storeName }} ana sayfa">
-        @if($shopAppearance->desktop_logo_path || $shopAppearance->mobile_logo_path)
-          <img src="{{ asset($shopAppearance->desktop_logo_path ?: $shopAppearance->mobile_logo_path) }}" alt="{{ $storeName }}" width="170" height="54" loading="lazy">
-        @else
-          <span class="footer-brand-fallback"><x-store-icon name="shopping-bag" />
-            <span><strong>{{ mb_strtoupper($brandTop, 'UTF-8') }}</strong>
-              @if($brandBottom)<small>{{ mb_strtoupper($brandBottom, 'UTF-8') }}</small>@endif
-            </span>
-          </span>
-        @endif
+        <img class="store-logo store-logo-footer" src="{{ asset($shopAppearance->desktopLogo()) }}" alt="{{ $storeName }} logosu" width="170" height="43" loading="lazy">
       </a>
       <p>{{ $storeDescription }}</p>
     </div>

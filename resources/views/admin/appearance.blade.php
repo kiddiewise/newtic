@@ -4,7 +4,7 @@
 <div class="admin-page-heading">
   <p class="admin-eyebrow">MARKA KİMLİĞİ</p>
   <h1>Mağaza logoları</h1>
-  <p>Masaüstü ve mobil için farklı logo yükleyebilirsiniz. İkisini de boş bırakırsanız genel mağaza simgesi kullanılır.</p>
+  <p>Masaüstü ve mobil için farklı logo yükleyebilirsiniz. Siz yükleyene kadar NEWTIC varsayılan WebP logoları kullanılır.</p>
 </div>
 <div class="admin-panel">
   <form method="POST" action="{{ route('admin.appearance.update') }}" enctype="multipart/form-data" class="admin-form admin-settings-grid">
@@ -14,7 +14,8 @@
       @if($appearance->desktop_logo_path)
         <img src="{{ asset($appearance->desktop_logo_path) }}" alt="Yüklü masaüstü logosu" height="80">
       @else
-        <p>Henüz özel logo yüklenmemiş. Mağaza adı ve genel alışveriş simgesi gösteriliyor.</p>
+        <img src="{{ asset(\App\Models\ShopAppearance::DEFAULT_DESKTOP_LOGO) }}" alt="Varsayılan NEWTIC masaüstü logosu" width="240" height="60">
+        <p>Varsayılan NEWTIC yatay logosu kullanılıyor.</p>
       @endif
     </div>
     <label class="admin-full">
@@ -28,7 +29,8 @@
       @if($appearance->mobile_logo_path)
         <img src="{{ asset($appearance->mobile_logo_path) }}" alt="Yüklü mobil logosu" height="80">
       @else
-        <p>Henüz özel logo yüklenmemiş. Genel mağaza simgesi gösteriliyor.</p>
+        <img src="{{ asset(\App\Models\ShopAppearance::DEFAULT_MOBILE_LOGO) }}" alt="Varsayılan NEWTIC mobil logosu" width="80" height="80">
+        <p>Varsayılan NEWTIC kare logosu kullanılıyor.</p>
       @endif
     </div>
     <label class="admin-full">

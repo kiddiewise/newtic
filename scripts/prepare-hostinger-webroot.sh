@@ -51,7 +51,7 @@ foreach (["resources/css/app.css" => "css", "resources/js/app.js" => "js"] as $n
 ' || fail "Incomplete or malformed Vite build."
 test -s "$APP/public/build/newtic-revision.txt" ||
   fail "Compiled frontend release marker missing; use the matching GitHub Actions artifact."
-test "$(cat "$APP/public/build/newtic-revision.txt")" = "$(git -C "$APP" rev-parse HEAD)" ||
+test "$(cat "$APP/public/build/newtic-revision.txt")" = "$(if git -C "$APP" rev-parse --verify HEAD >/dev/null 2>&1; then git -C "$APP" rev-parse HEAD; else cat "$APP/.newtic-release-revision"; fi)" ||
   fail "Compiled frontend does not match the installed code revision."
 
 # Use a real public storage directory for upload assets as Hostinger may

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#092037">
+  <link rel="icon" type="image/webp" href="{{ asset(\App\Models\ShopAppearance::current()->compactLogo()) }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
@@ -13,6 +14,7 @@
   @include('admin.partials.critical-styles')
 </head>
 @php
+  $adminAppearance = \App\Models\ShopAppearance::current();
   $adminAuthenticated = auth()->check() && auth()->user()->is_admin;
   $pendingReviewCount = $adminAuthenticated
     ? \App\Models\ProductReview::query()->where('status', 'pending')->count()
@@ -59,8 +61,8 @@
   <div class="admin-sidebar-backdrop" data-admin-sidebar-backdrop hidden></div>
   <aside class="admin-sidebar" id="admin-sidebar" aria-label="Yönetim menüsü" data-admin-sidebar>
     <a href="{{ route('admin.dashboard') }}" class="admin-sidebar-brand" aria-label="NEWTIC Genel Bakış">
-      <span class="admin-sidebar-symbol"><x-admin-icon name="bag" /></span>
-      <span>NEWTIC <small>Yönetim Paneli</small></span>
+      <span class="admin-sidebar-logo-surface"><img class="admin-sidebar-brand-logo" src="{{ asset($adminAppearance->desktopLogo()) }}" alt="NEWTIC" width="150" height="38"></span>
+      <span class="admin-sidebar-brand-caption">Yönetim Paneli</span>
     </a>
     <div class="admin-sidebar-scroll">
       <div class="admin-menu-caption">ANA MENÜ</div>
@@ -109,6 +111,7 @@
     <header class="admin-topbar">
       <div class="admin-topbar-inner">
         <button class="admin-menu-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Menüyü aç" data-admin-menu-toggle><x-admin-icon name="menu" /></button>
+        <img class="admin-topbar-brandmark" src="{{ asset($adminAppearance->compactLogo()) }}" alt="" width="30" height="30">
         <div class="admin-topbar-heading"><strong>@yield('topbar', 'NEWTIC Yönetim')</strong><small>Mağazanın kontrol merkezi</small></div>
         <form class="admin-global-search" action="{{ route('admin.search') }}" method="GET" role="search">
           <x-admin-icon name="search" />
@@ -135,7 +138,7 @@
       @endif
       @yield('content')
     </main>
-    <footer class="admin-footer">NEWTIC · {{ \App\Support\StoreIdentity::name() }} · Yönetim Paneli</footer>
+    <footer class="admin-footer"><img class="admin-footer-brandmark" src="{{ asset($adminAppearance->compactLogo()) }}" width="22" height="22" alt=""> NEWTIC · {{ \App\Support\StoreIdentity::name() }} · Yönetim Paneli</footer>
   </div>
 </div>
 @else

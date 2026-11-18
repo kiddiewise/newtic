@@ -91,6 +91,13 @@ jobs:
           trap - EXIT
       - name: Test Turkish phone formatter
         run: node --test tests/js/*.test.mjs
+      - name: Verify NEWTIC standard WebP brand assets
+        run: |
+          set -euo pipefail
+          file --mime-type public/assets/branding/newtic-logo.webp | grep -Fq image/webp
+          file --mime-type public/assets/branding/newtic-mark.webp | grep -Fq image/webp
+          test -s public/assets/branding/newtic-logo.webp
+          test -s public/assets/branding/newtic-mark.webp
       - name: Verify admin CSS is present in compiled Vite assets
         run: |
           set -euo pipefail
@@ -183,6 +190,30 @@ jobs:
           path: newtic-install-assets.tar.gz
           if-no-files-found: error
           retention-days: 14
+      - name: Package complete NEWTIC first-install release (main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/newtic-package/NEWTIC"
+          mkdir -p "$ROOT"
+          git archive --format=tar HEAD | tar -xf - -C "$ROOT"
+          cp -a public/build "$ROOT/public/build"
+          printf '%s\n' "$GITHUB_SHA" > "$ROOT/.newtic-release-revision"
+          test -s "$ROOT/public/assets/branding/newtic-logo.webp"
+          test -s "$ROOT/public/assets/branding/newtic-mark.webp"
+          test "$(cat "$ROOT/public/build/newtic-revision.txt")" = "$GITHUB_SHA"
+          (cd "$RUNNER_TEMP/newtic-package" && zip -qr "$GITHUB_WORKSPACE/newtic-complete-install.zip" NEWTIC)
+          unzip -p newtic-complete-install.zip NEWTIC/.newtic-release-revision | grep -Fxq "$GITHUB_SHA"
+          unzip -p newtic-complete-install.zip NEWTIC/public/assets/branding/newtic-logo.webp | cmp - public/assets/branding/newtic-logo.webp
+          unzip -p newtic-complete-install.zip NEWTIC/public/assets/branding/newtic-mark.webp | cmp - public/assets/branding/newtic-mark.webp
+      - name: Upload complete NEWTIC first-install release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-complete-install
+          path: newtic-complete-install.zip
+          if-no-files-found: error
+          retention-days: 30
       - name: Package verified frontend for staging
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |

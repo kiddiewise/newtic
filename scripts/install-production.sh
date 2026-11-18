@@ -26,6 +26,19 @@ test -f artisan && test -f composer.json && test -f .env.example ||
   fail "Run this command inside a NEWTIC checkout."
 test -f .env || fail "Missing .env. Copy .env.example and configure THIS store before proceeding."
 test -s composer.lock || fail "Missing composer.lock: use a reviewed, fully locked NEWTIC release."
+# The portable CI-verified ZIP includes its revision without a Git checkout.
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  SOURCE_REVISION="$(git rev-parse HEAD)"
+elif [[ -s .newtic-release-revision ]]; then
+  SOURCE_REVISION="$(cat .newtic-release-revision)"
+  [[ "$SOURCE_REVISION" =~ ^[0-9a-f]{40}$ ]] ||
+    fail "Invalid packaged NEWTIC release revision."
+else
+  fail "Unknown source revision. Use a Git checkout or verified release ZIP."
+fi
+for name in newtic-logo.webp newtic-mark.webp; do
+  test -s "public/assets/branding/$name" || fail "Missing standard NEWTIC WebP logo: $name"
+done
 command -v php >/dev/null 2>&1 || fail "PHP CLI 8.3+ is required."
 command -v composer >/dev/null 2>&1 || fail "Composer is required."
 composer validate --strict --no-check-publish >/dev/null ||
@@ -109,7 +122,7 @@ if [[ ! -f public/build/manifest.json && -n "$ASSET_BUNDLE" ]]; then
   fi
   tar -tzf "$ASSET_BUNDLE" | grep -Fxq 'build/newtic-revision.txt' ||
     fail "Frontend archive lacks matching revision metadata."
-  EXPECTED="$(git rev-parse HEAD)"
+  EXPECTED="$SOURCE_REVISION"
   BUNDLE_REVISION="$(tar -xOf "$ASSET_BUNDLE" build/newtic-revision.txt)"
   [[ "$BUNDLE_REVISION" == "$EXPECTED" ]] ||
     fail "Frontend build does not match this Git commit; download the assets from its successful CI run."
@@ -122,13 +135,13 @@ if [[ ! -f public/build/manifest.json ]]; then
   note "Compiling storefront assets with npm."
   npm install --ignore-scripts --no-audit --no-fund
   npm run build
-  git rev-parse HEAD > public/build/newtic-revision.txt
+  printf '%s\n' "$SOURCE_REVISION" > public/build/newtic-revision.txt
 fi
 
 test -f public/build/manifest.json || fail "Compiled Vite manifest missing."
 test -s public/build/newtic-revision.txt ||
   fail "Missing frontend revision marker. Use a fresh CI build or compile from this Git commit."
-[[ "$(cat public/build/newtic-revision.txt)" == "$(git rev-parse HEAD)" ]] ||
+[[ "$(cat public/build/newtic-revision.txt)" == "$SOURCE_REVISION" ]] ||
   fail "Frontend build revision differs from checked-out NEWTIC code."
 APP="$APP" php -r '
 $m = json_decode(file_get_contents(getenv("APP")."/public/build/manifest.json"), true);
