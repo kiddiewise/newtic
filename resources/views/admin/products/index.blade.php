@@ -49,7 +49,13 @@
             <span><x-admin-icon name="chart" /> {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</span>
           </div>
         </div>
-        <a class="admin-secondary" href="{{ route('admin.products.edit', $product) }}"><x-admin-icon name="settings" /> Düzenle</a>
+        <div class="category-tree-actions">
+          <a class="admin-secondary" href="{{ route('admin.products.edit', $product) }}"><x-admin-icon name="settings" /> Düzenle</a>
+          <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Bu ürünü kalıcı olarak silmek istiyor musunuz? Sipariş geçmişi bulunan ürünler silinemez.')">
+            @csrf @method('DELETE')
+            <button class="admin-danger" type="submit">Sil</button>
+          </form>
+        </div>
       </article>
     @empty
       <div class="admin-empty"><x-admin-icon name="package" /><strong>Bu filtrede ürün bulunamadı.</strong>

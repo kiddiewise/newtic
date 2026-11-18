@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC customer-photo support release: sync the verified order-upload module to Sinay Design.
+# NEWTIC admin catalog delete and domain-aware payment/shipping settings release to Sinay Design.
 
 on:
   push:

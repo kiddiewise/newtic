@@ -27,6 +27,10 @@
       <div class="category-tree-actions">
         <a class="admin-secondary" href="{{ route('admin.categories.create', ['parent_id' => $category->id]) }}">+ Alt kategori</a>
         <a class="admin-secondary" href="{{ route('admin.categories.edit', $category) }}">Düzenle</a>
+        <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Bu kategoriyi kalıcı olarak silmek istiyor musunuz? Bağlı ürün veya alt kategorisi varsa silinemez.')">
+          @csrf @method('DELETE')
+          <button class="admin-danger" type="submit">Sil</button>
+        </form>
       </div>
     </div>
   @empty

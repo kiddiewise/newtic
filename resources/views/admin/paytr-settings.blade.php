@@ -24,10 +24,6 @@
     </div>
     <span class="paytr-setup-pill">{{ $testEnabled ? 'Test modu açık' : ($configured ? 'Kayıtlı · Doğrulanmadı' : 'Kurulum gerekli') }}</span>
   </div>
-  <div class="paytr-setup-notice">
-    <x-admin-icon name="info" />
-    <span><strong>Güvenlik:</strong> PAYTR kart ödemeleri yalnızca bu Hostinger test alan adında ve test modunda açılabilir. Gerçek tahsilat devre dışıdır. Havale/EFT etkilenmez.</span>
-  </div>
 </section>
 
 <section class="admin-panel paytr-test-control" aria-label="PAYTR test ödemesini etkinleştir">
@@ -50,7 +46,7 @@
   @endif
   <div class="paytr-callback-box">
     <strong>PAYTR Bildirim URL</strong>
-    <code>https://{{ \App\Support\PaytrTestAccess::HOST }}/odeme/paytr/bildirim</code>
+    <code>{{ route('checkout.paytr.callback') }}</code>
     <small>PAYTR Mağaza Paneli → Destek &amp; Kurulum → Ayarlar bölümüne bu HTTPS bildirim adresini tanımlayın. Bu olmadan test ödemeniz tamamlanmış sayılmaz.</small>
   </div>
 </section>
@@ -96,12 +92,6 @@
       <small><x-admin-icon name="check" /> {{ $hasSalt ? 'Kayıtlı ve şifreli · Boş bırakırsanız mevcut anahtar korunur.' : 'Henüz kayıtlı değil · Şifreli saklanır.' }}</small>
     </label>
 
-    <div class="paytr-secrets-warning">
-      <x-admin-icon name="info" />
-      <span>Parola ve gizli anahtar <strong>kaydedildikten sonra ekranda görüntülenmez.</strong>
-        Yeni Mağaza No girerseniz iki gizli bilgiyi de tekrar doldurun.
-        Anahtarları sohbet mesajı, GitHub veya ekran görüntüsü ile paylaşmayın.</span>
-    </div>
     <div class="admin-form-actions paytr-form-actions">
       <span><x-admin-icon name="settings" /> Şifreli kayıt · Yalnızca yöneticiler</span>
       <button class="admin-primary" type="submit"><x-admin-icon name="check" /> Bilgileri güvenle kaydet</button>
@@ -109,27 +99,5 @@
   </form>
 </section>
 
-<section class="admin-panel paytr-setup-next" aria-labelledby="paytr-next-title">
-  <div class="paytr-section-heading">
-    <div>
-      <span class="paytr-step">03 / SIRADAKİ ADIMLAR</span>
-      <h2 id="paytr-next-title">Ödeme bağlantısı için kontrol listesi</h2>
-    </div>
-  </div>
-  <div class="paytr-checklist">
-    <div><span class="paytr-check-icon {{ $configured ? 'is-done' : '' }}"><x-admin-icon name="{{ $configured ? 'check' : 'clock' }}" /></span>
-      <span><strong>Mağaza bilgileri</strong><small>{{ $configured ? 'Kaydedildi; gerçek PAYTR bağlantısı henüz doğrulanmadı.' : 'Önce üç mağaza bilgisini kaydedin.' }}</small></span></div>
-    <div><span class="paytr-check-icon"><x-admin-icon name="clock" /></span>
-      <span><strong>1. Adım — iFrame token</strong><small>Laravel üzerinden güvenli POST, tutar ve sepet doğrulaması.</small></span></div>
-    <div><span class="paytr-check-icon"><x-admin-icon name="clock" /></span>
-      <span><strong>2. Adım — Ödeme bildirim URL'si</strong><small>PAYTR'nin gönderdiği imzalı POST sonucunun tek sefer işlenmesi ve yalnızca OK yanıtı.</small></span></div>
-    <div><span class="paytr-check-icon"><x-admin-icon name="clock" /></span>
-      <span><strong>Test ve canlıya geçiş</strong><small>Başarılı / başarısız test, stok ve tekrar eden bildirim kontrolleri tamamlanmadan kartlı ödeme açılmaz.</small></span></div>
-  </div>
-  <p class="admin-description">Bu ayar sayfası PAYTR'ye API isteği göndermez. Test modunu açtıktan sonra checkout üzerinden bir test ödemesi yaparak entegrasyonu doğrulayabilirsiniz.</p>
-  <div class="paytr-official-links">
-    <a href="https://dev.paytr.com/iframe-api/iframe-api-1-adim" target="_blank" rel="noopener noreferrer">PAYTR iFrame API 1. Adım <x-admin-icon name="external-link" /></a>
-    <a href="https://dev.paytr.com/iframe-api/iframe-api-2-adim" target="_blank" rel="noopener noreferrer">PAYTR iFrame API 2. Adım <x-admin-icon name="external-link" /></a>
-  </div>
-</section>
+
 @endsection

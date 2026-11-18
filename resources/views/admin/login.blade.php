@@ -13,7 +13,6 @@
         <label>Şifre<input name="password" type="password" autocomplete="current-password" required></label>
         <button type="submit" class="admin-primary">Giriş yap</button>
       </form>
-      <p class="admin-description admin-muted-note">İlk yönetici kullanıcı sunucuda <code>php artisan newtic:admin</code> komutuyla oluşturulur.</p>
     </div>
   </div>
 @endsection

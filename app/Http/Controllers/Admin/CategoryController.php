@@ -9,6 +9,7 @@ use App\Support\UniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -80,6 +81,47 @@ class CategoryController extends Controller
         }
 
         return back()->with('success', 'Kategori güncellendi.');
+    }
+
+
+    /**
+     * Keep products and the category tree intact; delete only an empty leaf.
+     * Existing banner/category files are cleared after the database commit.
+     */
+    public function destroy(Category $category): RedirectResponse
+    {
+        $paths = DB::transaction(function () use ($category): array {
+            $locked = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->children()->exists()) {
+                throw ValidationException::withMessages([
+                    'delete' => 'Bu kategorinin alt kategorileri var. Önce alt kategorileri taşıyın veya silin.',
+                ]);
+            }
+            if ($locked->products()->exists()
+                || DB::table('category_product')->where('category_id', $locked->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'delete' => 'Bu kategoriye bağlı ürünler var. Silmeden önce ürünleri başka kategoriye taşıyın.',
+                ]);
+            }
+
+            $paths = collect([$locked->image_path]);
+            foreach ($locked->banners as $banner) {
+                $paths->push($banner->desktop_image_path, $banner->mobile_image_path);
+            }
+            $locked->delete();
+
+            return $paths->filter(fn ($path) => is_string($path)
+                && (str_starts_with($path, 'storage/categories/')
+                    || str_starts_with($path, 'storage/category-banners/')))
+                ->unique()->values()->all();
+        }, 3);
+
+        foreach ($paths as $path) {
+            Storage::disk('public')->delete(substr($path, strlen('storage/')));
+        }
+
+        return redirect()->route('admin.categories.index')->with('success', 'Kategori silindi.');
     }
 
     private function validated(Request $request, ?Category $category = null): array

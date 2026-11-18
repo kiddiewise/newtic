@@ -39,14 +39,12 @@
         placeholder="{{ $configured ? 'Kaydedildi · Değiştirmek için yeni anahtar girin' : 'Paneldeki API anahtarını buraya girin' }}">
       <small>{{ $configured ? 'Anahtar şifreli saklanıyor. Boş bırakırsan mevcut anahtar korunur.' : 'Ayarlar → Satış Kanalları / API bölümünden alabilirsin.' }}</small>
     </label>
-    <p class="ship-hint">API anahtarını WhatsApp, sohbet, ekran görüntüsü veya GitHub üzerinden paylaşma. Yeni anahtar kaydedildiğinde test gönderileri otomatik kapatılır; bağlantıyı tekrar doğrulaman gerekir.</p>
     <button class="admin-primary" type="submit"><x-admin-icon name="check"/> Bilgileri güvenle kaydet</button>
   </form>
 </section>
 
 <section class="admin-panel">
   <div class="admin-panel-title"><h2>2. Kargo firmaları ve depolar</h2><span>{{ $lastCheckedAt ? $lastCheckedAt->format('d.m.Y H:i') : 'Henüz senkronize edilmedi' }}</span></div>
-  <p class="admin-description">Kargo Entegratör panelinde önce DHL hesabını ve gönderici deponu tanımla. NEWTIC, oradaki kayıtları API üzerinden okur; DHL şifreni NEWTIC'e ayrıca girmen gerekmez.</p>
   @if($configured)
     <form method="POST" action="{{ route('admin.shipping-integrations.sync') }}">
       @csrf
@@ -88,8 +86,6 @@
         {{ $enabled ? 'Dummy Kargo testlerini kapat' : 'Dummy Kargo testlerini etkinleştir' }}
       </button>
     </form>
-  @else
-    <p class="ship-info">Bağlantı kurulup en az bir Dummy Kargo hesabı ve depo senkronize edildikten sonra test etkinleştirilebilir. Yalnızca Hostinger test alan adında kullanılabilir.</p>
   @endif
   <div class="ship-callback-line">
     <strong>Kargo durum bildirim adresi</strong>

@@ -3,7 +3,7 @@
 # Called by Hostinger hPanel every 15 minutes; never creates a shipment.
 set -eu
 
-APP="/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+APP="$(CDPATH= cd "$(dirname "$0")/.." && pwd)"
 LOG="$APP/storage/logs/shipping-cron-health.log"
 
 # Both visible hPanel stdout and a private timestamped heartbeat; no credentials,

@@ -95,6 +95,37 @@ class ProductController extends Controller
         return back()->with('success', 'Ürün güncellendi.');
     }
 
+
+    /**
+     * Remove an unsold SKU without changing existing order records. Sold
+     * products must instead be unpublished to preserve purchase history.
+     */
+    public function destroy(Product $product): RedirectResponse
+    {
+        $paths = DB::transaction(function () use ($product): array {
+            $locked = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+
+            if (DB::table('order_items')->where('product_id', $locked->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'delete' => 'Sipariş geçmişinde bulunan ürün silinemez. Bunun yerine ürünü pasife alın.',
+                ]);
+            }
+
+            $paths = $locked->images()->pluck('path')->push($locked->image_path)
+                ->filter(fn ($path) => is_string($path) && str_starts_with($path, 'storage/products/'))
+                ->unique()->values()->all();
+            $locked->delete();
+
+            return $paths;
+        }, 3);
+
+        foreach ($paths as $path) {
+            Storage::disk('public')->delete(substr($path, strlen('storage/')));
+        }
+
+        return redirect()->route('admin.products.index')->with('success', 'Ürün silindi.');
+    }
+
     public function destroyImage(Product $product, ProductImage $image): RedirectResponse
     {
         abort_unless($image->product_id === $product->id, 404);

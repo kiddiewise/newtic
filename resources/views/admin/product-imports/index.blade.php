@@ -16,7 +16,6 @@
     <li><strong>Tüm sütunlar, tüm ürün tipleri, tüm kategoriler</strong> seçili olsun. <strong>Özel metaları da dışa aktar</strong> seçeneğini işaretle.</li>
     <li><strong>CSV oluştur</strong> diyerek dosyayı indir ve aşağıdan yükle. Eski mağaza bu sırada çalışmaya devam eder.</li>
   </ol>
-  <p class="import-note">WooCommerce'in kendi CSV formatı desteklenir. Parçalı, tekrar başlatılabilir aktarım yapılır; ürünlerin farklı gramajları tek üründe birleştirilmez.</p>
 </section>
 <section class="admin-panel import-upload">
   <div class="admin-panel-title"><h2>CSV dosyasını yükle</h2><span>En fazla 25 MB / 10.000 satır</span></div>
