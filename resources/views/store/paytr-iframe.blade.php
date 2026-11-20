@@ -21,7 +21,7 @@
       <h2 id="paytr-form-title">Ödeme ekranı</h2>
       @if($token)
         <div class="paytr-frame-viewport">
-          <iframe src="https://www.paytr.com/odeme/guvenli/{{ $token }}"
+          <iframe src="https://www.paytr.com/odeme/guvenli/{{ rawurlencode($token) }}"
             id="paytriframe" name="paytriframe" title="PAYTR güvenli test kartı ödeme formu"
             loading="eager" referrerpolicy="no-referrer"
             scrolling="no" style="display:block;width:100%;min-height:520px;border:0"></iframe>

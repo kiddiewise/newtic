@@ -134,7 +134,11 @@ final class PaytrTokenService
         }
         if (($json['status'] ?? null) !== 'success'
             || ! is_string($json['token'] ?? null)
-            || ! preg_match('/^[A-Za-z0-9]{16,256}$/D', $json['token'])) {
+            // PAYTR returns an opaque string. Its value is not guaranteed to
+            // be alphanumeric; base64 tokens contain +, / or =. Enforce
+            // length/control character safety and URI-encode on rendering.
+            || strlen($json['token']) < 16 || strlen($json['token']) > 256
+            || preg_match('/[\\x00-\\x20\\x7F]/', $json['token'])) {
             throw new PaytrTokenException('invalid_token_response');
         }
 

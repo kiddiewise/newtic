@@ -334,4 +334,40 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('pending_payment', $order->fresh()->status);
     }
 
+    public function test_realistic_paytr_opaque_token_is_accepted_and_uri_encoded(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+
+        // The provider's opaque value is not guaranteed to be alphanumeric:
+        // '+' '/' and '=' are legitimate token characters.
+        $opaque = str_repeat('A', 40).'+/=_-';
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response(['status' => 'success', 'token' => $opaque], 200)
+        ]);
+
+        $this->get(route('checkout.paytr.frame', $order))->assertOk()
+            ->assertSee('www.paytr.com/odeme/guvenli/'.rawurlencode($opaque), false)
+            ->assertDontSee('Ödeme formu açılamadı')
+            ->assertDontSee('invalid_token_response');
+        Http::assertSentCount(1);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
+    public function test_control_characters_in_provider_token_are_rejected_without_leaking(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+        $invalidOpaque = str_repeat('A', 40)."\n";
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response(['status' => 'success', 'token' => $invalidOpaque], 200)
+        ]);
+
+        $this->get(route('checkout.paytr.frame', $order))->assertOk()
+            ->assertSee('(invalid_token_response)')
+            ->assertDontSee('www.paytr.com/odeme/guvenli/')
+            ->assertDontSee($invalidOpaque);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
 }

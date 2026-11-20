@@ -191,6 +191,7 @@ class PaytrGatewayFoundationTest extends TestCase
                 && ($body['currency'] ?? null) === 'TL'
                 && ($body['no_installment'] ?? null) === '1'
                 && ($body['test_mode'] ?? null) === '1'
+                && ($body['debug_on'] ?? null) === '1'
                 && ($body['paytr_token'] ?? null) === PaytrSignature::iframeToken(
                     $body, 'test_secret_key_demo_only', 'test_secret_salt_demo_only'
                 )

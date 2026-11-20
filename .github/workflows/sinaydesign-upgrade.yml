@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC PAYTR sandbox token diagnosis and public-IP correction - validated Sinay release.
+# NEWTIC PAYTR opaque token URI encoding correction and sandbox gateway diagnostics - validated Sinay release.
 
 on:
   push:
