@@ -1,0 +1,57 @@
+name: Diagnose NEWTIC staging banner upload capacity
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/banner-upload-diagnostics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Prepare authenticated SSH (no secret output)
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-diagnostics
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-diagnostics ~/.ssh/known_hosts
+      - name: Read-only upload limits and recent error classes
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-diagnostics -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
+            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          echo "=== Read-only NEWTIC banner upload diagnostics ==="
+          echo "deployed_revision=$(git rev-parse --short HEAD)"
+          php -r '
+          foreach (["upload_max_filesize","post_max_size","max_file_uploads","memory_limit","max_input_time","max_execution_time","file_uploads","upload_tmp_dir"] as $key) {
+            $value = ini_get($key);
+            echo $key."=".($key === "upload_tmp_dir" ? ($value ? "custom" : "system-default") : $value).PHP_EOL;
+          }'
+          echo "webroot_htaccess_php_values:"
+          for path in "$WEB/.htaccess" "$WEB/.user.ini"; do
+            if test -f "$path"; then grep -Ei '^(php_value|upload_max_filesize|post_max_size|memory_limit|max_input_time|upload_tmp_dir)' "$path" | sed -E 's/^/  /' || true; else echo "  $(basename "$path"): absent"; fi
+          done
+          echo "file system write access:"
+          for path in "$APP/storage/app/public" "$WEB/storage"; do
+            test -w "$path" && echo "  writable" || echo "  not_writable"
+          done
+          echo "recent Laravel error classes (no log lines or private data):"
+          if test -f "$APP/storage/logs/laravel.log"; then
+            tail -n 600 "$APP/storage/logs/laravel.log" \
+              | grep -Eo 'PostTooLargeException|ValidationException|QueryException|Permission denied|UnableToWriteFile|UploadException|FileException|Allowed memory size|SQLSTATE\[[A-Z0-9]+\]' \
+              | sort | uniq -c || true
+          fi
+          REMOTE
