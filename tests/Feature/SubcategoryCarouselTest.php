@@ -89,8 +89,8 @@ final class SubcategoryCarouselTest extends TestCase
         $previous = -1;
         for ($i = 1; $i <= 8; $i++) {
             $url = route('category.show', 'alt-kategori-'.$i);
-            $this->assertSame(1, substr_count($html, 'href="'.$url.'"'));
-            $next = strpos($html, 'Alt kategori '.$i, $previous + 1);
+            $this->assertSame(1, substr_count($html, '<a href="'.$url.'" class="category-child-card"'));
+            $next = strpos($html, '<strong>Alt kategori '.$i.'</strong>', $previous + 1);
             $this->assertNotFalse($next);
             $this->assertGreaterThan($previous, $next);
             $previous = $next;
