@@ -55,3 +55,21 @@ jobs:
               | sort | uniq -c || true
           fi
           REMOTE
+          echo "=== Anonymous multipart banner POST over HTTP/1.1 and HTTP/2 (no auth, cannot create records) ==="
+          python3 - <<'PY'
+          import os
+          for name in ('desktop','mobile'):
+              with open('/tmp/newtic-probe-' + name + '.bin','wb') as f:
+                  f.write(os.urandom(4 * 1024 * 1024))
+          PY
+          SITE="https://powderblue-dinosaur-538060.hostingersite.com/admin/categories/28/banners"
+          for mode in --http1.1 --http2; do
+            set +e
+            curl "$mode" -sS -o /dev/null --connect-timeout 10 --max-time 40 \
+              -w "protocol=$mode status=%{http_code} http_version=%{http_version} bytes_sent=%{size_upload} time=%{time_total}\n" \
+              -F 'desktop_image=@/tmp/newtic-probe-desktop.bin;type=image/webp' \
+              -F 'mobile_image=@/tmp/newtic-probe-mobile.bin;type=image/webp' "$SITE"
+            echo "curl_exit_code=$?"
+            set -e
+          done
+          rm -f /tmp/newtic-probe-*.bin
