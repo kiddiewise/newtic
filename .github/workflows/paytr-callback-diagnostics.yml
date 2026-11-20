@@ -1,0 +1,77 @@
+name: Diagnose PAYTR callback handling safely
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paytr-callback-diagnostics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Configure authenticated read-only SSH connection
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/paytr-inspect
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/paytr-inspect ~/.ssh/known_hosts
+      - name: Inspect non-sensitive callback state and server error classes
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/paytr-inspect -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
+            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          cd "$APP"
+          echo "deployed_revision=$(git rev-parse --short HEAD)"
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          echo 'configuration_staging='.(parse_url(config('app.url'), PHP_URL_HOST) === 'powderblue-dinosaur-538060.hostingersite.com' ? 'yes':'no').PHP_EOL;
+          echo 'callback_gate='.(config('newtic.paytr_webhooks_enabled')?'on':'off').PHP_EOL;
+          $s = App\Models\PaytrSetting::find(1);
+          echo 'settings_enabled='.(($s?->is_enabled && $s?->test_mode && $s?->hasCredentials())?'yes':'no').PHP_EOL;
+          foreach ([31,32,33] as $id) {
+            $o=App\Models\Order::find($id);
+            echo 'order_'.$id.'_exists='.($o?'yes':'no').PHP_EOL;
+            if(!$o) continue;
+            echo 'order_'.$id.'_status='.$o->status.PHP_EOL;
+            echo 'order_'.$id.'_test='.($o->is_test?'yes':'no').PHP_EOL;
+            $attempts=$o->paytrAttempts()->get();
+            echo 'order_'.$id.'_attempts='.$attempts->count().PHP_EOL;
+            foreach($attempts as $a) {
+              echo 'order_'.$id.'_attempt_'.$a->id.'_status='.$a->status.PHP_EOL;
+              echo 'order_'.$id.'_attempt_'.$a->id.'_same_total='.($a->amount_cents===$o->total_cents?'yes':'no').PHP_EOL;
+            }
+          }
+          PHP
+          echo "== Sanitize most recent Laravel exception types (never copy exception detail) =="
+          if test -f storage/logs/laravel.log; then
+            tail -n 2500 storage/logs/laravel.log \
+            | grep -Eo 'ERROR|CRITICAL|PaytrCallbackController|Invalid PAYTR notification|Unexpected payment context|SQLSTATE\[[A-Z0-9]+\]|Illuminate\\[A-Za-z\\]+Exception|Symfony\\[A-Za-z\\]+Exception' \
+            | sort | uniq -c | tail -n 25 || true
+          fi
+          echo "== One invalid-signature callback route smoke test, no data changes =="
+          curl --http1.1 --max-time 18 --connect-timeout 8 -sS -o /dev/null \
+            -w 'callback_bad_signature_http=%{http_code} redirect_count=%{num_redirects}\n' \
+            -X POST \
+            --data-urlencode 'merchant_oid=NTPAYTRPROBESENTINEL' \
+            --data-urlencode 'status=success' \
+            --data-urlencode 'total_amount=12345' \
+            --data-urlencode 'hash=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' \
+            --data-urlencode 'test_mode=1' \
+            --data-urlencode 'payment_type=card' \
+            --data-urlencode 'currency=TL' \
+            'https://powderblue-dinosaur-538060.hostingersite.com/odeme/paytr/bildirim'
+          REMOTE
