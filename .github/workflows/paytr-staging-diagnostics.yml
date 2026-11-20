@@ -104,6 +104,13 @@ jobs:
               $result = $response->json();
               echo "provider_token_status=".(($result['status'] ?? '') === 'success' ? 'success'
                   : (($result['status'] ?? '') === 'failed' ? 'failed' : 'unknown'))."\n";
+              if (($result['status'] ?? '') === 'success') {
+                  $opaque = $result['token'] ?? null;
+                  echo "shape_string=".$yes(is_string($opaque))."\\n";
+                  echo "shape_length_16_256=".$yes(is_string($opaque) && strlen($opaque) >= 16 && strlen($opaque) <= 256)."\\n";
+                  echo "shape_simple_alnum=".$yes(is_string($opaque) && preg_match('/^[A-Za-z0-9]+$/D', $opaque) === 1)."\\n";
+                  echo "shape_contains_space=".$yes(is_string($opaque) && preg_match('/\\s/', $opaque) === 1)."\\n";
+              }
               if (($result['status'] ?? '') === 'failed') {
                   $reason = (string) ($result['reason'] ?? '');
                   $categories = [
