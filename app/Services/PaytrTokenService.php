@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Exceptions\PaytrTokenException;
 use App\Models\Order;
 use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
 use App\Support\PaytrSignature;
 use App\Support\PaytrTestAccess;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -93,7 +95,7 @@ final class PaytrTokenService
             'max_installment' => '0',
             'currency' => 'TL',
             'test_mode' => '1',
-            'debug_on' => '0',
+            'debug_on' => '1', // Test mode only; reason is classified, never displayed or logged.
             'user_name' => mb_substr($order->customer_name, 0, 60),
             'user_address' => mb_substr($address, 0, 400),
             'user_phone' => mb_substr($order->phone, 0, 20),
@@ -108,19 +110,32 @@ final class PaytrTokenService
         );
 
         // Never log the POST body, secret credentials or returned iframe token.
-        $response = Http::asForm()->acceptJson()
-            ->timeout(20)
-            ->post(self::ENDPOINT, $fields);
-
-        if (! $response->successful()) {
-            throw new RuntimeException('PAYTR bağlantısı başarısız. Daha sonra tekrar deneyin.');
+        try {
+            $response = Http::asForm()->acceptJson()->timeout(20)
+                ->post(self::ENDPOINT, $fields);
+        } catch (ConnectionException $exception) {
+            throw new PaytrTokenException('connection_failed');
         }
 
+        if (! $response->successful()) {
+            throw new PaytrTokenException('gateway_http_error');
+        }
+
+        // PAYTR's test gateway provides a failure reason when debug_on=1.
+        // Convert it to a fixed, non-sensitive class. NEVER log/echo the body.
         $json = $response->json();
-        if (! is_array($json) || ($json['status'] ?? null) !== 'success'
+        if (! is_array($json)) {
+            throw new PaytrTokenException('unexpected_response');
+        }
+        if (($json['status'] ?? null) === 'failed') {
+            throw PaytrTokenException::fromProviderReason(
+                is_string($json['reason'] ?? null) ? $json['reason'] : ''
+            );
+        }
+        if (($json['status'] ?? null) !== 'success'
             || ! is_string($json['token'] ?? null)
             || ! preg_match('/^[A-Za-z0-9]{16,256}$/D', $json['token'])) {
-            throw new RuntimeException('PAYTR test tokenı alınamadı. İşlem onaylanmadı.');
+            throw new PaytrTokenException('invalid_token_response');
         }
 
         return $json['token'];

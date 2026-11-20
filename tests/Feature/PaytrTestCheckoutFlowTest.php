@@ -30,6 +30,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
             'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
             'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
             'HTTPS' => 'on',
+            'REMOTE_ADDR' => '8.8.8.8',
         ]);
     }
 
@@ -267,4 +268,70 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->get('https://polariskursun.com/odeme')->assertOk()
             ->assertDontSee('name="payment_method" value="paytr"', false);
     }
+    public function test_reverse_proxy_customer_ip_is_forwarded_to_paytr_in_test_mode(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+
+        // Shared hosting presents a private reverse proxy as REMOTE_ADDR.
+        // Trusted proxy forwarding supplies the customer's public address.
+        $this->withServerVariables([
+            'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'HTTPS' => 'on',
+            'REMOTE_ADDR' => '10.0.0.10',
+            'HTTP_X_FORWARDED_FOR' => '192.168.1.2, 8.8.4.4, 10.0.0.10',
+        ]);
+
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response(['status' => 'success', 'token' => str_repeat('d', 48)])
+        ]);
+
+        $this->get(route('checkout.paytr.frame', $order))->assertOk()
+            ->assertSee('www.paytr.com/odeme/guvenli/'.str_repeat('d', 48), false);
+
+        Http::assertSent(fn ($request) =>
+            ($request->data()['user_ip'] ?? null) === '8.8.4.4'
+            && ($request->data()['debug_on'] ?? null) === '1'
+            && ($request->data()['test_mode'] ?? null) === '1'
+        );
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
+    public function test_paytr_provider_failure_shows_only_safe_error_code(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response([
+                'status' => 'failed',
+                'reason' => 'Zorunlu alan degeri gecersiz: user_ip TEST_SENSITIVE_NOT_FOR_CUSTOMER',
+            ])
+        ]);
+
+        $this->get(route('checkout.paytr.frame', $order))->assertOk()
+            ->assertSee('customer_ip')
+            ->assertSee('Ödeme formu açılamadı')
+            ->assertDontSee('TEST_SENSITIVE_NOT_FOR_CUSTOMER');
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
+    public function test_invalid_private_ip_cannot_call_paytr_gateway(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+        $this->withServerVariables([
+            'HTTP_HOST' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'SERVER_NAME' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'HTTPS' => 'on',
+            'REMOTE_ADDR' => '127.0.0.1',
+        ]);
+        Http::fake();
+
+        $this->get(route('checkout.paytr.frame', $order))->assertOk()
+            ->assertSee('müşteri bağlantısı doğrulanamadı');
+        Http::assertNothingSent();
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
 }

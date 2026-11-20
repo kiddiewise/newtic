@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\PaytrTokenException;
 use App\Models\Order;
 use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
@@ -213,8 +214,8 @@ class PaytrGatewayFoundationTest extends TestCase
         Http::fake(['https://www.paytr.com/odeme/api/get-token' => Http::response([
             'status' => 'failed', 'reason' => 'Sensitive provider failure',
         ])]);
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('test tokenı alınamadı');
+        $this->expectException(PaytrTokenException::class);
+        $this->expectExceptionMessage('PAYTR test ödeme formu açılamadı');
         app(PaytrTokenService::class)->requestIframeToken(
             $order, $attempt, '203.0.113.15',
             'https://powderblue-dinosaur-538060.hostingersite.com/odeme/basarili',

@@ -26,7 +26,7 @@
             loading="eager" referrerpolicy="no-referrer"
             scrolling="no" style="display:block;width:100%;min-height:520px;border:0"></iframe>
         </div>
-        <script src="https://www.paytr.com/js/iframeResizer.min.js" defer></script>
+        <script src="https://www.paytr.com/js/iframeResizer.min.js?v2" defer></script>
         <script>
           window.addEventListener('load', function () {
             if (typeof window.iFrameResize === 'function') {

@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PaytrTokenException;
 use App\Models\Order;
 use App\Models\PaytrPaymentAttempt;
 use App\Services\PaytrTokenService;
 use App\Support\PaytrTestAccess;
+use App\Support\PaytrClientIp;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 final class PaytrCheckoutController extends Controller
@@ -43,13 +46,21 @@ final class PaytrCheckoutController extends Controller
             } else {
                 try {
                     $token = $service->requestIframeToken(
-                        $order, $attempt, (string) $request->ip(),
+                        $order, $attempt, PaytrClientIp::resolve($request),
                         $this->signedReturn($order, 'success'),
                         $this->signedReturn($order, 'failed'),
                     );
-                } catch (RuntimeException|\InvalidArgumentException $e) {
-                    // Do not expose raw PAYTR responses or configuration details.
-                    $message = 'PAYTR test formu şu anda açılamadı. Ödeme alınmadı. Tekrar deneyin veya PAYTR ayarlarını kontrol edin.';
+                } catch (PaytrTokenException $e) {
+                    // Only a whitelisted failure class, never customer/merchant
+                    // data, gateway text, token, URL or IP address, is recorded.
+                    Log::warning('paytr_iframe_test_failure', ['safe_code' => $e->safeCode]);
+                    $message = 'PAYTR test formu açılamadı ('.$e->safeCode.'). Ödeme alınmadı. Tekrar deneyin.';
+                } catch (\InvalidArgumentException $e) {
+                    Log::warning('paytr_iframe_test_failure', ['safe_code' => 'invalid_checkout_network']);
+                    $message = 'Güvenli ödeme için müşteri bağlantısı doğrulanamadı. Ödeme alınmadı. Tekrar deneyin.';
+                } catch (RuntimeException $e) {
+                    Log::warning('paytr_iframe_test_failure', ['safe_code' => 'test_configuration']);
+                    $message = 'PAYTR test formu henüz açılamadı. Ödeme alınmadı. Test ayarlarını kontrol edin.';
                 }
             }
         }
