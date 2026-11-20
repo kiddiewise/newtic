@@ -1,0 +1,64 @@
+name: Audit PAYTR callback arrival safely (read-only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paytr-callback-intake-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Prepare SSH
+        env:
+          SSH_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          SSH_HOST_KEYS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$SSH_HOST_KEYS"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/newtic-audit
+          printf '%s\n' "$SSH_HOST_KEYS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-audit ~/.ssh/known_hosts
+      - name: Aggregate staging callback logs without printing payloads, IPs or tokens
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-audit -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
+            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          DOMAIN="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com"
+          APP="$DOMAIN/newtic"
+          cd "$APP"
+          echo "deployed_revision=$(git rev-parse --short HEAD)"
+          if test -r storage/logs/laravel.log; then
+            TEMP="$(mktemp)"
+            trap 'rm -f "$TEMP"' EXIT
+            tail -n 8000 storage/logs/laravel.log > "$TEMP"
+            for event in paytr_callback_accepted paytr_callback_rejected; do
+              n="$(grep -Fc "$event" "$TEMP" || true)"
+              printf '%s_count=%s\n' "$event" "$n"
+            done
+            for reason in staging_gate settings_gate invalid_signature invalid_test_mode invalid_payment_context unknown_attempt order_state_mismatch original_amount_mismatch paid_amount_below_order; do
+              n="$(grep -Fc "\"reason\":\"$reason\"" "$TEMP" || true)"
+              printf 'reason_%s_count=%s\n' "$reason" "$n"
+            done
+          else
+            echo "laravel_log_readable=no"
+          fi
+          # Read only access log totals if this shared hosting plan exposes them.
+          # Never print raw lines, IP addresses, request bodies or user agents.
+          for path in "$DOMAIN/logs" "$HOME/.logs"; do
+            test -d "$path" || continue
+            for file in "$path"/access.log "$path"/access_log "$path"/access.log.1; do
+              test -r "$file" || continue
+              echo "access_log_available=yes"
+              count="$(tail -n 5000 "$file" | grep -Fc '/odeme/paytr/bildirim' || true)"
+              echo "callback_route_hits_last_5000=$count"
+            done
+          done
+          echo "audit_complete=yes"
+          REMOTE
