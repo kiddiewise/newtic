@@ -271,7 +271,7 @@ class PaytrGatewayFoundationTest extends TestCase
         $forged = $this->signed($attempt->merchant_oid);
         $forged['hash'] = str_repeat('A', 44);
         $this->post(route('checkout.paytr.callback'), $forged)->assertStatus(403);
-        $this->post(route('checkout.paytr.callback'), $this->signed($attempt->merchant_oid, 'success', '17971'))
+        $this->post(route('checkout.paytr.callback'), $this->signed($attempt->merchant_oid, 'success', '17969'))
             ->assertStatus(422);
 
         $this->post(route('checkout.paytr.callback'), $this->signed('NTUNKNOWN1234'))
@@ -316,4 +316,70 @@ class PaytrGatewayFoundationTest extends TestCase
         $this->post(route('checkout.paytr.callback'), $payload)->assertStatus(422);
         $this->assertSame('pending', $attempt->fresh()->status);
     }
+    public function test_callback_accepts_missing_optional_test_mode_without_replaying_the_order(): void
+    {
+        config()->set('newtic.paytr_webhooks_enabled', true);
+        $setting = $this->credentials();
+        $setting->forceFill(['is_enabled' => true])->save();
+        $order = $this->order();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        $payload = $this->signed($attempt->merchant_oid);
+        unset($payload['test_mode']);
+        $payload['payment_amount'] = (string) $attempt->amount_cents;
+
+        $this->post(route('checkout.paytr.callback'), $payload)->assertOk()->assertSeeText('OK');
+        $this->assertSame('preparing', $order->fresh()->status);
+        $this->assertSame('success', $attempt->fresh()->status);
+        $first = $attempt->fresh()->processed_at?->toISOString();
+        $this->post(route('checkout.paytr.callback'), $payload)->assertOk()->assertSeeText('OK');
+        $this->assertSame($first, $attempt->fresh()->processed_at?->toISOString());
+        $this->assertDatabaseCount('paytr_payment_attempts', 1);
+    }
+
+    public function test_success_callback_accepts_higher_paid_total_but_never_underpayment(): void
+    {
+        config()->set('newtic.paytr_webhooks_enabled', true);
+        $setting = $this->credentials();
+        $setting->forceFill(['is_enabled' => true])->save();
+        $order = $this->order();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        $payload = $this->signed($attempt->merchant_oid, 'success', '18500');
+        $payload['payment_amount'] = (string) $attempt->amount_cents;
+        $this->post(route('checkout.paytr.callback'), $payload)->assertOk()->assertSeeText('OK');
+        $this->assertSame(18500, $attempt->fresh()->paid_total_cents);
+        $this->assertSame('preparing', $order->fresh()->status);
+    }
+
+    public function test_mismatched_unsigned_payment_amount_and_live_test_marker_cannot_approve_order(): void
+    {
+        config()->set('newtic.paytr_webhooks_enabled', true);
+        $setting = $this->credentials();
+        $setting->forceFill(['is_enabled' => true])->save();
+        $order = $this->order();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        $payload = $this->signed($attempt->merchant_oid);
+        $payload['payment_amount'] = '1';
+        $this->post(route('checkout.paytr.callback'), $payload)->assertStatus(422);
+
+        $payload = $this->signed($attempt->merchant_oid);
+        $payload['test_mode'] = '0';
+        $this->post(route('checkout.paytr.callback'), $payload)->assertStatus(422);
+        $this->assertSame('pending', $attempt->fresh()->status);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
+    public function test_missing_test_mode_does_not_bypass_notification_signature_validation(): void
+    {
+        config()->set('newtic.paytr_webhooks_enabled', true);
+        $setting = $this->credentials();
+        $setting->forceFill(['is_enabled' => true])->save();
+        $order = $this->order();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        $payload = $this->signed($attempt->merchant_oid);
+        unset($payload['test_mode']);
+        $payload['hash'] = str_repeat('A', 44);
+        $this->post(route('checkout.paytr.callback'), $payload)->assertStatus(403);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
 }

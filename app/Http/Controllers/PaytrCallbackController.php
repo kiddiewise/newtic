@@ -10,6 +10,7 @@ use App\Support\PaytrTestAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class PaytrCallbackController extends Controller
 {
@@ -18,6 +19,7 @@ final class PaytrCallbackController extends Controller
         // Stage two is installed but DISABLED until the order/checkout workflow
         // and verified PAYTR test transaction have passed acceptance testing.
         if (! PaytrTestAccess::onStaging() || ! config('newtic.paytr_webhooks_enabled', false)) {
+            Log::warning('paytr_callback_rejected', ['reason' => 'staging_gate']);
             return response('PAYTR callback is not active', 503)
                 ->header('Content-Type', 'text/plain; charset=UTF-8');
         }
@@ -25,25 +27,35 @@ final class PaytrCallbackController extends Controller
         $settings = PaytrSetting::query()->find(1);
         if (! $settings?->is_enabled || ! $settings->test_mode
             || ! $settings->hasCredentials()) {
+            Log::warning('paytr_callback_rejected', ['reason' => 'settings_gate']);
             return response('PAYTR integration is not active', 503);
         }
 
         $payload = $request->only([
             'merchant_oid', 'status', 'total_amount', 'hash', 'test_mode',
-            'payment_type', 'currency', 'failed_reason_code', 'failed_reason_msg',
+            'payment_type', 'currency', 'payment_amount', 'failed_reason_code', 'failed_reason_msg',
         ]);
 
         if (! PaytrSignature::notificationIsValid(
             $payload, $settings->merchant_key, $settings->merchant_salt
         )) {
+            // No request body, signature, merchant OID or customer data in logs.
+            Log::warning('paytr_callback_rejected', ['reason' => 'invalid_signature']);
             return response('Invalid PAYTR notification', 403);
         }
 
-        // These are unsigned auxiliary fields. They cannot override data
-        // already verified against the persisted signed payment attempt.
-        if (($payload['test_mode'] ?? null) !== '1'
-            || ($payload['payment_type'] ?? null) !== 'card'
+        // Per PayTR iFrame API 2. Adim, test_mode is OPTIONAL.
+        // The merchant settings, persisted attempt and order still enforce
+        // sandbox-only processing. An explicit live-mode marker is rejected.
+        if (array_key_exists('test_mode', $payload) && (string) $payload['test_mode'] !== '1') {
+            Log::warning('paytr_callback_rejected', ['reason' => 'invalid_test_mode']);
+            return response('Unexpected payment context', 422);
+        }
+        // These unsigned auxiliary fields must not override signed or
+        // persisted data. Payment type and currency are mandatory per API.
+        if (($payload['payment_type'] ?? null) !== 'card'
             || ! in_array(($payload['currency'] ?? null), ['TL', 'TRY'], true)) {
+            Log::warning('paytr_callback_rejected', ['reason' => 'invalid_payment_context']);
             return response('Unexpected payment context', 422);
         }
 
@@ -53,6 +65,7 @@ final class PaytrCallbackController extends Controller
                 ->lockForUpdate()->first();
 
             if (! $attempt) {
+                Log::warning('paytr_callback_rejected', ['reason' => 'unknown_attempt']);
                 return 404;
             }
 
@@ -70,14 +83,26 @@ final class PaytrCallbackController extends Controller
                 || $attempt->currency !== 'TRY'
                 || $attempt->amount_cents !== $order->total_cents
                 || $order->status !== 'pending_payment') {
+                Log::warning('paytr_callback_rejected', ['reason' => 'order_state_mismatch']);
                 return 409;
             }
 
             $total = (int) $payload['total_amount'];
-            // Only successful single-installment payments must equal the
-            // amount sent in step one. Failed notifications may report zero.
+            // The step-2 contract includes payment_amount (the original step-1
+            // amount). It is not in the callback HMAC, so check when provided
+            // against our persisted signed attempt rather than trusting it.
+            if (isset($payload['payment_amount'])
+                && (! preg_match('/^[0-9]{1,16}$/D', (string) $payload['payment_amount'])
+                    || (int) $payload['payment_amount'] !== $attempt->amount_cents)) {
+                Log::warning('paytr_callback_rejected', ['reason' => 'original_amount_mismatch']);
+                return 422;
+            }
+            // PayTR may report total_amount ABOVE payment_amount when
+            // installment differences apply. Never accept underpayments.
+            // Failed callbacks may report zero, but must still be HMAC-signed.
             if ($payload['status'] === 'success'
-                && ($total <= 0 || $total !== $attempt->amount_cents)) {
+                && ($total < $attempt->amount_cents || $total <= 0)) {
+                Log::warning('paytr_callback_rejected', ['reason' => 'paid_amount_below_order']);
                 return 422;
             }
 
@@ -114,6 +139,10 @@ final class PaytrCallbackController extends Controller
 
             return 200;
         }, 3);
+
+        if ($result === 200) {
+            Log::info('paytr_callback_accepted', ['result' => 'ok']);
+        }
 
         return $result === 200
             ? response('OK', 200)->header('Content-Type', 'text/plain; charset=UTF-8')

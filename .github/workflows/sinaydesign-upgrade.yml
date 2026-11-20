@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC PAYTR opaque token URI encoding correction and sandbox gateway diagnostics - validated Sinay release.
+# NEWTIC PayTR callback optional test_mode, safe payment_amount validation and idempotent OK acknowledgement release.
 
 on:
   push:
