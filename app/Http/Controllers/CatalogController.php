@@ -23,6 +23,17 @@ class CatalogController extends Controller
         $breadcrumbs = CategoryHierarchy::ancestors($category, $all);
         $categoryIds = CategoryHierarchy::descendantIds($category, $all);
         $subcategories = $category->activeChildren()->get();
+
+        // A nested category shows only its active siblings in a small sticky
+        // mobile navigation. No root-category pills or unrelated groups.
+        $siblingParent = $category->parent_id
+            ? $all->firstWhere('id', $category->parent_id)
+            : null;
+        $siblingCategories = $siblingParent
+            ? $all->filter(fn (Category $candidate) =>
+                $candidate->parent_id === $siblingParent->id && $candidate->is_active
+            )->values()
+            : collect();
         $banners = $category->banners()->visible()->get();
 
         $products = ProductReviewVisibility::withRatingSummary(Product::query()->with(['options', 'badges']))
@@ -44,7 +55,8 @@ class CatalogController extends Controller
         }
 
         return view('store.category', compact(
-            'category', 'breadcrumbs', 'subcategories', 'banners', 'products'
+            'category', 'breadcrumbs', 'subcategories', 'banners', 'products',
+            'siblingParent', 'siblingCategories'
         ));
     }
 

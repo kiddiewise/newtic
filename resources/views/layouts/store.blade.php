@@ -209,6 +209,9 @@
   </nav>
 </div>
 @endif
+@if(request()->routeIs('category.show') && isset($siblingParent, $siblingCategories) && $siblingCategories->isNotEmpty())
+  @include('store.partials.sticky-sibling-navigation')
+@endif
 
 @yield('content')
 @include('store.partials.quick-cart-sheet')

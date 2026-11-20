@@ -1,0 +1,100 @@
+/* Category siblings: context-aware mobile pill ribbon, independent of main nav.
+   Hidden until the visitor scrolls DOWN past the original search/chip bar. */
+.sticky-sibling-nav{display:none}
+@media(max-width:760px){
+  .sticky-sibling-nav{
+    position:fixed;
+    inset:auto 0 auto 0;
+    top:var(--sticky-sibling-top,66px);
+    display:block;
+    width:100%;
+    z-index:134; /* below fixed header, above normal product cards */
+    padding:8px 0 9px;
+    border-top:1px solid #f0f2f5;
+    border-bottom:1px solid #e6ebf0;
+    background:#fff;
+    box-shadow:0 9px 21px #0920370c;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translate3d(0,-110%,0);
+    transition:transform .24s ease,opacity .20s ease,visibility .24s;
+    will-change:transform;
+  }
+  .sticky-sibling-nav.is-visible{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateZ(0);
+  }
+  .sticky-sibling-pills.mobile-category-pills{
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:9px;
+    margin:0;
+    padding:2px 15px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    white-space:nowrap;
+  }
+  .sticky-sibling-pills::-webkit-scrollbar{display:none}
+  .sticky-sibling-pills .mobile-pill{
+    box-sizing:border-box;
+    flex:0 0 auto;
+    min-height:37px;
+    max-width:min(82vw,350px);
+    height:auto;
+    border:1px solid #e0e5ec;
+    border-radius:999px;
+    background:#fff;
+    color:#52616e;
+    padding:9px 15px;
+    font-family:Montserrat,sans-serif;
+    font-size:12px;
+    font-weight:500;
+    line-height:1.25;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-decoration:none;
+    scroll-snap-align:start;
+  }
+  .sticky-sibling-pills .mobile-pill.is-active{
+    background:#f0f1f9!important;
+    border-color:#afb7ce!important;
+    color:#092037!important;
+    font-weight:650;
+    box-shadow:none!important;
+  }
+  .sticky-sibling-pills .mobile-pill.is-active::before{
+    content:'';
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    background:#f68220;
+    vertical-align:middle;
+    margin-right:6px;
+  }
+  .sticky-sibling-pills .sticky-sibling-all{
+    background:#fafbfc;
+    color:#516273;
+    border-color:#e2e8ee;
+  }
+  .sticky-sibling-pills a:focus-visible{
+    outline:2px solid #092037;
+    outline-offset:2px;
+  }
+  body.mega-menu-open .sticky-sibling-nav{
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .sticky-sibling-nav{transition:none!important}
+  .sticky-sibling-pills{scroll-behavior:auto!important}
+}
