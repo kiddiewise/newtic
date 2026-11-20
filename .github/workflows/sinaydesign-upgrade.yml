@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC responsive subcategory carousel with gentle 3-second autoplay - verified Sinay release.
+# NEWTIC adaptive subcategory carousel release with corrected regression checks - verified Sinay deployment.
 
 on:
   push:
