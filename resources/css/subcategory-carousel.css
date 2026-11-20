@@ -1,0 +1,198 @@
+/* NEWTIC category landing: adaptive child cards, single row and optional auto-scroll.
+   Scope to category page only; no changes to storefront mega menus or admin. */
+.category-landing .category-children-section{
+  --subcat-gap:14px;
+  margin:0 0 26px;
+  min-width:0;
+}
+.category-landing .category-children-grid{
+  gap:var(--subcat-gap);
+}
+.category-landing .category-child-card{
+  min-width:0;
+  text-decoration:none;
+  border:1px solid #e8edf1;
+  border-radius:14px;
+  background:#fff;
+  padding:12px 12px 17px;
+  gap:11px;
+  box-shadow:0 2px 12px #09203705;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.category-landing .category-child-card:hover,
+.category-landing .category-child-card:focus-visible{
+  border-color:#b8c8d7;
+  box-shadow:0 8px 20px #0920370d;
+  transform:translateY(-2px);
+}
+.category-landing .category-child-art{
+  width:100%;
+  max-width:168px;
+  margin-inline:auto;
+  aspect-ratio:1/1;
+  border-radius:12px;
+  background:#f4f7f9;
+}
+.category-landing .category-child-card strong{
+  max-width:100%;
+  font-weight:600;
+  color:#092037;
+  line-height:1.46;
+  overflow-wrap:anywhere;
+  font-size:clamp(.75rem,1.1vw,.88rem);
+}
+.category-landing .category-children-section--count-1 .category-children-grid{
+  display:grid;
+  grid-template-columns:minmax(0,420px);
+}
+.category-landing .category-children-section--count-1 .category-child-card{
+  display:flex;
+  flex-direction:row;
+  text-align:left;
+  align-items:center;
+  justify-content:flex-start;
+  min-height:78px;
+  gap:13px;
+  padding:9px 12px;
+  border-radius:13px;
+  box-shadow:none;
+}
+.category-landing .category-children-section--count-1 .category-child-art{
+  flex:0 0 57px;
+  width:57px;
+  height:57px;
+  border-radius:10px;
+  margin:0;
+}
+.category-landing .category-children-section--count-1 .category-child-card strong{flex:1;font-size:.85rem}
+.category-landing .category-children-section--count-1 .category-child-card::after{
+  content:'›';
+  flex:none;
+  font-size:24px;
+  font-weight:400;
+  color:#71869a;
+  margin-right:3px;
+}
+.category-landing .category-children-section--count-2 .category-children-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  max-width:760px;
+}
+.category-landing .category-children-section--count-3 .category-children-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  max-width:1020px;
+}
+.category-landing .category-children-grid--scrolling{
+  display:flex;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
+  gap:var(--subcat-gap);
+  padding:3px 2px 11px;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:2px;
+  scrollbar-width:none;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.category-landing .category-children-grid--scrolling::-webkit-scrollbar{display:none}
+.category-landing .category-children-grid--scrolling>.category-child-card{
+  flex:0 0 calc((100% - 3 * var(--subcat-gap) - 4px)/4);
+  scroll-snap-align:start;
+  scroll-snap-stop:normal;
+}
+.category-landing .category-children-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:4px 2px 0;
+}
+.category-landing .category-children-toolbar[hidden]{display:none!important}
+.category-landing .category-children-hint{
+  font-size:11px;
+  font-weight:500;
+  color:#718392;
+}
+.category-landing .category-children-controls{display:flex;align-items:center;gap:7px}
+.category-landing .category-children-position{
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+  font-weight:600;
+  color:#566c7c;
+  margin-right:5px;
+}
+.category-landing .category-children-arrow{
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid #e0e7ed;
+  color:#092037;
+  font-size:23px;
+  line-height:1;
+  font-family:Arial,sans-serif;
+  cursor:pointer;
+  transition:background .18s,border-color .18s;
+}
+.category-landing .category-children-arrow:not(:disabled):hover{background:#f1f4f7;border-color:#aebdcb}
+.category-landing .category-children-arrow:disabled{opacity:.3;cursor:default}
+@media(max-width:760px){
+  .category-landing .category-children-section{--subcat-gap:10px;margin-bottom:24px}
+  .category-landing .category-child-card{
+    border:0;
+    border-radius:12px;
+    box-shadow:none;
+    gap:9px;
+    padding:7px 3px 10px;
+  }
+  .category-landing .category-child-card:hover,
+  .category-landing .category-child-card:focus-visible{box-shadow:none;transform:none}
+  .category-landing .category-child-art{
+    max-width:none;
+    border-radius:11px;
+    background:#f3f6f7;
+  }
+  .category-landing .category-child-card strong{
+    font-size:clamp(.68rem,2.75vw,.78rem);
+    font-weight:600;
+    line-height:1.4;
+  }
+  .category-landing .category-children-section--count-1 .category-child-card{
+    padding:8px 11px;
+    border:1px solid #e3eaf0;
+    background:#fafbfc;
+    box-shadow:none;
+  }
+  .category-landing .category-children-section--count-1 .category-children-grid{grid-template-columns:minmax(0,100%)}
+  .category-landing .category-children-section--count-1 .category-child-art{
+    flex-basis:52px;
+    width:52px;
+    height:52px;
+  }
+  .category-landing .category-children-section--count-2 .category-child-art{
+    width:min(100%,132px);
+  }
+  .category-landing .category-children-grid--scrolling{
+    flex-wrap:nowrap;
+    padding:2px 0 9px;
+    scroll-padding-inline:0;
+  }
+  .category-landing .category-children-grid--scrolling>.category-child-card{
+    flex:0 0 calc((100% - 2 * var(--subcat-gap))/2.78);
+  }
+  .category-landing .category-children-toolbar{padding-top:0}
+}
+@media(min-width:761px) and (max-width:1050px){
+  .category-landing .category-children-grid--scrolling>.category-child-card{
+    flex-basis:calc((100% - 2 * var(--subcat-gap) - 4px)/3);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .category-landing .category-child-card,
+  .category-landing .category-children-arrow{transition:none}
+  .category-landing .category-children-grid--scrolling{scroll-behavior:auto}
+}

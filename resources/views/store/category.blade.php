@@ -31,10 +31,15 @@
   </header>
 
   @if($subcategories->isNotEmpty())
-    <nav class="category-children-section" aria-label="{{ $category->name }} alt kategorileri">
-      <div class="category-children-grid">
+    @php $subcategoryCount = $subcategories->count(); @endphp
+    <nav class="category-children-section category-children-section--count-{{ min($subcategoryCount, 4) }}"
+      aria-label="{{ $category->name }} alt kategorileri"
+      @if($subcategoryCount > 3) data-subcategory-carousel data-autoplay-interval="3000" @endif>
+      <div class="category-children-grid{{ $subcategoryCount > 3 ? ' category-children-grid--scrolling' : '' }}"
+        @if($subcategoryCount > 3) data-subcategory-track tabindex="0" aria-label="Alt kategoriler, yatay kaydırılabilir" @endif>
         @foreach($subcategories as $subcategory)
-          <a href="{{ route('category.show', $subcategory->slug) }}" class="category-child-card">
+          <a href="{{ route('category.show', $subcategory->slug) }}" class="category-child-card"
+            @if($subcategoryCount > 3) data-subcategory-slide @endif>
             <span class="category-child-art">
               <img src="{{ asset($subcategory->image_path ?: 'assets/categories/renkli-kursun.svg') }}" alt="" width="320" height="320" loading="lazy">
             </span>
@@ -42,6 +47,16 @@
           </a>
         @endforeach
       </div>
+      @if($subcategoryCount > 3)
+        <div class="category-children-toolbar" data-subcategory-toolbar>
+          <span class="category-children-hint">Diğer kategorileri keşfet</span>
+          <div class="category-children-controls">
+            <span class="category-children-position" aria-hidden="true"><span data-subcategory-current>1</span> / {{ $subcategoryCount }}</span>
+            <button class="category-children-arrow" type="button" data-subcategory-prev aria-label="Önceki alt kategori" disabled>‹</button>
+            <button class="category-children-arrow" type="button" data-subcategory-next aria-label="Sonraki alt kategori">›</button>
+          </div>
+        </div>
+      @endif
     </nav>
   @endif
 
