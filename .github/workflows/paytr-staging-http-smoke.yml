@@ -1,0 +1,79 @@
+name: PAYTR staging signed HTTP iframe smoke test (no payment)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paytr-staging-http-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  iframe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Authenticate staging SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-paytr-smoke
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-paytr-smoke ~/.ssh/known_hosts
+      - name: Open signed test iframe page without a browser session
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-paytr-smoke -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
+            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          TMP="$(mktemp)"
+          trap 'rm -f "$TMP"' EXIT
+          # Signed URL is ephemeral, is used locally and is NEVER printed.
+          SIGNED_URL="$(php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          if (parse_url(config('app.url'), PHP_URL_HOST) !== 'powderblue-dinosaur-538060.hostingersite.com'
+              || !config('newtic.checkout_test_mode')) exit(1);
+          $order = App\Models\Order::query()->find(31);
+          if (!$order || !$order->is_test || $order->payment_method !== 'paytr'
+              || $order->status !== 'pending_payment') exit(2);
+          $relative = Illuminate\Support\Facades\URL::temporarySignedRoute(
+              'checkout.paytr.frame', now()->addMinutes(5), ['order' => $order->id], absolute: false
+          );
+          echo rtrim(config('app.url'), '/').'/'.ltrim($relative, '/');
+          PHP
+          )"
+          STATUS="$(curl --http2 --retry 2 -fsS --max-time 35 -o "$TMP" -w '%{http_code}' "$SIGNED_URL")"
+          echo "signed_http_status=$STATUS"
+          if grep -Fq 'id="paytriframe"' "$TMP"; then
+            echo "signed_iframe_rendered=yes"
+          elif grep -Fq 'paytr-token-error' "$TMP"; then
+            echo "signed_iframe_rendered=no"
+            if grep -Fq '(customer_ip)' "$TMP"; then
+              echo "safe_failure_class=customer_ip"
+            elif grep -Fq '(merchant_id)' "$TMP"; then
+              echo "safe_failure_class=merchant_id"
+            elif grep -Fq '(signature)' "$TMP"; then
+              echo "safe_failure_class=signature"
+            elif grep -Fq '(gateway_rejected)' "$TMP"; then
+              echo "safe_failure_class=gateway_rejected"
+            elif grep -Fq '(connection_failed)' "$TMP"; then
+              echo "safe_failure_class=connection_failed"
+            elif grep -Fq '(invalid_token_response)' "$TMP"; then
+              echo "safe_failure_class=invalid_token_response"
+            elif grep -Fq 'müşteri bağlantısı doğrulanamadı' "$TMP"; then
+              echo "safe_failure_class=invalid_checkout_network"
+            else
+              echo "safe_failure_class=other"
+            fi
+          else
+            echo "signed_iframe_rendered=unknown_page"
+          fi
+          REMOTE
