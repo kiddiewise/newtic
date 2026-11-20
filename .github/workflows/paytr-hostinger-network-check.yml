@@ -54,59 +54,12 @@ jobs:
           }
           probe public
           probe origin --resolve "$DOMAIN:443:147.79.123.121"
-      - name: Verify TLS versions, IPv4 DNS and redirect behavior
+      - name: Verify TLS versions, DNS and redirect behavior
         shell: bash
         run: |
           set -euo pipefail
           DOMAIN="powderblue-dinosaur-538060.hostingersite.com"
-          A="$(dig +short A "$DOMAIN" | grep -Ec '^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+
-        env:
-          SSH_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
-          SSH_HOST_KEYS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
-        run: |
-          set -euo pipefail
-          test -n "$SSH_KEY" && test -n "$SSH_HOST_KEYS"
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/newtic-paytr-network
-          printf '%s\n' "$SSH_HOST_KEYS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/newtic-paytr-network ~/.ssh/known_hosts
-          ssh -p 65002 -i ~/.ssh/newtic-paytr-network \
-            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
-            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
-          set -euo pipefail
-          DOMAIN="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com"
-          cd "$DOMAIN/newtic"
-          echo "revision=$(git rev-parse --short HEAD)"
-          php <<'PHP'
-          <?php
-          require 'vendor/autoload.php';
-          $app=require 'bootstrap/app.php';
-          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-          $yes=fn($b)=>$b?'yes':'no';
-          echo 'https_app_url='.$yes(str_starts_with((string)config('app.url'),'https://')).PHP_EOL;
-          echo 'staging_guard='.$yes(App\Support\PaytrTestAccess::onStaging()).PHP_EOL;
-          echo 'callback_enabled='.$yes(config('newtic.paytr_webhooks_enabled')).PHP_EOL;
-          $settings=App\Models\PaytrSetting::find(1);
-          echo 'paytr_test_enabled='.$yes($settings?->is_enabled && $settings?->test_mode && $settings?->hasCredentials()).PHP_EOL;
-          PHP
-          php artisan route:list --path=odeme/paytr/bildirim --json > /tmp/newtic-paytr-routes.json
-          php -r '
-          $r=json_decode(file_get_contents("/tmp/newtic-paytr-routes.json"),true);
-          $r=array_values(array_filter($r,fn($x)=>($x["uri"]??"")==="odeme/paytr/bildirim"));
-          echo "callback_post_route_present=".(count($r)===1&&str_contains($r[0]["method"],"POST")?"yes":"no")."\n";
-          echo "callback_requires_auth=".(count($r)&&str_contains(implode(",",$r[0]["middleware"]??[]),"auth")?"yes":"no")."\n";
-          '
-          rm -f /tmp/newtic-paytr-routes.json
-          if test -r storage/logs/laravel.log; then
-            echo "laravel_invalid_signature_count=$(tail -n 10000 storage/logs/laravel.log | grep -Fc 'paytr_callback_rejected' || true)"
-            echo "laravel_accepted_callback_count=$(tail -n 10000 storage/logs/laravel.log | grep -Fc 'paytr_callback_accepted' || true)"
-            for key in invalid_signature staging_gate settings_gate invalid_test_mode invalid_payment_context unknown_attempt order_state_mismatch original_amount_mismatch paid_amount_below_order; do
-              echo "laravel_rejected_${key}=$(tail -n 10000 storage/logs/laravel.log | grep -Fc "${key}" || true)"
-            done
-          fi
-          echo "audit_complete=yes"
-          REMOTE
- || true)"
+          A="$(dig +short A "$DOMAIN" | grep -Ec '^[0-9]+([.][0-9]+){3}$' || true)"
           AAAA="$(dig +short AAAA "$DOMAIN" | grep -Ec ':' || true)"
           echo "dns_a_record_present=$([[ "$A" -gt 0 ]] && echo yes || echo no)"
           echo "dns_aaaa_record_present=$([[ "$AAAA" -gt 0 ]] && echo yes || echo no)"
@@ -115,7 +68,7 @@ jobs:
             set +e
             curl -4 "$switch" --tls-max "$maximum" --http1.1 \
               -sS --max-time 20 --connect-timeout 8 -o /dev/null \
-              -w "${label}_http=%{http_code} ${label}_verify=%{ssl_verify_result} ${label}_redirects=%{num_redirects}\\n" \
+              -w "${label}_http=%{http_code} ${label}_verify=%{ssl_verify_result} ${label}_redirects=%{num_redirects}\n" \
               "https://$DOMAIN/up"
             result=$?
             set -e
@@ -123,7 +76,7 @@ jobs:
           done
           set +e
           curl -4 --http2 -sS --max-time 18 --connect-timeout 8 -o /dev/null \
-            -w "http2_health_http=%{http_code} http2_health_version=%{http_version}\\n" \
+            -w "http2_health_http=%{http_code} http2_health_version=%{http_version}\n" \
             "https://$DOMAIN/up"
           echo "http2_health_exit=$?"
           set -e
