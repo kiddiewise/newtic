@@ -82,7 +82,7 @@ final class AdminProductQuickEditTest extends TestCase
     {
         $product = $this->product($this->category());
 
-        $this->quick($product, 'name', 'Yetkisiz')->assertRedirect(route('admin.login'));
+        $this->quick($product, 'name', 'Yetkisiz')->assertUnauthorized();
         $this->actingAs(User::factory()->create());
         $this->quick($product, 'name', 'Yetkisiz')->assertForbidden();
         $this->assertSame('Renkli Surf Kurşun 125 gr', $product->fresh()->name);

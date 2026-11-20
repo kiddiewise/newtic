@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC autosaving product quick-edit sheet - verified Sinay Design deployment.
+# NEWTIC autosaving product quick-edit sheet with corrected unauthenticated JSON assertion - gated release.
 
 on:
   push:
