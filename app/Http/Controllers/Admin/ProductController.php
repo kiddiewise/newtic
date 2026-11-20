@@ -8,6 +8,7 @@ use App\Models\ProductImage;
 use App\Models\ProductBadge;
 use App\Support\CategoryHierarchy;
 use App\Support\UniqueSlug;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,9 @@ class ProductController extends Controller
             }))
             ->latest('id')->paginate(20)->withQueryString();
 
-        return view('admin.products.index', compact('products', 'term', 'status'));
+        $categories = collect(CategoryHierarchy::choices());
+
+        return view('admin.products.index', compact('products', 'term', 'status', 'categories'));
     }
 
     public function create(): View
@@ -95,6 +98,86 @@ class ProductController extends Controller
         return back()->with('success', 'Ürün güncellendi.');
     }
 
+
+    /**
+     * Save exactly one quick-edit field at a time. This intentionally bypasses
+     * the full product form (photos, badges, stock tracking, variants, SEO)
+     * so autosave never overwrites unrelated product data.
+     */
+    public function quickUpdate(Request $request, Product $product): JsonResponse
+    {
+        $field = $request->validate([
+            'field' => ['required', Rule::in([
+                'name', 'primary_category_id', 'regular_price', 'sale_price', 'stock_quantity',
+            ])],
+        ])['field'];
+
+        $rules = match ($field) {
+            'name' => ['required', 'string', 'max:190'],
+            'primary_category_id' => ['required', 'integer', 'exists:categories,id'],
+            'regular_price' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
+            'sale_price' => ['nullable', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
+            'stock_quantity' => ['required', 'integer', 'min:0', 'max:100000000'],
+        };
+        $value = $request->validate(['value' => $rules])['value'] ?? null;
+
+        $product = DB::transaction(function () use ($product, $field, $value): Product {
+            $locked = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+
+            if ($field === 'name') {
+                $locked->name = trim((string) $value);
+            } elseif ($field === 'primary_category_id') {
+                $locked->primary_category_id = (int) $value;
+            } elseif ($field === 'stock_quantity') {
+                // Do not implicitly enable/disable stock tracking.
+                $locked->stock_quantity = (int) $value;
+            } else {
+                // The normal selling price is compared to the optional sale
+                // price, using the same representation as the full editor.
+                $regular = (string) ($locked->compare_at_price ?: $locked->price);
+                $sale = $locked->compare_at_price ? (string) $locked->price : null;
+                if ($field === 'regular_price') {
+                    $regular = (string) $value;
+                } else {
+                    $sale = $value === null || $value === '' ? null : (string) $value;
+                }
+
+                $regularCents = (int) round((float) $regular * 100);
+                $saleCents = $sale !== null ? (int) round((float) $sale * 100) : null;
+                if ($saleCents !== null && $saleCents >= $regularCents) {
+                    throw ValidationException::withMessages([
+                        'value' => 'İndirimli fiyat normal fiyattan düşük olmalıdır. Önce indirimi kaldırabilir veya normal fiyatı yükseltebilirsiniz.',
+                    ]);
+                }
+
+                $locked->price = number_format((float) ($sale ?? $regular), 2, '.', '');
+                $locked->compare_at_price = $sale !== null
+                    ? number_format((float) $regular, 2, '.', '')
+                    : null;
+            }
+
+            $locked->save();
+
+            return $locked->load('category');
+        }, 3);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Değişiklik kaydedildi.',
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'primary_category_id' => $product->primary_category_id,
+                'category_name' => $product->category?->name ?? 'Kategori yok',
+                'regular_price' => (string) ($product->compare_at_price ?: $product->price),
+                'sale_price' => $product->compare_at_price ? (string) $product->price : null,
+                'price' => (string) $product->price,
+                'discount_percent' => $product->discount_percent,
+                'stock_quantity' => $product->stock_quantity,
+                'tracks_stock' => $product->tracks_stock,
+            ],
+        ]);
+    }
 
     /**
      * Remove an unsold SKU without changing existing order records. Sold

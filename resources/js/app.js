@@ -98,3 +98,4 @@ import './blog-studio.js';
 import './customer-photo-upload.js';
 import './category-banner-upload.js';
 import './subcategory-carousel.js';
+import './admin-product-quick-edit.js';

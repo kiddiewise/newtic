@@ -321,6 +321,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     Route::patch('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::patch('/products/{product}/quick-update', [ProductController::class, 'quickUpdate'])
+        ->middleware('throttle:120,1')->name('products.quick-update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::delete('/products/{product}/images/{image}', [ProductController::class, 'destroyImage'])->name('products.images.destroy');
 
