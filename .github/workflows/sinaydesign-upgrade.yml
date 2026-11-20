@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC default WebP branding with updated regression assertions for verified Sinay release.
+# NEWTIC category modal with safe product transfer and delete - deploy verified Sinay release.
 
 on:
   push:

@@ -93,3 +93,69 @@ if (adminGlobalSearch) {
     }
   });
 }
+
+// Category transfer/delete dialog: one accessible instance for the entire tree.
+const categoryDialog = document.querySelector('[data-category-transfer-dialog]');
+if (categoryDialog) {
+  const heading = categoryDialog.querySelector('#category-transfer-title');
+  const description = categoryDialog.querySelector('[data-category-transfer-description]');
+  const childWarning = categoryDialog.querySelector('[data-category-transfer-children]');
+  const transferForm = categoryDialog.querySelector('[data-category-transfer-form]');
+  const emptyDeleteForm = categoryDialog.querySelector('[data-category-empty-delete]');
+  const target = transferForm.querySelector('select[name="target_category_id"]');
+  const moveButton = categoryDialog.querySelector('[data-category-transfer-only]');
+  const moveAndDeleteButton = categoryDialog.querySelector('[data-category-transfer-and-delete]');
+  let previousFocus = null;
+
+  const close = () => categoryDialog.close();
+  categoryDialog.querySelectorAll('[data-category-transfer-close]').forEach(button =>
+    button.addEventListener('click', close)
+  );
+  categoryDialog.addEventListener('close', () => previousFocus?.focus?.());
+  categoryDialog.addEventListener('click', event => {
+    if (event.target === categoryDialog) close();
+  });
+  categoryDialog.addEventListener('keydown', event => {
+    if (event.key === 'Escape') categoryDialog.close();
+  });
+
+  document.querySelectorAll('[data-category-delete-open]').forEach(button => {
+    button.addEventListener('click', () => {
+      previousFocus = button;
+      const count = Number(button.dataset.productCount) || 0;
+      const children = Number(button.dataset.childrenCount) || 0;
+      const sourceId = button.dataset.categoryId;
+      const hasProducts = count > 0;
+      heading.textContent = button.dataset.categoryName;
+      description.textContent = hasProducts
+        ? 'Bu kategoride ' + count + ' ürün bağlantısı bulunduğu için doğrudan silinemez. Ürünleri başka bir kategoriye taşıyın.'
+        : children ? 'Bu kategorinin alt kategorileri bulunduğu için doğrudan silinemez.'
+          : 'Bu kategori boş. Kalıcı olarak silmek istediğinize emin misiniz?';
+      childWarning.hidden = children === 0;
+      childWarning.textContent = children
+        ? 'Bu kategorinin ' + children + ' alt kategorisi var. Ürünleri taşıyabilirsiniz; alt kategoriler kaldırılmadan kategoriyi silemezsiniz.'
+        : '';
+      transferForm.hidden = !hasProducts;
+      emptyDeleteForm.hidden = hasProducts || children > 0;
+      transferForm.action = button.dataset.transferUrl;
+      emptyDeleteForm.action = button.dataset.deleteUrl;
+      target.value = '';
+      [...target.options].forEach(option => {
+        option.disabled = option.value !== '' && option.value === sourceId;
+      });
+      const available = [...target.options].some(option => option.value && !option.disabled);
+      moveButton.disabled = !available;
+      moveAndDeleteButton.disabled = !available || children > 0;
+      categoryDialog.showModal();
+      if (hasProducts && available) target.focus();
+    });
+  });
+  transferForm.addEventListener('submit', event => {
+    const action = event.submitter?.value;
+    if (!target.value || target.selectedOptions[0]?.disabled
+      || (action === 'move_and_delete' && moveAndDeleteButton.disabled)) {
+      event.preventDefault();
+      target.reportValidity();
+    }
+  });
+}
