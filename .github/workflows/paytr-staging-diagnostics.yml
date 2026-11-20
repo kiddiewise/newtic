@@ -1,0 +1,131 @@
+name: Diagnose PAYTR staging token rejection (sanitized)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paytr-staging-diagnostics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Setup authenticated staging SSH connection
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-paytr-diagnostic
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-paytr-diagnostic ~/.ssh/known_hosts
+      - name: Diagnose test order and request sandbox token without payment
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-paytr-diagnostic -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 \
+            u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          export PAYTR_DIAG_IP="$(curl -fsSL --max-time 12 https://api.ipify.org)"
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $yes = static fn ($b) => $b ? 'yes' : 'no';
+          $host = parse_url((string) config('app.url'), PHP_URL_HOST);
+          echo "deployment_host_matches=". $yes($host === 'powderblue-dinosaur-538060.hostingersite.com')."\n";
+          echo "checkout_test_mode=".$yes(config('newtic.checkout_test_mode'))."\n";
+          echo "paytr_cards_gate=".$yes(config('newtic.paytr_card_payments_enabled'))."\n";
+          echo "paytr_callbacks_gate=".$yes(config('newtic.paytr_webhooks_enabled'))."\n";
+          $settings = App\Models\PaytrSetting::query()->find(1);
+          echo "paytr_credentials_saved=".$yes($settings?->hasCredentials())."\n";
+          echo "paytr_setting_enabled=".$yes($settings?->is_enabled)."\n";
+          echo "paytr_setting_test=".$yes($settings?->test_mode)."\n";
+          $order = App\Models\Order::query()->with('items')->find(31);
+          echo "test_order_exists=".$yes($order !== null)."\n";
+          $attempt = $order?->paytrAttempts()->where('status', 'pending')->latest('id')->first();
+          echo "pending_test_attempt=".$yes($attempt !== null)."\n";
+          if (!$settings?->hasCredentials() || !$settings->is_enabled || !$settings->test_mode
+             || $host !== 'powderblue-dinosaur-538060.hostingersite.com'
+             || !config('newtic.checkout_test_mode') || !config('newtic.paytr_card_payments_enabled')
+             || !config('newtic.paytr_webhooks_enabled') || !$order || !$attempt
+             || !$order->is_test || !$attempt->is_test || $order->status !== 'pending_payment'
+             || $order->payment_method !== 'paytr' || $attempt->amount_cents !== $order->total_cents) {
+              echo "probe=skipped_safety_gate\n";
+              exit(0);
+          }
+          $ip = (string) getenv('PAYTR_DIAG_IP');
+          if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+              echo "probe=skipped_bad_external_ip\n";
+              exit(0);
+          }
+          $basket = $order->items->map(static function ($item) {
+              $name = $item->product_name;
+              if ($item->option_label && $item->option_value) $name .= ' ('.$item->option_label.': '.$item->option_value.')';
+              return [mb_substr($name, 0, 190), number_format($item->unit_price_cents / 100, 2, '.', ''), $item->quantity];
+          })->all();
+          if ($order->shipping_cents > 0) $basket[] = ['Kargo', number_format($order->shipping_cents / 100, 2, '.', ''), 1];
+          $address = implode(', ', array_filter([$order->street_address, $order->district, $order->city]));
+          $baseUrl = rtrim(config('app.url'), '/');
+          $fields = [
+              'merchant_id' => $settings->merchant_id,
+              'user_ip' => $ip,
+              'merchant_oid' => $attempt->merchant_oid,
+              'email' => mb_substr($order->customer_email, 0, 100),
+              'payment_amount' => (string) $order->total_cents,
+              'user_basket' => base64_encode(json_encode($basket, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)),
+              'no_installment' => '1',
+              'max_installment' => '0',
+              'currency' => 'TL',
+              'test_mode' => '1',
+              'debug_on' => '1',
+              'user_name' => mb_substr($order->customer_name, 0, 60),
+              'user_address' => mb_substr($address, 0, 400),
+              'user_phone' => mb_substr($order->phone, 0, 20),
+              'merchant_ok_url' => $baseUrl . '/odeme/basarili',
+              'merchant_fail_url' => $baseUrl . '/odeme/basarisiz',
+              'timeout_limit' => '30',
+              'lang' => 'tr',
+          ];
+          $fields['paytr_token'] = App\Support\PaytrSignature::iframeToken($fields, $settings->merchant_key, $settings->merchant_salt);
+          echo "probe=started_no_payment\n";
+          echo "email_ascii=".$yes(preg_match('/^[\\x00-\\x7f]*$/D', $fields['email']) === 1)."\n";
+          echo "oid_alphanumeric=".$yes(preg_match('/^[A-Za-z0-9]{1,64}$/D', $fields['merchant_oid']) === 1)."\n";
+          try {
+              $response = Illuminate\Support\Facades\Http::asForm()->acceptJson()->timeout(20)
+                  ->post('https://www.paytr.com/odeme/api/get-token', $fields);
+              echo "provider_http_status=".$response->status()."\n";
+              $result = $response->json();
+              echo "provider_token_status=".(($result['status'] ?? '') === 'success' ? 'success'
+                  : (($result['status'] ?? '') === 'failed' ? 'failed' : 'unknown'))."\n";
+              if (($result['status'] ?? '') === 'failed') {
+                  $reason = (string) ($result['reason'] ?? '');
+                  $categories = [
+                      'merchant_id' => '/merchant_id/i',
+                      'merchant_oid' => '/merchant_oid/i',
+                      'merchant_credentials' => '/merchant_key|merchant_salt|parola|gizli anahtar|hatali magaza|hatalı mağaza|mağaza|magaza/i',
+                      'customer_ip' => '/user_ip|\\bip\\b/i',
+                      'customer_email' => '/email|eposta/i',
+                      'signature' => '/token|hash|imza/i',
+                      'payment_amount' => '/payment_amount|tutar/i',
+                      'user_basket' => '/basket|sepet/i',
+                      'site_domain' => '/site|domain|alan adi|alan adı|url/i',
+                      'test_mode' => '/test_mode|test mod/i',
+                  ];
+                  $category = 'unclassified';
+                  foreach ($categories as $label => $pattern) {
+                      if (preg_match($pattern, $reason)) { $category = $label; break; }
+                  }
+                  echo "provider_rejection_category=".$category."\n";
+              }
+          } catch (Throwable $exception) {
+              echo "probe_exception_class=".get_class($exception)."\n";
+          }
+          PHP
+          REMOTE
