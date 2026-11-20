@@ -96,3 +96,4 @@ import './homepage-showcase.js';
 
 import './blog-studio.js';
 import './customer-photo-upload.js';
+import './category-banner-upload.js';

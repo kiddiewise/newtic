@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\CategoryBanner;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryBannerController extends Controller
 {
-    public function store(Request $request, Category $category): RedirectResponse
+    public function store(Request $request, Category $category): RedirectResponse|JsonResponse
     {
         $data = $this->validated($request, true);
 
@@ -30,10 +31,10 @@ class CategoryBannerController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $category->banners()->create($data);
 
-        return back()->with('success', 'Kategori bannerı eklendi.');
+        return $this->successResponse($request, $category, 'Kategori bannerı eklendi.');
     }
 
-    public function update(Request $request, Category $category, CategoryBanner $banner): RedirectResponse
+    public function update(Request $request, Category $category, CategoryBanner $banner): RedirectResponse|JsonResponse
     {
         $this->assertOwnership($category, $banner);
         $data = $this->validated($request, false);
@@ -54,7 +55,7 @@ class CategoryBannerController extends Controller
             }
         }
 
-        return back()->with('success', 'Kategori bannerı güncellendi.');
+        return $this->successResponse($request, $category, 'Kategori bannerı güncellendi.');
     }
 
     public function destroy(Category $category, CategoryBanner $banner): RedirectResponse
@@ -67,6 +68,19 @@ class CategoryBannerController extends Controller
         }
 
         return back()->with('success', 'Banner silindi.');
+    }
+
+    private function successResponse(Request $request, Category $category, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('admin.categories.edit', $category).'#category-banners',
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     private function assertOwnership(Category $category, CategoryBanner $banner): void

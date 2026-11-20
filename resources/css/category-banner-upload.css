@@ -1,0 +1,10 @@
+/* Admin-only category banner upload feedback, shared with all merchants. */
+.admin-banner-upload-message{
+  display:block;width:100%;box-sizing:border-box;
+  padding:11px 14px;border:1px solid #d8e3ec;border-radius:10px;
+  background:#f4f7fa;color:#092037;line-height:1.55;font-size:12px;
+}
+.admin-banner-upload-message[hidden]{display:none!important}
+.admin-banner-upload-message.is-error{background:#fff4f3;border-color:#ebc9c6;color:#9b302c}
+[data-category-banner-upload].is-uploading{opacity:.85}
+[data-category-banner-upload] button[type="submit"]:disabled{opacity:.65;cursor:progress}

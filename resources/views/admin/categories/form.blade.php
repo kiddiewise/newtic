@@ -70,18 +70,18 @@
 </div>
 
 @if($category->exists)
-  <div class="admin-panel">
+  <div class="admin-panel" id="category-banners">
     <div class="admin-panel-title">
       <h2>Bu kategoriye özel bannerlar</h2><span>{{ $category->banners->count() }}/3</span>
     </div>
-    <p class="admin-description">Masaüstü ve mobil görseli ayrı yükleyebilirsin. <strong>Masaüstü: 1470 × 600 px (2,45:1) · mobil: 1280 × 720 px (16:9).</strong> Banner yoksa kategori doğrudan ürünleri gösterir. En fazla 3 banner eklenebilir.</p>
+    <p class="admin-description">Masaüstü ve mobil görseli ayrı yükleyebilirsin. <strong>Masaüstü: 1470 × 600 px (2,45:1) · mobil: 1280 × 720 px (16:9).</strong> Büyük dosyalar yükleme öncesinde otomatik WebP formatında optimize edilir. Banner yoksa kategori doğrudan ürünleri gösterir. En fazla 3 banner eklenebilir.</p>
 
     @foreach($category->banners as $banner)
       <div class="admin-banner-edit-card">
         <div class="admin-banner-preview">
           <img src="{{ asset($banner->mobile_image_path ?: $banner->desktop_image_path) }}" alt="{{ $banner->alt_text ?: 'Kategori bannerı' }}" loading="lazy">
         </div>
-        <form class="admin-form admin-settings-grid" method="POST" enctype="multipart/form-data" action="{{ route('admin.categories.banners.update', [$category, $banner]) }}">
+        <form class="admin-form admin-settings-grid" method="POST" enctype="multipart/form-data" action="{{ route('admin.categories.banners.update', [$category, $banner]) }}" data-category-banner-upload>
           @csrf @method('PATCH')
           <label>Açıklama / alt metin
             <input name="alt_text" maxlength="190" value="{{ $banner->alt_text }}">
@@ -108,6 +108,7 @@
           <label>Bitiş zamanı (isteğe bağlı)
             <input type="datetime-local" name="ends_at" value="{{ $banner->ends_at?->format('Y-m-d\TH:i') }}">
           </label>
+          <p class="admin-banner-upload-message admin-full" data-banner-upload-message role="status" aria-live="polite" hidden></p>
           <div class="admin-form-actions">
             <button class="admin-primary" type="submit">Bannerı güncelle</button>
           </div>
@@ -121,7 +122,7 @@
 
     @if($category->banners->count() < 3)
       <h3>Yeni banner ekle</h3>
-      <form class="admin-form admin-settings-grid" method="POST" enctype="multipart/form-data" action="{{ route('admin.categories.banners.store', $category) }}">
+      <form class="admin-form admin-settings-grid" method="POST" enctype="multipart/form-data" action="{{ route('admin.categories.banners.store', $category) }}" data-category-banner-upload>
         @csrf
         <label>Masaüstü bannerı *
           <input type="file" name="desktop_image" accept="image/jpeg,image/png,image/webp,image/avif" required>
@@ -150,6 +151,7 @@
         <label>Bitiş zamanı
           <input type="datetime-local" name="ends_at">
         </label>
+        <p class="admin-banner-upload-message admin-full" data-banner-upload-message role="status" aria-live="polite" hidden></p>
         <div class="admin-form-actions"><button type="submit" class="admin-primary">Kategori bannerı ekle</button></div>
       </form>
     @endif
