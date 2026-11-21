@@ -34,12 +34,15 @@ final class PendingPaytrCart
         }
 
         $currentCart = ShoppingCart::raw($request);
+        // A detached cart can legitimately contain exactly the same items
+        // again. Equality with the saved order is NOT proof of ownership.
+        $isDetached = (int) $session->get('paytr_detached_order_id', 0) === $id;
 
         if ($order->status === 'pending_payment') {
-            // For older checkout sessions: only detach the exact paid-for
-            // snapshot. Never wipe any newly added shopping-cart items.
-            if ($savedCart !== [] && $currentCart === $savedCart) {
+            // Migrate legacy sessions only once, before stock normalization.
+            if (!$isDetached && $savedCart !== [] && $currentCart === $savedCart) {
                 ShoppingCart::clear($request);
+                $session->put('paytr_detached_order_id', $id);
             }
 
             return $order;
@@ -52,18 +55,19 @@ final class PendingPaytrCart
             // snapshot() will validate current stock and options afterward.
             if ($currentCart === [] && $savedCart !== []) {
                 ShoppingCart::put($request, $savedCart);
-                $session->forget('paytr_pending_cart');
+                $session->forget(['paytr_pending_cart', 'paytr_detached_order_id']);
             }
 
             return null;
         }
 
         if (in_array($order->status, ['preparing', 'shipped', 'out_for_delivery', 'completed'], true)) {
-            // Never erase a different new cart after the prior payment succeeds.
-            if ($savedCart !== [] && $currentCart === $savedCart) {
+            // The paid order owns only its persisted order lines, never a cart
+            // opened later, even if its items are coincidentally identical.
+            if (!$isDetached && $savedCart !== [] && $currentCart === $savedCart) {
                 ShoppingCart::clear($request);
             }
-            $session->forget('paytr_pending_cart');
+            $session->forget(['paytr_pending_cart', 'paytr_detached_order_id']);
         }
 
         return null;

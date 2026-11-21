@@ -193,6 +193,32 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('preparing', $order->fresh()->status);
     }
 
+
+    public function test_late_paytr_success_never_deletes_a_new_cart_with_identical_items(): void
+    {
+        $this->merchant();
+        $product = $this->product();
+        $order = $this->place($product);
+
+        // Customer independently buys the SAME SKU and same two units again.
+        $this->post(route('cart.add'), ['items' => [$product->id => 2]])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(2, session('shopping_cart')[$product->id]);
+
+        // A signed provider callback for the first purchase arrives later.
+        $attempt = $order->paytrAttempts()->firstOrFail();
+        $this->post(route('checkout.paytr.callback'), $this->signedPayload($attempt))
+            ->assertOk()->assertSeeText('OK');
+        $this->get(route('checkout.success', $order))->assertOk();
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee($product->name)
+            ->assertDontSee('Ödemesi bekleyen bir siparişin var');
+
+        $this->assertSame(2, session('shopping_cart')[$product->id]);
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+        $this->assertSame(1, Order::count());
+    }
+
     public function test_pending_test_payment_page_can_be_revisited_more_than_old_eight_per_minute_limit(): void
     {
         $this->merchant();

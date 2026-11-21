@@ -360,6 +360,7 @@ class CheckoutController extends Controller
             // removes cart-only photo drafts (order copies are already private).
             $request->session()->put('paytr_pending_cart', $cartSnapshot);
             ShoppingCart::clear($request);
+            $request->session()->put('paytr_detached_order_id', $order->id);
 
             return redirect()->route('checkout.paytr.frame', $order);
         }
