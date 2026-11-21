@@ -105,8 +105,8 @@ final class VerifiedOrderRevenueConsistencyTest extends TestCase
         ]);
 
         foreach ([$bank, $card, $pending, $test, $cancelled, $wrongMethod] as $order) {
-            OrderItem::create([
-                'order_id' => $order->id, 'product_id' => $product->id,
+            $order->items()->create([
+                'product_id' => $product->id,
                 'sku' => $product->sku, 'product_name' => $product->name,
                 'quantity' => 1, 'unit_price_cents' => $order->total_cents,
                 'line_total_cents' => $order->total_cents,
