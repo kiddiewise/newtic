@@ -160,9 +160,10 @@ class PaytrTestCheckoutFlowTest extends TestCase
             ->assertDontSee('sandbox_salt_for_tests');
         Http::assertSentCount(1);
 
-        // Idempotent: returning to checkout does not generate another order.
+        // Checkout no longer forces the fixed-price old PAYTR order. Empty
+        // fresh cart returns to the cart, and a payment resume is explicit.
         $this->get(route('checkout.index'))
-            ->assertRedirect(route('checkout.paytr.frame', $order));
+            ->assertRedirect(route('cart.index'));
         $this->assertDatabaseCount('orders', 1);
         $attempt = $order->paytrAttempts()->firstOrFail();
 
