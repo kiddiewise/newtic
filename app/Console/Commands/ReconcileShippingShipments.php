@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\ShippingReconciliationService;
 use App\Support\ShippingTestAccess;
+use App\Support\SystemHealthRecorder;
 use Illuminate\Console\Command;
 
 final class ReconcileShippingShipments extends Command
@@ -23,6 +24,9 @@ final class ReconcileShippingShipments extends Command
             return self::INVALID;
         }
         $result = $service->run($limit);
+        // Also monitor direct cron calls that do not use schedule:run.
+        SystemHealthRecorder::record('shipping_sync', $result['failed'] === 0,
+            $result['failed'] === 0 ? 'command_completed' : 'command_failed');
         $this->line(sprintf(
             'checked=%d updated=%d failed=%d skipped=%d',
             $result['checked'], $result['updated'], $result['failed'], $result['skipped']

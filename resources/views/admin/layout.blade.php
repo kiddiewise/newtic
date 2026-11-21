@@ -23,39 +23,60 @@
   $pendingPaymentCount = $adminAuthenticated
     ? \App\Models\PaymentNotification::query()->where('status', 'pending')->count()
     : 0;
-  $menu = [
-    ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
-    ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
-    ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
-    ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
-    ['label' => 'WooCommerce Aktarım', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
-    ['label' => 'Google Merchant Center', 'name' => 'admin.google-merchant.edit', 'active' => 'admin.google-merchant.*', 'icon' => 'globe'],
-    ['label' => 'E-posta ve Bildirimler', 'name' => 'admin.email-center.index', 'active' => 'admin.email-center.*', 'icon' => 'mail'],
-    ['label' => 'Kampanya E-postaları', 'name' => 'admin.marketing.index', 'active' => 'admin.marketing.*', 'icon' => 'mail'],
-    ['label' => 'Google Giriş ve Üyelik', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
-    ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
-    ['label' => 'SEO Ayarları', 'name' => 'admin.seo.edit', 'active' => 'admin.seo.*', 'icon' => 'search'],
-    ['label' => '301 Yönlendirmeler', 'name' => 'admin.redirects.index', 'active' => 'admin.redirects.*', 'icon' => 'arrow-right'],
-    ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
-    ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
-    ['label' => 'Stok Yönetimi', 'name' => 'admin.stock', 'active' => 'admin.stock', 'icon' => 'package'],
-    ['label' => 'Ödeme Bildirimleri', 'name' => 'admin.payment-notifications.index', 'active' => 'admin.payment-notifications.*', 'icon' => 'landmark', 'count' => $pendingPaymentCount],
-    ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
-    ['label' => 'PAYTR Ödeme Ayarları', 'name' => 'admin.paytr-settings.edit', 'active' => 'admin.paytr-settings.*', 'icon' => 'settings'],
-    ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
-    ['label' => 'Pazarlama ve Analitik', 'name' => 'admin.analytics', 'active' => 'admin.analytics*', 'icon' => 'chart'],
-    ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
-    ['label' => 'Vitrin Yönetimi', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
-    ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],
-    ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
-    ['label' => 'Logolar', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
-    ['label' => 'Menüler', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.*', 'icon' => 'menu', 'children' => [
-      ['label' => 'Mega Menü Ayarları', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.mega-menu.*'],
+  $menuGroups = [
+    ['label' => 'GENEL BAKIŞ', 'items' => [
+      ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
     ]],
-    ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
-    ['label' => 'Kargo Entegrasyonu', 'name' => 'admin.shipping-integrations.index', 'active' => 'admin.shipping-integrations.*', 'icon' => 'truck'],
-    ['label' => 'Kargo Operasyonları', 'name' => 'admin.shipping-operations.index', 'active' => 'admin.shipping-operations.*', 'icon' => 'package'],
+    ['label' => 'SATIŞ VE KATALOG', 'items' => [
+      ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
+      ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
+      ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
+      ['label' => 'Stok Yönetimi', 'name' => 'admin.stock', 'active' => 'admin.stock', 'icon' => 'package'],
+      ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
+      ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
+      ['label' => 'Ürün Aktarımı', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
+      ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
+      ['label' => 'Ödeme Bildirimleri', 'name' => 'admin.payment-notifications.index', 'active' => 'admin.payment-notifications.*', 'icon' => 'landmark', 'count' => $pendingPaymentCount],
+      ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
+    ]],
+    ['label' => 'PAZARLAMA VE RAPORLAMA', 'items' => [
+      ['label' => 'Pazarlama ve Analitik', 'name' => 'admin.analytics', 'active' => 'admin.analytics*', 'icon' => 'chart'],
+      ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
+      ['label' => 'E-posta ve Bildirimler', 'name' => 'admin.email-center.index', 'active' => 'admin.email-center.*', 'icon' => 'mail'],
+      ['label' => 'Kampanya E-postaları', 'name' => 'admin.marketing.index', 'active' => 'admin.marketing.*', 'icon' => 'mail'],
+      ['label' => 'SEO Ayarları', 'name' => 'admin.seo.edit', 'active' => 'admin.seo.*', 'icon' => 'search'],
+      ['label' => '301 Yönlendirmeler', 'name' => 'admin.redirects.index', 'active' => 'admin.redirects.*', 'icon' => 'arrow-right'],
+    ]],
+    ['label' => 'MAĞAZA GÖRÜNÜMÜ', 'items' => [
+      ['label' => 'Vitrin · Slider', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
+      ['label' => 'Menüler', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.*', 'icon' => 'menu'],
+      ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],
+      ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
+      ['label' => 'Logolar ve Görünüm', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
+    ]],
+    ['label' => 'ENTEGRASYONLAR', 'items' => [
+      ['label' => 'PAYTR Ödeme Ayarları', 'name' => 'admin.paytr-settings.edit', 'active' => 'admin.paytr-settings.*', 'icon' => 'settings'],
+      ['label' => 'Google Merchant', 'name' => 'admin.google-merchant.edit', 'active' => 'admin.google-merchant.*', 'icon' => 'globe'],
+      ['label' => 'Kargo Entegrasyonu', 'name' => 'admin.shipping-integrations.index', 'active' => 'admin.shipping-integrations.*', 'icon' => 'truck'],
+      ['label' => 'Kargo Operasyonları', 'name' => 'admin.shipping-operations.index', 'active' => 'admin.shipping-operations.*', 'icon' => 'package'],
+      ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
+    ]],
+    ['label' => 'SİSTEM YÖNETİMİ', 'items' => [
+      ['label' => 'Sistem Sağlığı', 'name' => 'admin.system-health', 'active' => 'admin.system-health', 'icon' => 'chart'],
+      ['label' => 'Kullanıcı Girişi · Google', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
+      ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
+    ]],
   ];
+  $activeGroupLabel = 'Mağazanın kontrol merkezi';
+  foreach ($menuGroups as $group) {
+    foreach ($group['items'] as $link) {
+      if (request()->routeIs($link['active'])
+          || ($link['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))) {
+        $activeGroupLabel = mb_convert_case(mb_strtolower($group['label']), MB_CASE_TITLE, 'UTF-8');
+        break 2;
+      }
+    }
+  }
 @endphp
 <body class="admin-body {{ $adminAuthenticated ? 'admin-app-active' : 'admin-auth-only' }}">
 @if($adminAuthenticated)
@@ -67,32 +88,30 @@
       <span class="admin-sidebar-brand-caption">Yönetim Paneli</span>
     </a>
     <div class="admin-sidebar-scroll">
-      <div class="admin-menu-caption">ANA MENÜ</div>
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
-        @foreach($menu as $item)
-          @if($item['name'] === 'admin.announcements.index')<div class="admin-menu-caption admin-menu-section">MAĞAZA AYARLARI</div>@endif
-          @if(isset($item['children']))
-            <details class="admin-nav-group" @if(request()->routeIs($item['active'])) open @endif>
-              <summary @class(['admin-side-link', 'is-active' => request()->routeIs($item['active'])])>
-                <x-admin-icon :name="$item['icon']" />
-                <span>{{ $item['label'] }}</span>
-                <x-admin-icon name="arrow-right" />
-              </summary>
-              <div class="admin-nav-children">
-                @foreach($item['children'] as $child)
-                  <a href="{{ route($child['name']) }}" @class(['admin-nav-child', 'is-active' => request()->routeIs($child['active'])]) @if(request()->routeIs($child['active'])) aria-current="page" @endif>{{ $child['label'] }}</a>
-                @endforeach
-              </div>
-            </details>
-          @else
-            <a href="{{ route($item['name']) }}"
-              @class(['admin-side-link', 'is-active' => request()->routeIs($item['active']) || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))])
-              @if(request()->routeIs($item['active'])) aria-current="page" @endif>
-              <x-admin-icon :name="$item['icon']" />
-              <span>{{ $item['label'] }}</span>
-              @if(($item['count'] ?? 0) > 0)<strong class="admin-side-count">{{ $item['count'] }}</strong>@endif
-            </a>
-          @endif
+        @foreach($menuGroups as $group)
+          @php
+            $groupActive = collect($group['items'])->contains(fn ($link) =>
+              request()->routeIs($link['active'])
+              || ($link['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))
+            );
+          @endphp
+          <details class="admin-nav-section" name="admin-menu-groups" @if($groupActive) open @endif>
+            <summary><span>{{ $group['label'] }}</span><x-admin-icon name="arrow-right" class="admin-nav-group-arrow" /></summary>
+            <div class="admin-nav-section-items">
+              @foreach($group['items'] as $item)
+                @php $active = request()->routeIs($item['active'])
+                  || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*')); @endphp
+                <a href="{{ route($item['name']) }}"
+                  @class(['admin-side-link', 'is-active' => $active])
+                  @if($active) aria-current="page" @endif>
+                  <x-admin-icon :name="$item['icon']" />
+                  <span>{{ $item['label'] }}</span>
+                  @if(($item['count'] ?? 0) > 0)<strong class="admin-side-count">{{ $item['count'] }}</strong>@endif
+                </a>
+              @endforeach
+            </div>
+          </details>
         @endforeach
       </nav>
     </div>
@@ -100,13 +119,17 @@
       <div class="admin-help-card">
         <span class="admin-help-icon"><x-admin-icon name="info" /></span>
         <strong>Hızlı erişim</strong>
-        <p>Ödeme bildirimi ve yeni siparişleri tek ekranda incele.</p>
-        <a href="{{ route('admin.dashboard') }}">Genel Bakış <x-admin-icon name="arrow-right" /></a>
+        <p>Zamanlayıcı, yedek, PAYTR ve kargo durumunu takip et.</p>
+        <a href="{{ route('admin.system-health') }}">Sistem Sağlığı <x-admin-icon name="arrow-right" /></a>
       </div>
       <div class="admin-sidebar-user">
         <span class="admin-user-avatar">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
         <div><strong>{{ auth()->user()->name }}</strong><small>Yönetici</small></div>
       </div>
+      <form method="POST" action="{{ route('admin.logout') }}">
+        @csrf
+        <button type="submit" class="admin-sidebar-logout"><x-admin-icon name="logout" /> Güvenli çıkış</button>
+      </form>
     </div>
   </aside>
   <div class="admin-workspace">
@@ -114,7 +137,7 @@
       <div class="admin-topbar-inner">
         <button class="admin-menu-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Menüyü aç" data-admin-menu-toggle><x-admin-icon name="menu" /></button>
         <img class="admin-topbar-brandmark" src="{{ asset($adminAppearance->compactLogo()) }}" alt="" width="30" height="30">
-        <div class="admin-topbar-heading"><strong>@yield('topbar', 'NEWTIC Yönetim')</strong><small>Mağazanın kontrol merkezi</small></div>
+        <div class="admin-topbar-heading"><strong>@yield('topbar', 'NEWTIC Yönetim')</strong><small>{{ $activeGroupLabel }}</small></div>
         <form class="admin-global-search" action="{{ route('admin.search') }}" method="GET" role="search">
           <x-admin-icon name="search" />
           <input type="search" name="q" minlength="2" maxlength="100" value="{{ request()->routeIs('admin.search') ? request('q') : '' }}" placeholder="Sipariş, ürün veya müşteri ara..." aria-label="Sipariş, ürün veya müşteri ara" required>

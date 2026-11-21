@@ -6,6 +6,7 @@ use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
 use App\Models\Product;
 use App\Support\PaytrSignature;
+use App\Support\SystemHealthRecorder;
 use App\Support\PaytrTestAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -141,7 +142,14 @@ final class PaytrCallbackController extends Controller
         }, 3);
 
         if ($result === 200) {
+            SystemHealthRecorder::record('paytr_callback', true, 'signed_notification');
             Log::info('paytr_callback_accepted', ['result' => 'ok']);
+        }
+
+        if ($result !== 200) {
+            // Only a signature-verified processing failure is recorded; invalid
+            // unauthenticated internet requests cannot flood health storage.
+            SystemHealthRecorder::record('paytr_callback', false, 'signed_processing_failed');
         }
 
         return $result === 200

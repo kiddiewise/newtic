@@ -1,0 +1,116 @@
+/* NEWTIC 10: host-independent control center, dark corporate navigation. */
+.admin-app-active{--admin-ink:#092037;--admin-deep:#092037;--admin-mint:#243f63;--admin-bg:#f5f7fb;font-family:Montserrat,Arial,sans-serif}
+.admin-app-active .admin-sidebar{background:linear-gradient(170deg,#092037 0%,#102b47 80%,#142e4b 100%);color:#e8edf6}
+.admin-app-active .admin-sidebar-brand{min-height:79px;padding:17px 19px}
+.admin-app-active .admin-sidebar-scroll{padding:12px 13px 22px}
+.admin-app-active .admin-sidebar-nav{gap:7px}
+.admin-nav-section{min-width:0;border:1px solid transparent;border-radius:13px}
+.admin-nav-section[open]{background:#ffffff08;border-color:#ffffff13;padding-bottom:7px}
+.admin-nav-section>summary{display:flex;align-items:center;gap:9px;min-height:45px;padding:10px 12px;color:#9db0cd;cursor:pointer;font-size:10px;font-weight:750;letter-spacing:.09em;list-style:none;user-select:none}
+.admin-nav-section>summary::-webkit-details-marker{display:none}
+.admin-nav-section>summary .admin-icon{width:17px;height:17px}
+.admin-nav-section>summary .admin-nav-group-arrow{margin-left:auto;width:14px;height:14px;transition:transform .18s;opacity:.65}
+.admin-nav-section[open]>summary .admin-nav-group-arrow{transform:rotate(90deg)}
+.admin-nav-section>summary:hover,.admin-nav-section>summary:focus-visible,.admin-nav-section[open]>summary{color:#fff}
+.admin-nav-section-items{display:grid;gap:3px;padding:0 6px}
+.admin-app-active .admin-side-link{min-height:40px;padding:9px 12px;color:#bcc8db;font-weight:550;font-size:11.75px;gap:10px;border-radius:9px;letter-spacing:0}
+.admin-app-active .admin-side-link:hover{background:#ffffff16;color:#fff}
+.admin-app-active .admin-side-link.is-active{background:#f4f7ff;color:#092037;box-shadow:none;font-weight:750}
+.admin-app-active .admin-side-link.is-active .admin-icon{color:#092037}
+.admin-app-active .admin-side-count{background:#deebff;color:#092037;border-radius:7px}
+.admin-app-active .admin-help-card{background:#ffffff0c;border:1px solid #ffffff18;box-shadow:none}
+.admin-app-active .admin-help-icon{color:#c0d6ff}
+.admin-app-active .admin-help-card a{color:#092037}
+.admin-app-active .admin-sidebar-user{padding-top:10px}
+.admin-app-active .admin-sidebar-bottom{border-top:1px solid #ffffff16}
+.admin-sidebar-logout{display:flex;align-items:center;gap:9px;width:100%;margin-top:11px;padding:10px 11px;text-align:left;background:transparent;border:1px solid #ffffff25;border-radius:9px;color:#cbd8eb;font-size:11px;cursor:pointer}
+.admin-sidebar-logout:hover{background:#ffffff12;color:white}
+.admin-sidebar-logout .admin-icon{width:16px;height:16px}
+.admin-app-active .admin-user-avatar,.admin-app-active .admin-top-avatar{background:#243f63;color:#fff}
+.admin-app-active .admin-topbar{background:#fffdfd}
+.admin-app-active .admin-topbar-heading strong{font-family:'Plus Jakarta Sans',Montserrat,sans-serif;color:#092037;font-weight:750}
+.admin-app-active .admin-global-search:focus-within{border-color:#7389aa;box-shadow:0 0 0 3px #09203712}
+.admin-app-active .admin-primary{background:#092037;color:#fff;box-shadow:none}
+.admin-app-active .admin-primary:hover{background:#1e3b5c}
+.admin-app-active .admin-secondary{background:#edf1f8;color:#173655;border:1px solid #dbe3f0}
+.admin-app-active .admin-secondary:hover{background:#e3eaf4}
+.admin-app-active .admin-eyebrow{color:#424769}
+.admin-app-active .admin-page-heading h1{color:#092037;font-family:'Plus Jakarta Sans',Montserrat,sans-serif}
+.admin-app-active a:focus-visible,.admin-app-active button:focus-visible,.admin-app-active summary:focus-visible{outline:3px solid #b67a3c;outline-offset:3px}
+.admin-app-active .admin-top-icon-link:hover{color:#092037;border-color:#70839e}
+.admin-app-active .admin-top-badge{background:#092037}
+.health-page{width:100%;color:#092037}
+.health-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:6px 0 24px}
+.health-hero h1{font-family:'Plus Jakarta Sans',Montserrat,sans-serif;font-size:clamp(27px,3vw,36px);font-weight:750;letter-spacing:-.045em;margin:4px 0 9px}
+.health-kicker{font-size:10px;color:#5e6f8a;letter-spacing:.14em;font-weight:750;margin:0 0 8px}
+.health-hero p:not(.health-kicker){font-size:12px;color:#67768c;line-height:1.7;max-width:700px;margin:0}
+.health-hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.health-checked-at{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#77849a;white-space:nowrap}
+.health-checked-at .admin-icon{width:15px;height:15px}
+.health-refresh{display:inline-flex;align-items:center;gap:9px;padding:10px 14px;background:#092037;color:#fff!important;text-decoration:none;border-radius:10px;font-size:12px;font-weight:650;min-height:42px}
+.health-refresh:hover{background:#24415e}
+.health-refresh .admin-icon{width:16px;height:16px}
+.health-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:27px}
+.health-overview>div{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e6ebf2;border-radius:14px;padding:16px 19px;box-shadow:0 7px 25px #122a4607}
+.health-overview strong{font-size:24px;font-weight:750;font-family:'Plus Jakarta Sans',Montserrat,sans-serif}
+.health-overview small{font-size:11px;color:#7f8da2}
+.health-overview-dot{display:block;width:9px;height:9px;border-radius:50%;background:#c4cad5;flex:none}
+.health-overview-dot.is-ok{background:#26806b}
+.health-overview-dot.is-warning{background:#c8873b}
+.health-overview-dot.is-unknown{background:#8b92a5}
+.health-overview-dot.is-disabled{background:#c8d0dd}
+.health-section-head{display:flex;align-items:end;justify-content:space-between;margin:0 0 14px}
+.health-section-head h2,.health-surface h2{font:750 17px 'Plus Jakarta Sans',Montserrat,sans-serif;margin:0 0 5px}
+.health-section-head p,.health-surface-head p{font-size:11px;color:#8490a2;margin:0;line-height:1.6}
+.health-check-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:24px}
+.health-check-card{display:flex;flex-direction:column;min-width:0;min-height:210px;border:1px solid #e6eaf1;background:#fff;border-radius:16px;padding:19px 19px 15px;box-shadow:0 7px 24px #122a4607}
+.health-check-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px}
+.health-check-symbol{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#eff2f7;color:#566985}
+.health-check-symbol .admin-icon{width:19px;height:19px}
+.health-check-card.is-ok .health-check-symbol{background:#e8f4ef;color:#29715e}
+.health-check-card.is-warning .health-check-symbol{background:#fff3e5;color:#9b662b}
+.health-check-card h3{font:750 14px 'Plus Jakarta Sans',Montserrat,sans-serif;margin:0 0 7px}
+.health-check-summary{font-size:12px;line-height:1.55;color:#4c5c74;margin:0 0 8px}
+.health-check-hint{font-size:10.5px;line-height:1.5;color:#8993a4;margin:0 0 14px}
+.health-status-pill,.health-task-status{display:inline-flex;align-items:center;max-width:100%;padding:5px 9px;border-radius:7px;font-size:10px;font-weight:750;white-space:nowrap;color:#68758b;background:#f2f4f8}
+.health-status-pill.is-ok,.health-task-status.is-ok{color:#226a56;background:#eaf5ef}
+.health-status-pill.is-warning,.health-task-status.is-warning{color:#94642c;background:#fff3e3}
+.health-check-foot{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;border-top:1px solid #edf0f5;padding-top:12px;margin-top:auto}
+.health-check-foot span,.health-check-foot a{display:inline-flex;align-items:center;gap:6px;color:#8390a2;font-size:10px}
+.health-check-foot a{color:#173e62;text-decoration:none;font-weight:650}
+.health-check-foot a:hover{text-decoration:underline}
+.health-check-foot .admin-icon{width:13px;height:13px}
+.health-lower-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(285px,1fr);gap:16px;align-items:start}
+.health-stack{display:grid;gap:16px}
+.health-surface{border:1px solid #e6eaf1;background:#fff;border-radius:16px;padding:20px;box-shadow:0 7px 24px #122a4607;min-width:0}
+.health-surface-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+.health-task-scroll{width:100%;overflow:auto}
+.health-task-table{width:100%;border-collapse:collapse;text-align:left;min-width:545px}
+.health-task-table th{padding:11px 8px;font-size:10px;color:#8290a2;letter-spacing:.04em;font-weight:700;background:#f8f9fc}
+.health-task-table td{padding:13px 8px;border-bottom:1px solid #eef1f5;font-size:11px;color:#66758a;vertical-align:middle}
+.health-task-table tr:last-child td{border-bottom:0}
+.health-task-table td strong{display:block;font-size:11px;font-weight:750;color:#193653}
+.health-task-table td small{display:block;font-size:10px;margin-top:4px;color:#9aa4b2}
+.health-revision{display:flex;align-items:center;gap:11px;padding:14px 15px;border:1px solid #e1e7f0;background:#f8faff;border-radius:11px;margin-bottom:12px}
+.health-revision>.admin-icon{color:#48637e;width:24px;height:24px}
+.health-revision small,.health-revision strong{display:block}
+.health-revision small{color:#8591a3;font-size:10px;margin-bottom:5px}
+.health-revision strong{font:750 15px 'Plus Jakarta Sans',Montserrat,sans-serif;overflow-wrap:anywhere}
+.health-runtime{margin:0}
+.health-runtime div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 3px;border-bottom:1px solid #eef1f5;font-size:11px}
+.health-runtime div:last-child{border:0}
+.health-runtime dt{color:#8490a2}
+.health-runtime dd{color:#173552;font-weight:700;margin:0;text-align:right;overflow-wrap:anywhere}
+.health-log-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf1f6;font-size:11px;color:#748094}
+.health-log-row:last-child{border:0}
+.health-log-level{color:#8e5e29;background:#fff2e4;border-radius:6px;padding:4px 7px;font-weight:750;font-size:10px}
+.health-no-logs{font-size:11px;color:#8290a2;line-height:1.7}
+.health-footnote{display:flex;align-items:flex-start;gap:12px;border:1px solid #dfe6f0;border-radius:13px;background:#eef2f8;padding:17px;margin-top:21px;font-size:11px;color:#687992;line-height:1.65}
+.health-footnote>.admin-icon{color:#516785;flex:none;width:19px;height:19px}
+.health-footnote strong{color:#203c5d;font-size:12px}
+.health-footnote p{margin:4px 0 0}
+.health-footnote code,.health-surface code{color:#263f62;background:#e6ebf3;border-radius:4px;padding:2px 4px;font-size:10px;overflow-wrap:anywhere}
+@media(max-width:1250px){.health-check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.health-lower-grid{grid-template-columns:1fr}}
+@media(max-width:850px){.health-hero{align-items:flex-start;flex-direction:column}.health-hero-actions{width:100%;justify-content:space-between}.health-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){.health-check-grid{grid-template-columns:1fr}.health-check-card{min-height:175px}.health-overview>div{padding:13px}.health-overview strong{font-size:20px}.health-overview small{font-size:10px}.health-check-head{margin-bottom:12px}.health-surface{padding:15px}.health-task-table{min-width:485px}.health-checked-at{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.admin-nav-section>summary .admin-nav-group-arrow{transition:none}}
