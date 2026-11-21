@@ -20,7 +20,9 @@ final class PendingPaytrCart
     public static function prepare(Request $request): ?Order
     {
         $session = $request->session();
-        $id = (int) $session->get('checkout_last_order', 0);
+        // A later bank-transfer checkout must not hide this pending card order.
+        $id = (int) $session->get('paytr_pending_order_id',
+            $session->get('checkout_last_order', 0));
         $savedCart = $session->get('paytr_pending_cart');
 
         if ($id < 1 || !is_array($savedCart)
@@ -55,7 +57,7 @@ final class PendingPaytrCart
             // snapshot() will validate current stock and options afterward.
             if ($currentCart === [] && $savedCart !== []) {
                 ShoppingCart::put($request, $savedCart);
-                $session->forget(['paytr_pending_cart', 'paytr_detached_order_id']);
+                $session->forget(['paytr_pending_cart', 'paytr_detached_order_id', 'paytr_pending_order_id']);
             }
 
             return null;
@@ -67,7 +69,7 @@ final class PendingPaytrCart
             if (!$isDetached && $savedCart !== [] && $currentCart === $savedCart) {
                 ShoppingCart::clear($request);
             }
-            $session->forget(['paytr_pending_cart', 'paytr_detached_order_id']);
+            $session->forget(['paytr_pending_cart', 'paytr_detached_order_id', 'paytr_pending_order_id']);
         }
 
         return null;

@@ -359,6 +359,7 @@ class CheckoutController extends Controller
             // if no new basket has been started. Clearing here also safely
             // removes cart-only photo drafts (order copies are already private).
             $request->session()->put('paytr_pending_cart', $cartSnapshot);
+            $request->session()->put('paytr_pending_order_id', $order->id);
             ShoppingCart::clear($request);
             $request->session()->put('paytr_detached_order_id', $order->id);
 
@@ -381,7 +382,8 @@ class CheckoutController extends Controller
         if ($order->payment_method === 'paytr'
             && in_array($order->status, ['preparing', 'shipped', 'out_for_delivery', 'completed'], true)
             && $isSessionOrder
-            && (int) $request->session()->get('checkout_last_order') === $order->id) {
+            && (int) $request->session()->get('paytr_pending_order_id',
+                $request->session()->get('checkout_last_order', 0)) === $order->id) {
             // Clear only the legacy original cart, never later shopping items.
             PendingPaytrCart::prepare($request);
         }

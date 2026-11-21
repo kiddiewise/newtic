@@ -379,6 +379,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $newOrder = Order::query()->whereKeyNot($oldOrder->id)->firstOrFail();
         $this->assertSame('bank_transfer', $newOrder->payment_method);
         $this->assertSame(2, $newOrder->items()->firstOrFail()->quantity);
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee($oldOrder->order_number)
+            ->assertSee(route('checkout.paytr.frame', $oldOrder));
     }
 
     public function test_signed_payment_success_does_not_erase_new_basket_items(): void
