@@ -333,8 +333,9 @@ final class AnalyticsCenterTest extends TestCase
 
         $this->actingAs($this->admin());
         $response = $this->get(route('admin.analytics.export', ['days' => 7]));
-        $response->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
-            ->assertHeader('Cache-Control', 'private, no-store');
+        $response->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', (string) $response->headers->get('Cache-Control'));
         $csv = $response->streamedContent();
         $this->assertStringContainsString('sep=;', $csv);
         $this->assertStringContainsString('NEWTIC', $csv);
