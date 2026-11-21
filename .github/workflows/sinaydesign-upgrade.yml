@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC Intelligence phase 2: period comparison, retention, opportunities and CSV exports
+# NEWTIC Intelligence phase 2: verified Sinay release for aggregate analytics
 
 on:
   push:
