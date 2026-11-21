@@ -190,6 +190,45 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('preparing', $order->fresh()->status);
     }
 
+    public function test_pending_test_payment_page_can_be_revisited_more_than_old_eight_per_minute_limit(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response(['status' => 'success', 'token' => str_repeat('r', 48)])
+        ]);
+
+        // Browser back/forward and repeated checkout redirects must not
+        // produce a full-page 429 after the old IP-wide eight-request cap.
+        for ($index = 0; $index < 12; $index++) {
+            $this->get(route('checkout.paytr.frame', $order))
+                ->assertOk()
+                ->assertSee('PAYTR TEST MODU');
+        }
+
+        Http::assertSentCount(12);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('paytr_payment_attempts', 1);
+    }
+
+    public function test_test_payment_token_route_still_prevents_unbounded_provider_requests(): void
+    {
+        $this->merchant();
+        $order = $this->place($this->product());
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
+            Http::response(['status' => 'success', 'token' => str_repeat('t', 48)])
+        ]);
+
+        for ($index = 0; $index < 24; $index++) {
+            $this->get(route('checkout.paytr.frame', $order))->assertOk();
+        }
+
+        $this->get(route('checkout.paytr.frame', $order))->assertStatus(429);
+        Http::assertSentCount(24);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
     public function test_admin_cannot_cancel_paytr_order_while_callback_is_pending(): void
     {
         $this->merchant();

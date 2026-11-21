@@ -122,7 +122,8 @@ Route::post('/kargo/bildirim', ShippingCallbackController::class)->middleware('t
 Route::post('/odeme/paytr/bildirim', PaytrCallbackController::class)
     ->name('checkout.paytr.callback');
 
-Route::get('/odeme/paytr/{order}', [PaytrCheckoutController::class, 'show'])->middleware('throttle:8,1')->name('checkout.paytr.frame');
+Route::get('/odeme/paytr/{order}', [PaytrCheckoutController::class, 'show'])
+    ->middleware('throttle:paytr-frame')->name('checkout.paytr.frame');
 Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
 Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
