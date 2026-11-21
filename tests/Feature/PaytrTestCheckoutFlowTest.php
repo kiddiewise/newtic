@@ -416,7 +416,11 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $order = $this->place($product);
 
         // Existing browsers may still have the pre-fix original cart snapshot.
-        $this->withSession(['shopping_cart' => session('paytr_pending_cart')]);
+        $this->withSession([
+            'shopping_cart' => session('paytr_pending_cart'),
+            // A real pre-migration browser session predates this marker.
+            'paytr_detached_order_id' => null,
+        ]);
         $this->get(route('cart.index'))->assertOk()
             ->assertSee('Ödemesi bekleyen bir siparişin var')
             ->assertSee($order->order_number);
