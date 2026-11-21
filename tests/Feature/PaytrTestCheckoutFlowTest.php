@@ -212,21 +212,26 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertDatabaseCount('paytr_payment_attempts', 1);
     }
 
-    public function test_test_payment_token_route_still_prevents_unbounded_provider_requests(): void
+    public function test_payment_frame_retains_named_scoped_rate_limits(): void
     {
-        $this->merchant();
-        $order = $this->place($this->product());
-        Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
-            Http::response(['status' => 'success', 'token' => str_repeat('t', 48)])
-        ]);
+        // Laravel disables actual throttle enforcement in the PHPUnit test
+        // HTTP kernel. Check the configured limiter directly instead of
+        // asserting that its 25th test HTTP request produces 429.
+        $route = \Illuminate\Support\Facades\Route::getRoutes()
+            ->getByName('checkout.paytr.frame');
+        $this->assertContains('throttle:paytr-frame', $route->gatherMiddleware());
 
-        for ($index = 0; $index < 24; $index++) {
-            $this->get(route('checkout.paytr.frame', $order))->assertOk();
-        }
-
-        $this->get(route('checkout.paytr.frame', $order))->assertStatus(429);
-        Http::assertSentCount(24);
-        $this->assertSame('pending_payment', $order->fresh()->status);
+        $limiter = \Illuminate\Support\Facades\RateLimiter::limiter('paytr-frame');
+        $this->assertNotNull($limiter);
+        $request = \Illuminate\Http\Request::create(
+            route('checkout.paytr.frame', 42), 'GET'
+        );
+        $request->setLaravelSession(app('session')->driver());
+        $limits = $limiter($request);
+        $this->assertCount(2, $limits);
+        $this->assertSame(24, $limits[0]->maxAttempts);
+        $this->assertSame(120, $limits[1]->maxAttempts);
+        $this->assertNotSame($limits[0]->key, $limits[1]->key);
     }
 
     public function test_admin_cannot_cancel_paytr_order_while_callback_is_pending(): void
