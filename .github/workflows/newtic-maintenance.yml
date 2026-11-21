@@ -49,4 +49,10 @@ jobs:
           php artisan shipping:sync --limit=8
           php artisan merchant:sync --steps=4
           php artisan customer-photos:prune-drafts --days=7 --limit=100
+          # Sinay Design has its own private database/filesystem. Run the same
+          # bounded draft-only cleanup if the independent install has this release.
+          SINAY_APP="$HOME/domains/sinaydesign.com/newtic"
+          if test -f "$SINAY_APP/.env" && test -f "$SINAY_APP/app/Console/Commands/PruneCustomerPhotoDrafts.php"; then
+            (cd "$SINAY_APP" && php artisan customer-photos:prune-drafts --days=7 --limit=100)
+          fi
           REMOTE

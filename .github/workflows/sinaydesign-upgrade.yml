@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC Intelligence phase 2: verified Sinay release for aggregate analytics
+# NEWTIC audit #1-3: aligned verified revenue, private photo cleanup, untracked stock — verified deployment
 
 on:
   push:
