@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC first-party privacy analytics + live marketing dashboard (tested deployment)
+# NEWTIC first-party privacy analytics + live marketing dashboard (fixed query deployment)
 
 on:
   push:

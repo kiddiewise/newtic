@@ -36,7 +36,7 @@ final class AnalyticsCenterController extends Controller
             ->whereNotIn('status', ['cancelled', 'pending_payment'])
             ->where(function ($query) {
                 $query->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'))
-                    ->orWhereHas('paytrAttempts', fn ($q) => $q->where('status', 'success', 'is_test', false));
+                    ->orWhereHas('paytrAttempts', fn ($q) => $q->where('status', 'success')->where('is_test', false));
             });
     }
 
@@ -51,7 +51,7 @@ final class AnalyticsCenterController extends Controller
                 'kind' => $item->page_type,
                 'device' => $item->device,
                 'location' => $item->city ?: ($item->country_code ?: 'Bilinmiyor'),
-                'seconds_ago' => max(0, now()->diffInSeconds(\Carbon\Carbon::parse($item->last_seen_at))),
+                'seconds_ago' => (int) abs(now()->diffInSeconds(\Carbon\Carbon::parse($item->last_seen_at))),
             ])->all();
 
         return [
@@ -122,7 +122,7 @@ final class AnalyticsCenterController extends Controller
                 ->where('is_test', false)
                 ->whereNotIn('status', ['cancelled', 'pending_payment'])
                 ->where(fn ($sub) => $sub->whereHas('paymentNotifications', fn ($p) => $p->where('status', 'verified'))
-                    ->orWhereHas('paytrAttempts', fn ($p) => $p->where('status', 'success', 'is_test', false)));
+                    ->orWhereHas('paytrAttempts', fn ($p) => $p->where('status', 'success')->where('is_test', false)));
         })->whereNotNull('product_id')
             ->selectRaw('product_id, SUM(quantity) as units, SUM(line_total_cents) as revenue_cents')
             ->groupBy('product_id')->orderByDesc('units')->limit(30)->get()->keyBy('product_id');
