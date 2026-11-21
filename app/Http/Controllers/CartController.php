@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
 use App\Models\Product;
 use App\Support\ShoppingCart;
+use App\Support\PendingPaytrCart;
 use App\Support\CartCustomerPhotos;
 use App\Support\QuickCartSheet;
 use App\Support\CategoryHierarchy;
@@ -18,26 +18,15 @@ class CartController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        // A pending PAYTR order already reserved the original cart's stock.
-        // Do not normalize it against reduced stock on a return to /sepet:
-        // that would destroy the customer's cart before a failed payment retry.
-        $pendingOrderId = $request->session()->get('checkout_last_order');
-        $pendingCart = $request->session()->get('paytr_pending_cart');
-        if ($pendingOrderId && is_array($pendingCart)
-            && $pendingCart === ShoppingCart::raw($request)) {
-            $pendingOrder = Order::query()->find($pendingOrderId);
-            if ($pendingOrder?->payment_method === 'paytr'
-                && $pendingOrder->status === 'pending_payment'
-                && in_array($pendingOrder->id, (array) $request->session()->get('confirmed_order_ids', []), true)) {
-                return redirect()->route('checkout.paytr.frame', $pendingOrder);
-            }
-        }
+        // Show the actual cart even while a separate PAYTR order is pending.
+        $pendingPaytrOrder = PendingPaytrCart::prepare($request);
+        $pendingPaytrOrder?->loadMissing('items');
 
         $cart = ShoppingCart::snapshot($request);
 
         $wishlistIds = WishlistController::ids($request);
 
-        return view('store.cart', compact('cart', 'wishlistIds'));
+        return view('store.cart', compact('cart', 'wishlistIds', 'pendingPaytrOrder'));
     }
 
     public function add(Request $request): RedirectResponse|JsonResponse
@@ -66,6 +55,9 @@ class CartController extends Controller
             throw ValidationException::withMessages(['items' => 'Sepete eklemek için en az bir adet seçin.']);
         }
 
+        // A pending order has already reserved its items; never mix them with
+        // additions for a second checkout.
+        PendingPaytrCart::prepare($request);
         // Normalize stale items first; all changes are written only after full validation.
         ShoppingCart::snapshot($request);
         $existing = ShoppingCart::raw($request);
@@ -174,6 +166,7 @@ class CartController extends Controller
             'quantity' => ['required', 'integer', 'min:0', 'max:999'],
             'option_id' => ['nullable', 'integer', 'min:1'],
         ]);
+        PendingPaytrCart::prepare($request);
         ShoppingCart::snapshot($request);
         $items = ShoppingCart::raw($request);
         $key = ShoppingCart::key($product->id, isset($data['option_id']) ? (int) $data['option_id'] : null);
@@ -215,6 +208,7 @@ class CartController extends Controller
 
     public function remove(Request $request, Product $product): RedirectResponse
     {
+        PendingPaytrCart::prepare($request);
         $data = $request->validate(['option_id' => ['nullable', 'integer', 'min:1']]);
         $items = ShoppingCart::raw($request);
         $key = ShoppingCart::key($product->id, isset($data['option_id']) ? (int) $data['option_id'] : null);
@@ -227,6 +221,7 @@ class CartController extends Controller
 
     public function clear(Request $request): RedirectResponse
     {
+        PendingPaytrCart::prepare($request);
         ShoppingCart::clear($request);
 
         return redirect()->route('cart.index')->with('success', 'Sepet boşaltıldı.');

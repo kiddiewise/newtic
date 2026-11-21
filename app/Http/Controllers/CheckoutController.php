@@ -17,6 +17,7 @@ use App\Support\CategoryHierarchy;
 use App\Support\OrderTracking;
 use App\Support\PaytrTestAccess;
 use App\Support\ShoppingCart;
+use App\Support\PendingPaytrCart;
 use App\Support\CartCustomerPhotos;
 use App\Support\TurkeyProvinces;
 use Illuminate\Http\RedirectResponse;
@@ -34,17 +35,9 @@ class CheckoutController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        // Check the original cart before snapshot() clamps quantities because
-        // the pending PAYTR order has already reserved those same items.
-        $lastOrderId = $request->session()->get('checkout_last_order');
-        if ($lastOrderId
-            && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
-            $pendingOrder = Order::query()->find($lastOrderId);
-            if ($pendingOrder?->payment_method === 'paytr'
-                && $pendingOrder->status === 'pending_payment') {
-                return redirect()->route('checkout.paytr.frame', $pendingOrder);
-            }
-        }
+        // Revisiting checkout must not silently resume an old fixed-price
+        // PAYTR order. A fresh cart always means a new, independent purchase.
+        PendingPaytrCart::prepare($request);
 
         $cart = ShoppingCart::snapshot($request);
         if (! $cart['lines']) {
@@ -361,9 +354,12 @@ class CheckoutController extends Controller
         $request->session()->put('confirmed_order_ids',
             array_slice(array_merge((array) $request->session()->get('confirmed_order_ids', []), [$order->id]), -10));
         if ($method === 'paytr') {
-            // Leave the cart intact if PayTR rejects the test transaction.
-            // A paid order clears only its unchanged original cart on return.
+            // Freeze the fixed-price pending order and its reserved inventory.
+            // The saved snapshot can be restored after a verified PAYTR failure
+            // if no new basket has been started. Clearing here also safely
+            // removes cart-only photo drafts (order copies are already private).
             $request->session()->put('paytr_pending_cart', $cartSnapshot);
+            ShoppingCart::clear($request);
 
             return redirect()->route('checkout.paytr.frame', $order);
         }
@@ -384,9 +380,9 @@ class CheckoutController extends Controller
         if ($order->payment_method === 'paytr'
             && in_array($order->status, ['preparing', 'shipped', 'out_for_delivery', 'completed'], true)
             && $isSessionOrder
-            && $request->session()->get('paytr_pending_cart') === ShoppingCart::raw($request)) {
-            ShoppingCart::clear($request);
-            $request->session()->forget('paytr_pending_cart');
+            && (int) $request->session()->get('checkout_last_order') === $order->id) {
+            // Clear only the legacy original cart, never later shopping items.
+            PendingPaytrCart::prepare($request);
         }
         $bankAccounts = $order->payment_method === 'bank_transfer' && $order->status === 'pending_payment'
             ? BankAccount::query()->where('is_active', true)

@@ -48,6 +48,8 @@
         <strong>Ödeme sonrası</strong>
         <p>PAYTR sunucumuzla sonucu doğruladıktan sonra sipariş durumunuz güncellenir. Yalnızca ödeme ekranındaki yönlendirme başarı onayı değildir.</p>
         <a class="checkout-outline-action" href="{{ $paymentReturnUrl }}">Sipariş durumunu görüntüle</a>
+        <a class="checkout-outline-action paytr-continue-shopping" href="{{ route('cart.index') }}">Sepete dön ve alışverişe devam et</a>
+        <p>Yeni ürünler için ayrı bir sepet kullanabilirsin. Bekleyen siparişin ödeme işlemi değişmez.</p>
       </div>
     </section>
     <aside class="checkout-card paytr-order-summary">

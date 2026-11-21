@@ -143,7 +143,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $order = $this->place($product);
 
         $this->assertSame(17970, $order->total_cents);
-        $this->assertSame(2, session('shopping_cart')[$product->id]);
+        // Once ordered, items are reserved and shown as a pending order,
+        // not double-counted in the customer's editable shopping cart.
+        $this->assertSame([], session('shopping_cart', []));
         $this->assertSame(1, $order->items()->count());
 
         Http::fake(['https://www.paytr.com/odeme/api/get-token' =>
@@ -264,10 +266,13 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $order = $this->place($product);
         $attempt = $order->paytrAttempts()->firstOrFail();
 
-        // Returning to the cart must not erase items whose stock is reserved
-        // by this still-pending test payment.
-        $this->get(route('cart.index'))->assertRedirect(route('checkout.paytr.frame', $order));
-        $this->assertSame(2, session('shopping_cart')[$product->id]);
+        // The cart must stay accessible while the fixed-price payment is pending.
+        // The original order has reserved its inventory and lives in the banner.
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee('Ödemesi bekleyen bir siparişin var')
+            ->assertSee($order->order_number)
+            ->assertSee(route('checkout.paytr.frame', $order));
+        $this->assertSame([], session('shopping_cart', []));
 
         $failed = $this->signedPayload($attempt, 'failed', '0');
         $failed['failed_reason_code'] = '6';
@@ -277,12 +282,126 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame(10, $product->fresh()->stock_quantity);
         $this->assertSame('cancelled', $order->fresh()->status);
         $this->assertSame('failed', $attempt->fresh()->status);
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee($product->name);
         $this->assertSame(2, session('shopping_cart')[$product->id]);
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertSee('Test ödemeniz başarısız oldu.')
             ->assertSee('Sepete dön ve yeniden dene');
         $this->get(route('checkout.index'))->assertOk();
         $this->assertNotEmpty(session('checkout_token'));
+    }
+
+    public function test_pending_payment_does_not_lock_cart_and_new_products_go_to_a_separate_order(): void
+    {
+        $this->merchant();
+        $product = $this->product();
+        $oldOrder = $this->place($product);
+
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee('Ödemesi bekleyen bir siparişin var')
+            ->assertSee($oldOrder->order_number)
+            ->assertSee('Sepetin henüz boş')
+            ->assertSee(route('checkout.paytr.frame', $oldOrder))
+            ->assertSee('Yeni ürünler eklersen bunlar ayrı bir sipariş oluşturur');
+        $this->get(route('checkout.index'))->assertRedirect(route('cart.index'));
+
+        $new = Product::create([
+            'primary_category_id' => $product->primary_category_id,
+            'sku' => 'SURF-NEW', 'slug' => 'surf-new',
+            'name' => 'Yeni Surf Ürünü', 'price' => '59.90',
+            'stock_quantity' => 10, 'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add'), ['items' => [$new->id => 2]])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame([$new->id => 2], session('shopping_cart'));
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+        $this->assertSame(10, $new->fresh()->stock_quantity);
+
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee($oldOrder->order_number)
+            ->assertSee($new->name)
+            ->assertSee('2 Ürün');
+        $this->get(route('checkout.index'))->assertOk()
+            ->assertSee($new->name);
+        // Placing a second order reserves only the new items.
+        \App\Models\BankAccount::create([
+            'bank_name' => 'Deneme Bankası',
+            'account_holder' => 'Deneme Mağaza',
+            'iban' => 'TR330006100519786457841326',
+            'is_active' => true,
+        ]);
+        $token = session('checkout_token');
+        $this->post(route('checkout.place'), [
+            'checkout_token' => $token,
+            'payment_method' => 'bank_transfer',
+            'address_label' => 'Ev',
+            'full_name' => 'Test Müşterisi',
+            'email' => 'buyer@example.test',
+            'phone' => '05321234567',
+            'city' => 'İzmir', 'district' => 'Buca',
+            'street_address' => 'Çamlık Mahallesi 12 Sokak No 6',
+            'invoice_type' => 'individual',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('orders', 2);
+        $this->assertSame('pending_payment', $oldOrder->fresh()->status);
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+        $this->assertSame(8, $new->fresh()->stock_quantity);
+        $newOrder = Order::query()->whereKeyNot($oldOrder->id)->firstOrFail();
+        $this->assertSame('bank_transfer', $newOrder->payment_method);
+        $this->assertSame(2, $newOrder->items()->firstOrFail()->quantity);
+    }
+
+    public function test_signed_payment_success_does_not_erase_new_basket_items(): void
+    {
+        $this->merchant();
+        $product = $this->product();
+        $oldOrder = $this->place($product);
+        $other = Product::create([
+            'primary_category_id' => $product->primary_category_id,
+            'sku' => 'OTHER-CART', 'slug' => 'other-cart',
+            'name' => 'Ek Sepet Ürünü', 'price' => '75.00',
+            'stock_quantity' => 8, 'is_active' => true,
+        ]);
+        $this->post(route('cart.add'), ['items' => [$other->id => 1]])
+            ->assertSessionHasNoErrors();
+        $attempt = $oldOrder->paytrAttempts()->firstOrFail();
+        $this->post(route('checkout.paytr.callback'), $this->signedPayload($attempt))
+            ->assertOk()->assertSeeText('OK');
+
+        $this->get(route('checkout.success', $oldOrder))->assertOk();
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee('Ek Sepet Ürünü')
+            ->assertDontSee('Ödemesi bekleyen bir siparişin var');
+        $this->assertSame([$other->id => 1], session('shopping_cart'));
+        $this->assertSame(8, $product->fresh()->stock_quantity);
+    }
+
+    public function test_legacy_pending_cart_is_detached_before_any_new_cart_addition(): void
+    {
+        $this->merchant();
+        $product = $this->product();
+        $order = $this->place($product);
+
+        // Existing browsers may still have the pre-fix original cart snapshot.
+        $this->withSession(['shopping_cart' => session('paytr_pending_cart')]);
+        $this->get(route('cart.index'))->assertOk()
+            ->assertSee('Ödemesi bekleyen bir siparişin var')
+            ->assertSee($order->order_number);
+        $this->assertSame([], session('shopping_cart', []));
+
+        $other = Product::create([
+            'primary_category_id' => $product->primary_category_id,
+            'sku' => 'LEGACY-NEW', 'slug' => 'legacy-new',
+            'name' => 'Yeni Ek Ürün', 'price' => '55.00',
+            'stock_quantity' => 4, 'is_active' => true,
+        ]);
+        $this->post(route('cart.add'), ['items' => [$other->id => 1]])
+            ->assertSessionHasNoErrors();
+        $this->assertSame([$other->id => 1], session('shopping_cart'));
+        $this->assertSame(8, $product->fresh()->stock_quantity);
     }
 
     public function test_unauthorized_guest_cannot_open_another_customers_payment_page(): void

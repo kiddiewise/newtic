@@ -1,0 +1,19 @@
+/* Pending PAYTR checkouts are separate, fixed-price orders. The cart stays usable. */
+.cart-pending-paytr{display:flex;justify-content:space-between;gap:22px;align-items:center;border:1px solid #dbe3e5;border-radius:16px;background:#f7f9fa;padding:19px 20px;margin:0 0 23px;box-shadow:0 2px 12px rgba(11,30,39,.04)}
+.cart-pending-paytr-content{flex:1;min-width:0}
+.cart-pending-paytr-eyebrow{display:inline-flex;align-items:center;gap:8px;color:#655642;font:700 10px/1.5 Montserrat,sans-serif;letter-spacing:.035em}
+.cart-pending-paytr-dot{width:7px;height:7px;border-radius:50%;background:#e78a2a;box-shadow:0 0 0 3px #fcead7}
+.cart-pending-paytr h2{font:700 16px/1.45 "Plus Jakarta Sans",Montserrat,sans-serif;color:#21343c;margin:7px 0 8px}
+.cart-pending-paytr p{font:500 11px/1.75 Montserrat,sans-serif;color:#596972;margin:5px 0;max-width:760px}
+.cart-pending-paytr p strong{font-weight:700;color:#273b43}
+.cart-pending-paytr-items{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.cart-pending-paytr-items span{font:500 10px/1.45 Montserrat,sans-serif;border-radius:8px;padding:5px 9px;background:#fff;border:1px solid #e1e6e9;color:#54636c}
+.cart-pending-paytr-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:175px}
+.cart-pending-paytr-actions a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:39px;border-radius:10px;padding:9px 13px;font:600 11px/1.5 Montserrat,sans-serif;text-decoration:none;transition:background-color .18s ease,border-color .18s ease}
+.cart-pending-paytr-resume{background:#27383f;border:1px solid #27383f;color:white}
+.cart-pending-paytr-resume:hover,.cart-pending-paytr-resume:focus-visible{background:#43535b;color:white}
+.cart-pending-paytr-status{background:#fff;border:1px solid #d5dfe2;color:#354953}
+.cart-pending-paytr-status:hover,.cart-pending-paytr-status:focus-visible{border-color:#89989f;color:#21343c}
+.paytr-continue-shopping{margin-top:9px}
+@media(max-width:680px){.cart-pending-paytr{flex-direction:column;align-items:stretch;gap:14px;padding:15px}.cart-pending-paytr-actions{min-width:0;flex-direction:row;flex-wrap:wrap}.cart-pending-paytr-actions a{flex:1;min-width:132px}.cart-pending-paytr h2{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.cart-pending-paytr-actions a{transition:none}}

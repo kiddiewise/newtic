@@ -18,6 +18,33 @@
     <a href="{{ route('search') }}">Alışverişe devam et <span aria-hidden="true">›</span></a>
   </div>
 
+  @if($pendingPaytrOrder)
+    <section class="cart-pending-paytr" aria-labelledby="pending-paytr-cart-title">
+      <div class="cart-pending-paytr-content">
+        <span class="cart-pending-paytr-eyebrow"><span class="cart-pending-paytr-dot" aria-hidden="true"></span> Ödeme bekleniyor</span>
+        <h2 id="pending-paytr-cart-title">Ödemesi bekleyen bir siparişin var</h2>
+        <p>
+          <strong>{{ $pendingPaytrOrder->order_number }}</strong> numaralı siparişin için
+          {{ number_format($pendingPaytrOrder->total_cents / 100, 2, ',', '.') }} ₺ tutarında ödeme bekleniyor.
+          Bu siparişteki ürünlerin stokları ayrıldı.
+        </p>
+        <p>Sepetin alışverişe açık. Yeni ürünler eklersen bunlar ayrı bir sipariş oluşturur; bekleyen siparişin tutarı değişmez.</p>
+        <div class="cart-pending-paytr-items">
+          @foreach($pendingPaytrOrder->items->take(3) as $pendingLine)
+            <span>{{ $pendingLine->product_name }} × {{ $pendingLine->quantity }}</span>
+          @endforeach
+          @if($pendingPaytrOrder->items->count() > 3)
+            <span>ve {{ $pendingPaytrOrder->items->count() - 3 }} ürün daha</span>
+          @endif
+        </div>
+      </div>
+      <div class="cart-pending-paytr-actions">
+        <a class="cart-pending-paytr-resume" href="{{ route('checkout.paytr.frame', $pendingPaytrOrder) }}">Ödemeye devam et</a>
+        <a class="cart-pending-paytr-status" href="{{ route('checkout.success', $pendingPaytrOrder) }}">Sipariş durumunu gör</a>
+      </div>
+    </section>
+  @endif
+
   @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
   @if(session('error'))<div class="cart-flash is-error" role="alert">{{ session('error') }}</div>@endif
   @if($errors->any())
