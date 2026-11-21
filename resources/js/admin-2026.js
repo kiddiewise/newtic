@@ -4,10 +4,16 @@ const adminSidebar = document.querySelector('[data-admin-sidebar]');
 const adminBackdrop = document.querySelector('[data-admin-sidebar-backdrop]');
 if (adminToggle && adminSidebar && adminBackdrop) {
   let lastFocused = null;
+  const mobileScreen = window.matchMedia('(max-width: 900px)');
+  const syncSidebarAccessibility = () => {
+    adminSidebar.inert = mobileScreen.matches && !document.body.classList.contains('admin-sidebar-open');
+  };
+  syncSidebarAccessibility();
   const open = () => {
     lastFocused = document.activeElement;
     adminBackdrop.hidden = false;
     document.body.classList.add('admin-sidebar-open');
+    syncSidebarAccessibility();
     adminToggle.setAttribute('aria-expanded', 'true');
     adminToggle.setAttribute('aria-label', 'Menüyü kapat');
     adminSidebar.querySelector('a')?.focus();
@@ -17,6 +23,7 @@ if (adminToggle && adminSidebar && adminBackdrop) {
     adminToggle.setAttribute('aria-expanded', 'false');
     adminToggle.setAttribute('aria-label', 'Menüyü aç');
     adminBackdrop.hidden = true;
+    syncSidebarAccessibility();
     lastFocused?.focus?.();
   };
   adminToggle.addEventListener('click', () => {
@@ -31,7 +38,7 @@ if (adminToggle && adminSidebar && adminBackdrop) {
       close();
     }
     if (event.key === 'Tab') {
-      const links = [...adminSidebar.querySelectorAll('a:not([hidden])')];
+      const links = [...adminSidebar.querySelectorAll('a, button, summary')].filter(el => el.getClientRects().length > 0 && !el.disabled);
       if (!links.length) return;
       const first = links[0], last = links[links.length - 1];
       if (event.shiftKey && document.activeElement === first) {
@@ -43,6 +50,7 @@ if (adminToggle && adminSidebar && adminBackdrop) {
       }
     }
   });
+  mobileScreen.addEventListener('change', syncSidebarAccessibility);
   window.matchMedia('(min-width: 901px)').addEventListener('change', event => {
     if (event.matches && document.body.classList.contains('admin-sidebar-open')) close();
   });

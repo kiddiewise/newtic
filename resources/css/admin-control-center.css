@@ -110,6 +110,11 @@
 .health-footnote strong{color:#203c5d;font-size:12px}
 .health-footnote p{margin:4px 0 0}
 .health-footnote code,.health-surface code{color:#263f62;background:#e6ebf3;border-radius:4px;padding:2px 4px;font-size:10px;overflow-wrap:anywhere}
+.health-security{margin-top:20px;scroll-margin-top:110px}
+.health-security-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px}
+.health-security-item{border:1px solid #ebeff5;border-radius:12px;background:#f9fafd;padding:14px;min-height:135px}
+.health-security-item strong{display:block;font:700 12px 'Plus Jakarta Sans',Montserrat,sans-serif;color:#193653;margin:12px 0 7px}
+.health-security-item p{font-size:10.5px;color:#7b8ba0;margin:0;line-height:1.65}
 @media(max-width:1250px){.health-check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.health-lower-grid{grid-template-columns:1fr}}
 @media(max-width:850px){.health-hero{align-items:flex-start;flex-direction:column}.health-hero-actions{width:100%;justify-content:space-between}.health-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:530px){.health-check-grid{grid-template-columns:1fr}.health-check-card{min-height:175px}.health-overview>div{padding:13px}.health-overview strong{font-size:20px}.health-overview small{font-size:10px}.health-check-head{margin-bottom:12px}.health-surface{padding:15px}.health-task-table{min-width:485px}.health-checked-at{font-size:10px}}

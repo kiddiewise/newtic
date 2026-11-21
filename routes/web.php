@@ -216,6 +216,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::delete('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'destroyImage'])->name('blog.images.destroy');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/sistem-sagligi', SystemHealthController::class)->middleware('throttle:30,1')->name('system-health');
+    Route::get('/guvenlik', SystemHealthController::class)->middleware('throttle:30,1')->name('security');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
     Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');
     Route::get('/kampanya-eposta/yeni', [MarketingCampaignController::class,'create'])->name('marketing.create');

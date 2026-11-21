@@ -105,6 +105,19 @@
     </div>
   </div>
 
+  <section class="health-surface health-security" id="guvenlik" aria-labelledby="health-security-title">
+    <div class="health-surface-head"><div><h2 id="health-security-title">Güvenlik Kontrolü</h2><p>Yalnızca güvenli yapılandırma göstergeleri gösterilir. Anahtarlar, şifreler ve oturum verileri hiçbir zaman ekrana gönderilmez.</p></div></div>
+    <div class="health-security-grid">
+      @foreach($security as $check)
+        <div class="health-security-item">
+          <span class="health-status-pill is-{{ $check['status'] }}">{{ $statusText[$check['status']] }}</span>
+          <strong>{{ $check['label'] }}</strong>
+          <p>{{ $check['detail'] }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
+
   <div class="health-footnote">
     <x-admin-icon name="info" />
     <div><strong>Hosting bağımsız mimari</strong><p>NEWTIC; Hostinger, başka bir paylaşımlı hosting, VPS veya bulut sunucusuna özgü API gerektirmez. Yedekleme başarı bilgisi, gerçek yedekleme işlemi tamamlandıktan sonra <code>php artisan health:backup-report --result=success --provider=external</code> komutuyla sunulmalıdır. Bu komut yedek oluşturmaz. Bir işin çalışmış olması, harici hizmetin de başarılı olduğu anlamına gelmez.</p></div>

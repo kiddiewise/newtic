@@ -2,14 +2,12 @@
 
 namespace App\Support;
 
-use App\Models\GoogleMerchantSetting;
 use App\Models\PaytrPaymentAttempt;
 use App\Models\PaytrSetting;
 use App\Models\ShippingProvider;
 use App\Models\ShippingShipment;
 use App\Models\ShippingStatusEvent;
 use App\Models\SystemHealthMonitor;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +76,7 @@ final class SystemHealthSnapshot
                 'queue' => (string) config('queue.default', 'unknown'),
                 'cache' => (string) config('cache.default', 'unknown'),
             ],
+            'security' => $this->security(),
             'checked_at' => now(),
         ];
     }
@@ -199,6 +198,31 @@ final class SystemHealthSnapshot
             now(), 'Yalnızca Laravel sunucusunun yerel dosya sistemi ölçülür.');
     }
 
+    /**
+     * Read-only security posture, with safe booleans only. Never render an
+     * application key or other secret or suggest a remediation that mutates
+     * the live configuration from an HTTP request.
+     */
+    private function security(): array
+    {
+        $secureSession = config('session.secure');
+        $checks = [
+            ['label' => 'HTTPS', 'status' => request()->isSecure() ? 'ok' : 'warning',
+                'detail' => request()->isSecure() ? 'Yönetim bağlantısı HTTPS kullanıyor' : 'HTTPS algılanmadı; ters proxy ayarlarını inceleyin'],
+            ['label' => 'Hata ayıklama', 'status' => config('app.debug', false) ? 'warning' : 'ok',
+                'detail' => config('app.debug', false) ? 'APP_DEBUG açık; canlı ortamda kapatılmalı' : 'Detaylı hata ekranları kapalı'],
+            ['label' => 'Şifreleme anahtarı', 'status' => filled(config('app.key')) ? 'ok' : 'warning',
+                'detail' => filled(config('app.key')) ? 'Uygulama anahtarı mevcut' : 'Uygulama anahtarı yapılandırılmamış'],
+            ['label' => 'Güvenli oturum çerezi',
+                'status' => $secureSession === null ? 'unknown' : ($secureSession ? 'ok' : 'warning'),
+                'detail' => $secureSession === null ? 'Çerez güvenlik ayarı sunucu tarafından belirleniyor'
+                    : ($secureSession ? 'HTTPS-Only oturum çerezi etkin' : 'Oturum çerezinde secure bayrağı kapalı')],
+            ['label' => 'HttpOnly oturum çerezi', 'status' => config('session.http_only', true) ? 'ok' : 'warning',
+                'detail' => config('session.http_only', true) ? 'JavaScript ile oturum çerezine erişim engelli' : 'HttpOnly bayrağı etkin değil'],
+        ];
+        return $checks;
+    }
+
     private function revision(): string
     {
         foreach ([public_path('build/newtic-revision.txt'), base_path('.newtic-release-revision')] as $file) {
@@ -231,7 +255,8 @@ final class SystemHealthSnapshot
             }
             fclose($handle);
         }
-        $entries = array_slice(array_reverse($entries), 0, 8);
+        usort($entries, fn ($a, $b) => strcmp($b['at'], $a['at']));
+        $entries = array_slice($entries, 0, 8);
         $latest = $entries[0]['at'] ?? null;
         return [
             'entries' => $entries,

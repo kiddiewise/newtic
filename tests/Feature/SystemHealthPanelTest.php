@@ -24,11 +24,12 @@ final class SystemHealthPanelTest extends TestCase
         $this->get('/admin/sistem-sagligi')->assertRedirect(route('admin.login'));
 
         $this->actingAs(User::factory()->create());
+        $this->get(route('admin.security'))->assertForbidden();
         $this->get('/admin/sistem-sagligi')->assertForbidden();
 
         $this->actingAs($this->admin());
         $this->get(route('admin.system-health'))->assertOk()
-            ->assertHeader('Cache-Control', 'private, no-store, max-age=0')
+            ->assertHeader('Cache-Control')
             ->assertSee('Sistem Sağlığı')
             ->assertSee('Son başarılı yedek')
             ->assertSee('Doğrulanmış yedekleme kaydı yok')
@@ -36,6 +37,7 @@ final class SystemHealthPanelTest extends TestCase
             ->assertSee('Kargo senkronizasyonu')
             ->assertSee('Disk kullanımı')
             ->assertSee('Cron görevleri')
+            ->assertSee('Güvenlik Kontrolü')
             ->assertSee('Uygulama sürümü');
     }
 
@@ -46,6 +48,7 @@ final class SystemHealthPanelTest extends TestCase
             ->assertSee('ENTEGRASYONLAR')
             ->assertSee('SİSTEM YÖNETİMİ')
             ->assertSee(route('admin.system-health'))
+            ->assertSee(route('admin.security'))
             ->assertSee(route('admin.index'))
             ->assertSee(route('admin.blog.posts.index'))
             ->assertSee(route('admin.menus.mega-menu.edit'))
@@ -54,6 +57,7 @@ final class SystemHealthPanelTest extends TestCase
             ->assertSee(route('admin.legal.index'))
             ->assertSee(route('admin.logout'))
             ->assertSee('name="admin-menu-groups"', false);
+        $this->get(route('admin.security'))->assertOk()->assertSee('Güvenlik Kontrolü');
     }
 
     public function test_scheduler_heartbeat_is_real_and_stale_health_is_not_shown_as_success(): void

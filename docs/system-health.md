@@ -29,3 +29,6 @@ Allowed providers: external, local, remote, managed. This is only a reporting ho
 - Shipping: provider readiness, shipment sync timestamps, verified webhook events, technical exception counts.
 - Cron: per-command success/failure hooks and a main one-minute heartbeat persisted in system_health_monitors.
 - No tables in the existing store are deleted or reset by the migration. Existing store data and credentials remain untouched.
+
+## Security posture
+The same admin-only monitor includes an anchorable security section (`/admin/guvenlik#guvenlik`) for HTTPS, debug mode, encryption-key presence, secure cookie and HttpOnly checks. Only configuration presence/booleans are exposed; no credentials or keys.

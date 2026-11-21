@@ -35,7 +35,6 @@
       ['label' => 'Ürün Yorumları', 'name' => 'admin.reviews.index', 'active' => 'admin.reviews.*', 'icon' => 'star', 'count' => $pendingReviewCount],
       ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
       ['label' => 'Ürün Aktarımı', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
-      ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
       ['label' => 'Ödeme Bildirimleri', 'name' => 'admin.payment-notifications.index', 'active' => 'admin.payment-notifications.*', 'icon' => 'landmark', 'count' => $pendingPaymentCount],
       ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
     ]],
@@ -62,7 +61,9 @@
       ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
     ]],
     ['label' => 'SİSTEM YÖNETİMİ', 'items' => [
+      ['label' => 'Kullanıcılar ve Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
       ['label' => 'Sistem Sağlığı', 'name' => 'admin.system-health', 'active' => 'admin.system-health', 'icon' => 'chart'],
+      ['label' => 'Güvenlik Kontrolü', 'name' => 'admin.security', 'active' => 'admin.security', 'icon' => 'shield', 'fragment' => '#guvenlik'],
       ['label' => 'Kullanıcı Girişi · Google', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
       ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
     ]],
@@ -102,7 +103,7 @@
               @foreach($group['items'] as $item)
                 @php $active = request()->routeIs($item['active'])
                   || ($item['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*')); @endphp
-                <a href="{{ route($item['name']) }}"
+                <a href="{{ route($item['name']).($item['fragment'] ?? '') }}"
                   @class(['admin-side-link', 'is-active' => $active])
                   @if($active) aria-current="page" @endif>
                   <x-admin-icon :name="$item['icon']" />
