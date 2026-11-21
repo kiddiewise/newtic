@@ -82,7 +82,12 @@ final class VerifiedOrderRevenueConsistencyTest extends TestCase
         $cancelled = $this->order('bank_transfer', 80000, false, 'cancelled');
         $this->bankVerified($cancelled);
         $unverified = $this->order('bank_transfer', 60000);
-        PaymentNotification::create(['order_id' => $unverified->id, 'status' => 'pending']);
+        PaymentNotification::create([
+            'order_id' => $unverified->id,
+            'bank_name_snapshot' => 'Deneme Bankası',
+            'iban_snapshot' => 'TR000000000000000000000000',
+            'status' => 'pending',
+        ]);
         $wrongMethod = $this->order('paytr', 70000);
         $this->bankVerified($wrongMethod);
 
@@ -118,7 +123,7 @@ final class VerifiedOrderRevenueConsistencyTest extends TestCase
         $this->get(route('admin.reports'))->assertOk()
             ->assertViewHas('paidCents', 30000)
             ->assertViewHas('paidCount', 2)
-            ->assertViewHas('topProducts', fn ($top) => $top->first()->sold === 2);
+            ->assertViewHas('topProducts', fn ($top) => (int) $top->first()->sold === 2);
         $this->get(route('admin.analytics'))->assertOk()
             ->assertViewHas('revenueCents', 30000)
             ->assertViewHas('orderCount', 2)
