@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC checkout navigation: independent pending PAYTR order and open cart; verified Sinay deployment
+# NEWTIC checkout navigation: safe legacy-cart transition, independently pending payment; verified Sinay release
 
 on:
   push:
