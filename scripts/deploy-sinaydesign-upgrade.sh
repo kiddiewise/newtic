@@ -76,6 +76,7 @@ chmod($argv[1], 0600);
 "$DUMP_BIN" --defaults-extra-file="$MYSQL_CLIENT_FILE" --single-transaction --quick --skip-lock-tables   u880685189_sinay_newtic | gzip -c > "$BACKUP/database-before-upgrade.sql.gz" ||
   fail "Database backup failed. No code or migrations changed."
 test -s "$BACKUP/database-before-upgrade.sql.gz" || fail "Database backup empty"
+gzip -t "$BACKUP/database-before-upgrade.sql.gz" || fail "Database backup archive invalid"
 rm -f "$MYSQL_CLIENT_FILE"
 MYSQL_CLIENT_FILE=""
 
@@ -99,6 +100,9 @@ test -s "$APP/public/build/manifest.json" || fail "Missing Vite manifest"
 grep -RFlq --include='*.css' '.blog-card' "$APP/public/build/assets" ||
   fail "Latest blog frontend CSS missing"
 php artisan migrate --force --no-interaction
+# A real server-private database and asset backup was created and validated above.
+# Report ONLY after the new health table exists; no storage path or secret is logged.
+php artisan health:backup-report --result=success --provider=local
 php artisan optimize:clear
 php artisan view:cache
 php artisan config:cache

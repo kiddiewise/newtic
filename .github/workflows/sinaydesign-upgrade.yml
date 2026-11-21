@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC checkout navigation: safe legacy-cart transition, independently pending payment; verified Sinay release
+# NEWTIC admin control center: host-independent health checks; verified Sinay release
 
 on:
   push:
