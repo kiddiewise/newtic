@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Support\VerifiedOrderRevenue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -105,15 +106,7 @@ final class AnalyticsCenterController extends Controller
 
     private function paidOrders(): \Illuminate\Database\Eloquent\Builder
     {
-        // Never treat a bank notification as paid unless an admin verifies it.
-        // PAYTR must likewise have a verified successful callback; test orders
-        // and cancelled orders are ALWAYS excluded from revenue.
-        return Order::query()->where('is_test', false)
-            ->whereNotIn('status', ['cancelled', 'pending_payment'])
-            ->where(function ($query) {
-                $query->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'))
-                    ->orWhereHas('paytrAttempts', fn ($q) => $q->where('status', 'success')->where('is_test', false));
-            });
+        return VerifiedOrderRevenue::query();
     }
 
     private function liveSnapshot(): array
@@ -232,11 +225,9 @@ final class AnalyticsCenterController extends Controller
             ->groupBy('product_id')->orderByDesc('views')->limit(30)->get()->keyBy('product_id');
 
         $soldProducts = OrderItem::query()->whereHas('order', function ($query) use ($start, $end) {
-            $query->whereBetween('placed_at', [$start, $end])
-                ->where('is_test', false)
-                ->whereNotIn('status', ['cancelled', 'pending_payment'])
-                ->where(fn ($sub) => $sub->whereHas('paymentNotifications', fn ($p) => $p->where('status', 'verified'))
-                    ->orWhereHas('paytrAttempts', fn ($p) => $p->where('status', 'success')->where('is_test', false)));
+            VerifiedOrderRevenue::constrain(
+                $query->whereBetween('placed_at', [$start, $end])
+            );
         })->whereNotNull('product_id')
             ->selectRaw('product_id, SUM(quantity) as units, SUM(line_total_cents) as revenue_cents')
             ->groupBy('product_id')->orderByDesc('units')->limit(30)->get()->keyBy('product_id');

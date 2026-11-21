@@ -48,4 +48,5 @@ jobs:
           php artisan orders:expire-unpaid --limit=50
           php artisan shipping:sync --limit=8
           php artisan merchant:sync --steps=4
+php artisan customer-photos:prune-drafts --days=7 --limit=100
           REMOTE

@@ -67,6 +67,18 @@ class Product extends Model
         return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
     }
 
+    /**
+     * Public purchase quantity ceiling shared by cards, cart and checkout.
+     * Untracked products never consume inventory, but still respect the
+     * per-order 999-unit safety limit.
+     */
+    public function getCartQuantityLimitAttribute(): int
+    {
+        return $this->tracks_stock
+            ? max(0, min(999, (int) $this->stock_quantity))
+            : 999;
+    }
+
     public function getDiscountPercentAttribute(): int
     {
         $regular = (float) $this->compare_at_price;

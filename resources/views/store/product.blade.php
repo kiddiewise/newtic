@@ -88,9 +88,9 @@
         <span>{{ $reviewCount ? $reviewCount.' yorum' : 'İlk yorumunuzu bırakın' }}</span>
         <x-store-icon name="chevron-right" />
       </a>
-      @if($product->stock_quantity === 0)
+      @if($product->tracks_stock && $product->stock_quantity === 0)
         <p class="pdp-availability"><span class="pdp-out-of-stock">Tükendi</span></p>
-      @elseif($product->stock_quantity <= 10)
+      @elseif($product->tracks_stock && $product->stock_quantity <= 10)
         <p class="pdp-availability"><span class="pdp-low-stock">Son {{ $product->stock_quantity }} ürün</span></p>
       @endif
       <div class="pdp-current-product-note">
@@ -100,7 +100,7 @@
       <div class="pdp-desktop-purchase" aria-label="Ürün satın alma seçenekleri">
         <div class="pdp-desktop-purchase-head">
           <strong>Adet seçin</strong>
-          @if($product->stock_quantity > 0 && $product->stock_quantity <= 10)
+          @if($product->tracks_stock && $product->stock_quantity > 0 && $product->stock_quantity <= 10)
             <span class="pdp-low-stock">Son {{ $product->stock_quantity }} ürün</span>
           @endif
         </div>
@@ -120,10 +120,10 @@
         <div class="pdp-desktop-purchase-row">
           <div class="pdp-desktop-stepper" aria-label="{{ $product->name }} adedi">
             <button type="button" data-desktop-minus aria-label="{{ $product->name }} azalt">−</button>
-            <output data-desktop-qty aria-label="Seçili adet">{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
-            <button type="button" data-desktop-plus aria-label="{{ $product->name }} artır" @disabled($product->stock_quantity <= 0)>+</button>
+            <output data-desktop-qty aria-label="Seçili adet">{{ $product->cart_quantity_limit > 0 && !$pickerReset ? 1 : 0 }}</output>
+            <button type="button" data-desktop-plus aria-label="{{ $product->name }} artır" @disabled($product->cart_quantity_limit <= 0)>+</button>
           </div>
-          <button type="submit" form="pdp-cart-form" class="pdp-desktop-add" data-cart-add @disabled($product->stock_quantity <= 0)>
+          <button type="submit" form="pdp-cart-form" class="pdp-desktop-add" data-cart-add @disabled($product->cart_quantity_limit <= 0)>
             <x-store-icon name="shopping-cart-plus" />
             Sepete Ekle
           </button>
@@ -155,7 +155,7 @@
       @foreach($categoryProducts as $categoryProduct)
         @php
           $current = $categoryProduct->is($product);
-          $initialQty = $current && $categoryProduct->stock_quantity > 0 && !$pickerReset ? 1 : 0;
+          $initialQty = $current && $categoryProduct->cart_quantity_limit > 0 && !$pickerReset ? 1 : 0;
         @endphp
         <div class="order-item pdp-order-item {{ $current ? 'is-current' : '' }}">
           <span class="order-item-image">
@@ -166,9 +166,9 @@
             <strong>{{ number_format((float) $categoryProduct->price, 2, ',', '.') }} ₺</strong>
             @if($categoryProduct->discount_percent > 0)<small class="order-discount">-%{{ $categoryProduct->discount_percent }} indirim</small>@endif
             @if($current)<span class="current-product-label">Görüntülenen ürün</span>@endif
-            @if($categoryProduct->stock_quantity === 0)
+            @if($categoryProduct->tracks_stock && $categoryProduct->stock_quantity === 0)
               <span class="pdp-stock-note">Tükendi</span>
-            @elseif($categoryProduct->stock_quantity <= 10)
+            @elseif($categoryProduct->tracks_stock && $categoryProduct->stock_quantity > 0 && $categoryProduct->stock_quantity <= 10)
               <span class="pdp-low-stock">Son {{ $categoryProduct->stock_quantity }} ürün</span>
             @endif
           </span>
@@ -209,9 +209,9 @@
             <button type="button" data-step-minus aria-label="{{ $categoryProduct->name }} azalt">−</button>
             <label class="quantity-field">
               <span class="sr-only">{{ $categoryProduct->name }} adedi</span>
-              <input type="number" form="pdp-cart-form" name="items[{{ $categoryProduct->id }}]" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->stock_quantity }}" value="{{ $initialQty }}" autocomplete="off" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
+              <input type="number" form="pdp-cart-form" name="items[{{ $categoryProduct->id }}]" data-order-quantity data-product-id="{{ $categoryProduct->id }}" data-price="{{ $categoryProduct->price }}" min="0" max="{{ $categoryProduct->cart_quantity_limit }}" value="{{ $initialQty }}" autocomplete="off" inputmode="numeric" aria-label="{{ $categoryProduct->name }} miktarı">
             </label>
-            <button type="button" data-step-plus aria-label="{{ $categoryProduct->name }} arttır" @disabled($categoryProduct->stock_quantity === 0)>+</button>
+            <button type="button" data-step-plus aria-label="{{ $categoryProduct->name }} arttır" @disabled($categoryProduct->tracks_stock && $categoryProduct->stock_quantity === 0)>+</button>
           </div>
         </div>
       @endforeach
@@ -288,8 +288,8 @@
     <div class="pdp-sticky-quick">
       <div class="pdp-sticky-stepper" aria-label="Görüntülenen ürünün adedi">
         <button type="button" data-quick-minus aria-label="{{ $product->name }} azalt">−</button>
-        <output data-quick-qty>{{ $product->stock_quantity > 0 && !$pickerReset ? 1 : 0 }}</output>
-        <button type="button" data-quick-plus aria-label="{{ $product->name }} arttır" @disabled($product->stock_quantity === 0)>+</button>
+        <output data-quick-qty>{{ $product->cart_quantity_limit > 0 && !$pickerReset ? 1 : 0 }}</output>
+        <button type="button" data-quick-plus aria-label="{{ $product->name }} arttır" @disabled($product->tracks_stock && $product->stock_quantity === 0)>+</button>
       </div>
     </div>
     <button class="pdp-sticky-add" type="submit" form="pdp-cart-form" data-cart-add

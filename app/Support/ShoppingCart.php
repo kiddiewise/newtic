@@ -74,7 +74,7 @@ class ShoppingCart
             $taken = (int) ($usedStock[$product->id] ?? 0);
             $quantity = min(
                 (int) $rawQuantity,
-                max(0, (int) $product->stock_quantity - $taken),
+                max(0, $product->cart_quantity_limit - $taken),
                 self::MAX_QUANTITY - $taken
             );
             if ($quantity < 1) {
@@ -110,7 +110,7 @@ class ShoppingCart
         foreach ($lines as &$line) {
             $product = $line['product'];
             $line['max_quantity'] = max(1, min(self::MAX_QUANTITY,
-                (int) $product->stock_quantity
+                $product->cart_quantity_limit
                 - ($usedStock[$product->id] - $line['quantity'])));
         }
         unset($line);

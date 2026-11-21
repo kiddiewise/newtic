@@ -32,3 +32,7 @@ Schedule::command('orders:expire-unpaid --limit=50')->everyFifteenMinutes()
 
 // Privacy: automatically purge events after 90 days and expired sessions.
 Schedule::command('analytics:prune')->dailyAt('03:25')->withoutOverlapping(15);
+
+// Remove only abandoned private cart-photo drafts. Order copies are never touched.
+Schedule::command('customer-photos:prune-drafts --days=7 --limit=200')
+    ->dailyAt('03:45')->withoutOverlapping(30);

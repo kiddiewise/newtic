@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Support\VerifiedOrderRevenue;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -20,16 +21,15 @@ class ReportController extends Controller
         $totalOrders = (clone $rangeOrders)->count();
         $testOrders = (clone $rangeOrders)->where('is_test', true)->count();
         $paymentPending = (clone $rangeOrders)->where('status', 'pending_payment')->count();
-        $verifiedRealOrders = (clone $rangeOrders)->where('is_test', false)
-            ->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'));
+        $verifiedRealOrders = VerifiedOrderRevenue::constrain(clone $rangeOrders);
         $paidCount = (clone $verifiedRealOrders)->count();
         $paidCents = (int) (clone $verifiedRealOrders)->sum('total_cents');
         $averageCents = $paidCount > 0 ? (int) round($paidCents / $paidCount) : 0;
 
         $topProducts = OrderItem::query()
-            ->whereHas('order', fn ($q) => $q->where('placed_at', '>=', $start)
-                ->where('is_test', false)
-                ->whereHas('paymentNotifications', fn ($p) => $p->where('status', 'verified')))
+            ->whereHas('order', fn ($q) => VerifiedOrderRevenue::constrain(
+                $q->where('placed_at', '>=', $start)
+            ))
             ->selectRaw('product_name, SUM(quantity) as sold, SUM(line_total_cents) as revenue')
             ->groupBy('product_name')->orderByDesc('sold')->limit(10)->get();
 

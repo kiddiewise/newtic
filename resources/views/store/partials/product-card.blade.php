@@ -21,20 +21,20 @@
       @if($product->options->isNotEmpty() || $product->requires_customer_photos)
       <a class="product-card-action product-card-option-link" href="{{ route('product.show', $product->slug) }}" aria-label="{{ $product->name }} için {{ $product->requires_customer_photos ? 'fotoğraf yükle' : 'ürün seçeneği belirle' }}">
         <x-store-icon name="shopping-cart" />
-        <span class="product-card-action-label">{{ $product->stock_quantity > 0 ? ($product->requires_customer_photos ? 'Fotoğraf Yükle' : 'Seçenek Seç') : 'Tükendi' }}</span>
+        <span class="product-card-action-label">{{ $product->cart_quantity_limit > 0 ? ($product->requires_customer_photos ? 'Fotoğraf Yükle' : 'Seçenek Seç') : 'Tükendi' }}</span>
       </a>
       @else
       <form class="product-card-add-form" method="POST" action="{{ route('cart.add') }}" data-quick-add data-quick-product="{{ $product->id }}">
         @csrf
         <input type="hidden" name="items[{{ $product->id }}]" value="1">
-        <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" title="{{ $product->stock_quantity > 0 ? 'Sepete ekle' : 'Tükendi' }}" @disabled($product->stock_quantity <= 0)>
+        <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" title="{{ $product->cart_quantity_limit > 0 ? 'Sepete ekle' : 'Tükendi' }}" @disabled($product->cart_quantity_limit <= 0)>
           <x-store-icon name="shopping-cart" />
-          <span class="product-card-action-label">{{ $product->stock_quantity > 0 ? 'Sepete Ekle' : 'Tükendi' }}</span>
+          <span class="product-card-action-label">{{ $product->cart_quantity_limit > 0 ? 'Sepete Ekle' : 'Tükendi' }}</span>
         </button>
       </form>
       @endif
     </div>
-    @if($product->stock_quantity > 0 && $product->stock_quantity <= 10)
+    @if($product->tracks_stock && $product->stock_quantity > 0 && $product->stock_quantity <= 10)
       <small class="product-card-low-stock">Son {{ $product->stock_quantity }} ürün</small>
     @endif
   </div>

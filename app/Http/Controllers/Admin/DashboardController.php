@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\PaymentNotification;
 use App\Models\Product;
+use App\Support\VerifiedOrderRevenue;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -20,10 +21,7 @@ class DashboardController extends Controller
             'products' => Product::query()->count(),
             'low_stock' => Product::query()->where('is_active', true)->where('tracks_stock', true)
                 ->where('stock_quantity', '<=', 10)->count(),
-            'verified_revenue_cents' => (int) Order::query()
-                ->where('is_test', false)
-                ->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'))
-                ->sum('total_cents'),
+            'verified_revenue_cents' => (int) VerifiedOrderRevenue::query()->sum('total_cents'),
         ];
 
         $recentOrders = Order::query()
@@ -35,11 +33,10 @@ class DashboardController extends Controller
             ->where('stock_quantity', '<=', 10)
             ->orderBy('stock_quantity')->orderBy('id')->limit(5)->get();
 
-        // Portable across MySQL and SQLite; only bank-verified *real* orders are revenue.
+        // One verified-gross-revenue rule across every admin report.
         $start = now()->startOfDay()->subDays(6);
-        $revenueByDay = Order::query()->where('is_test', false)
+        $revenueByDay = VerifiedOrderRevenue::query()
             ->where('placed_at', '>=', $start)
-            ->whereHas('paymentNotifications', fn ($q) => $q->where('status', 'verified'))
             ->selectRaw('DATE(placed_at) as day, SUM(total_cents) as revenue')
             ->groupByRaw('DATE(placed_at)')->pluck('revenue', 'day');
 

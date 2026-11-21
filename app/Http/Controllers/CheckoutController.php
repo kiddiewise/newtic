@@ -218,7 +218,7 @@ class CheckoutController extends Controller
                 }
 
                 $reserved[$id] = (int) ($reserved[$id] ?? 0) + $qty;
-                if ($reserved[$id] > min(999, $product->stock_quantity)) {
+                if ($reserved[$id] > $product->cart_quantity_limit) {
                     throw ValidationException::withMessages([
                         'cart' => $product->name.' için toplam stok miktarı yeterli değil.',
                     ]);

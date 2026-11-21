@@ -131,7 +131,7 @@ class CartController extends Controller
                     $inCart += (int) $storedQty;
                 }
             }
-            if ($qty + $inCart > min(999, $product->stock_quantity)) {
+            if ($qty + $inCart > $product->cart_quantity_limit) {
                 throw ValidationException::withMessages([
                     'items' => $product->name.' için toplam stok miktarı yeterli değil.',
                 ]);
@@ -198,7 +198,7 @@ class CartController extends Controller
                 }
             }
             if (! $product->is_active || ! $product->category?->is_active
-                || ($qty + $otherQty) > min(999, $product->stock_quantity)) {
+                || ($qty + $otherQty) > $product->cart_quantity_limit) {
                 throw ValidationException::withMessages(['quantity' => 'Seçilen adet stokta bulunmuyor.']);
             }
             $items[$key] = $qty;
