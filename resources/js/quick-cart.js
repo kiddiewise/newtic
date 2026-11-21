@@ -141,6 +141,14 @@ if (quickSheet) {
     try {
       const response = await requestCart(form.action, data);
       render(response);
+      for (const [key, raw] of data.entries()) {
+        const match = /^items\[(\d+)\]$/.exec(key);
+        if (match && Number(raw) > 0) {
+          document.dispatchEvent(new CustomEvent('newtic:cart-added', {
+            detail: { productId: Number(match[1]) },
+          }));
+        }
+      }
       form.closest('.product-card')?.querySelector('.quick-cart-card-error')?.remove();
       showToast('Sepete eklendi');
       // Do not open the quick-cart drawer or navigate away after adding.
@@ -194,6 +202,9 @@ if (quickSheet) {
     try {
       const response = await requestCart(endpoint, data);
       render(response, productId, plus ? 'plus' : 'minus');
+      if (plus) document.dispatchEvent(new CustomEvent('newtic:cart-added', {
+        detail: { productId },
+      }));
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Miktar güncellenemedi.');
       allButtons.forEach((item) => {

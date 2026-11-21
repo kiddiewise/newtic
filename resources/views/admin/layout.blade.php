@@ -43,6 +43,7 @@
     ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
     ['label' => 'PAYTR Ödeme Ayarları', 'name' => 'admin.paytr-settings.edit', 'active' => 'admin.paytr-settings.*', 'icon' => 'settings'],
     ['label' => 'Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
+    ['label' => 'Pazarlama ve Analitik', 'name' => 'admin.analytics', 'active' => 'admin.analytics*', 'icon' => 'chart'],
     ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
     ['label' => 'Vitrin Yönetimi', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
     ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],

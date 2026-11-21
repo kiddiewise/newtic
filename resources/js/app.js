@@ -100,3 +100,5 @@ import './category-banner-upload.js';
 import './subcategory-carousel.js';
 import './admin-product-quick-edit.js';
 import './sticky-sibling-navigation.js';
+import './store-analytics.js';
+import './admin-analytics-center.js';

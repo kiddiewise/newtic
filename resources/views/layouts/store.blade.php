@@ -5,6 +5,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="newtic-analytics-endpoint" content="{{ route('analytics.event') }}">
+  <meta name="newtic-analytics-forget" content="{{ route('analytics.forget') }}">
+  @if(request()->routeIs('product.show') && isset($product))
+    <meta name="newtic-analytics-page" content="product">
+    <meta name="newtic-analytics-product" content="{{ $product->id }}">
+  @elseif(request()->routeIs('category.show') && isset($category))
+    <meta name="newtic-analytics-page" content="category">
+    <meta name="newtic-analytics-category" content="{{ $category->id }}">
+  @elseif(request()->routeIs('search') && isset($products))
+    <meta name="newtic-analytics-page" content="search">
+    <meta name="newtic-analytics-search-count" content="{{ $products->total() }}">
+  @endif
   <meta name="theme-color" content="#092037">
   <link rel="icon" type="image/webp" href="{{ asset($shopAppearance->compactLogo()) }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">

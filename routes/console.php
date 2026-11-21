@@ -29,3 +29,6 @@ Schedule::command('merchant:sync --steps=6')->everyFifteenMinutes()->withoutOver
 // orders with an unreviewed/verified bank payment notification.
 Schedule::command('orders:expire-unpaid --limit=50')->everyFifteenMinutes()
     ->withoutOverlapping(10);
+
+// Privacy: automatically purge events after 90 days and expired sessions.
+Schedule::command('analytics:prune')->dailyAt('03:25')->withoutOverlapping(15);

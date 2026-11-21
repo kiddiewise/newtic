@@ -150,7 +150,7 @@ if (catalogForm) {
         disposeInfiniteCatalog(results);
         results.innerHTML = data.html;
         document.dispatchEvent(new CustomEvent('newtic:catalog-results-replaced', {
-          detail: { holder: results },
+          detail: { holder: results, term, count: data.count },
         }));
         heading.textContent = data.heading;
         status.textContent = data.count === 0 ? 'Ürün bulunamadı.'

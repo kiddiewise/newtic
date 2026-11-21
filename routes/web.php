@@ -8,6 +8,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\AnalyticsEventController;
+use App\Http\Controllers\Admin\AnalyticsCenterController;
 use App\Http\Controllers\PaymentNotificationController;
 use App\Http\Controllers\PaytrCallbackController;
 use App\Http\Controllers\ShippingCallbackController;
@@ -63,6 +65,12 @@ Route::get('/kategori/{slug}', [CatalogController::class, 'category'])->middlewa
 Route::get('/urun/{slug}', [CatalogController::class, 'product'])->middleware(ResolveCatalogRedirect::class)->name('product.show');
 Route::get('/ara/oneriler', [CatalogController::class, 'suggestions'])->middleware('throttle:60,1')->name('search.suggest');
 Route::get('/ara', [CatalogController::class, 'search'])->name('search');
+
+// Privacy-first, opt-in and per-installation first-party analytics.
+Route::post('/analitik/olay', [AnalyticsEventController::class, 'ingest'])
+    ->middleware('throttle:240,1')->name('analytics.event');
+Route::post('/analitik/unut', [AnalyticsEventController::class, 'forget'])
+    ->middleware('throttle:20,1')->name('analytics.forget');
 
 // Session-backed shopping cart; order checkout uses the same authoritative cart.
 // Favoriting and the wishlist require membership; cart stays available to guests.
@@ -243,6 +251,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/reviews', [AdminProductReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews/{review}/moderate', [AdminProductReviewController::class, 'moderate'])->name('reviews.moderate');
     Route::get('/reports', ReportController::class)->name('reports');
+    Route::get('/analitik-merkezi', [AnalyticsCenterController::class, 'index'])->name('analytics');
+    Route::get('/analitik-merkezi/canli', [AnalyticsCenterController::class, 'live'])
+        ->middleware('throttle:30,1')->name('analytics.live');
     Route::get('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'edit'])->name('paytr-settings.edit');
     Route::patch('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'update'])->middleware('throttle:10,1')->name('paytr-settings.update');
     Route::post('/odeme-ayarlari/paytr/test-modu', [PaytrSettingsController::class, 'testMode'])->middleware('throttle:6,1')->name('paytr-settings.test-mode');

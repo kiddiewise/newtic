@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC PayTR callback optional test_mode, safe payment_amount validation and idempotent OK acknowledgement release.
+# NEWTIC first-party privacy analytics + live marketing dashboard (tested deployment)
 
 on:
   push:
