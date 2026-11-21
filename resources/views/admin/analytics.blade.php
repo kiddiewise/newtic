@@ -8,12 +8,15 @@
       <h1>Pazarlama ve Analitik</h1>
       <p>Ziyaretleri, ürün ilgisini ve doğrulanmış satışları tek bir panelden incele.</p>
     </div>
-    <nav class="analytics-periods" aria-label="Analiz dönemi">
-      @foreach([7 => '7 gün', 30 => '30 gün', 90 => '90 gün'] as $period => $label)
-        <a @class(['is-active' => $days === $period]) href="{{ route('admin.analytics', ['days' => $period]) }}"
-           @if($days === $period) aria-current="page" @endif>{{ $label }}</a>
-      @endforeach
-    </nav>
+    <div class="analytics-actions">
+      <nav class="analytics-periods" aria-label="Analiz dönemi">
+        @foreach([7 => '7 gün', 30 => '30 gün', 90 => '90 gün'] as $period => $label)
+          <a @class(['is-active' => $days === $period]) href="{{ route('admin.analytics', ['days' => $period]) }}"
+             @if($days === $period) aria-current="page" @endif>{{ $label }}</a>
+        @endforeach
+      </nav>
+      <a class="analytics-export-button" href="{{ route('admin.analytics.export', ['days' => $days]) }}"><x-admin-icon name="download"/> CSV indir</a>
+    </div>
   </div>
 
   <div class="analytics-privacy-notice">
@@ -22,6 +25,7 @@
   </div>
 
   <section class="analytics-summary" aria-label="Temel göstergeler">
+    @php $comparisonKeys = ['visitors', 'pageViews', 'revenueCents', 'orderCount', 'averageCents', null]; @endphp
     @foreach([
       ['Ziyaretçi oturumu', number_format($visitors, 0, ',', '.'), 'Analitik izni bulunan farklı oturumlar'],
       ['Sayfa görüntüleme', number_format($pageViews, 0, ',', '.'), 'İzinli ziyaretlerin görüntülemeleri'],
@@ -34,6 +38,18 @@
         <span>{{ $item[0] }}</span>
         <strong>{{ $item[1] }}</strong>
         <small>{{ $item[2] }}</small>
+        @if($comparisonKeys[$index])
+          @php $delta = $comparison[$comparisonKeys[$index]]; @endphp
+          <div @class(['analytics-delta','is-up' => $delta['percent'] !== null && $delta['percent'] > 0,
+            'is-down' => $delta['percent'] !== null && $delta['percent'] < 0])>
+            @if($delta['percent'] === null)
+              <span>Önceki dönemde veri yok</span>
+            @else
+              <span>{{ $delta['percent'] > 0 ? '+' : '' }}{{ number_format($delta['percent'], 1, ',', '.') }}%</span>
+              <small>önceki {{ $days }} güne göre</small>
+            @endif
+          </div>
+        @endif
       </article>
     @endforeach
   </section>
@@ -83,6 +99,47 @@
         @endforeach
       </div>
       <p class="analytics-note">Satışlar siparişin oluşturulduğu güne göre gösterilir. İadeler bu ilk sürümün net ciro hesabına henüz dahil değildir.</p>
+    </section>
+
+    <section class="analytics-card">
+      <div class="analytics-card-heading">
+        <div><p class="analytics-eyebrow">CUSTOMER RETENTION</p><h2>Müşteri sadakati</h2></div>
+        <span class="analytics-chip">Üyelikli satışlar</span>
+      </div>
+      <div class="analytics-customer-metric">
+        <strong>{{ $buyers['returning_percent'] === null ? '—' : number_format($buyers['returning_percent'], 1, ',', '.').'%' }}</strong>
+        <span>Bu dönemde alışveriş yapan üyeler arasında daha önce de gerçek satın alma yapmış olanların oranı</span>
+      </div>
+      <div class="analytics-device-track analytics-retention-track">
+        <span style="width:{{ $buyers['returning_percent'] ?? 0 }}%"></span>
+      </div>
+      <div class="analytics-inline-stats analytics-retention-stats">
+        <div><span>İlk kez satın alan üyeler</span><strong>{{ number_format($buyers['new'], 0, ',', '.') }}</strong></div>
+        <div><span>Geri dönen üyeler</span><strong>{{ number_format($buyers['returning'], 0, ',', '.') }}</strong></div>
+      </div>
+      <p class="analytics-note">{{ number_format($buyers['all'], 0, ',', '.') }} üyelikli alıcı incelendi. Misafir alışverişleri kişisel e-posta ile eşleştirilmez; bu oran tüm müşterilerin tekrar satın alma oranı değildir.</p>
+    </section>
+
+    <section class="analytics-card">
+      <div class="analytics-card-heading">
+        <div><p class="analytics-eyebrow">OPPORTUNITY RADAR</p><h2>Satış fırsatı göstergeleri</h2></div>
+        <span class="analytics-chip">Kurala dayalı</span>
+      </div>
+      <p class="analytics-note">En az 10 izinli görüntülenmesi olan ürünlerde düşük sepete ekleme oranı veya tükenen stok tespit edilir.</p>
+      <div class="analytics-opportunities">
+        @forelse($opportunities as $opportunity)
+          <div class="analytics-opportunity">
+            <div>
+              <a href="{{ route('admin.products.edit', $opportunity['id']) }}">{{ $opportunity['name'] }}</a>
+              <span>{{ $opportunity['reason'] }}</span>
+            </div>
+            <small>{{ $opportunity['views'] }} inceleme · {{ $opportunity['cart_adds'] }} sepete ekleme</small>
+          </div>
+        @empty
+          <p class="analytics-empty">Henüz yeterli veriyle oluşan fırsat uyarısı bulunmuyor. Bu, sorun olmadığı anlamına gelmez.</p>
+        @endforelse
+      </div>
+      <p class="analytics-note">Bu sinyaller kesin sonuç veya nedensellik kanıtı değildir; ürün ve stok incelemesi için başlangıç noktasıdır.</p>
     </section>
 
     <section class="analytics-card analytics-span-2">

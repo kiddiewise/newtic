@@ -236,4 +236,112 @@ final class AnalyticsCenterTest extends TestCase
         $this->artisan('analytics:prune')->assertSuccessful();
         $this->assertDatabaseCount('analytics_events', 1);
     }
+
+    public function test_equal_length_previous_period_is_compared_without_making_up_zero_baseline_growth(): void
+    {
+        $uuid = (string) Str::uuid();
+        $this->postJson(route('analytics.event'), $this->payload($uuid))->assertStatus(202);
+
+        $this->actingAs($this->admin());
+        $this->get(route('admin.analytics', ['days' => 30]))->assertOk()
+            ->assertViewHas('comparison', fn (array $c) =>
+                $c['visitors']['previous'] === 0
+                && $c['visitors']['percent'] === null
+                && $c['revenueCents']['percent'] === null);
+
+        DB::table('analytics_events')->insert([
+            'session_key' => str_repeat('f', 64),
+            'event_name' => 'page_view', 'page_path' => '/',
+            'device' => 'desktop', 'occurred_at' => now()->subDays(35),
+        ]);
+        DB::table('analytics_events')->insert([
+            'session_key' => str_repeat('e', 64),
+            'event_name' => 'page_view', 'page_path' => '/',
+            'device' => 'desktop', 'occurred_at' => now()->subDays(35),
+        ]);
+        $this->get(route('admin.analytics', ['days' => 30]))->assertOk()
+            ->assertViewHas('comparison', fn (array $c) =>
+                $c['visitors']['previous'] === 2
+                && $c['visitors']['percent'] === -50.0);
+    }
+
+    public function test_repeat_buyer_segments_use_verified_registered_orders_only(): void
+    {
+        $returning = User::factory()->create();
+        $new = User::factory()->create();
+
+        $prior = $this->order(false);
+        $prior->update(['user_id' => $returning->id, 'placed_at' => now()->subDays(65)]);
+        $this->verify($prior);
+
+        $repeat = $this->order(false);
+        $repeat->update(['user_id' => $returning->id]);
+        $this->verify($repeat);
+
+        $first = $this->order(false);
+        $first->update(['user_id' => $new->id]);
+        $this->verify($first);
+
+        $guest = $this->order(false);
+        $this->verify($guest);
+
+        $test = $this->order(true);
+        $test->update(['user_id' => $new->id]);
+        $this->verify($test);
+
+        $this->actingAs($this->admin())->get(route('admin.analytics'))->assertOk()
+            ->assertViewHas('buyers', fn (array $buyers) =>
+                $buyers['all'] === 2
+                && $buyers['new'] === 1
+                && $buyers['returning'] === 1
+                && $buyers['returning_percent'] === 50.0);
+    }
+
+    public function test_sales_opportunity_needs_enough_genuine_interest_sample(): void
+    {
+        $product = $this->product();
+        $key = str_repeat('b', 64);
+        $rows = [];
+        for ($i = 0; $i < 11; $i++) {
+            $rows[] = [
+                'session_key' => $key,
+                'event_name' => 'view_item',
+                'product_id' => $product->id,
+                'page_path' => '/urun/renkli-surf-125',
+                'device' => 'mobile', 'occurred_at' => now(),
+            ];
+        }
+        DB::table('analytics_events')->insert($rows);
+        $this->actingAs($this->admin())->get(route('admin.analytics'))->assertOk()
+            ->assertViewHas('opportunities', fn ($items) =>
+                $items->count() === 1
+                && $items->first()['views'] === 11
+                && $items->first()['cart_adds'] === 0);
+    }
+
+    public function test_admin_only_csv_contains_aggregates_and_neutralizes_catalog_formulas(): void
+    {
+        $this->get(route('admin.analytics.export'))->assertRedirect();
+        $this->actingAs(User::factory()->create());
+        $this->get(route('admin.analytics.export'))->assertForbidden();
+
+        $product = $this->product();
+        $product->update(['name' => '=2+2']);
+        $this->postJson(route('analytics.event'), $this->payload((string) Str::uuid(), 'view_item', [
+            'path' => '/urun/renkli-surf-125', 'product_id' => $product->id,
+        ]))->assertStatus(202);
+
+        $this->actingAs($this->admin());
+        $response = $this->get(route('admin.analytics.export', ['days' => 7]));
+        $response->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
+            ->assertHeader('Cache-Control', 'private, no-store');
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('sep=;', $csv);
+        $this->assertStringContainsString('NEWTIC', $csv);
+        $this->assertStringContainsString("'=2+2", $csv);
+        $this->assertStringNotContainsString('customer@example.test', $csv);
+        $this->assertStringNotContainsString('session_key', $csv);
+        $this->get(route('admin.analytics.export', ['days' => 365]))->assertStatus(422);
+    }
+
 }

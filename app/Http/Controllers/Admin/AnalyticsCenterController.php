@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class AnalyticsCenterController extends Controller
 {
@@ -25,6 +26,81 @@ final class AnalyticsCenterController extends Controller
     {
         return response()->json($this->liveSnapshot())
             ->header('Cache-Control', 'private, no-store, max-age=0');
+    }
+
+    /**
+     * Export aggregate statistics only; never visitor/session identifiers,
+     * user IDs, emails, IPs, payment details or customer addresses.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $days = (int) $request->query('days', 30);
+        abort_unless(in_array($days, [7, 30, 90], true), 422);
+        $report = $this->buildReport($days);
+
+        return response()->streamDownload(function () use ($report, $days) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fwrite($out, "sep=;\r\n");
+            $row = static function (array $values) use ($out): void {
+                // Spreadsheet apps must not execute a catalog title or search
+                // phrase as a formula. Prefix dangerous leading characters.
+                fputcsv($out, array_map(static function ($value) {
+                    $text = (string) $value;
+
+                    return preg_match('/^\s*[=+\-@]/u', $text) ? "'".$text : $text;
+                }, $values), ';');
+            };
+
+            $row(['NEWTIC — Pazarlama ve Analitik', $days.' gün']);
+            $row(['Veri kapsamı', 'Anonim ziyaretler için analitik izni gerekir; satışlar doğrulanmış gerçek siparişlerdir.']);
+            $row([]);
+            $row(['Gösterge', 'Bu dönem', 'Önceki dönem']);
+            foreach ([
+                'Ziyaretçi oturumu' => ['visitors', 'visitors'],
+                'Sayfa görüntüleme' => ['pageViews', 'pageViews'],
+                'Doğrulanmış sipariş' => ['orderCount', 'orderCount'],
+                'Doğrulanmış ciro (TL)' => ['revenueCents', 'revenueCents'],
+                'Ortalama sipariş (TL)' => ['averageCents', 'averageCents'],
+            ] as $label => [$field, $metric]) {
+                $divisor = str_contains($label, '(TL)') ? 100 : 1;
+                $row([$label, $report[$field] / $divisor, $report['comparison'][$metric]['previous'] / $divisor]);
+            }
+
+            $row([]);
+            $row(['Müşteri segmentleri (yalnızca üyelikli alışverişler)', 'Alıcı sayısı']);
+            $row(['Bu dönemde alışveriş yapan üyeler', $report['buyers']['all']]);
+            $row(['Daha önce satın almış üyeler', $report['buyers']['returning']]);
+            $row(['İlk kez satın alan üyeler', $report['buyers']['new']]);
+            $row([]);
+            $row(['Günlük trafik ve satış', 'Sayfa görüntüleme', 'Ziyaretçi oturumu', 'Doğrulanmış ciro (TL)']);
+            foreach ($report['trend'] as $day) {
+                $row([$day['label'], $day['views'], $day['visitors'], $day['revenue']]);
+            }
+            $row([]);
+            $row(['Ürün', 'İnceleme', 'Sepete ekleme', 'Satılan adet', 'Doğrulanmış ürün cirosu (TL)']);
+            foreach ($report['products'] as $product) {
+                $row([$product['name'], $product['views'], $product['cart_adds'], $product['sold'], $product['revenue_cents'] / 100]);
+            }
+            $row([]);
+            $row(['Arama terimi', 'Arama sayısı', 'Sonuçsuz arama']);
+            foreach ($report['searches'] as $search) {
+                $row([$search->search_term, $search->searches, $search->empty_results]);
+            }
+            fclose($out);
+        }, 'newtic-analitik-'.now()->format('Ymd').'-'.$days.'gun.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function compareMetric(int $current, int $previous): array
+    {
+        return [
+            'previous' => $previous,
+            'percent' => $previous > 0 ? round((($current - $previous) / $previous) * 100, 1) : null,
+        ];
     }
 
     private function paidOrders(): \Illuminate\Database\Eloquent\Builder
@@ -68,6 +144,8 @@ final class AnalyticsCenterController extends Controller
     {
         $start = now()->startOfDay()->subDays($days - 1);
         $end = now()->endOfDay();
+        $previousStart = $start->copy()->subDays($days);
+        $previousEnd = $start->copy()->subSecond();
         $events = DB::table('analytics_events')->whereBetween('occurred_at', [$start, $end]);
         $paidOrders = $this->paidOrders()->whereBetween('placed_at', [$start, $end]);
 
@@ -79,6 +157,42 @@ final class AnalyticsCenterController extends Controller
         $orderCount = (clone $paidOrders)->count();
         $revenueCents = (int) (clone $paidOrders)->sum('total_cents');
         $averageCents = $orderCount ? (int) round($revenueCents / $orderCount) : 0;
+
+        // Equal-length calendar periods. Do not fabricate a percentage when the
+        // previous period had zero data (especially during initial rollout).
+        $previousEvents = DB::table('analytics_events')
+            ->whereBetween('occurred_at', [$previousStart, $previousEnd]);
+        $previousOrders = $this->paidOrders()
+            ->whereBetween('placed_at', [$previousStart, $previousEnd]);
+        $previousVisitors = (clone $previousEvents)->distinct('session_key')->count('session_key');
+        $previousPageViews = (clone $previousEvents)->where('event_name', 'page_view')->count();
+        $previousOrderCount = (clone $previousOrders)->count();
+        $previousRevenueCents = (int) (clone $previousOrders)->sum('total_cents');
+        $previousAverageCents = $previousOrderCount
+            ? (int) round($previousRevenueCents / $previousOrderCount) : 0;
+        $comparison = [
+            'visitors' => $this->compareMetric($visitors, $previousVisitors),
+            'pageViews' => $this->compareMetric($pageViews, $previousPageViews),
+            'orderCount' => $this->compareMetric($orderCount, $previousOrderCount),
+            'revenueCents' => $this->compareMetric($revenueCents, $previousRevenueCents),
+            'averageCents' => $this->compareMetric($averageCents, $previousAverageCents),
+        ];
+
+        // Only aggregate registered-account buyers. Guest orders are
+        // deliberately excluded instead of matching customers by email.
+        $paidMembers = (clone $paidOrders)->whereNotNull('user_id');
+        $memberCount = (clone $paidMembers)->distinct()->count('user_id');
+        $returningMemberCount = (clone $paidMembers)
+            ->whereIn('user_id', $this->paidOrders()->where('placed_at', '<', $start)
+                ->whereNotNull('user_id')->select('user_id'))
+            ->distinct()->count('user_id');
+        $buyers = [
+            'all' => $memberCount,
+            'returning' => $returningMemberCount,
+            'new' => $memberCount - $returningMemberCount,
+            'returning_percent' => $memberCount
+                ? round(100 * $returningMemberCount / $memberCount, 1) : null,
+        ];
 
         $sessionsByEvent = (clone $events)
             ->select('event_name', DB::raw('COUNT(DISTINCT session_key) as total'))
@@ -128,15 +242,37 @@ final class AnalyticsCenterController extends Controller
             ->groupBy('product_id')->orderByDesc('units')->limit(30)->get()->keyBy('product_id');
 
         $ids = $productEvents->keys()->merge($soldProducts->keys())->unique()->values();
-        $names = Product::query()->whereIn('id', $ids)->pluck('name', 'id');
+        $catalog = Product::query()->whereIn('id', $ids)
+            ->get(['id', 'name', 'stock_quantity', 'tracks_stock'])->keyBy('id');
         $products = $ids->map(fn ($id) => [
             'id' => (int) $id,
-            'name' => $names[$id] ?? ('Ürün #'.$id),
+            'name' => $catalog[$id]->name ?? ('Ürün #'.$id),
             'views' => (int) ($productEvents[$id]->views ?? 0),
             'cart_adds' => (int) ($productEvents[$id]->cart_adds ?? 0),
             'sold' => (int) ($soldProducts[$id]->units ?? 0),
             'revenue_cents' => (int) ($soldProducts[$id]->revenue_cents ?? 0),
+            'stock' => (int) ($catalog[$id]->stock_quantity ?? 0),
+            'tracks_stock' => (bool) ($catalog[$id]->tracks_stock ?? false),
         ])->sortByDesc('views')->take(15)->values();
+
+        // Explainable opportunity rules, not AI or proven causal findings.
+        // A minimum sample size reduces false alerts from tiny datasets.
+        $opportunities = $products->filter(fn (array $product) => $product['views'] >= 10)
+            ->map(function (array $product) {
+                $reason = ($product['tracks_stock'] && $product['stock'] === 0)
+                    ? 'Yoğun ilgi var, ürün stokta yok'
+                    : (($product['cart_adds'] / max(1, $product['views'])) < 0.05
+                        ? 'Çok inceleniyor, sepete eklenme oranı düşük'
+                        : null);
+
+                return $reason ? [
+                    'id' => $product['id'],
+                    'name' => $product['name'],
+                    'views' => $product['views'],
+                    'cart_adds' => $product['cart_adds'],
+                    'reason' => $reason,
+                ] : null;
+            })->filter()->take(5)->values();
 
         $pages = (clone $events)->where('event_name', 'page_view')
             ->select('page_path', DB::raw('COUNT(*) as views'))
@@ -159,7 +295,7 @@ final class AnalyticsCenterController extends Controller
             'days', 'visitors', 'pageViews', 'productViews', 'cartAdds',
             'checkoutStarts', 'orderCount', 'revenueCents', 'averageCents',
             'trend', 'funnel', 'products', 'pages', 'searches', 'sources',
-            'devices', 'live'
+            'devices', 'live', 'comparison', 'buyers', 'opportunities'
         );
     }
 }

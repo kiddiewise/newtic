@@ -252,6 +252,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/reviews/{review}/moderate', [AdminProductReviewController::class, 'moderate'])->name('reviews.moderate');
     Route::get('/reports', ReportController::class)->name('reports');
     Route::get('/analitik-merkezi', [AnalyticsCenterController::class, 'index'])->name('analytics');
+    Route::get('/analitik-merkezi/disa-aktar', [AnalyticsCenterController::class, 'export'])
+        ->middleware('throttle:10,1')->name('analytics.export');
     Route::get('/analitik-merkezi/canli', [AnalyticsCenterController::class, 'live'])
         ->middleware('throttle:30,1')->name('analytics.live');
     Route::get('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'edit'])->name('paytr-settings.edit');

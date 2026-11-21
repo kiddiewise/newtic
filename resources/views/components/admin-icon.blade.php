@@ -22,6 +22,7 @@
 @case('arrow-right')<path d="M4 12h16m-6-6 6 6-6 6"/>@break
 @case('arrow-up')<path d="M12 19V5m-6 6 6-6 6 6"/>@break
 @case('arrow-down')<path d="M12 5v14m-6-6 6 6 6-6"/>@break
+@case('download')<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>@break
 @case('trash-2')<path d="M3 6h18M8 6V4h8v2M5 6l1 15h12l1-15M10 10v7M14 10v7"/>@break
 @case('external-link')<path d="M13 5h6v6M19 5l-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>@break
 @case('menu')<path d="M4 6h16M4 12h16M4 18h16"/>@break

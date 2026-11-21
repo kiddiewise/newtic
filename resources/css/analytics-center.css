@@ -88,3 +88,38 @@
   .analytics-live-summary strong{font-size:20px}
   .analytics-plot{height:218px}
 }
+
+
+/* Intelligence phase 2: calendar-period comparison, member retention, opportunity signals, CSV export. */
+.analytics-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.analytics-export-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#263238;border:1px solid #263238;color:#fff;text-decoration:none;padding:10px 14px;border-radius:11px;font:600 11px Montserrat,sans-serif;white-space:nowrap;min-height:41px;transition:background .18s ease,border-color .18s ease}
+.analytics-export-button:hover,.analytics-export-button:focus-visible{background:#414d53;border-color:#414d53;color:#fff}
+.analytics-export-button svg{width:15px;height:15px}
+.analytics-delta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:25px;margin-top:3px;border-top:1px solid #e9edef;padding-top:11px;color:#87959b;font-size:10px}
+.analytics-delta span{font-weight:700}
+.analytics-delta small{font-size:9px;font-weight:500;color:#89969b}
+.analytics-delta.is-up span{color:#187c65}
+.analytics-delta.is-down span{color:#ae6744}
+.analytics-kpi.is-featured .analytics-delta{border-top-color:#424a50}
+.analytics-kpi.is-featured .analytics-delta span,.analytics-kpi.is-featured .analytics-delta small{color:#cad2d6}
+.analytics-customer-metric{display:flex;align-items:center;gap:16px;margin:20px 0}
+.analytics-customer-metric strong{font:700 clamp(38px,4vw,53px)/1 "Plus Jakarta Sans",Montserrat,sans-serif;letter-spacing:-.04em;color:#25343c;white-space:nowrap}
+.analytics-customer-metric span{max-width:280px;font-size:11px;line-height:1.65;color:#6b7c84}
+.analytics-retention-track{height:13px}
+.analytics-retention-track span{background:#f68220}
+.analytics-retention-stats{margin-top:23px}
+.analytics-opportunities{margin-top:12px}
+.analytics-opportunity{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #edf0f2}
+.analytics-opportunity:last-child{border-bottom:0}
+.analytics-opportunity>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.analytics-opportunity a{color:#314249;font:600 11px/1.55 Montserrat,sans-serif;text-decoration:none}
+.analytics-opportunity a:hover{text-decoration:underline}
+.analytics-opportunity>div>span{font-size:10px;color:#c06d27;line-height:1.5}
+.analytics-opportunity>small{flex:none;color:#87959c;font-size:9px;white-space:nowrap}
+@media(max-width:760px){
+  .analytics-actions{width:100%;justify-content:stretch;gap:8px}
+  .analytics-export-button{flex:1}
+  .analytics-customer-metric{gap:13px}
+  .analytics-customer-metric strong{font-size:35px}
+  .analytics-opportunity{align-items:flex-start;flex-direction:column;gap:5px}
+}
