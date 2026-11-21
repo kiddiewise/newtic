@@ -156,6 +156,7 @@ use App\Http\Controllers\Admin\ProductCsvController;
 use App\Http\Controllers\Admin\ProductBadgeController;
 use App\Http\Controllers\Admin\CatalogImportController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -214,6 +215,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::patch('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'updateImage'])->name('blog.images.update');
     Route::delete('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'destroyImage'])->name('blog.images.destroy');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/sistem-sagligi', SystemHealthController::class)->middleware('throttle:30,1')->name('system-health');
+    Route::get('/guvenlik', SystemHealthController::class)->middleware('throttle:30,1')->name('security');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
     Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');
     Route::get('/kampanya-eposta/yeni', [MarketingCampaignController::class,'create'])->name('marketing.create');

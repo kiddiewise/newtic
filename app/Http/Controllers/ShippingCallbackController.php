@@ -7,6 +7,7 @@ use App\Models\ShippingProvider;
 use App\Models\ShippingShipment;
 use App\Services\ShippingShipmentManager;
 use App\Support\ShippingTestAccess;
+use App\Support\SystemHealthRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -43,6 +44,7 @@ final class ShippingCallbackController extends Controller
             ->where('remote_id', (int)$id)->first();
         if (!$shipment || !$shipment->carrier->is_dummy) return response('not found', 404);
         $manager->acceptCallback($shipment, $status, $time);
+        SystemHealthRecorder::record('shipping_sync', true, 'signed_callback');
 
         return response('OK', 200)->header('Content-Type', 'text/plain; charset=UTF-8')
             ->header('Cache-Control', 'no-store');
