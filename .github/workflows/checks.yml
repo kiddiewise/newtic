@@ -85,7 +85,7 @@ jobs:
           sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
-          printf '\\nNEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false\\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=false\\nNEWTIC_SHIPPING_DUMMY_ENABLED=false\\nNEWTIC_MARKETING_SEND_ENABLED=false\\n' >> .env
+          printf '\nNEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=false\nNEWTIC_SHIPPING_DUMMY_ENABLED=false\nNEWTIC_MARKETING_SEND_ENABLED=false\n' >> .env
           bash scripts/install-production.sh --check
           test -f .env.newtic-ci-backup
           mv -f .env.newtic-ci-backup .env
