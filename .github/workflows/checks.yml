@@ -87,6 +87,12 @@ jobs:
           printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
           printf '\nNEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=false\nNEWTIC_SHIPPING_DUMMY_ENABLED=false\nNEWTIC_MARKETING_SEND_ENABLED=false\n' >> .env
           bash scripts/install-production.sh --check
+          # Repeated payment flag lines are dangerous: reject ambiguous .env.
+          printf '\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=true\n' >> .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: conflicting duplicate environment keys accepted" >&2
+            exit 1
+          fi
           test -f .env.newtic-ci-backup
           mv -f .env.newtic-ci-backup .env
           trap - EXIT

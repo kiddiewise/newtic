@@ -62,6 +62,19 @@ env_value() {
   printf '%s' "$value"
 }
 
+# Laravel dotenv and shell extraction can interpret duplicate keys
+# differently. Refuse an ambiguous merchant configuration before any write.
+for name in \
+  APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL \
+  DB_CONNECTION DB_HOST DB_PORT DB_SOCKET DB_DATABASE DB_USERNAME DB_PASSWORD \
+  NEWTIC_CHECKOUT_TEST_MODE NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED \
+  NEWTIC_PAYTR_WEBHOOKS_ENABLED NEWTIC_SHIPPING_DUMMY_ENABLED \
+  NEWTIC_MARKETING_SEND_ENABLED; do
+  occurrences="$(grep -c "^${name}=" .env || true)"
+  [[ "$occurrences" -le 1 ]] ||
+    fail "Duplicate .env key: $name. Remove ambiguous duplicate lines before first installation."
+done
+
 [[ "$(env_value APP_ENV)" == "production" ]] ||
   fail "APP_ENV must be production."
 [[ "$(env_value APP_DEBUG)" == "false" ]] ||

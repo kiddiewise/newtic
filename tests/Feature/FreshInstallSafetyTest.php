@@ -26,6 +26,7 @@ final class FreshInstallSafetyTest extends TestCase
         $this->assertLessThan(strpos($script, 'php artisan migrate --force'), $probe);
         $this->assertStringContainsString('NEWTIC_PAYTR_WEBHOOKS_ENABLED:false', $script);
         $this->assertStringContainsString('NEWTIC_MARKETING_SEND_ENABLED:false', $script);
+        $this->assertStringContainsString('Duplicate .env key:', $script);
     }
 
     public function test_public_asset_verifier_checks_sensitive_application_paths(): void
