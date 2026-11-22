@@ -87,6 +87,16 @@ final class StoreInstaller
             'Dosya yazma izinleri' => is_writable(storage_path('app'))
                 && is_writable(storage_path('framework'))
                 && is_writable(base_path('bootstrap/cache')),
+            // CLI bootstrap verifies all SHA256 checksums once before the
+            // database is touched. The HTTP wizard verifies essentials only
+            // to avoid hashing thousands of files on every unauthenticated GET.
+            'Uygulama ve ön yüz dosyaları' => $test || (
+                is_file(base_path('vendor/autoload.php'))
+                && is_file(public_path('build/manifest.json'))
+                && is_file(public_path('build/newtic-revision.txt'))
+                && is_file(public_path('assets/branding/newtic-logo.webp'))
+            ),
+            'Toplu pazarlama gönderimi kapalı' => !config('newtic.marketing_live_enabled', false),
             'Test ödeme modu etkin' => (bool) config('newtic.checkout_test_mode', true),
             'Gerçek ödeme ve kargo kapalı' => !config('newtic.paytr_card_payments_enabled', false)
                 && !config('newtic.paytr_webhooks_enabled', false)

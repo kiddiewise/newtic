@@ -90,7 +90,10 @@ final class NewticDefaultBrandingTest extends TestCase
         $this->assertStringContainsString('.newtic-release-revision', $script);
         $this->assertStringContainsString('public/assets/branding/', $script);
         $workflow = file_get_contents(base_path('.github/workflows/checks.yml'));
-        $this->assertStringContainsString('newtic-complete-install.zip', $workflow);
-        $this->assertStringContainsString('git archive --format=tar HEAD', $workflow);
+        $this->assertStringContainsString('newtic-customer-install.zip', $workflow);
+        $build = file_get_contents(base_path('scripts/build-customer-release.sh'));
+        $this->assertStringContainsString('git archive --format=tar', $build);
+        $this->assertStringContainsString('vendor/autoload.php', $build);
+        $this->assertStringContainsString('NEWTIC-RELEASE-SHA256SUMS.txt', $build);
     }
 }

@@ -1,4 +1,10 @@
-# NEWTIC – Her müşteriye bağımsız Hostinger kurulumu (Model A)
+# NEWTIC – Her müşteriye bağımsız kurulum (Model A)
+
+**Güncel tek paket kurulum yolunun ayrıntılı ve sağlayıcıdan bağımsız
+rehberi: `docs/NEWTIC_INSTALLATION_MANUAL_TR.md`.** Aşağıdaki Git/Hostinger
+komutları, kaynaktan manuel kurulum yapmak isteyenler için alternatif olarak
+korunur. Resmi `newtic-customer-install.zip` paketinin içinde Composer
+bağımlılıkları ve derlenmiş CSS/JS zaten hazırdır; canlı ödeme/kargo kapalıdır.
 
 Bu doküman tek bir müşteriye değil, herhangi bir yeni domain için ilk kuruluma
 uygulanır. Polaris, Sinay veya başka mağazanın kullanıcıları ve ürünleri asla

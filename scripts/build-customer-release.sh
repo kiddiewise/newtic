@@ -47,7 +47,8 @@ find "$ROOT/scripts" -mindepth 1 -maxdepth 1 -type f \
 mkdir -p "$ROOT/docs" "$ROOT/storage/app/private" "$ROOT/storage/app/public" \
   "$ROOT/storage/framework/cache/data" "$ROOT/storage/framework/sessions" \
   "$ROOT/storage/framework/views" "$ROOT/storage/logs" "$ROOT/bootstrap/cache"
-cp docs/INSTALL_NEW_STORE.md docs/NEW_CUSTOMER_INSTALL_AUDIT.md "$ROOT/docs/"
+cp docs/INSTALL_NEW_STORE.md docs/NEW_CUSTOMER_INSTALL_AUDIT.md \
+  docs/NEWTIC_INSTALLATION_MANUAL_TR.md "$ROOT/docs/"
 cat > "$ROOT/INSTALL-FIRST.md" <<'README'
 # NEWTIC — Tek paket müşteri kurulumu
 
@@ -72,7 +73,7 @@ Bu dosya, resmi GitHub kurulum sürümünden gelmelidir. ZIP dışındaki
    Özel dosyadaki kodu yalnız güvenli `https://ALANADI/install` ekranına girin,
    mağaza adını ve ilk yöneticiyi oluşturun. Kurulum sonrası `/install` kapanır.
 8. Cron, SMTP, yasal sayfalar, ödeme ve kargo için
-   `docs/INSTALL_NEW_STORE.md` rehberini izleyin.
+   `docs/NEWTIC_INSTALLATION_MANUAL_TR.md` rehberini izleyin.
 
 **Önemli:** Bu sürüm ilk kurulum içindir. PAYTR gerçek tahsilatı ve gerçek
 kargo çıkışı ancak ayrı canlıya geçiş testleriyle kullanılabilir.

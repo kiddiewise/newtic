@@ -122,6 +122,7 @@ final class SetupWizardTest extends TestCase
         $this->post(route('install.finish'), $this->details())->assertNotFound();
         $this->assertDatabaseCount('users',1);
         $this->get(route('admin.index'))->assertOk();
+        $this->artisan('newtic:doctor')->assertExitCode(0);
     }
 
     public function test_password_validation_prevents_partial_installation(): void

@@ -10,7 +10,7 @@
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
-    body { margin: 0; color:#092037; background:linear-gradient(145deg,#eff4f6,#f8fafb 66%,#e8eff4);
+    body { margin: 0; color:#092037; background:linear-gradient(145deg,#f2f5fa,#fafbfc 66%,#eaf0f7);
       font: 15px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh; }
     .container { width: min(100% - 32px, 760px); margin: 38px auto 60px; }
     .brand { display:flex;align-items:center;justify-content:space-between; margin-bottom:22px; }
@@ -18,14 +18,14 @@
     .tag { border:1px solid #d8e3e9;border-radius:99px;padding:6px 12px;font-size:12px;letter-spacing:.4px; }
     .panel { background:white;border:1px solid #e0e7ec;border-radius:24px;
       padding:clamp(20px,5vw,38px);box-shadow:0 20px 60px rgba(9,32,55,.07); }
-    .eyebrow {font-weight:700;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#56818a;}
+    .eyebrow {font-weight:700;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#637e9b;}
     h1 { font-size:clamp(26px,4vw,38px);line-height:1.2;letter-spacing:-1.3px;margin:12px 0; }
     h2 {font-size:18px;letter-spacing:-.4px;}
     p,small {color:#576b7c;}
     label {display:block;font-weight:650;font-size:13px;margin:18px 0 7px;}
     input {width:100%;min-height:49px;padding:12px 14px;border:1px solid #d8e3e9;
       border-radius:10px;background:#f9fbfc;color:#092037;font:inherit;}
-    input:focus {outline:2px solid #9bb9c4;outline-offset:1px;}
+    input:focus {outline:2px solid #a9bdd6;outline-offset:1px;}
     button,.button { background:#092037;color:white;text-decoration:none;border:0;border-radius:11px;
       min-height:47px;padding:12px 21px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
       cursor:pointer;font-size:14px;}
@@ -33,7 +33,7 @@
     button:disabled {opacity:.5;cursor:not-allowed;}
     .disabled {opacity:.5;cursor:not-allowed;pointer-events:none;}
     .grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 17px;}
-    .notice {background:#f1f6f9;border:1px solid #d7e5eb;color:#244a60;
+    .notice {background:#f2f6fb;border:1px solid #dee8f4;color:#38546e;
       border-radius:11px;padding:13px 16px;margin:18px 0;}
     .errors {background:#fff2f2;border:1px solid #f5cccc;color:#a52e39;
       border-radius:11px;padding:12px 17px;margin:18px 0;}
@@ -66,7 +66,7 @@
       @endif
       @yield('content')
     </main>
-    <p class="foot">NEWTIC Kurulum Sihirbazı v1.0 · İlk kurulumdan sonra erişim otomatik kapanır.</p>
+    <p class="foot">NEWTIC · Güvenli ve bağımsız mağaza kurulumu · İlk kurulumdan sonra erişim otomatik kapanır.</p>
   </div>
 </body>
 </html>
