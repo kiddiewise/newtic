@@ -58,7 +58,10 @@ class PolarisCorporateThemeTest extends TestCase
         $critical = (string) file_get_contents(
             resource_path('views/admin/partials/critical-styles.blade.php')
         );
-        $this->assertStringContainsString('.admin-side-link.is-active{background:#f68220;color:#092037}', $critical);
+        // The admin sidebar is now calm cloud-slate; the old orange active item
+        // must not reappear in the server-rendered critical first paint.
+        $this->assertStringContainsString('.admin-side-link.is-active{background:#fff;color:#273f59;border:1px solid #d4e0ec}', $critical);
+        $this->assertStringNotContainsString('.admin-side-link.is-active{background:#f68220;color:#092037}', $critical);
         $this->assertStringContainsString('.admin-primary{background:#f68220;color:#092037}', $critical);
 
         $css = $this->theme();
