@@ -150,7 +150,7 @@ jobs:
           DB_DATABASE=newtic_fresh_ci
           DB_USERNAME=newtic_install_ci
           DB_PASSWORD=newtic_ci_temporary_only
-          NEWTIC_CHECKOUT_TEST_MODE=true
+          # NEWTIC_CHECKOUT_TEST_MODE=true is already set in .env.example
           NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
           NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
           NEWTIC_SHIPPING_DUMMY_ENABLED=false
