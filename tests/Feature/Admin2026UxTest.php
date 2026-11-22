@@ -108,6 +108,25 @@ class Admin2026UxTest extends TestCase
         $this->assertSame(2, Order::count());
     }
 
+    public function test_soft_sidebar_does_not_render_the_large_quick_access_card(): void
+    {
+        $this->actingAs($this->admin());
+        $page = $this->get(route('admin.dashboard'))->assertOk();
+
+        $page->assertDontSee('admin-help-card')
+            ->assertDontSee('Hızlı erişim')
+            ->assertSee('SİSTEM YÖNETİMİ')
+            ->assertSee(route('admin.system-health'))
+            ->assertSee('admin-sidebar-user')
+            ->assertSee('Güvenli çıkış')
+            ->assertSee('admin-sidebar-bottom');
+
+        $styles = file_get_contents(resource_path('css/admin-control-center.css'));
+        $this->assertStringContainsString('background:linear-gradient(165deg,#f4f7fb', $styles);
+        $this->assertStringContainsString('background:#fff;color:#273f59', $styles);
+        $this->assertStringNotContainsString('admin-help-card', $styles);
+    }
+
     public function test_navigation_retains_existing_management_routes(): void
     {
         $this->actingAs($this->admin());

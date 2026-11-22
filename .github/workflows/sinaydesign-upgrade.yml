@@ -1,5 +1,5 @@
 name: Sinay Design verified NEWTIC upgrade
-# NEWTIC admin control center: host-independent health checks; verified Sinay release
+# NEWTIC sidebar polish: soft navigation, removed quick access; verified Sinay release
 
 on:
   push:
