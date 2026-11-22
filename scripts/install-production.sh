@@ -40,9 +40,24 @@ for name in newtic-logo.webp newtic-mark.webp; do
   test -s "public/assets/branding/$name" || fail "Missing standard NEWTIC WebP logo: $name"
 done
 command -v php >/dev/null 2>&1 || fail "PHP CLI 8.3+ is required."
-command -v composer >/dev/null 2>&1 || fail "Composer is required."
-composer validate --strict --no-check-publish >/dev/null ||
-  fail "composer.json and composer.lock are inconsistent."
+# Official immutable customer ZIP includes production Composer dependencies,
+# so the destination hosting does not need Composer or Node/npm.
+# Source checkouts still use the normal lockfile-driven Composer installation.
+BUNDLED_RELEASE=false
+if [[ -f NEWTIC-RELEASE-SHA256SUMS.txt ]]; then
+  test -f scripts/verify-customer-release.php ||
+    fail "Release integrity verifier is missing."
+  php scripts/verify-customer-release.php "$APP" ||
+    fail "NEWTIC package failed checksum verification. Obtain a fresh official ZIP."
+  test -f vendor/autoload.php ||
+    fail "Standalone release has no production vendor/autoload.php."
+  BUNDLED_RELEASE=true
+else
+  command -v composer >/dev/null 2>&1 ||
+    fail "Composer is required when installing from Git source. Use the verified standalone customer ZIP instead."
+  composer validate --strict --no-check-publish >/dev/null ||
+    fail "composer.json and composer.lock are inconsistent."
+fi
 
 php -r 'if (PHP_VERSION_ID < 80300) {fwrite(STDERR, "PHP 8.3+ required\n"); exit(1);}
 foreach (["pdo_mysql", "mbstring", "openssl", "fileinfo", "xml", "ctype", "tokenizer"] as $e) {
@@ -123,8 +138,14 @@ else
 fi
 
 mkdir -p storage/{app/public,framework/cache/data,framework/sessions,framework/views,logs} bootstrap/cache
-composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
-composer check-platform-reqs --no-dev --no-interaction
+if [[ "$BUNDLED_RELEASE" == true ]]; then
+  note "Using verified production dependencies bundled in this customer release; no Composer install required."
+else
+  composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+fi
+if command -v composer >/dev/null 2>&1; then
+  composer check-platform-reqs --no-dev --no-interaction
+fi
 php -r 'require "vendor/autoload.php"; foreach (["Firebase\\JWT\\JWT", "Firebase\\JWT\\JWK"] as $class) { if (!class_exists($class)) { fwrite(STDERR, "Missing required JWT class: ".$class.PHP_EOL); exit(1); } }' ||
   fail "Missing required Google login signature verification package."
 
