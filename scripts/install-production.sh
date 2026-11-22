@@ -78,6 +78,7 @@ SITE_URL="$(env_value APP_URL)"
 [[ -n "$(env_value APP_NAME)" ]] || fail "Set this merchant's APP_NAME."
 [[ "$(env_value DB_DATABASE)" != "u880685189_newtic" ]] ||
   fail "The original development database is forbidden for new merchants."
+# Never enable real checkout during a fresh customer installation.
 # Fresh install flags must be explicit, not simply rely on framework defaults.
 # A mistyped boolean can silently enable real-world integrations.
 for pair in \
