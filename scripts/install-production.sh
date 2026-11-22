@@ -84,7 +84,7 @@ for name in \
   DB_CONNECTION DB_HOST DB_PORT DB_SOCKET DB_DATABASE DB_USERNAME DB_PASSWORD \
   NEWTIC_CHECKOUT_TEST_MODE NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED \
   NEWTIC_PAYTR_WEBHOOKS_ENABLED NEWTIC_SHIPPING_DUMMY_ENABLED \
-  NEWTIC_MARKETING_SEND_ENABLED; do
+  NEWTIC_MARKETING_SEND_ENABLED NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN; do
   occurrences="$(grep -c "^${name}=" .env || true)"
   [[ "$occurrences" -le 1 ]] ||
     fail "Duplicate .env key: $name. Remove ambiguous duplicate lines before first installation."
@@ -97,8 +97,23 @@ done
 SITE_URL="$(env_value APP_URL)"
 [[ "$SITE_URL" =~ ^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]{2,5})?/?$ ]] ||
   fail "APP_URL must be an HTTPS domain, e.g. https://sinaydesign.com."
-[[ "$SITE_URL" != *"hostingersite.com"* ]] ||
-  fail "Use an owned domain, not a Hostinger preview domain for a production install."
+# Hostinger temporary domain use is an *explicit first-install-only* exception.
+# Never switch this flag on for normal customer domains; no live integrations
+# are allowed when it is on. The strict safe-mode flags are checked below.
+SITE_HOST="${SITE_URL#https://}"
+SITE_HOST="${SITE_HOST%%[:/]*}"
+TEMP_FLAG="$(env_value NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN)"
+if [[ "$SITE_HOST" == *.hostingersite.com ]]; then
+  [[ "$SITE_HOST" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?\.hostingersite\.com$ ]] ||
+    fail "Hostinger test hostname is malformed."
+  [[ "$TEMP_FLAG" == "true" ]] ||
+    fail "Hostinger temporary domains require explicit NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true and all safe-mode flags."
+  note "Temporary Hostinger domain: authorized for first-install TEST MODE only."
+elif [[ "$TEMP_FLAG" == "true" ]]; then
+  fail "Disable NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN for real customer domains."
+elif [[ "$TEMP_FLAG" != "false" && -n "$TEMP_FLAG" ]]; then
+  fail "NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN must be true or false."
+fi
 [[ "$(env_value DB_CONNECTION)" == "mysql" ]] ||
   fail "Set DB_CONNECTION=mysql for an isolated customer MySQL database."
 [[ -n "$(env_value DB_DATABASE)" && -n "$(env_value DB_USERNAME)" && -n "$(env_value DB_PASSWORD)" ]] ||

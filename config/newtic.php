@@ -3,6 +3,9 @@
 return [
     // Protected server-side first-install wizard state. Never put this inside public_html.
     'install_private_directory' => storage_path('app/private/newtic-setup'),
+    // Explicit opt-in for initial installation on a temporary Hostinger preview
+    // hostname. Never grants production payments, shipments or bulk sending.
+    'install_allow_hostinger_temp_domain' => (bool) env('NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN', false),
     // Deliberately server-private: admin recovery never lives under public_html.
     'admin_recovery_private_directory' => storage_path('app/private/newtic-admin-recovery'),
     /*

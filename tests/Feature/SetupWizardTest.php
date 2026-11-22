@@ -26,6 +26,8 @@ final class SetupWizardTest extends TestCase
         config()->set('newtic.paytr_card_payments_enabled', false);
         config()->set('newtic.paytr_webhooks_enabled', false);
         config()->set('newtic.shipping_dummy_enabled', false);
+        config()->set('newtic.marketing_live_enabled', false);
+        config()->set('newtic.install_allow_hostinger_temp_domain', false);
     }
 
     protected function tearDown(): void
@@ -53,6 +55,36 @@ final class SetupWizardTest extends TestCase
             'password_confirmation'=>'StrongerSetupPass!2026',
             'accept_safe_mode'=>1,
         ];
+    }
+
+    public function test_hostinger_preview_installation_requires_explicit_safe_flags_and_valid_hostname(): void
+    {
+        $installer = app(StoreInstaller::class);
+        $preview = 'humane-indigo-chough-50.hostingersite.com';
+
+        $this->assertFalse($installer->installationHostAllowed($preview));
+        $this->assertTrue($installer->installationHostAllowed('customer.example'));
+
+        config()->set('newtic.install_allow_hostinger_temp_domain', true);
+        $this->assertTrue($installer->installationHostAllowed($preview));
+        $this->assertFalse($installer->installationHostAllowed('customer.example'));
+        $this->assertFalse($installer->installationHostAllowed('.hostingersite.com'));
+        $this->assertFalse($installer->installationHostAllowed('hostingersite.com'));
+        $this->assertFalse($installer->installationHostAllowed('bad..hostingersite.com'));
+
+        foreach ([
+            'checkout_test_mode' => false,
+            'paytr_card_payments_enabled' => true,
+            'paytr_webhooks_enabled' => true,
+            'shipping_dummy_enabled' => true,
+            'marketing_live_enabled' => true,
+        ] as $key => $unsafe) {
+            $safe = config('newtic.'.$key);
+            config()->set('newtic.'.$key, $unsafe);
+            $this->assertFalse($installer->installationHostAllowed($preview), $key);
+            config()->set('newtic.'.$key, $safe);
+        }
+        $this->assertTrue($installer->installationHostAllowed($preview));
     }
 
     public function test_existing_shop_cannot_start_or_access_installer(): void

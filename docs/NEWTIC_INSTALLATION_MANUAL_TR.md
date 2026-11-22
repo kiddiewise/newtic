@@ -84,6 +84,7 @@ NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
 NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
 NEWTIC_SHIPPING_DUMMY_ENABLED=false
 NEWTIC_MARKETING_SEND_ENABLED=false
+NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false
 ```
 
 **Not:** Bu bir şablon; gerçek şifreyi örnek metindeki yer tutucuya yazın.
@@ -91,6 +92,18 @@ Aynı anahtarı .env içinde iki kez tanımlamayın. İlk kurulum APP_KEY'i benz
 olarak oluşturacaktır. Kurulu bir mağazanın APP_KEY'i sonradan değiştirilmez.
 Veritabanı şifresi özel karakterler içeriyorsa dotenv kurallarına uygun
 çift tırnak içinde kaydedin. DB anahtarlarını sohbetlere asla yapıştırmayın.
+
+### Hostinger geçici domaininde test kurulumu
+
+İlk kurulum provası `https://ornek.hostingersite.com` gibi geçici bir
+domain üzerinde yapılacaksa yalnızca o yeni mağazanın `.env` dosyasında
+`NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true` ayarlayın.
+Diğer beş güvenlik bayrağı mutlaka test/kapalı konumunda kalmalıdır.
+Bu özel izin yalnız geçici domainin kurulmasına yöneliktir, gerçek
+ödeme/kargo/toplu e-posta izni vermez. Yeni bir gerçek domaine
+geçişte bu bayrağı `false` yapın ve yeni domainin bağımsız kurulumunu
+ayrıca yapın. Kurulu bir mağazanın `APP_URL` değerini başka müşteri
+mağazası yapmak için değiştirmeyin.
 
 ## 4 — Güvenli kurulum komutları
 

@@ -88,6 +88,28 @@ jobs:
           printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
           # Safe-mode values are provided once in .env.example; duplicates are forbidden.
           bash scripts/install-production.sh --check
+          # Preview hostname is blocked by default and allowed only in test
+          # mode with an explicit, unique opt-in.
+          sed -i 's|^APP_URL=.*|APP_URL=https://customer-ci.hostingersite.com|' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary domain accepted without explicit opt-in" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
+          bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary domain accepted with live payment enabled" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary-domain override accepted on a real domain" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/' .env
+          bash scripts/install-production.sh --check
           # Repeated payment flag lines are dangerous: reject ambiguous .env.
           printf '\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=true\n' >> .env
           if bash scripts/install-production.sh --check; then
@@ -226,7 +248,8 @@ jobs:
           cp .env.example .env
           sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
           sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
-          sed -i 's|^APP_URL=.*|APP_URL=https://package-merchant.example|' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://package-merchant.hostingersite.com|' .env
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           printf '\nDB_DATABASE=newtic_fresh_ci\nDB_USERNAME=newtic_install_ci\nDB_PASSWORD=newtic_ci_temporary_only\n' >> .env
           bash scripts/install-production.sh --check

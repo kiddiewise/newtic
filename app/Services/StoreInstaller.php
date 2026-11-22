@@ -53,14 +53,39 @@ final class StoreInstaller
         return true;
     }
 
+    /**
+     * Preview hosts are permitted only with a deliberate setup flag AND every
+     * payment, shipping and marketing safeguard still enabled. This is a
+     * one-time setup exception, not a license to use a preview domain live.
+     */
+    public function installationHostAllowed(string $host): bool
+    {
+        $host = strtolower($host);
+        if (!filter_var('https://'.$host, FILTER_VALIDATE_URL)) return false;
+
+        $temporary = str_ends_with($host, '.hostingersite.com');
+        $allowTemporary = (bool) config('newtic.install_allow_hostinger_temp_domain', false);
+
+        if (!$temporary) return !$allowTemporary;
+        if (!preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.hostingersite\\.com$/D', $host)) {
+            return false;
+        }
+
+        return $allowTemporary
+            && config('newtic.checkout_test_mode', true)
+            && !config('newtic.paytr_card_payments_enabled', false)
+            && !config('newtic.paytr_webhooks_enabled', false)
+            && !config('newtic.shipping_dummy_enabled', false)
+            && !config('newtic.marketing_live_enabled', false);
+    }
+
     /** @return array<string, bool> */
     public function checks(?Request $request = null): array
     {
         $test = app()->environment('testing');
         $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
         $domainIsSafe = $test || (
-            filter_var('https://'.$host, FILTER_VALIDATE_URL)
-            && !str_ends_with(strtolower($host), '.hostingersite.com')
+            $this->installationHostAllowed($host)
             && str_starts_with((string) config('app.url'), 'https://')
         );
 
