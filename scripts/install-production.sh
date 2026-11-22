@@ -143,7 +143,7 @@ if [[ "$BUNDLED_RELEASE" == true ]]; then
 else
   composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 fi
-if command -v composer >/dev/null 2>&1; then
+if [[ "$BUNDLED_RELEASE" == false ]]; then
   composer check-platform-reqs --no-dev --no-interaction
 fi
 php -r 'require "vendor/autoload.php"; foreach (["Firebase\\JWT\\JWT", "Firebase\\JWT\\JWK"] as $class) { if (!class_exists($class)) { fwrite(STDERR, "Missing required JWT class: ".$class.PHP_EOL); exit(1); } }' ||

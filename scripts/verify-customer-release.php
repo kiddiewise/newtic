@@ -33,18 +33,25 @@ if ($lines === false || count($lines) < 100) {
 }
 $checked = [];
 foreach ($lines as $line) {
-    if (!preg_match('/^([a-f0-9]{64})  \.\/([A-Za-z0-9._\/-]+)$/D', $line, $m)) {
+    if (!preg_match('/^([a-f0-9]{64})  \.\/(.+)$/D', $line, $m)) {
         fwrite(STDERR, "ERROR: Malformed release checksum record.\n");
         exit(1);
     }
     $relative = $m[2];
-    if (isset($checked[$relative]) || in_array('..', explode('/', $relative), true)
+    $parts = explode('/', $relative);
+    if (isset($checked[$relative]) || in_array('..', $parts, true)
+        || in_array('', $parts, true)
+        || strpos($relative, chr(92)) !== false
+        || preg_match('/[\x00-\x1F]/', $relative)
         || str_starts_with($relative, '/') || $relative === 'NEWTIC-RELEASE-SHA256SUMS.txt') {
         fwrite(STDERR, "ERROR: Unsafe or duplicate checksum record.\n");
         exit(1);
     }
     $file = $root.'/'.$relative;
-    if (!is_file($file) || is_link($file) || !hash_equals($m[1], (string) hash_file('sha256', $file))) {
+    $resolved = realpath($file);
+    if (!$resolved || !str_starts_with($resolved, $root.DIRECTORY_SEPARATOR)
+        || !is_file($file) || is_link($file)
+        || !hash_equals($m[1], (string) hash_file('sha256', $file))) {
         fwrite(STDERR, "ERROR: A NEWTIC release file is missing, changed or unsafe.\n");
         exit(1);
     }

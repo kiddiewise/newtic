@@ -230,7 +230,21 @@ jobs:
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           printf '\nDB_DATABASE=newtic_fresh_ci\nDB_USERNAME=newtic_install_ci\nDB_PASSWORD=newtic_ci_temporary_only\n' >> .env
           bash scripts/install-production.sh --check
-          echo "PASS: immutable standalone ZIP, production vendor, no Node/Composer requirement, HTTPS-safe preflight."
+          # Create a second pristine schema: prove the extracted ZIP installs
+          # to real MySQL without invoking Composer or npm on the server.
+          php <<'PHP'
+          <?php
+          $db = new PDO('mysql:host=127.0.0.1;port=3306', 'root', 'newtic_ci_root_only');
+          $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $db->exec('CREATE DATABASE newtic_package_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+          $db->exec("GRANT ALL PRIVILEGES ON newtic_package_ci.* TO 'newtic_install_ci'@'%'");
+          PHP
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=newtic_package_ci/' .env
+          bash scripts/install-production.sh --install
+          php artisan migrate:status | grep -F 'create_newtic_installations_table'
+          php artisan newtic:setup-token --private-file
+          test -s storage/app/private/newtic-setup/mobile-install-code.txt
+          echo "PASS: immutable standalone ZIP, real blank MySQL installation, no Composer/npm required, and private setup token."
       - name: Upload complete NEWTIC customer install ZIP
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit')
         uses: actions/upload-artifact@v4
