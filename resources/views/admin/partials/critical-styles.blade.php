@@ -8,30 +8,25 @@
 .admin-body *{box-sizing:border-box}
 .admin-body svg.admin-icon{display:inline-block;width:20px;height:20px;flex:none;vertical-align:middle}
 .admin-app-shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
-.admin-sidebar{position:sticky;top:0;display:flex;flex-direction:column;height:100dvh;min-width:0;background:#092037;color:#e6ebf4;z-index:80}
-.admin-sidebar-brand{display:flex;align-items:center;gap:12px;min-height:82px;padding:18px;color:#fff;text-decoration:none;font-size:19px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700}
+.admin-sidebar{position:sticky;top:0;display:flex;flex-direction:column;height:100dvh;min-width:0;background:#edf2f8;color:#344b64;border-right:1px solid #dbe4ee;z-index:80}
+.admin-sidebar-brand{display:flex;align-items:center;gap:12px;min-height:82px;padding:18px;color:#253e58;text-decoration:none;font-size:19px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:700}
 .admin-sidebar-brand small{display:block;color:#b4cfd0;font-size:11px;font-weight:500}
 .admin-sidebar-symbol{display:grid;place-items:center;flex:none;width:42px;height:42px;background:#424769;border-radius:12px}
 .admin-sidebar-scroll{padding:9px 13px 22px;flex:1;min-height:0;overflow-y:auto}
 .admin-menu-caption{margin:8px 10px 12px;font-size:10px;font-weight:500;letter-spacing:.09em;color:#9cbbc2}
 .admin-menu-section{padding-top:18px;margin-top:14px;border-top:1px solid #ffffff25}
 .admin-sidebar-nav{display:flex;flex-direction:column;gap:4px}
-.admin-side-link{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:500;text-decoration:none;color:#c9dedd}
+.admin-side-link{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:500;text-decoration:none;color:#475e77}
 .admin-side-link span{flex:1}
-.admin-side-link.is-active{background:#f68220;color:#092037}
-.admin-side-link:hover{background:#ffffff20;color:#fff}
+.admin-side-link.is-active{background:#fff;color:#273f59;border:1px solid #d4e0ec}
+.admin-side-link:hover{background:#e7eef6;color:#253c55}
 .admin-side-count{display:inline-grid;place-items:center;min-width:21px;height:21px;border-radius:11px;background:#fff3e7;color:#6f3505;font-size:10px}
-.admin-sidebar-bottom{padding:13px}
-.admin-help-card{padding:14px;border-radius:12px;background:#424769;color:#f6f7fb}
-.admin-help-card strong{display:block;font-size:12px}
-.admin-help-card p{font-size:11px;line-height:1.45;margin:7px 0 10px}
-.admin-help-card a{display:flex;align-items:center;gap:8px;color:#ffd3ac;font-size:12px;text-decoration:none}
-.admin-help-icon{display:none}
+.admin-sidebar-bottom{padding:13px;border-top:1px solid #d8e2ed}
 .admin-sidebar-user{display:flex;gap:10px;align-items:center;margin-top:15px}
-.admin-user-avatar,.admin-top-avatar{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#424769;color:#fff;font-weight:800}
+.admin-user-avatar,.admin-top-avatar{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#dbe6f0;color:#37516d;font-weight:700}
 .admin-sidebar-user div{display:flex;flex-direction:column;min-width:0}
 .admin-sidebar-user strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.admin-sidebar-user small{font-size:10px;color:#acd0d0}
+.admin-sidebar-user small{font-size:10px;color:#8293a8}
 .admin-workspace{min-width:0;display:flex;flex-direction:column}
 .admin-topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid #e5edef;padding:0 22px}
 .admin-topbar-inner{display:flex;gap:14px;align-items:center;min-height:72px;max-width:none;margin:0}

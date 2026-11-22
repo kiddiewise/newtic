@@ -117,12 +117,6 @@
       </nav>
     </div>
     <div class="admin-sidebar-bottom">
-      <div class="admin-help-card">
-        <span class="admin-help-icon"><x-admin-icon name="info" /></span>
-        <strong>Hızlı erişim</strong>
-        <p>Zamanlayıcı, yedek, PAYTR ve kargo durumunu takip et.</p>
-        <a href="{{ route('admin.system-health') }}">Sistem Sağlığı <x-admin-icon name="arrow-right" /></a>
-      </div>
       <div class="admin-sidebar-user">
         <span class="admin-user-avatar">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
         <div><strong>{{ auth()->user()->name }}</strong><small>Yönetici</small></div>

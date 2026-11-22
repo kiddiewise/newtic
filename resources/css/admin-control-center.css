@@ -1,32 +1,91 @@
-/* NEWTIC 10: host-independent control center, dark corporate navigation. */
-.admin-app-active{--admin-ink:#092037;--admin-deep:#092037;--admin-mint:#243f63;--admin-bg:#f5f7fb;font-family:Montserrat,Arial,sans-serif}
-.admin-app-active .admin-sidebar{background:linear-gradient(170deg,#092037 0%,#102b47 80%,#142e4b 100%);color:#e8edf6}
-.admin-app-active .admin-sidebar-brand{min-height:79px;padding:17px 19px}
-.admin-app-active .admin-sidebar-scroll{padding:12px 13px 22px}
-.admin-app-active .admin-sidebar-nav{gap:7px}
-.admin-nav-section{min-width:0;border:1px solid transparent;border-radius:13px}
-.admin-nav-section[open]{background:#ffffff08;border-color:#ffffff13;padding-bottom:7px}
-.admin-nav-section>summary{display:flex;align-items:center;gap:9px;min-height:45px;padding:10px 12px;color:#9db0cd;cursor:pointer;font-size:10px;font-weight:750;letter-spacing:.09em;list-style:none;user-select:none}
-.admin-nav-section>summary::-webkit-details-marker{display:none}
-.admin-nav-section>summary .admin-icon{width:17px;height:17px}
-.admin-nav-section>summary .admin-nav-group-arrow{margin-left:auto;width:14px;height:14px;transition:transform .18s;opacity:.65}
-.admin-nav-section[open]>summary .admin-nav-group-arrow{transform:rotate(90deg)}
-.admin-nav-section>summary:hover,.admin-nav-section>summary:focus-visible,.admin-nav-section[open]>summary{color:#fff}
-.admin-nav-section-items{display:grid;gap:3px;padding:0 6px}
-.admin-app-active .admin-side-link{min-height:40px;padding:9px 12px;color:#bcc8db;font-weight:550;font-size:11.75px;gap:10px;border-radius:9px;letter-spacing:0}
-.admin-app-active .admin-side-link:hover{background:#ffffff16;color:#fff}
-.admin-app-active .admin-side-link.is-active{background:#f4f7ff;color:#092037;box-shadow:none;font-weight:750}
-.admin-app-active .admin-side-link.is-active .admin-icon{color:#092037}
-.admin-app-active .admin-side-count{background:#deebff;color:#092037;border-radius:7px}
-.admin-app-active .admin-help-card{background:#ffffff0c;border:1px solid #ffffff18;box-shadow:none}
-.admin-app-active .admin-help-icon{color:#c0d6ff}
-.admin-app-active .admin-help-card a{color:#092037}
-.admin-app-active .admin-sidebar-user{padding-top:10px}
-.admin-app-active .admin-sidebar-bottom{border-top:1px solid #ffffff16}
-.admin-sidebar-logout{display:flex;align-items:center;gap:9px;width:100%;margin-top:11px;padding:10px 11px;text-align:left;background:transparent;border:1px solid #ffffff25;border-radius:9px;color:#cbd8eb;font-size:11px;cursor:pointer}
-.admin-sidebar-logout:hover{background:#ffffff12;color:white}
+/* NEWTIC admin: calm cloud-slate palette, subtle surfaces and clean mobile navigation. */
+.admin-app-active{--admin-ink:#243b55;--admin-deep:#374e67;--admin-mint:#627b99;--admin-bg:#f6f8fb;font-family:Montserrat,Arial,sans-serif}
+.admin-app-active .admin-sidebar{
+  background:linear-gradient(165deg,#f4f7fb 0%,#edf2f8 56%,#e7eef6 100%);
+  color:#344b64;border-right:1px solid #dbe4ee;
+  box-shadow:4px 0 24px #243b5510
+}
+.admin-app-active .admin-sidebar-brand{
+  min-height:88px;gap:10px;padding:17px 18px;color:#253e58;
+  text-decoration:none
+}
+.admin-app-active .admin-sidebar-brand-caption{color:#73869e;font-weight:500;letter-spacing:.005em}
+.admin-app-active .admin-sidebar-logo-surface{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#fff;border:1px solid #dfe7f0;border-radius:13px;
+  box-shadow:0 6px 18px #405a7210
+}
+.admin-app-active .admin-sidebar-scroll{
+  padding:10px 12px 18px;scrollbar-color:#bfccda transparent
+}
+.admin-app-active .admin-sidebar-nav{gap:4px}
+.admin-app-active .admin-nav-section{min-width:0;border:1px solid transparent;border-radius:12px}
+.admin-app-active .admin-nav-section[open]{
+  background:#ffffffa8;border-color:#dce5ef;padding-bottom:6px;
+  box-shadow:0 3px 10px #405a7207
+}
+.admin-app-active .admin-nav-section>summary{
+  display:flex;align-items:center;gap:9px;min-height:43px;
+  padding:10px 11px;color:#5b7088;cursor:pointer;
+  font-size:10.5px;font-weight:650;letter-spacing:.065em;
+  list-style:none;user-select:none;border-radius:10px;
+  transition:background .16s,color .16s
+}
+.admin-app-active .admin-nav-section>summary::-webkit-details-marker{display:none}
+.admin-app-active .admin-nav-section>summary .admin-icon{width:15px;height:15px;color:#758ba2}
+.admin-app-active .admin-nav-section>summary .admin-nav-group-arrow{
+  margin-left:auto;width:15px;height:15px;color:#91a2b5;
+  transition:transform .18s;opacity:.75
+}
+.admin-app-active .admin-nav-section[open]>summary .admin-nav-group-arrow{transform:rotate(90deg)}
+.admin-app-active .admin-nav-section>summary:hover,
+.admin-app-active .admin-nav-section>summary:focus-visible,
+.admin-app-active .admin-nav-section[open]>summary{
+  color:#293f59;background:#e7eef6
+}
+.admin-app-active .admin-nav-section-items{display:grid;gap:3px;padding:0 6px}
+.admin-app-active .admin-side-link{
+  min-height:39px;padding:9px 10px;color:#475e77;
+  font-weight:500;font-size:11.75px;gap:10px;
+  border:1px solid transparent;border-radius:9px;letter-spacing:0
+}
+.admin-app-active .admin-side-link .admin-icon{width:17px;height:17px;color:#788da4}
+.admin-app-active .admin-side-link:hover{
+  background:#edf3f9;color:#253c55;border-color:#dce5ef
+}
+.admin-app-active .admin-side-link.is-active{
+  background:#fff;color:#273f59;border-color:#d4e0ec;
+  box-shadow:0 3px 10px #455e7910;font-weight:700
+}
+.admin-app-active .admin-side-link.is-active .admin-icon{color:#53708c}
+.admin-app-active .admin-side-count{
+  background:#e4ebf3;color:#405a75;border-radius:7px
+}
+.admin-app-active .admin-sidebar-bottom{
+  padding:13px 14px 17px;border-top:1px solid #d8e2ed;
+  background:#edf2f8ee
+}
+.admin-app-active .admin-sidebar-user{
+  padding:1px 2px 10px;margin:0;gap:10px
+}
+.admin-app-active .admin-sidebar-user strong{color:#2c445d;font-weight:650}
+.admin-app-active .admin-sidebar-user small{color:#8293a8}
+.admin-app-active .admin-user-avatar{
+  width:34px;height:34px;background:#dbe6f0;
+  border:1px solid #cbd8e5;color:#37516d;font-weight:700
+}
+.admin-sidebar-logout{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:10px 11px;text-align:left;background:transparent;
+  border:1px solid #d3deea;border-radius:9px;
+  color:#576d85;font-size:11px;font-weight:550;cursor:pointer;
+  transition:background .16s,border-color .16s,color .16s
+}
+.admin-sidebar-logout:hover{
+  background:#fff;border-color:#bacbdc;color:#293f59
+}
 .admin-sidebar-logout .admin-icon{width:16px;height:16px}
-.admin-app-active .admin-user-avatar,.admin-app-active .admin-top-avatar{background:#243f63;color:#fff}
+.admin-app-active .admin-top-avatar{background:#51677f;color:#fff}
 .admin-app-active .admin-topbar{background:#fffdfd}
 .admin-app-active .admin-topbar-heading strong{font-family:'Plus Jakarta Sans',Montserrat,sans-serif;color:#092037;font-weight:750}
 .admin-app-active .admin-global-search:focus-within{border-color:#7389aa;box-shadow:0 0 0 3px #09203712}
