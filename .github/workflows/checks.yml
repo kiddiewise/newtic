@@ -85,6 +85,7 @@ jobs:
           sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
+          printf '\\nNEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false\\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=false\\nNEWTIC_SHIPPING_DUMMY_ENABLED=false\\nNEWTIC_MARKETING_SEND_ENABLED=false\\n' >> .env
           bash scripts/install-production.sh --check
           test -f .env.newtic-ci-backup
           mv -f .env.newtic-ci-backup .env
@@ -161,6 +162,11 @@ jobs:
           php -r 'if (function_exists("exec")) exit(1);'
           bash scripts/install-production.sh --check
           bash scripts/install-production.sh --install --assets-bundle "$PWD/newtic-smoke-assets.tar.gz"
+          # After initial migrations, a new first-install must be rejected.
+          if php artisan newtic:check-fresh-db; then
+            echo "ERROR: existing database accepted as an empty installation target" >&2
+            exit 1
+          fi
           test -L public/storage
           php artisan migrate:status | grep -F 'create_newtic_installations_table'
           WEBROOT="$RUNNER_TEMP/newtic-fresh-webroot"

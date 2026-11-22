@@ -71,4 +71,18 @@ if [[ -n "$PUBLIC_ROOT" ]]; then
   echo "PASS: uploaded files can be served from public_html/storage."
 fi
 
+# Detect a mistakenly exposed Laravel project root without collecting any
+# sensitive response body. These paths must never return a successful page.
+for private_path in .env .env.example composer.json artisan vendor/autoload.php storage/logs/laravel.log; do
+  status="$(curl --silent --show-error --location --proto-redir '=https' \
+    --connect-timeout 10 --max-time 20 --retry 1 -o /dev/null -w '%{http_code}' \
+    "$SITE_URL/$private_path")" ||
+      fail "Cannot confirm access protection for /$private_path."
+  case "$status" in
+    403|404|410) ;;
+    *) fail "Private path /$private_path returned HTTP $status. Fix webroot/deny rules before launch." ;;
+  esac
+done
+echo "PASS: sensitive application files are not publicly served."
+
 echo "NEWTIC_PUBLIC_ASSETS_OK: $SITE_URL"

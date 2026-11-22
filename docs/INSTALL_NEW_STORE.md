@@ -63,7 +63,12 @@ loglara veya sohbete yapıştırmayın.
 
     bash scripts/install-production.sh --check
 
-Bu komut .env, PHP sürümü ve gerekli ayarları değiştirmeden denetler.
+Bu komut yalnızca **statik** PHP/.env kontrollerini yapar. MySQL bağlantısını,
+şemanın boşluğunu, DNS yönlendirmesini, SSL sertifikasını veya webroot'u tek başına
+doğrulamaz. `--install` gerçek veritabanına bağlanır ve herhangi bir tablo/görünüm
+tespit ederse migration işlemine **başlamadan** durur. Kısmi kurulum veya mevcut
+mağaza DB'si için yeniden kurulum yapılmaz; önce verilerin yedeği alınarak
+durum incelenir.
 İlk gerçek veritabanı tabloları --install sırasında oluşturulur.
 
 ## 3. Vite CSS/JS kurulum: iki seçenek
@@ -123,7 +128,11 @@ de kontrol edip dosyayı siler.
 
 Başarılı sonuç: NEWTIC_PUBLIC_ASSETS_OK: https://MUSTERI-DOMAINI
 
-Bu sonuç olmadan ilk kurulumu tamam kabul etmeyin.
+Bu sonuç olmadan ilk kurulumu tamam kabul etmeyin. Ek güvenlik kontrolü
+`/.env`, `/.env.example`, `/composer.json`, `/artisan`,
+`/vendor/autoload.php` ve `/storage/logs/laravel.log` adreslerinin
+HTTP 403, 404 veya 410 döndürdüğünü de doğrular. Bu dosyalar internetten
+sunuluyorsa kurulum kesinlikle tamam değildir.
 
 ## 6. Görsel ilk kurulum sihirbazı
 

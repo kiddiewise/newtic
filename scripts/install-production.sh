@@ -78,13 +78,26 @@ SITE_URL="$(env_value APP_URL)"
 [[ -n "$(env_value APP_NAME)" ]] || fail "Set this merchant's APP_NAME."
 [[ "$(env_value DB_DATABASE)" != "u880685189_newtic" ]] ||
   fail "The original development database is forbidden for new merchants."
-[[ "$(env_value NEWTIC_CHECKOUT_TEST_MODE)" != "false" ]] ||
-  fail "Real checkout is not approved for fresh installs: use NEWTIC_CHECKOUT_TEST_MODE=true."
+# Fresh install flags must be explicit, not simply rely on framework defaults.
+# A mistyped boolean can silently enable real-world integrations.
+for pair in \
+  'NEWTIC_CHECKOUT_TEST_MODE:true' \
+  'NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED:false' \
+  'NEWTIC_PAYTR_WEBHOOKS_ENABLED:false' \
+  'NEWTIC_SHIPPING_DUMMY_ENABLED:false' \
+  'NEWTIC_MARKETING_SEND_ENABLED:false'; do
+  name="${pair%%:*}"
+  expected="${pair#*:}"
+  [[ "$(env_value "$name")" == "$expected" ]] ||
+    fail "Missing or unsafe $name. Fresh installation requires $name=$expected."
+done
 
 note "NEWTIC isolated-install preflight passed for $SITE_URL."
 note "MySQL database configured: $(env_value DB_DATABASE)."
 if [[ "$MODE" == "--check" ]]; then
-  note "Read-only preflight: no files or database were changed."
+  note "Static preflight only: no files or database were changed."
+  note "NOTE: MySQL connectivity/emptiness, SSL, DNS and document root are NOT checked by --check."
+  note "During --install, the configured schema is checked as empty before key generation and migrations."
   note "Next: bash scripts/install-production.sh --install"
   exit 0
 fi
@@ -100,6 +113,11 @@ composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction -
 composer check-platform-reqs --no-dev --no-interaction
 php -r 'require "vendor/autoload.php"; foreach (["Firebase\\JWT\\JWT", "Firebase\\JWT\\JWK"] as $class) { if (!class_exists($class)) { fwrite(STDERR, "Missing required JWT class: ".$class.PHP_EOL); exit(1); } }' ||
   fail "Missing required Google login signature verification package."
+
+# Reject an occupied or unreachable database BEFORE any new encryption key,
+# migrations, or installation records. This is a read-only Laravel/MySQL check.
+php artisan newtic:check-fresh-db --no-interaction ||
+  fail "MySQL target is not empty or accessible. No database migrations were started."
 
 if [[ -z "$(env_value APP_KEY)" ]]; then
   php artisan key:generate --force --no-interaction
