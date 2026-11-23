@@ -110,9 +110,6 @@ final class NewticSoftwareUpdater
                 $job['status'] = 'failed';
                 $job['finished_at'] = now()->toIso8601String();
                 $job['message'] = 'Güncelleme tamamlanamadı. Mağaza ve son yedek kontrol edilmeli.';
-                if (app()->environment('testing') && getenv('CI') === 'true') {
-                    $job['ci_diagnostic'] = mb_substr($e::class.': '.$e->getMessage(), 0, 250);
-                }
                 $this->releases->writeState($job);
                 Log::error('newtic_software_update_failed', ['exception_type' => $e::class]);
                 File::deleteDirectory($stage);
