@@ -22,6 +22,19 @@ jobs:
             done
             rm -f "$header"
           done
+      - name: Check live login session cookie flags (never log cookie values)
+        shell: bash
+        run: |
+          for domain in powderblue-dinosaur-538060.hostingersite.com sinaydesign.com; do
+            tmp="$(mktemp)"
+            curl -sSL --max-time 20 -D "$tmp" -o /dev/null "https://$domain/admin/login" || true
+            echo "cookie_domain=$domain"
+            count="$(grep -ic '^set-cookie:' "$tmp" || true)"
+            echo "set_cookie_header_count=$count"
+            if grep -i '^set-cookie:' "$tmp" | grep -Eqi ';[[:space:]]*secure([;[:space:]]|$)';then echo "some_cookie_has_secure=yes";else echo "some_cookie_has_secure=no";fi
+            if grep -i '^set-cookie:' "$tmp" | grep -Eqi ';[[:space:]]*httponly([;[:space:]]|$)';then echo "some_cookie_has_httponly=yes";else echo "some_cookie_has_httponly=no";fi
+            rm -f "$tmp"
+          done
       - name: Inspect installations and image bytes without modifying data
         env:
           KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
