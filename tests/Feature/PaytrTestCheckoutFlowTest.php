@@ -153,7 +153,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         ]);
 
         $this->get(route('checkout.paytr.frame', $order))->assertOk()
-            ->assertSee('PAYTR TEST MODU')
+            ->assertSee('PAYTR BAĞLANTI KONTROLÜ')
             ->assertSee('www.paytr.com/odeme/guvenli/'.str_repeat('a', 48), false)
             ->assertSee('179,70')
             ->assertDontSee('sandbox_key_for_tests')
@@ -232,7 +232,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         for ($index = 0; $index < 12; $index++) {
             $this->get(route('checkout.paytr.frame', $order))
                 ->assertOk()
-                ->assertSee('PAYTR TEST MODU');
+                ->assertSee('PAYTR BAĞLANTI KONTROLÜ');
         }
 
         Http::assertSentCount(12);

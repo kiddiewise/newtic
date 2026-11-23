@@ -75,7 +75,7 @@ class PaytrSettingsSecurityTest extends TestCase
         $this->assertArrayNotHasKey('merchant_salt', $stored->toArray());
 
         $body = $this->get(route('admin.paytr-settings.edit'))->assertOk()
-            ->assertSee('Kayıtlı · Doğrulanmadı')
+            ->assertSee('Kayıtlı · Aktivasyon bekleniyor')
             ->assertSee('Kayıtlı ve şifreli')
             ->assertSee('type="password"', false)
             ->getContent();
