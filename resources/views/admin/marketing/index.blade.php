@@ -4,7 +4,7 @@
 @section('content')
 <div class="admin-page-heading admin-heading-actions">
  <div><p class="admin-eyebrow">MÜŞTERİ İLETİŞİMİ / KAMPANYALAR</p><h1>Kampanya e-postaları</h1>
- <p>Görselli kampanyalar oluştur, önizle, test et ve İYS doğrulanmış izinli alıcılara kontrollü gönder.</p></div>
+ <p>Görselli kampanyalar oluştur, önizle, gönderimi doğrula ve İYS onaylı alıcılara kontrollü ilet.</p></div>
  <a class="admin-primary" href="{{ route('admin.marketing.create') }}">+ Yeni kampanya</a>
 </div>
 <section class="admin-panel" style="padding:22px;margin-bottom:18px">
@@ -13,7 +13,7 @@
  {{ $settings->ready() ? 'Kurumsal bilgiler ve manuel İYS kayıt beyanı tamamlandı.' : 'Kurumsal bilgiler ve İYS kayıt beyanı henüz tamamlanmadı; toplu gönderim kapalı.' }}
  &nbsp;Yalnızca <strong>{{ $eligibleCount }}</strong> izinli, İYS doğrulanmış adres hedeflenebilir.
  @if(\App\Models\EmailSetting::previewEnvironment())
- <strong>Test mağazası:</strong> bütün e-postalar güvenli test alıcısına yönlendirilir; kampanya başına en fazla 3 test gönderimi.
+ <strong>Gönderim doğrulaması:</strong> iletiler yalnızca güvenli doğrulama adresine yönlendirilir; gerçek kampanya gönderimi kapalıdır.
  @elseif(!config('newtic.marketing_live_enabled'))
  <strong>Canlı kampanya gönderimi sunucu yapılandırmasında kapalı.</strong>
  @endif

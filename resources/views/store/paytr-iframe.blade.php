@@ -1,28 +1,28 @@
 @extends('layouts.store')
-@section('title', 'PAYTR Test Ödemesi | {{ \App\Support\StoreIdentity::name() }}')
+@section('title', 'PAYTR Kart Ödemesi | {{ \App\Support\StoreIdentity::name() }}')
 @section('content')
 <main class="checkout-shell paytr-payment-page" id="content">
   <div class="checkout-top">
     <a href="{{ route('checkout.success', $order) }}" aria-label="Sipariş bilgilerine dön">‹</a>
-    <strong>Güvenli Test Ödemesi</strong>
+    <strong>PAYTR Ödeme</strong>
     <span><x-store-icon name="landmark" /></span>
   </div>
   <div class="paytr-checkout-heading">
-    <div class="paytr-test-tag"><x-store-icon name="check" /> PAYTR TEST MODU</div>
-    <h1>Kartla test ödemesi</h1>
+    <div class="paytr-test-tag"><x-store-icon name="check" /> PAYTR BAĞLANTI KONTROLÜ</div>
+    <h1>Kartla ödeme işlemi</h1>
     <p>Ödeme işlemi PAYTR'nin güvenli ödeme penceresinde tamamlanır. Kart bilgileri NEWTIC'e kaydedilmez.</p>
   </div>
   <div class="checkout-main-grid paytr-checkout-grid">
     <section class="checkout-card paytr-iframe-panel" aria-labelledby="paytr-form-title">
       <div class="paytr-iframe-top">
         <span><x-store-icon name="check" /> PAYTR Güvenli Ödeme</span>
-        <span class="paytr-test-indicator">Test · Gerçek tahsilat yok</span>
+        <span class="paytr-test-indicator">Aktivasyon bekleniyor · Tahsilat yok</span>
       </div>
       <h2 id="paytr-form-title">Ödeme ekranı</h2>
       @if($token)
         <div class="paytr-frame-viewport">
           <iframe src="https://www.paytr.com/odeme/guvenli/{{ rawurlencode($token) }}"
-            id="paytriframe" name="paytriframe" title="PAYTR güvenli test kartı ödeme formu"
+            id="paytriframe" name="paytriframe" title="PAYTR kart ödeme formu"
             loading="eager" referrerpolicy="no-referrer"
             scrolling="no" style="display:block;width:100%;min-height:520px;border:0"></iframe>
         </div>
@@ -53,7 +53,7 @@
       </div>
     </section>
     <aside class="checkout-card paytr-order-summary">
-      <span class="payment-eyebrow">TEST SİPARİŞİ</span>
+      <span class="payment-eyebrow">SİPARİŞ ÖZETİ</span>
       <h2>Ödeme özeti</h2>
       <p class="paytr-order-number">{{ $order->order_number }}</p>
       @foreach($order->items as $item)
@@ -68,7 +68,7 @@
       <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
       <div class="checkout-price-line"><span>Kargo</span><strong>{{ $order->shipping_cents ? number_format($order->shipping_cents / 100, 2, ',', '.').' ₺' : 'Ücretsiz' }}</strong></div>
       <div class="checkout-price-line is-total"><span>Toplam</span><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></div>
-      <p class="paytr-test-disclaimer">Bu işlem PAYTR test modu ile yapılır. Gerçek kredi kartıyla ödeme gerçekleştirmeyin; PAYTR'nin test senaryolarını kullanın.</p>
+      <p class="paytr-test-disclaimer">Ödeme aktivasyonu henüz tamamlanmadı. Gerçek kart bilgisi girmeyin; bu aşamada para tahsil edilmez.</p>
     </aside>
   </div>
 </main>
