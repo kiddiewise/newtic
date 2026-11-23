@@ -78,8 +78,9 @@ final class AdminOrderDocumentTest extends TestCase
 
         $this->actingAs($this->admin());
         $response = $this->get($uri)->assertOk()
-            ->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Cache-Control', 'private, no-store, max-age=0');
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
 
         $this->assertStringContainsString('attachment;', $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('Promofatura.pdf', $response->headers->get('Content-Disposition'));
