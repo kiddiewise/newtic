@@ -2,7 +2,7 @@ name: Sinay NEWTIC updater pilot baseline
 on:
   push:
     branches: ['feature/merchant-one-click-updates']
-    paths: ['VERSION', '.github/workflows/sinay-updater-pilot-baseline.yml']
+    paths: ['VERSION', '.github/workflows/sinay-updater-pilot-baseline.yml', 'tests/Unit/NewticReleaseValidationTest.php']
 permissions:
   contents: read
 concurrency:
