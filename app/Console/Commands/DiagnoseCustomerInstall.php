@@ -38,7 +38,7 @@ final class DiagnoseCustomerInstall extends Command
                 is_file(public_path('build/manifest.json'))
                 && is_file(public_path('build/newtic-revision.txt'))
             ),
-            'Test ödeme modu' => (bool) config('newtic.checkout_test_mode', true),
+            'Normal sipariş modu' => $test || config('newtic.checkout_test_mode', true) === false,
             'PAYTR canlı tahsilatı kapalı' => !config('newtic.paytr_card_payments_enabled', false)
                 && !config('newtic.paytr_webhooks_enabled', false),
             'Gerçek kargo kapalı' => !config('newtic.shipping_dummy_enabled', false),
