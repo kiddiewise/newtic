@@ -1,6 +1,7 @@
 name: Diagnose PAYTR 2nd-step callback on isolated Polaris staging
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - fix/paytr-notification-20261123
@@ -85,6 +86,30 @@ jobs:
               printf 'last8000_%s=%s\n' "$word" "$count"
             done
           fi
+          # Shared Hostinger may hide server access logs; report only aggregate
+          # evidence about PayTR's two provider-reported source addresses.
+          echo "== Hostinger ingress controls (no raw log lines) =="
+          for conf in "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html/.htaccess" "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/public/.htaccess"; do
+            if [[ -r "$conf" ]]; then
+              echo "htaccess_present=yes"
+              echo "htaccess_custom_ip_restriction_lines=$(grep -Eic 'Require (not )?ip|Deny from|Allow from|REMOTE_ADDR' "$conf" || true)"
+            fi
+          done
+          HAVE_LOG=no
+          for folder in "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/logs" "$HOME/.logs"; do
+            for file in "$folder/access.log" "$folder/access_log" "$folder/access.log.1"; do
+              if [[ -r "$file" ]]; then
+                HAVE_LOG=yes
+                count="$(tail -n 50000 "$file" | grep -Fc '/odeme/paytr/bildirim' || true)"
+                echo "callback_hits_access_log_last50000=$count"
+                for ip in 212.252.97.250 213.74.97.150; do
+                  count="$(tail -n 50000 "$file" | grep -F "$ip" | grep -Fc '/odeme/paytr/bildirim' || true)"
+                  echo "paytr_reported_source_callback_hits=$count"
+                done
+              fi
+            done
+          done
+          echo "access_log_visible=$HAVE_LOG"
           for endpoint in 'https://www.paytr.com/odeme/api/get-token' 'https://dev.paytr.com/iframe-api/iframe-api-2-adim'; do
             set +e
             result="$(curl -4 -sS --connect-timeout 10 --max-time 15 -o /dev/null -w '%{http_code} tls=%{ssl_verify_result} connect=%{time_connect}' -I "$endpoint")"
