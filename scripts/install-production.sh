@@ -100,6 +100,9 @@ SITE_URL="$(env_value APP_URL)"
 # Hostinger temporary domain use is an *explicit first-install-only* exception.
 # Never switch this flag on for normal customer domains; no live integrations
 # are allowed when it is on. The strict safe-mode flags are checked below.
+CHECKOUT_MODE="$(env_value NEWTIC_CHECKOUT_TEST_MODE)"
+[[ "$CHECKOUT_MODE" == "true" || "$CHECKOUT_MODE" == "false" ]] ||
+  fail "NEWTIC_CHECKOUT_TEST_MODE must be true or false."
 SITE_HOST="${SITE_URL#https://}"
 SITE_HOST="${SITE_HOST%%[:/]*}"
 TEMP_FLAG="$(env_value NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN)"
@@ -108,7 +111,7 @@ if [[ "$SITE_HOST" == *.hostingersite.com ]]; then
     fail "Hostinger test hostname is malformed."
   [[ "$TEMP_FLAG" == "true" ]] ||
     fail "Hostinger temporary domains require explicit NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true and all safe-mode flags."
-  note "Temporary Hostinger domain: authorized for first-install TEST MODE only."
+  note "Hostinger temporary domain: secure initial installation authorized; payment and shipping remain disabled."
 elif [[ "$TEMP_FLAG" == "true" ]]; then
   fail "Disable NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN for real customer domains."
 elif [[ "$TEMP_FLAG" != "false" && -n "$TEMP_FLAG" ]]; then
@@ -125,7 +128,6 @@ fi
 # Fresh install flags must be explicit, not simply rely on framework defaults.
 # A mistyped boolean can silently enable real-world integrations.
 for pair in \
-  'NEWTIC_CHECKOUT_TEST_MODE:true' \
   'NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED:false' \
   'NEWTIC_PAYTR_WEBHOOKS_ENABLED:false' \
   'NEWTIC_SHIPPING_DUMMY_ENABLED:false' \

@@ -72,7 +72,6 @@ final class StoreInstaller
         }
 
         return $allowTemporary
-            && config('newtic.checkout_test_mode', true)
             && !config('newtic.paytr_card_payments_enabled', false)
             && !config('newtic.paytr_webhooks_enabled', false)
             && !config('newtic.shipping_dummy_enabled', false)
@@ -122,7 +121,9 @@ final class StoreInstaller
                 && is_file(public_path('assets/branding/newtic-logo.webp'))
             ),
             'Toplu pazarlama gönderimi kapalı' => !config('newtic.marketing_live_enabled', false),
-            'Test ödeme modu etkin' => (bool) config('newtic.checkout_test_mode', true),
+            'Ödeme ve kargo açılışı güvenli' => !config('newtic.paytr_card_payments_enabled', false)
+                && !config('newtic.paytr_webhooks_enabled', false)
+                && !config('newtic.shipping_dummy_enabled', false),
             'Gerçek ödeme ve kargo kapalı' => !config('newtic.paytr_card_payments_enabled', false)
                 && !config('newtic.paytr_webhooks_enabled', false)
                 && !config('newtic.shipping_dummy_enabled', false),

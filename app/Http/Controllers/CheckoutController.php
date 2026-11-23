@@ -120,7 +120,7 @@ class CheckoutController extends Controller
                 return redirect()->route('checkout.paytr.frame', $previous);
             }
             if ($previous?->payment_method === 'paytr' && $previous->status === 'cancelled') {
-                return redirect()->route('checkout.index')->with('error', 'Önceki test ödemeniz başarısız. Yeniden deneyebilirsiniz.');
+                return redirect()->route('checkout.index')->with('error', 'Önceki kart ödemeniz başarısız. Yeniden deneyebilirsiniz.');
             }
 
             return redirect()->route('checkout.success', $request->session()->get('checkout_last_order'));
