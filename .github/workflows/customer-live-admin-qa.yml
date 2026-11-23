@@ -1,0 +1,31 @@
+name: NEWTIC customer preview authenticated catalogue acceptance
+
+on:
+  push:
+    branches:
+      - feat/customer-live-smoke-20261123
+
+permissions:
+  contents: read
+
+jobs:
+  verified-live-admin:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare verified Hostinger SSH key (private, no logging)
+        env:
+          KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY" && test -n "$KNOWN"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/newtic-qa
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-qa ~/.ssh/known_hosts
+      - name: Install HTTPS session test dependency
+        run: python3 -m pip install --disable-pip-version-check --quiet --break-system-packages requests
+      - name: Exercise isolated admin menus, category/product CRUD, uploads, storefront and cleanup
+        run: python3 scripts/qa-customer-live-admin.py
