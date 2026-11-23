@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - fix/paytr-notification-20261123
+      - diagnostic/paytr-merchant-retry-20261123
     paths:
       - .github/workflows/paytr-notification-20261123.yml
 
@@ -71,6 +71,22 @@ jobs:
           echo 'paytr_admin_active='.$yn((bool)$s?->is_enabled).PHP_EOL;
           echo 'paytr_is_provider_test='.$yn((bool)$s?->test_mode).PHP_EOL;
           echo 'attempt_count='.(int)\App\Models\PaytrPaymentAttempt::count().PHP_EOL;
+          // Match only a short identifier prefix from the customer's new PAYTR
+          // screenshot, without disclosing the merchant order reference.
+          $latestFromScreenshot=\App\Models\PaytrPaymentAttempt::query()
+              ->where('merchant_oid','like','NTND7N2%')->latest('id')->first();
+          echo 'screenshot_recent_attempt_exists='.$yn((bool)$latestFromScreenshot).PHP_EOL;
+          if($latestFromScreenshot){
+              echo 'screenshot_recent_attempt_status='.$latestFromScreenshot->status.PHP_EOL;
+              echo 'screenshot_recent_order_status='.($latestFromScreenshot->order?->status??'missing').PHP_EOL;
+              echo 'screenshot_recent_attempt_age_minutes='.(int)$latestFromScreenshot->created_at->diffInMinutes(now()).PHP_EOL;
+          }
+          foreach(\App\Models\PaytrPaymentAttempt::query()->latest('id')->limit(3)->get() as $index=>$a){
+              echo 'latest_attempt_'.$index.'_status='.$a->status.PHP_EOL;
+              echo 'latest_attempt_'.$index.'_age_minutes='.(int)$a->created_at->diffInMinutes(now()).PHP_EOL;
+              echo 'latest_attempt_'.$index.'_order_status='.($a->order?->status??'missing').PHP_EOL;
+          }
+          echo 'callback_route_configured='.route('checkout.paytr.callback').PHP_EOL;
           foreach(['pending','success','failed'] as $state){echo 'attempt_'.$state.'_count='.(int)\App\Models\PaytrPaymentAttempt::where('status',$state)->count().PHP_EOL;}
           echo 'unsigned_webhook_must_be_rejected=yes'.PHP_EOL;
           PHP
