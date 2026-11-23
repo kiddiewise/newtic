@@ -2,6 +2,9 @@ name: Deploy NEWTIC staging
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'deploy/polaris-staging-proforma-1-0-4'
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 95e83b9df42818dbfae0a4a67198296ee1dcd709
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -69,7 +74,7 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upload asset bundle and deploy
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: 95e83b9df42818dbfae0a4a67198296ee1dcd709
         run: |
           set -euo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
@@ -78,6 +83,26 @@ jobs:
           "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
           "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
           "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify NEWTIC 1.0.4 proforma and admin QR routes on Polaris staging
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          test "$(git rev-parse HEAD)" = '95e83b9df42818dbfae0a4a67198296ee1dcd709'
+          test "$(cat VERSION)" = '1.0.4'
+          php -r 'require "vendor/autoload.php"; if (!class_exists("Dompdf\\Dompdf") || !class_exists("Endroid\\QrCode\\Builder\\Builder")) exit(1);'
+          test -s "$APP/public/build/manifest.json"
+          cmp "$APP/public/build/manifest.json" "$WEB/build/manifest.json"
+          test -s resources/views/admin/orders/document.blade.php
+          grep -Fq 'Promofatura PDF' resources/views/admin/orders/show.blade.php
+          grep -Fq 'QR · SİPARİŞİ AÇ' resources/views/admin/orders/document.blade.php
+          php artisan route:list --name=orders.document | grep -F 'admin.orders.document'
+          php artisan migrate:status > /dev/null
+          echo 'NEWTIC_1_0_4_A4_PDF_AND_PRIVATE_QR_VERIFIED'
+          REMOTE
       - name: Verify public staging homepage
         run: |
           set -euo pipefail
