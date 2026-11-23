@@ -327,7 +327,7 @@
       <strong>Alışveriş Bilgileri</strong>
       <p>Sepet, ödeme ve teslimat ayrıntılarını siparişi onaylamadan önce kontrol edebilirsiniz.</p>
       @if(config('newtic.checkout_test_mode',true))
-        <p class="legal-footer-test">Test modu: Gerçek kart tahsilatı yapılmaz.</p>
+        <p class="legal-footer-test">Gerçek kart tahsilatı henüz etkinleştirilmedi.</p>
       @endif
     </div>
     <div class="legal-footer-trust">

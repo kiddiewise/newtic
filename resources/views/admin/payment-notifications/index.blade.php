@@ -15,7 +15,7 @@
     <article class="admin-payment-record">
       <div class="admin-payment-record-head">
         <div><a href="{{ route('admin.orders.show', $notification->order) }}"><strong>{{ $notification->order->order_number }}</strong></a>
-          <small>{{ $notification->order->customer_name }} · {{ $notification->created_at->format('d.m.Y H:i') }} @if($notification->order->is_test) · TEST @endif</small>
+          <small>{{ $notification->order->customer_name }} · {{ $notification->created_at->format('d.m.Y H:i') }} @if($notification->order->is_test) · Tahsilatsız kayıt @endif</small>
         </div>
         <strong>{{ number_format($notification->order->total_cents / 100, 2, ',', '.') }} ₺</strong>
       </div>
@@ -29,12 +29,12 @@
             @csrf
             <label class="admin-check"><input name="bank_verified" type="checkbox" value="1" required>
               @if($notification->order->is_test)
-                Gerçek banka transferi yapılmadığını biliyorum. <strong>{{ $notification->order->order_number }}</strong> numaralı test bildirimini yalnızca deneme amacıyla onaylıyorum.
+                Bu işlemin gerçek banka tahsilatı olmadığını biliyorum. <strong>{{ $notification->order->order_number }}</strong> numaralı kaydı ciroya dahil etmeden doğruluyorum.
               @else
                 Banka hareketinde <strong>{{ number_format($notification->order->total_cents / 100, 2, ',', '.') }} ₺</strong> tutarını ve <strong>{{ $notification->order->order_number }}</strong> açıklamasını kontrol ettim.
               @endif
             </label>
-            <button type="submit" class="admin-primary">{{ $notification->order->is_test ? 'TEST Ödemeyi Doğrula' : 'Ödemeyi Doğrula' }} / Hazırlanıyor</button>
+            <button type="submit" class="admin-primary">{{ $notification->order->is_test ? 'Tahsilatsız Kaydı Doğrula' : 'Ödemeyi Doğrula' }} / Hazırlanıyor</button>
           </form>
           <form action="{{ route('admin.payment-notifications.reject', $notification) }}" method="POST" class="admin-form">
             @csrf
