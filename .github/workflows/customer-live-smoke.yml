@@ -1,0 +1,28 @@
+name: NEWTIC customer preview read-only smoke audit
+
+on:
+  push:
+    branches:
+      - feat/customer-live-smoke-20261123
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test live new customer URL over TLS without modifying data
+        env:
+          NEWTIC_QA_URL: https://humane-indigo-chough-50.hostingersite.com
+        run: bash scripts/qa-customer-live-smoke.sh
+      - name: Save evidence, even on failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newtic-customer-public-readonly-audit
+          path: ${{ runner.temp }}/newtic-live-smoke/report.txt
+          if-no-files-found: warn
+          retention-days: 30
