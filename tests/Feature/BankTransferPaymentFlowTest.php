@@ -179,7 +179,7 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->get(route('admin.orders.show', $order))->assertOk()
             ->assertSee('Bu kayıt gerçek bir banka tahsilatı içermiyor.');
         $this->get(route('admin.payment-notifications.index'))->assertOk()
-            ->assertSee('Gerçek banka transferi yapılmadığını biliyorum.');
+            ->assertSee('Bu işlemin gerçek banka tahsilatı olmadığını biliyorum.');
         $this->patch(route('admin.orders.update', $order), [
             'status' => 'preparing',
         ])->assertSessionHasErrors('status');
