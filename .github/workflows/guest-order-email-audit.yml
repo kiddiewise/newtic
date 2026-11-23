@@ -80,5 +80,22 @@ jobs:
           $hm=\Illuminate\Support\Facades\DB::table('system_health_monitors')->where('key','email_process')->first();
           echo 'email_process_health='.($hm?->status??'unknown').PHP_EOL;
           PHP
+          # Cron visibility and outbox freshness (never print recipient fields).
+          if command -v crontab >/dev/null 2>&1; then
+            n="$( (crontab -l 2>/dev/null || true) | grep -Fc 'artisan schedule:run' || true)"
+            echo "hosting_account_laravel_scheduler_entries=$n"
+          else
+            echo "hosting_account_crontab_available=no"
+          fi
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app=require 'bootstrap/app.php';
+          $app->make(\\Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+          $sent=\\App\\Models\\EmailDelivery::query()->whereNotNull('sent_at')->orderByDesc('sent_at')->first();
+          $queued=\\App\\Models\\EmailDelivery::query()->where('status','pending')->orderBy('created_at')->first();
+          echo 'most_recent_delivery_utc='.($sent?->sent_at?->utc()?->format('Y-m-d H:i:s')??'none').PHP_EOL;
+          echo 'oldest_queued_minutes='.($queued?(int)$queued->created_at->diffInMinutes(now()):0).PHP_EOL;
+          PHP
           done
           REMOTE
