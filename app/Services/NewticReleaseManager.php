@@ -66,11 +66,19 @@ final class NewticReleaseManager
     public function refresh(): ?array
     {
         try {
+            $previewTag = (string) config('newtic.update_preview_tag', '');
+            $url = self::API;
+            if ($previewTag !== '') {
+                if (!preg_match('/^v\d+\.\d+\.\d+$/D', $previewTag)) {
+                    throw new RuntimeException('invalid_preview_tag');
+                }
+                $url = 'https://api.github.com/repos/kiddiewise/newtic/releases/tags/'.$previewTag;
+            }
             $response = Http::withHeaders([
                 'Accept' => 'application/vnd.github+json',
                 'User-Agent' => 'NEWTIC-Merchant-Updater',
                 'X-GitHub-Api-Version' => '2022-11-28',
-            ])->connectTimeout(5)->timeout(12)->get(self::API);
+            ])->connectTimeout(5)->timeout(12)->get($url);
 
             if (!$response->successful()) throw new RuntimeException('release_api_unavailable');
             $release = $this->parse($response->json());
@@ -87,8 +95,14 @@ final class NewticReleaseManager
 
     public function parse(mixed $payload): array
     {
-        if (!is_array($payload) || ($payload['draft'] ?? true) || ($payload['prerelease'] ?? true)) {
+        $previewTag = (string) config('newtic.update_preview_tag', '');
+        $previewMatches = $previewTag !== '' && ($payload['tag_name'] ?? '') === $previewTag;
+        if (!is_array($payload) || ($payload['draft'] ?? true)
+            || (($payload['prerelease'] ?? true) && !$previewMatches)) {
             throw new RuntimeException('invalid_release');
+        }
+        if ($previewTag !== '' && !$previewMatches) {
+            throw new RuntimeException('unexpected_preview_release');
         }
 
         $tag = (string) ($payload['tag_name'] ?? '');
