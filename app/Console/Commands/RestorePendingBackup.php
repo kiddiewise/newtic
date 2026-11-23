@@ -43,7 +43,7 @@ final class RestorePendingBackup extends Command
                     $date = $job['finished_at'] ?? $job['created_at'] ?? null;
                     if (in_array($status, ['done', 'failed', 'ready'], true)
                         && $date && strtotime((string) $date) < time() - $expires) {
-                        \\Illuminate\\Support\\Facades\\File::deleteDirectory($service->directory($id));
+                        \Illuminate\Support\Facades\File::deleteDirectory($service->directory($id));
                     }
                     continue;
                 }
