@@ -267,9 +267,18 @@ final class NewticSoftwareUpdater
             || !extension_loaded('pdo_mysql') || !class_exists(ZipArchive::class)) {
             throw new RuntimeException('Server does not support one-click updates.');
         }
+        // The staged package already occupies disk. Updating needs room for
+        // unchanged customer data AND temporary copies of replaced code.
+        $packageBytes = 0;
+        $items = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($items as $item) {
+            if ($item->isFile()) $packageBytes += $item->getSize();
+        }
         $available = @disk_free_space(base_path());
-        if (is_float($available) && $available < 800 * 1024 * 1024) {
-            throw new RuntimeException('Insufficient free space to update safely.');
+        if ($available !== false && $available < ($packageBytes * 1.5) + 200 * 1024 * 1024) {
+            throw new RuntimeException('Insufficient free disk space for safe staging and rollback.');
         }
 
         $public = json_decode((string) file_get_contents($source.'/public/build/manifest.json'), true);
@@ -351,7 +360,9 @@ final class NewticSoftwareUpdater
 
                     $journal[] = ['target' => $target, 'prior' => $prior, 'existed' => $existed];
                     File::ensureDirectoryExists($rollback, 0700);
-                    file_put_contents($rollback.'/journal.json', json_encode($journal, JSON_THROW_ON_ERROR), LOCK_EX);
+                    if (file_put_contents($rollback.'/journal.json', json_encode($journal, JSON_THROW_ON_ERROR), LOCK_EX) === false) {
+                        throw new RuntimeException('Update journal cannot be saved.');
+                    }
                     $temp = $target.'.newtic-pending-'.bin2hex(random_bytes(4));
                     if (!copy($item->getPathname(), $temp) || !rename($temp, $target)) {
                         @unlink($temp);
