@@ -93,4 +93,36 @@ jobs:
             if [[ "$endpoint" == *get-token ]]; then label=api; else label=docs; fi
             echo "outbound_$label exit=$exitcode result=$result"
           done
+          # Signed HMAC, deliberately UNKNOWN merchant_oid: proves valid PayTR
+          # transport without creating or settling any payment or order.
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app=require 'bootstrap/app.php';
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $host='powderblue-dinosaur-538060.hostingersite.com';
+          if (parse_url((string)config('app.url'),PHP_URL_HOST)!==$host
+              || \Illuminate\Support\Facades\DB::connection()->getDatabaseName()==='') exit(2);
+          $settings=\App\Models\PaytrSetting::find(1);
+          if (!$settings?->is_enabled || !$settings->hasCredentials()
+              || !config('newtic.paytr_webhooks_enabled')) exit(2);
+          $oid='NTDIAG'.\Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(23));
+          if (\App\Models\PaytrPaymentAttempt::where('merchant_oid',$oid)->exists()) exit(2);
+          $before=\App\Models\Order::count();
+          $payload=[
+            'merchant_oid'=>$oid,'status'=>'failed','total_amount'=>'0',
+            'payment_type'=>'card','currency'=>'TL','payment_amount'=>'0','test_mode'=>'1',
+            'hash'=>\App\Support\PaytrSignature::notificationHash($oid,'failed','0',$settings->merchant_key,$settings->merchant_salt)
+          ];
+          try {
+            $res=\Illuminate\Support\Facades\Http::asForm()->timeout(20)->post('https://'.$host.'/odeme/paytr/bildirim',$payload);
+            $status=$res->status();
+            echo 'signed_unknown_order_http='.$status.PHP_EOL;
+            echo 'signed_unknown_order_reached_hmac_verification='.($status===404&&trim($res->body())==='PAYTR notification could not be processed'?'yes':'no').PHP_EOL;
+            echo 'no_payment_created='.(\App\Models\Order::count()===$before?'yes':'no').PHP_EOL;
+            if($status!==404 || \App\Models\Order::count()!==$before) exit(3);
+          } catch (\Throwable $e) {
+            echo 'signed_unknown_order_transport_failed=yes'.PHP_EOL;exit(3);
+          }
+          PHP
           REMOTE
