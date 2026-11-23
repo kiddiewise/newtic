@@ -202,7 +202,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
         <td style="width:43%;">
           <table class="price-box">
             <tr><td>Ürünler toplamı</td><td>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</td></tr>
-            <tr><td>Kargo</td><td>{{ $order->shipping_cents === 0 ? 'Ücretsiz' : number_format($order->shipping_cents / 100, 2, ',', ' ').' ₺' }}</td></tr>
+            <tr><td>Kargo</td><td>{{ $order->shipping_cents === 0 ? 'Ücretsiz' : number_format($order->shipping_cents / 100, 2, ',', '.').' ₺' }}</td></tr>
             <tr><td>GENEL TOPLAM</td><td>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</td></tr>
           </table>
           <p class="payment-details">Tutarlar sipariş oluşturulduğu andaki kayıttan alınmıştır. Kargo bedeli sipariş toplamına dahildir.</p>
