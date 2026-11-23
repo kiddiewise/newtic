@@ -8,7 +8,7 @@
     <h1>{{ $order->order_number }}</h1>
     <p>{{ $order->created_at->format('d.m.Y H:i') }}
       · <span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
-      @if($order->is_test)<span class="admin-test-tag">TEST SİPARİŞİ</span>@endif
+      @if($order->is_test)<span class="admin-test-tag">Gerçek tahsilat yok</span>@endif
     </p>
   </div>
   <a class="admin-secondary" href="{{ route('admin.orders.index') }}"><x-admin-icon name="arrow-right" /> Tüm siparişler</a>
@@ -54,11 +54,11 @@
     @if($order->payment_method === 'paytr')
       <section class="admin-panel">
         <div class="admin-panel-title"><h2>PAYTR kart ödeme geçmişi</h2></div>
-        <p class="admin-description">PAYTR test işlemi yalnızca doğrulanmış sunucu bildirimiyle sonuçlandırılır. Müşterinin ödeme ekranına dönmesi onay anlamına gelmez.</p>
+        <p class="admin-description">PAYTR ödeme işlemi yalnızca doğrulanmış sunucu bildirimiyle sonuçlandırılır. Müşterinin ödeme ekranına dönmesi onay anlamına gelmez.</p>
         @forelse($order->paytrAttempts as $attempt)
           <article class="admin-payment-history">
             <span @class(['admin-state-pill', 'state-completed' => $attempt->status === 'success', 'state-cancelled' => $attempt->status === 'failed', 'state-pending_payment' => $attempt->status === 'pending'])>
-              {{ match($attempt->status) { 'success' => 'Test ödemesi doğrulandı', 'failed' => 'Başarısız', default => 'Bildirim bekleniyor' } }}
+              {{ match($attempt->status) { 'success' => 'Ödeme bildirimi doğrulandı', 'failed' => 'Başarısız', default => 'Bildirim bekleniyor' } }}
             </span>
             <small>PAYTR işlem no: {{ $attempt->merchant_oid }} · {{ $attempt->created_at->format('d.m.Y H:i') }}</small>
             <div class="admin-detail-line"><span>İşlem tutarı</span><strong>{{ number_format($attempt->amount_cents / 100, 2, ',', '.') }} ₺</strong></div>
@@ -67,7 +67,7 @@
             @endif
           </article>
         @empty
-          <p class="admin-empty">Henüz PAYTR test ödeme girişimi yok.</p>
+          <p class="admin-empty">Henüz PAYTR ödeme girişimi yok.</p>
         @endforelse
       </section>
     @else
@@ -89,12 +89,12 @@
                 @csrf
                 <label class="admin-check"><input type="checkbox" name="bank_verified" value="1" required>
                   @if($order->is_test)
-                    Gerçek banka transferi yapılmadığını biliyorum. {{ $order->order_number }} numaralı test bildirimini yalnızca deneme amacıyla onaylıyorum.
+                    Bu kayıt gerçek bir banka tahsilatı içermiyor. İşlemi ciroya dahil etmeden yalnızca yönetim doğrulaması olarak onaylıyorum.
                   @else
                     Tutarı ({{ number_format($order->total_cents/100, 2, ',', '.') }} ₺) ve açıklamadaki {{ $order->order_number }} numarasını banka hareketinde kontrol ettim.
                   @endif
                 </label>
-                <button class="admin-primary" type="submit"><x-admin-icon name="check" /> {{ $order->is_test ? 'TEST Ödemeyi doğrula' : 'Ödemeyi doğrula' }}</button>
+                <button class="admin-primary" type="submit"><x-admin-icon name="check" /> {{ $order->is_test ? 'Tahsilatsız kaydı doğrula' : 'Ödemeyi doğrula' }}</button>
               </form>
               <form class="admin-form" method="POST" action="{{ route('admin.payment-notifications.reject', $notification) }}">
                 @csrf
@@ -123,7 +123,7 @@
             <i>@if($step >= $index && $order->status !== 'cancelled')✓@else{{ $index + 1 }}@endif</i>
             <span>{{ $label }}<small>
               @if($index === 0){{ $order->created_at->format('d.m.Y H:i') }}
-              @elseif($index === 1 && $step === 0){{ $order->payment_method === 'paytr' ? 'PAYTR test bildirimi bekleniyor' : 'Banka kontrolü bekleniyor' }}
+              @elseif($index === 1 && $step === 0){{ $order->payment_method === 'paytr' ? 'PAYTR bildirimi bekleniyor' : 'Banka kontrolü bekleniyor' }}
               @elseif($index <= $step)Tamamlandı
               @else Henüz değil @endif
             </small></span>
@@ -247,13 +247,13 @@
     </section>
     <section class="admin-panel">
       <h2>Operasyon bilgileri</h2>
-      <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart (Test)' : 'Havale / EFT' }}</strong></div>
+      <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart' : 'Havale / EFT' }}</strong></div>
       <div class="admin-detail-line"><span>Ödeme durumu</span>
         <strong>{{ $paymentVerified ? 'Ödeme doğrulandı' : ($order->payment_method === 'paytr' ? 'PAYTR ödeme bildirimi bekleniyor / başarısız' : 'Havale/EFT doğrulaması bekleniyor') }}</strong>
       </div>
       <div class="admin-detail-line"><span>Sipariş durumu</span><strong>{{ $order->statusLabel() }}</strong></div>
       <div class="admin-detail-line"><span>Oluşturulma</span><strong>{{ $order->created_at->format('d.m.Y H:i') }}</strong></div>
-      <div class="admin-detail-line"><span>Tür</span><strong>{{ $order->is_test ? 'TEST siparişi' : 'Gerçek sipariş' }}</strong></div>
+      <div class="admin-detail-line"><span>Tür</span><strong>{{ $order->is_test ? 'Tahsilatsız kayıt' : 'Sipariş' }}</strong></div>
     </section>
   </div>
 </div>

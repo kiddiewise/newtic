@@ -33,7 +33,7 @@
   <div class="admin-order-card-list">
     @forelse($orders as $order)
       <a class="admin-order-list-item" href="{{ route('admin.orders.show', $order) }}">
-        <span><strong>{{ $order->order_number }} @if($order->is_test)<small class="admin-test-tag">TEST</small>@endif</strong>
+        <span><strong>{{ $order->order_number }} @if($order->is_test)<small class="admin-test-tag">Tahsilatsız kayıt</small>@endif</strong>
           <small>{{ $order->customer_name }} · {{ $order->customer_email }}</small>
         </span>
         <span class="admin-order-list-date"><small>Tarih</small><strong>{{ $order->created_at->format('d.m.Y') }}</strong></span>

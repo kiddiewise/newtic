@@ -21,7 +21,7 @@
 
   <div class="analytics-privacy-notice">
     <x-admin-icon name="shield"/>
-    <span><strong>Gizlilik odaklı ölçüm:</strong> Davranışlar yalnızca analitik izni veren ziyaretçilerden toplanır. IP adresi, müşteri kimliği ve tam konum saklanmaz. Canlı sayaç tüm ziyaretçileri değil, izne dayalı etkin anonim oturumları gösterir. Test siparişleri ciroya girmez.</span>
+    <span><strong>Gizlilik odaklı ölçüm:</strong> Davranışlar yalnızca analitik izni veren ziyaretçilerden toplanır. IP adresi, müşteri kimliği ve tam konum saklanmaz. Canlı sayaç tüm ziyaretçileri değil, izne dayalı etkin anonim oturumları gösterir. Tahsilatsız işlemler ciroya girmez.</span>
   </div>
 
   <section class="analytics-summary" aria-label="Temel göstergeler">
@@ -30,7 +30,7 @@
       ['Ziyaretçi oturumu', number_format($visitors, 0, ',', '.'), 'Analitik izni bulunan farklı oturumlar'],
       ['Sayfa görüntüleme', number_format($pageViews, 0, ',', '.'), 'İzinli ziyaretlerin görüntülemeleri'],
       ['Doğrulanmış ciro', number_format($revenueCents / 100, 2, ',', '.').' ₺', 'Banka veya PAYTR onaylı gerçek siparişler'],
-      ['Gerçek satış adedi', number_format($orderCount, 0, ',', '.'), 'Test ve iptal siparişleri hariç'],
+      ['Gerçek satış adedi', number_format($orderCount, 0, ',', '.'), 'Tahsilatsız ve iptal siparişleri hariç'],
       ['Ortalama sipariş', number_format($averageCents / 100, 2, ',', '.').' ₺', 'Gerçek doğrulanmış siparişlerden'],
       ['Şu an aktif', (string)$live['online'], 'Son 5 dakikadaki izinli oturumlar'],
     ] as $index => $item)
