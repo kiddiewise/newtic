@@ -40,6 +40,11 @@ jobs:
           php artisan test
           npm install --ignore-scripts --no-audit --no-fund
           npm run build
+          # Match the shipped source and compiled celebratory confirmation UI.
+          # PayTR checkout stays OFF for Sinay until its own merchant setup.
+          grep -Fq 'data-order-celebration-stage' resources/views/store/order-success.blade.php
+          grep -RFlq --include='*.css' '.order-preparing-confirmation' public/build/assets
+          grep -RFlq --include='*.js' 'newtic:order-celebrated' public/build/assets
           printf '%s\n' "$GITHUB_SHA" > public/build/newtic-revision.txt
           tar -czf sinay-upgrade-build.tar.gz -C public build
       - name: Configure existing Hostinger connection
