@@ -4,7 +4,8 @@ const orderCelebration = document.querySelector('[data-order-celebration]');
 
 if (orderCelebration && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const orderId = orderCelebration.dataset.orderCelebration;
-  const key = `newtic:order-celebrated:${orderId}`;
+  const stage = orderCelebration.dataset.orderCelebrationStage || 'receipt';
+  const key = `newtic:order-celebrated:${orderId}:${stage}`;
   let celebrated = false;
 
   try {
@@ -15,7 +16,7 @@ if (orderCelebration && !window.matchMedia('(prefers-reduced-motion: reduce)').m
   }
 
   if (!celebrated) {
-    const partyIcon = orderCelebration.querySelector('.checkout-success-mark');
+    const partyIcon = orderCelebration.querySelector('.checkout-success-mark, .order-stage-package');
     partyIcon?.classList.add('is-celebrating');
 
     window.requestAnimationFrame(() => {

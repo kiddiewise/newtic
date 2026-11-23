@@ -4,7 +4,10 @@
 <main class="checkout-shell checkout-success-page" id="content">
   <div class="checkout-top"><a href="{{ route('home') }}" aria-label="Ana sayfa">‹</a><strong>Sipariş Bilgileri</strong><span></span></div>
   <div class="checkout-card checkout-success-hero order-tracking-hero stage-{{ $tracking['key'] }}"
-    data-order-stage="{{ $tracking['key'] }}" @if($tracking['key'] === 'pending_payment') data-order-celebration="{{ $order->id }}" @endif>
+    data-order-stage="{{ $tracking['key'] }}"
+    @if($tracking['key'] === 'pending_payment' || ($tracking['key'] === 'preparing' && $order->payment_method === 'paytr' && $paytrAttempt?->status === 'success'))
+      data-order-celebration="{{ $order->id }}" data-order-celebration-stage="{{ $tracking['key'] }}"
+    @endif>
     @if($tracking['icon'] === 'party')
       <div class="checkout-success-mark" role="img" aria-label="Sipariş kutlaması">🎉</div>
     @elseif($tracking['icon'] === 'thumb')
@@ -21,6 +24,12 @@
       <div class="order-stage-mark order-stage-alert" role="img" aria-label="{{ $tracking['badge'] }}"><x-store-icon name="x" /></div>
     @else
       <div class="order-stage-mark order-stage-clock" role="img" aria-label="Durum bekleniyor"><x-store-icon name="clock-3" /></div>
+    @endif
+    @if($tracking['key'] === 'preparing' && $order->payment_method === 'paytr' && $paytrAttempt?->status === 'success')
+      <div class="order-preparing-confirmation" role="status">
+        <span class="order-preparing-confirmation-icon" aria-hidden="true"><x-store-icon name="check" /></span>
+        <span><strong>🎉 Siparişiniz başarıyla alındı!</strong><small>Kart ödemeniz güvenle doğrulandı.</small></span>
+      </div>
     @endif
     <h1>{{ $tracking['title'] }}</h1>
     <p class="order-stage-description">{{ $tracking['description'] }}</p>

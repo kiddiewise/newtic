@@ -142,6 +142,11 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $product = $this->product();
         $order = $this->place($product);
 
+        // A pending payment must not be celebrated as a successful charge.
+        $this->get(route('checkout.success', $order))->assertOk()
+            ->assertDontSee('order-preparing-confirmation')
+            ->assertDontSee('data-order-celebration-stage="preparing"', false);
+
         $this->assertSame(17970, $order->total_cents);
         // Once ordered, items are reserved and shown as a pending order,
         // not double-counted in the customer's editable shopping cart.
@@ -177,6 +182,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame(8, $product->fresh()->stock_quantity);
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertSee('Siparişiniz hazırlanıyor')
+            ->assertSee('Siparişiniz başarıyla alındı!')
+            ->assertSee('Kart ödemeniz güvenle doğrulandı.')
+            ->assertSee('data-order-celebration-stage="preparing"', false)
             ->assertSee('PAYTR ödeme bildirimi doğrulandı')
             ->assertDontSee('Banka hesabını seç');
         $this->assertSame([], session('shopping_cart', []));
