@@ -35,9 +35,6 @@
     <p class="order-stage-description">{{ $tracking['description'] }}</p>
     <p class="order-stage-number">Sipariş numaran: <strong>{{ $order->order_number }}</strong></p>
     <span class="checkout-status order-stage-status">{{ $tracking['badge'] }}</span>
-    @if($order->is_test)
-      <p class="checkout-testing-note"><strong>Gerçek tahsilat yapılmadı.</strong> Bu işlem ödeme aktivasyonu öncesinde oluşturulmuştur; ödeme durumu yalnızca doğrulanmış sunucu bildirimiyle güncellenir.</p>
-    @endif
     @guest
       <div class="payment-guest-link">
         <div><strong>Sipariş bağlantını sakla</strong><small>14 gün boyunca ödeme talimatlarına ve sipariş durumuna buradan dönebilirsin. Bu özel bağlantıyı başkalarıyla paylaşma.</small></div>
