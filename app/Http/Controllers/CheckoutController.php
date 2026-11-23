@@ -59,7 +59,8 @@ class CheckoutController extends Controller
             'addresses' => $addresses,
             'selectedAddress' => $selectedAddress,
             'provinces' => TurkeyProvinces::ALL,
-            'bankAccountsAvailable' => BankAccount::query()->where('is_active', true)->exists(),
+            'bankAccountsAvailable' => BankAccount::query()->where('is_active', true)->exists()
+                && (config('newtic.checkout_test_mode', true) || LegalReadiness::checkoutReady()),
             'paytrAvailable' => PaytrTestAccess::available(),
         ]);
     }
@@ -68,7 +69,8 @@ class CheckoutController extends Controller
     {
         AddressValidation::normalizePhoneInput($request);
         $paytrAvailable = PaytrTestAccess::available();
-        $bankAvailable = BankAccount::query()->where('is_active', true)->exists();
+        $bankAvailable = BankAccount::query()->where('is_active', true)->exists()
+            && (config('newtic.checkout_test_mode', true) || LegalReadiness::checkoutReady());
         $allowedMethods = array_values(array_filter([
             $bankAvailable ? 'bank_transfer' : null,
             $paytrAvailable ? 'paytr' : null,

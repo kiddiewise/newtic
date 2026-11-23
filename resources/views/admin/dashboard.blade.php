@@ -12,6 +12,9 @@
 @if(!\App\Models\BankAccount::query()->where('is_active', true)->exists() && !\App\Support\PaytrTestAccess::available())
   <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Ödeme kurulumu gerekiyor:</strong> Henüz etkin bir ödeme yöntemi yok. Havale/EFT için banka hesabı; kart için PAYTR bağlantısı ve sağlayıcı onayı gerekir. <a href="{{ route('admin.bank-accounts.index') }}">Banka hesapları</a> · <a href="{{ route('admin.paytr-settings.edit') }}">PAYTR ayarları</a></span></div>
 @endif
+@if(\App\Support\LegalReadiness::requiredBeforeLive() !== [])
+  <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Mağaza yayına hazırlık:</strong> Satıcı bilgileri ve zorunlu sözleşmeler tamamlanmadan gerçek sipariş açılamaz. <a href="{{ route('admin.legal.index') }}">Yasal sayfaları tamamla</a></span></div>
+@endif
 <div class="admin-kpi-grid">
   <a href="{{ route('admin.orders.index') }}" class="admin-kpi">
     <span class="admin-kpi-icon is-mint"><x-admin-icon name="bag" /></span>
