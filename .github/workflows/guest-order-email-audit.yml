@@ -91,9 +91,9 @@ jobs:
           <?php
           require 'vendor/autoload.php';
           $app=require 'bootstrap/app.php';
-          $app->make(\\Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
-          $sent=\\App\\Models\\EmailDelivery::query()->whereNotNull('sent_at')->orderByDesc('sent_at')->first();
-          $queued=\\App\\Models\\EmailDelivery::query()->where('status','pending')->orderBy('created_at')->first();
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $sent=\App\Models\EmailDelivery::query()->whereNotNull('sent_at')->orderByDesc('sent_at')->first();
+          $queued=\App\Models\EmailDelivery::query()->where('status','pending')->orderBy('created_at')->first();
           echo 'most_recent_delivery_utc='.($sent?->sent_at?->utc()?->format('Y-m-d H:i:s')??'none').PHP_EOL;
           echo 'oldest_queued_minutes='.($queued?(int)$queued->created_at->diffInMinutes(now()):0).PHP_EOL;
           PHP
