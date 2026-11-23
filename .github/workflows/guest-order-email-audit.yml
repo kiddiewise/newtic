@@ -1,0 +1,84 @@
+name: Audit NEWTIC guest order email delivery (read-only)
+
+on:
+  push:
+    branches:
+      - fix/order-payment-messaging-guest-email-audit-20261123
+    paths:
+      - .github/workflows/guest-order-email-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Verify separate Polaris and Sinay email configuration (no PII, no modifications)
+        shell: bash
+        env:
+          KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY" && test -n "$KNOWN"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$KEY" > "$HOME/.ssh/guest-email-audit"
+          printf '%s\n' "$KNOWN" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/guest-email-audit" "$HOME/.ssh/known_hosts"
+          ssh -p 65002 -i "$HOME/.ssh/guest-email-audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          for shop in polaris sinay; do
+            if [[ "$shop" = polaris ]]; then
+              dir="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+            else
+              dir="$HOME/domains/sinaydesign.com/newtic"
+            fi
+            echo "== $shop =="
+            cd "$dir"
+            echo "revision=$(git rev-parse --short HEAD)"
+            php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app=require 'bootstrap/app.php';
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $s=\App\Models\EmailSetting::query()->find(1); // no writes
+          $yn=static fn($value)=>$value?'yes':'no';
+          echo 'smtp_record_exists='.$yn((bool)$s).PHP_EOL;
+          echo 'smtp_configured='.$yn($s?->configured()??false).PHP_EOL;
+          echo 'smtp_verified='.$yn((bool)$s?->verified_at).PHP_EOL;
+          echo 'email_auto_enabled='.$yn((bool)$s?->enabled).PHP_EOL;
+          echo 'email_operational='.$yn($s?->active()??false).PHP_EOL;
+          echo 'order_received_event_enabled='.$yn($s?->allows('customer_order_received')??false).PHP_EOL;
+          echo 'payment_verified_event_enabled='.$yn($s?->allows('customer_payment_verified')??false).PHP_EOL;
+          echo 'preview_recipient_only='.$yn(\App\Models\EmailSetting::previewEnvironment()).PHP_EOL;
+          echo 'safe_test_inbox_configured='.$yn((bool)$s && (bool)$s->safeRecipient('checkout-guest@example.com')).PHP_EOL;
+          $has=\Illuminate\Support\Facades\Schema::hasTable('email_deliveries');
+          echo 'email_outbox_table_exists='.$yn($has).PHP_EOL;
+          if($has){
+              foreach(['customer_order_received','customer_payment_verified'] as $event){
+                  $q=\App\Models\EmailDelivery::query()->where('event',$event);
+                  echo $event.'_count='.(int)(clone $q)->count().PHP_EOL;
+                  foreach(['pending','retry','processing','sent','failed','skipped'] as $status){
+                      echo $event.'_'.$status.'='.(int)(clone $q)->where('status',$status)->count().PHP_EOL;
+                  }
+              }
+              if(parse_url((string)config('app.url'),PHP_URL_HOST)==='powderblue-dinosaur-538060.hostingersite.com'){
+                  $order=\App\Models\Order::query()->find(38); // screenshot order number only
+                  echo 'example_guest_order_found='.$yn((bool)$order && !$order->user_id).PHP_EOL;
+                  if($order && !$order->user_id){
+                      foreach(['customer_order_received','customer_payment_verified'] as $event){
+                          $row=\App\Models\EmailDelivery::query()->where('order_id',$order->id)->where('event',$event)->first();
+                          echo 'example_'.$event.'_queued='.$yn((bool)$row).PHP_EOL;
+                          echo 'example_'.$event.'_status='.($row?->status??'none').PHP_EOL;
+                      }
+                  }
+              }
+          }
+          $hm=\Illuminate\Support\Facades\DB::table('system_health_monitors')->where('key','email_process')->first();
+          echo 'email_process_health='.($hm?->status??'unknown').PHP_EOL;
+          PHP
+          done
+          REMOTE
