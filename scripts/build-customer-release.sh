@@ -39,6 +39,7 @@ rm -f -- "$ROOT/app/Console/Commands/ImportPolarisLegalContent.php" \
   "$ROOT/database/seeders/PolarisDemoSeeder.php"
 find "$ROOT/scripts" -mindepth 1 -maxdepth 1 -type f \
   ! -name 'install-production.sh' \
+  ! -name 'quick-install.sh' \
   ! -name 'prepare-hostinger-webroot.sh' \
   ! -name 'publish-webroot-assets.sh' \
   ! -name 'verify-public-assets.sh' \
@@ -57,11 +58,16 @@ Bu dosya, resmi GitHub kurulum sürümünden gelmelidir. ZIP dışındaki
 
 1. ZIP içindeki `NEWTIC/` klasörünü sunucuya açın; uygulama kodunu
    public web kökünün (public_html) dışında tutun.
-2. `cp .env.example .env` yapın. Yalnız yeni domain, üretim ayarları ve
-   yeni müşterinin boş MySQL veritabanı bilgilerini girin. `APP_KEY` boş kalır.
-   İlk kurulumda PAYTR, kargo, toplu mail kapalı ve checkout test modundadır.
-3. `bash scripts/install-production.sh --check` ile salt okunur ön kontrol.
-4. `bash scripts/install-production.sh --install` ile güvenli kurulum.
+2. **Hızlı yol:** Boş MySQL oluşturun, ZIP içindeki `NEWTIC/`
+   klasörünü domain dizininde `newtic/` olarak açın ve şu tek komutu çalıştırın:
+   `cd ~/domains/ALANADI/newtic && bash scripts/quick-install.sh`
+   Bu işlem .env, güvenlik denetimi, MySQL tabloları, web dosyaları,
+   HTTPS denetimi ve kurulum kodunu yönetir.
+3. **Manuel yol:** .env dosyasını oluşturun; APP_ENV=production,
+   APP_DEBUG=false, boş APP_KEY, müşteriye özel DB, HTTPS domain,
+   NEWTIC_CHECKOUT_TEST_MODE=false ve diğer entegrasyon bayrakları false olsun.
+4. `bash scripts/install-production.sh --check` ve ardından
+   `bash scripts/install-production.sh --install` çalıştırın.
    Bu pakette production vendor ve Vite bulunduğu için sunucuda Node veya
    Composer kurulumu gerekmez. PHP 8.3+ ve uygun uzantılar gerekir.
 5. Domainin document root'unu `NEWTIC/public` yapın, ya da ayrı boş
@@ -75,8 +81,9 @@ Bu dosya, resmi GitHub kurulum sürümünden gelmelidir. ZIP dışındaki
 8. Cron, SMTP, yasal sayfalar, ödeme ve kargo için
    `docs/NEWTIC_INSTALLATION_MANUAL_TR.md` rehberini izleyin.
 
-**Önemli:** Bu sürüm ilk kurulum içindir. PAYTR gerçek tahsilatı ve gerçek
-kargo çıkışı ancak ayrı canlıya geçiş testleriyle kullanılabilir.
+**Önemli:** İlk kurulumda ödeme ve kargo kapalıdır. Banka hesabı
+kaydedilmeden havale yöntemi, PAYTR onayı olmadan kart yöntemi açılmaz.
+Gerçek kart tahsilatı ve kargo için sağlayıcı onayı gerekir.
 README
 test ! -e "$ROOT/.env"
 test ! -e "$ROOT/.git"
