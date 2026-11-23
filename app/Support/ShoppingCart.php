@@ -120,11 +120,7 @@ class ShoppingCart
         }
         CartCustomerPhotos::prune($request, array_keys($normalized));
 
-        $settings = StoreSetting::current();
-        $thresholdCents = (int) round((float) $settings->free_shipping_threshold * 100);
-        $feeCents = (int) round((float) $settings->shipping_fee * 100);
-        $remainingCents = max(0, $thresholdCents - $subtotalCents);
-        $shippingCents = $subtotalCents > 0 && $remainingCents > 0 ? $feeCents : 0;
+        $pricing = ShippingPricing::forSubtotal($subtotalCents, StoreSetting::current());
 
         return [
             'lines' => $lines,
@@ -132,12 +128,12 @@ class ShoppingCart
             'subtotal_cents' => $subtotalCents,
             'savings_cents' => $savingsCents,
             'regular_subtotal_cents' => $subtotalCents + $savingsCents,
-            'shipping_cents' => $shippingCents,
-            'total_cents' => $subtotalCents + $shippingCents,
-            'threshold_cents' => $thresholdCents,
-            'remaining_cents' => $remainingCents,
-            'shipping_fee_cents' => $feeCents,
-            'free_shipping' => $subtotalCents > 0 && $remainingCents === 0,
+            'shipping_cents' => $pricing['shipping_cents'],
+            'total_cents' => $pricing['total_cents'],
+            'threshold_cents' => $pricing['threshold_cents'],
+            'remaining_cents' => $pricing['remaining_cents'],
+            'shipping_fee_cents' => $pricing['shipping_fee_cents'],
+            'free_shipping' => $pricing['free_shipping'],
         ];
     }
 
