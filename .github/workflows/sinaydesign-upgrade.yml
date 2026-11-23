@@ -1,5 +1,7 @@
 name: Sinay Design verified NEWTIC upgrade
 # NEWTIC sidebar polish: soft navigation, removed quick access; verified Sinay release
+# Customer-facing order confirmation: remove activation notices on both shops; keep payment controls server-side.
+# Guest tracking email: no SMTP auto-enablement for Sinay; separate setup required.
 
 on:
   push:

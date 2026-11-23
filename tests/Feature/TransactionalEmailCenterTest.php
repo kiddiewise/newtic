@@ -105,6 +105,32 @@ final class TransactionalEmailCenterTest extends TestCase
         $this->assertDatabaseCount('email_deliveries', 5);
     }
 
+    public function test_guest_order_email_contains_fourteen_day_signed_tracking_link(): void
+    {
+        $settings = $this->enable();
+        $order = $this->makeOrder();
+
+        $delivery = EmailDelivery::query()->where('event', 'customer_order_received')
+            ->where('order_id', $order->id)->firstOrFail();
+        $this->assertSame($order->customer_email, $delivery->recipient_email);
+
+        $email = app(EmailComposer::class)->build($delivery->load('order'));
+        $this->assertNotNull($email);
+        $this->assertSame('Siparişimi görüntüle', $email['action']['title']);
+        $trackingUrl = $email['action']['url'];
+        $this->assertStringContainsString('/siparis/onay/'.$order->id.'?', $trackingUrl);
+        $this->assertStringContainsString('signature=', $trackingUrl);
+        parse_str((string) parse_url($trackingUrl, PHP_URL_QUERY), $query);
+        $this->assertGreaterThan(now()->addDays(13)->timestamp, (int) ($query['expires'] ?? 0));
+
+        // The signed link works without customer login or the checkout session.
+        $this->get($trackingUrl)->assertOk()->assertSee($order->order_number);
+
+        // Preview mode must never email an actual guest customer.
+        $this->assertTrue(EmailSetting::previewEnvironment());
+        $this->assertSame('sandbox@example.com', $settings->safeRecipient($order->customer_email));
+    }
+
     public function test_review_invitation_requires_signed_in_delivered_order_and_respects_three_day_delay(): void
     {
         $this->enable();
