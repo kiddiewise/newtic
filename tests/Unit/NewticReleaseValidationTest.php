@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\NewticReleaseManager;
 use App\Services\NewticSoftwareUpdater;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use ReflectionMethod;
 use RuntimeException;
 
