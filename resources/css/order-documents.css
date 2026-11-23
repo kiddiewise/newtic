@@ -1,0 +1,55 @@
+.admin-order-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.admin-order-document-actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  min-height: 41px;
+  border-radius: 11px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 13px;
+}
+.admin-order-document-actions > a .admin-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+.admin-order-document-actions > a.admin-primary {
+  background: #092037;
+  color: #fff;
+  border: 1px solid #092037;
+}
+.admin-order-document-actions > a.admin-primary:hover {
+  background: #163b55;
+  border-color: #163b55;
+}
+.admin-order-document-actions > a.admin-secondary {
+  color: #092037;
+  background: #fff;
+  border: 1px solid #d6e0e9;
+}
+.admin-order-document-actions > a.admin-secondary:hover {
+  background: #f3f7fa;
+}
+@media (max-width: 850px) {
+  .admin-order-document-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .admin-order-document-actions > a {
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 460px) {
+  .admin-order-document-actions .is-preview { flex-basis: 100%; }
+  .admin-order-document-actions > a { font-size: 11px; padding: 9px 7px; }
+}

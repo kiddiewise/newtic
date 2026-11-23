@@ -11,7 +11,17 @@
       @if($order->is_test)<span class="admin-test-tag">Gerçek tahsilat yok</span>@endif
     </p>
   </div>
-  <a class="admin-secondary" href="{{ route('admin.orders.index') }}"><x-admin-icon name="arrow-right" /> Tüm siparişler</a>
+  <div class="admin-order-document-actions" aria-label="Sipariş hazırlama belgeleri">
+    <a class="admin-primary" href="{{ route('admin.orders.document', [$order, 'proforma']) }}" title="Fiyatlı A4 promofaturayı PDF olarak indir">
+      <x-admin-icon name="download" /> Promofatura PDF
+    </a>
+    <a class="admin-secondary" href="{{ route('admin.orders.document', [$order, 'packing']) }}" title="Fiyatsız A4 ürün toplama formunu indir">
+      <x-admin-icon name="package" /> Hazırlama Formu
+    </a>
+    <a class="admin-secondary is-preview" href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer" title="A4 belgeyi yeni sekmede görüntüle ve yazdır">
+      <x-admin-icon name="external-link" /> Önizle / Yazdır
+    </a>
+  </div>
 </div>
 <div class="admin-order-detail-grid">
   <div class="admin-order-detail-primary">

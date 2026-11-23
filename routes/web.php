@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\GoogleCustomerLoginController;
 use App\Http\Controllers\Admin\AuthVisualController;
 use App\Http\Controllers\Admin\EmailCenterController;
 use App\Http\Controllers\Admin\SoftwareUpdateController;
+use App\Http\Controllers\Admin\OrderDocumentController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\MarketingUnsubscribeController;
 use App\Http\Controllers\MarketingPreferenceController;
@@ -278,6 +279,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/documents/{mode}', [OrderDocumentController::class, 'download'])
+        ->whereIn('mode', ['proforma', 'packing'])->middleware('throttle:12,1')->name('orders.document');
     Route::get('/orders/{order}/items/{item}/photos/{index}', [AdminOrderController::class, 'customerPhoto'])
         ->whereNumber('index')->name('orders.customer-photo');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
