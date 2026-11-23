@@ -284,13 +284,13 @@ jobs:
           if-no-files-found: error
           retention-days: 90
       - name: Package verified frontend for staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |
           set -euo pipefail
           test -f public/build/manifest.json
           tar -czf newtic-build.tar.gz -C public build
       - name: Prepare staging SSH credentials
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
           KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
@@ -304,7 +304,7 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Diagnose Hostinger 504 before publishing
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |
           set +e
           echo "=== External HTTP availability before publish ==="
@@ -332,7 +332,7 @@ jobs:
           REMOTE
           exit 0
       - name: Release verified build to Hostinger staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
@@ -355,7 +355,7 @@ jobs:
             sleep 7
           done
       - name: Verify storefront, admin login and compiled admin stylesheet
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |
           set -euo pipefail
           SITE="https://powderblue-dinosaur-538060.hostingersite.com"
@@ -371,7 +371,7 @@ jobs:
           echo "Staging storefront, admin login and published admin stylesheet verified"
 
   publish_customer_candidate:
-    name: Publish permanent, traceable customer installation candidate
+    name: Publish permanent, versioned customer package
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
     runs-on: ubuntu-24.04
@@ -381,7 +381,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: newtic-customer-complete-install
-      - name: Verify release checksum and publish a GitHub prerelease
+      - name: Verify checksums and publish official versioned release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -390,9 +390,16 @@ jobs:
           sha256sum -c newtic-customer-install.zip.sha256
           test ! -e .env
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]]; then
-            tag="newtic-v$(date -u +%Y.%m.%d)-${GITHUB_SHA:0:12}"
-            title="NEWTIC | Complete verified customer installation ${GITHUB_SHA:0:12}"
-            release_flags=()
+            # Versioned, stable releases are visible to the merchant updater.
+            version="$(unzip -p newtic-customer-install.zip NEWTIC/VERSION | tr -d '\r\n')"
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION file"; exit 1; }
+            tag="v$version"
+            title="NEWTIC $version | Tam Kurulum ve Güncelleme"
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "ERROR: $tag already published. Bump VERSION before publishing another stable release." >&2
+              exit 1
+            fi
+            release_flags=(--latest)
           else
             tag="newtic-customer-rc-${GITHUB_SHA:0:12}"
             title="NEWTIC | Portable customer installation candidate ${GITHUB_SHA:0:12}"
@@ -402,4 +409,4 @@ jobs:
             newtic-customer-install.zip newtic-customer-install.zip.sha256 \
             --target "$GITHUB_SHA" "${release_flags[@]}" \
             --title "$title" \
-            --notes "NEWTIC single customer-ready distribution: Laravel application, locked production PHP dependencies, compiled CSS/JS, quick installer and Turkish manual. Verified order tracking now celebrates a PAYTR-confirmed preparing order once per browser tab, never an unconfirmed payment. Fresh stores ship without merchant/customer data or secrets, with payment and shipping providers OFF until each merchant separately configures and activates them. Existing installed stores keep their separate database and settings. Source SHA: $GITHUB_SHA. Verify the provided SHA256 before installation."
+            --notes "NEWTIC tam kurulum ve sürüm güncelleme paketi. Laravel uygulaması, kilitli PHP bağımlılıkları, derlenmiş CSS/JS, yönetim paneli güncelleme bildirimi ve hızlı kurulum araçları. Müşteriye ait veritabanı, ödeme bilgileri ve yüklemeler bu kurulum ZIP dosyasına dahil değildir. Kaynak revizyonu: $GITHUB_SHA. Kurulum öncesi birlikte yayınlanan SHA256 dosyasını doğrulayın."

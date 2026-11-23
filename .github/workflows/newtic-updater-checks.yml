@@ -1,0 +1,48 @@
+name: NEWTIC updater checks
+
+on:
+  pull_request:
+    paths:
+      - 'app/Services/NewticReleaseManager.php'
+      - 'app/Services/NewticSoftwareUpdater.php'
+      - 'app/Http/Controllers/Admin/SoftwareUpdateController.php'
+      - 'app/Console/Commands/*NewticUpdate.php'
+      - 'tests/Unit/NewticReleaseValidationTest.php'
+      - 'tests/Feature/NewticUpdaterPackageTest.php'
+      - 'tests/Feature/NewticUpdaterEndToEndTest.php'
+      - 'tests/Feature/NewticUpdateAdminTest.php'
+      - 'routes/**'
+      - '.github/workflows/newtic-updater-checks.yml'
+  push:
+    branches: ['feature/merchant-one-click-updates']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, zip, phar, zlib
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Lint updater PHP
+        run: |
+          php -l app/Services/NewticReleaseManager.php
+          php -l app/Services/NewticSoftwareUpdater.php
+          php -l app/Console/Commands/ApplyNewticUpdate.php
+          php -l app/Console/Commands/CheckNewticUpdates.php
+          php -l app/Http/Controllers/Admin/SoftwareUpdateController.php
+          php -l app/Http/Controllers/Admin/DashboardController.php
+          php -l tests/Feature/NewticUpdaterPackageTest.php
+          php -l tests/Feature/NewticUpdaterEndToEndTest.php
+          php -l tests/Feature/NewticUpdateAdminTest.php
+          php -l routes/web.php
+          php -l routes/console.php
+      - name: Regression tests
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan test tests/Unit/NewticReleaseValidationTest.php tests/Feature/NewticUpdaterPackageTest.php tests/Feature/NewticUpdaterEndToEndTest.php tests/Feature/NewticUpdateAdminTest.php

@@ -7,11 +7,12 @@ use App\Models\Order;
 use App\Models\PaymentNotification;
 use App\Models\Product;
 use App\Support\VerifiedOrderRevenue;
+use App\Services\NewticReleaseManager;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(NewticReleaseManager $releases): View
     {
         $metrics = [
             'orders' => Order::query()->count(),
@@ -63,9 +64,13 @@ class DashboardController extends Controller
 
         $totalStatus = max(1, (int) $statusCounts->sum());
 
+        $updateAvailable = $releases->hasUpdate();
+        $updateRelease = $updateAvailable ? $releases->latest() : null;
+
         return view('admin.dashboard', compact(
             'metrics', 'recentOrders', 'lowStockProducts', 'trend',
-            'chartMax', 'statusCounts', 'totalStatus'
+            'chartMax', 'statusCounts', 'totalStatus',
+            'updateAvailable', 'updateRelease'
         ));
     }
 }

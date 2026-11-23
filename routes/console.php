@@ -7,6 +7,15 @@ use App\Support\SystemHealthRecorder;
 
 Schedule::command('health:heartbeat')->everyMinute()->withoutOverlapping(2);
 
+ 
+// Public release metadata is checked quietly. No storefront request calls GitHub.
+Schedule::command('newtic:check-updates')->everySixHours()->withoutOverlapping(15);
+
+// Only an admin-confirmed update runs. The scheduler can complete it during maintenance.
+Schedule::command('newtic:apply-update')->everyMinute()
+    ->withoutOverlapping(120)->evenInMaintenanceMode();
+
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

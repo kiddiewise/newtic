@@ -9,6 +9,13 @@
   </div>
   <a href="{{ route('home') }}" class="admin-secondary" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link" /> Mağazayı görüntüle</a>
 </div>
+@if($updateAvailable && $updateRelease)
+  <section class="admin-dashboard-notice" style="display:flex;align-items:center;gap:13px;background:#edf2f8;border:1px solid #cbd7e5;border-left:4px solid #092037;border-radius:12px;padding:15px 17px;margin-bottom:18px;color:#092037" aria-label="Yeni NEWTIC sürümü">
+    <x-admin-icon name="refresh-cw" />
+    <span style="flex:1"><strong>NEWTIC {{ $updateRelease['version'] }} güncellemesi hazır!</strong> Yeni özellikler, iyileştirmeler ve sürüm ayrıntılarını inceleyebilirsiniz.</span>
+    <a style="white-space:nowrap;background:#092037;color:#fff;border-radius:9px;padding:10px 14px;text-decoration:none;font-weight:600" href="{{ route('admin.software-updates.index') }}">Güncellemeyi gör</a>
+  </section>
+@endif
 @if(!\App\Models\BankAccount::query()->where('is_active', true)->exists() && !\App\Support\PaytrTestAccess::available())
   <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Ödeme kurulumu gerekiyor:</strong> Henüz etkin bir ödeme yöntemi yok. Havale/EFT için banka hesabı; kart için PAYTR bağlantısı ve sağlayıcı onayı gerekir. <a href="{{ route('admin.bank-accounts.index') }}">Banka hesapları</a> · <a href="{{ route('admin.paytr-settings.edit') }}">PAYTR ayarları</a></span></div>
 @endif
