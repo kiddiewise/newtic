@@ -1,0 +1,47 @@
+name: Verify Sinay update notification with read-only SSH
+on:
+  push:
+    branches: ['feature/merchant-one-click-updates']
+    paths: ['.github/workflows/sinay-pilot-verify.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure existing Hostinger SSH credentials
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Confirm installed Sinay sees official pinned v1.0.1
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          cd "$HOME/domains/sinaydesign.com/newtic"
+          test "$(cat VERSION)" = '1.0.0'
+          output="$(php artisan newtic:check-updates)"
+          printf '%s\n' "$output"
+          grep -Fq 'Current: 1.0.0 | Latest: 1.0.1' <<< "$output"
+          php artisan route:list --name=software-updates | grep -F 'software-updates.install'
+          php artisan schedule:list | grep -F 'newtic:apply-update'
+          echo 'SINAY_NEW_RELEASE_NOTIFICATION_READY'
+          REMOTE
+      - name: Public website and admin login remain available
+        run: |
+          set -Eeuo pipefail
+          curl -fsSL --max-time 30 https://sinaydesign.com/admin/login -o /tmp/sinay-admin.html
+          grep -Fq NEWTIC /tmp/sinay-admin.html
+          curl -fsSL --max-time 30 https://sinaydesign.com/ -o /tmp/sinay-home.html
+          grep -Fqi Sinay /tmp/sinay-home.html
+          echo SINAY_RELEASE_NOTICE_VERIFIED
