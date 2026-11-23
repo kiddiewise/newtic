@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\GoogleMerchantController;
 use App\Http\Controllers\Admin\GoogleCustomerLoginController;
 use App\Http\Controllers\Admin\AuthVisualController;
 use App\Http\Controllers\Admin\EmailCenterController;
+use App\Http\Controllers\Admin\BackupRestoreController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\MarketingUnsubscribeController;
 use App\Http\Controllers\MarketingPreferenceController;
@@ -216,6 +217,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::delete('/blog/yazilar/{post}/bloklar/{block}/gorseller/{image}', [BlogBlockController::class, 'destroyImage'])->name('blog.images.destroy');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/sistem-sagligi', SystemHealthController::class)->middleware('throttle:30,1')->name('system-health');
+    Route::get('/yedekleme', [BackupRestoreController::class, 'index'])->name('backup-restore.index');
+    Route::post('/yedekleme/yukle', [BackupRestoreController::class, 'upload'])
+        ->middleware('throttle:3,10')->name('backup-restore.upload');
+    Route::post('/yedekleme/{id}/onayla', [BackupRestoreController::class, 'confirm'])
+        ->where('id', '[a-f0-9]{32}')->middleware('throttle:2,10')->name('backup-restore.confirm');
+    Route::delete('/yedekleme/{id}', [BackupRestoreController::class, 'delete'])
+        ->where('id', '[a-f0-9]{32}')->name('backup-restore.delete');
     Route::get('/guvenlik', SystemHealthController::class)->middleware('throttle:30,1')->name('security');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
     Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');
