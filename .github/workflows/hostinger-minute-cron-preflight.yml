@@ -1,0 +1,83 @@
+name: NEWTIC Hostinger minute scheduler preflight (read only)
+
+on:
+  push:
+    branches: [ops/hostinger-minute-cron-audit-20261123]
+    paths: [.github/workflows/hostinger-minute-cron-preflight.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Configure existing authenticated Hostinger SSH
+        env:
+          SSH_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          SSH_HOST_KEYS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$SSH_HOST_KEYS"
+          mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/newtic-scheduler-audit"
+          printf '%s\n' "$SSH_HOST_KEYS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/newtic-scheduler-audit" "$HOME/.ssh/known_hosts"
+      - name: Check PHP binary, schedule, heartbeat, and shell cron availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i "$HOME/.ssh/newtic-scheduler-audit" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            -o ConnectTimeout=15 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          for shop in polaris sinay; do
+            if [[ "$shop" == polaris ]]; then
+              app="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+            else
+              app="$HOME/domains/sinaydesign.com/newtic"
+            fi
+            echo "store=$shop"
+            test -s "$app/artisan" && test -s "$app/.env"
+            cd "$app"
+            echo "deploy_sha=$(git rev-parse --short HEAD)"
+            echo "php_cli_path=$(command -v php || true)"
+            php -r 'echo "php_binary=".PHP_BINARY.PHP_EOL; echo "php_version=".PHP_VERSION.PHP_EOL; echo "php_proc_open=".(function_exists("proc_open")?"yes":"no").PHP_EOL; echo "php_exec=".(function_exists("exec")?"yes":"no").PHP_EOL;'
+            echo "schedule_entries:"
+            php artisan schedule:list --no-ansi | head -n 26
+            php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $expected= [
+            'polaris' => 'powderblue-dinosaur-538060.hostingersite.com',
+            'sinay' => 'sinaydesign.com',
+          ];
+          $hostname=(string)parse_url((string)config('app.url'), PHP_URL_HOST);
+          echo 'app_hostname_allowed='.(in_array($hostname,$expected,true)?'yes':'no').PHP_EOL;
+          echo 'app_environment='.config('app.env').PHP_EOL;
+          echo 'app_debug='.((bool)config('app.debug')?'on':'off').PHP_EOL;
+          echo 'current_utc='.now('UTC')->format('Y-m-d H:i:s').PHP_EOL;
+          $monitor=\App\Models\SystemHealthMonitor::query()->where('key','scheduler')->first();
+          echo 'scheduler_monitor_exists='.($monitor?'yes':'no').PHP_EOL;
+          echo 'scheduler_last_success_utc='.($monitor?->last_success_at?->utc()?->format('Y-m-d H:i:s')??'none').PHP_EOL;
+          echo 'scheduler_age_minutes='.($monitor?->last_success_at ? (int)$monitor->last_success_at->diffInMinutes(now()) : -1).PHP_EOL;
+          foreach (['email_process','shipping_sync','merchant_sync'] as $name) {
+            $event=\App\Models\SystemHealthMonitor::query()->where('key',$name)->first();
+            echo 'monitor_'.$name.'_last_success_utc='.($event?->last_success_at?->utc()?->format('Y-m-d H:i:s')??'none').PHP_EOL;
+          }
+          PHP
+            if command -v crontab >/dev/null 2>&1; then
+              echo "ssh_crontab_available=yes"
+              existing="$(crontab -l 2>/dev/null || true)"
+              count="$(printf '%s\n' "$existing" | grep -Ec 'artisan[[:space:]]+schedule:run' || true)"
+              echo "ssh_scheduler_cron_entry_count=$count"
+            else
+              echo "ssh_crontab_available=no"
+            fi
+            echo "store_end=$shop"
+          done
+          REMOTE
