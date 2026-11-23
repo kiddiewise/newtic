@@ -1,0 +1,33 @@
+name: Prepare order PDF dependencies
+on:
+  push:
+    branches: ['feature/order-proforma-pdf']
+    paths:
+      - '.github/workflows/order-pdf-dependencies.yml'
+permissions:
+  contents: write
+jobs:
+  lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/order-proforma-pdf
+          persist-credentials: true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, gd, dom, pdo_sqlite, zip, fileinfo
+          tools: composer:v2
+          coverage: none
+      - name: Resolve locked PDF and private QR dependencies
+        run: |
+          set -Eeuo pipefail
+          composer require 'dompdf/dompdf:^3.1' 'endroid/qr-code:^6.0' --no-interaction --no-progress --no-scripts
+          composer validate --strict --no-check-publish
+          composer audit --locked --no-interaction
+          git config user.name 'NEWTIC Dependency Bot'
+          git config user.email 'newtic-ci@users.noreply.github.com'
+          git add composer.json composer.lock
+          git commit -m 'Lock stable PDF and QR libraries for A4 admin order documents'
+          git push origin HEAD:feature/order-proforma-pdf
