@@ -160,6 +160,9 @@ jobs:
       - name: NPM production dependency advisories (read only)
         shell: bash
         run: |
+          # package-lock.json is not committed; resolve temporarily on this isolated runner.
+          # Do not publish or deploy this transient resolution.
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund >/dev/null
           set +e
           npm audit --omit=dev --json > npm-audit.json 2>/dev/null
           status=$?
