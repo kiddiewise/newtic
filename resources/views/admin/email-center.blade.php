@@ -38,7 +38,7 @@
       <label>Gönderen e-posta <input name="from_address" type="email" required maxlength="255" value="{{ old('from_address',$settings->from_address) }}" placeholder="siparis@ornekmagaza.com"></label>
       <label>Gönderen adı <input name="from_name" required maxlength="140" value="{{ old('from_name',$settings->from_name ?: \App\Support\StoreIdentity::name()) }}"></label>
       <label>Yanıt adresi <input name="reply_to" type="email" maxlength="255" value="{{ old('reply_to',$settings->reply_to) }}" placeholder="destek@ornekmagaza.com"></label>
-      <label>Doğrulama alıcısı <input name="test_recipient" type="email" maxlength="255" value="{{ old('test_recipient',$settings->test_recipient) }}" placeholder="test@ornekmagaza.com" @required(\App\Models\EmailSetting::previewEnvironment())>
+      <label>Doğrulama alıcısı <input name="test_recipient" type="email" maxlength="255" value="{{ old('test_recipient',$settings->test_recipient) }}" placeholder="dogrulama@ornekmagaza.com" @required(\App\Models\EmailSetting::previewEnvironment())>
         <small>Canlı gönderim açılmadan önce bildirimin gönderileceği tek güvenli adres.</small></label>
       <label>Yorum daveti gecikmesi (gün) <input name="review_delay_days" type="number" min="1" max="14" required value="{{ old('review_delay_days',$settings->review_delay_days) }}"></label>
     </div>
