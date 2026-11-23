@@ -3,7 +3,6 @@
     <div><span class="payment-eyebrow">PAYTR / KREDİ KARTI</span><h2 id="paytr-payment-status-title">Kart ödeme durumu</h2></div>
     <span class="payment-status-pill {{ in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true) ? 'is-verified' : '' }}">{{ $tracking['payment'] }}</span>
   </div>
-  <p class="checkout-testing-note"><strong>Ödeme aktivasyonu bekleniyor.</strong> Bu işlemde gerçek para tahsil edilmez. Siparişin ödenmiş sayılması için imzalı PAYTR sunucu bildirimi gerekir.</p>
   <div class="payment-copy-grid">
     <div class="payment-copy-item">
       <span>Sipariş tutarı</span>
