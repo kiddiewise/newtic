@@ -35,7 +35,14 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Install locked PHP dependencies
+      - name: Run Laravel regression tests for the tagged code
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan test
+
+      - name: Install locked production PHP dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
 
       - name: Set up Node
