@@ -166,4 +166,55 @@ jobs:
             echo 'signed_unknown_order_transport_failed=yes'.PHP_EOL;exit(3);
           }
           PHP
+          # PayTR read-only status inquiry for the *existing* screenshot order.
+          # Provider credentials stay exclusively on Hostinger and are never printed.
+          # No callback is forged, no stock/order/payment state is modified.
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app=require 'bootstrap/app.php';
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $settings=\App\Models\PaytrSetting::find(1);
+          $attempt=\App\Models\PaytrPaymentAttempt::query()
+              ->where('merchant_oid','like','NTND7N2%')->latest('id')->first();
+          if (!$settings?->hasCredentials() || !$attempt
+              || parse_url((string)config('app.url'),PHP_URL_HOST)!=='powderblue-dinosaur-538060.hostingersite.com') {
+              echo "provider_inquiry=blocked_missing_prerequisites\n"; exit(0);
+          }
+          echo "provider_merchant_matches_screenshot=".($settings->merchant_id==='777277'?'yes':'no')."\n";
+          try {
+              $token=base64_encode(hash_hmac('sha256',
+                  $settings->merchant_id.$attempt->merchant_oid.$settings->merchant_salt,
+                  $settings->merchant_key, true));
+              $response=\Illuminate\Support\Facades\Http::asForm()
+                  ->timeout(20)->post('https://www.paytr.com/odeme/durum-sorgu',[
+                      'merchant_id'=>$settings->merchant_id,
+                      'merchant_oid'=>$attempt->merchant_oid,
+                      'paytr_token'=>$token,
+                  ]);
+              echo "provider_inquiry_http=".$response->status()."\n";
+              $data=$response->json();
+              if (!is_array($data)) {echo "provider_inquiry_valid_json=no\n";exit(0);}
+              $status=$data['status']??'unknown';
+              echo "provider_inquiry_result=".($status==='success'?'success':
+                      ($status==='error'?'error':'other'))."\n";
+              if($status==='success'){
+                $currency=(string)($data['currency']??'');
+                echo "provider_currency_expected=".(in_array($currency,['TL','TRY'],true)?'yes':'no')."\n";
+                $amount=(string)($data['payment_amount']??'');
+                $amount=str_replace(',','.',$amount);
+                $valid=(bool)preg_match('/^\d{1,10}(?:\.\d{1,2})?$/D',$amount);
+                $cents=$valid?(int)round(((float)$amount)*100):-1;
+                echo "provider_payment_amount_matches_order=".($cents===$attempt->amount_cents?'yes':'no')."\n";
+                echo "provider_test_payment=".((string)($data['test_mode']??'')==='1'?'yes':'no')."\n";
+              } else {
+                $err=(string)($data['err_no']??'');
+                echo "provider_inquiry_safe_error_number=".
+                    (preg_match('/^[0-9]{1,4}$/D',$err)?$err:'unknown')."\n";
+              }
+              echo "provider_inquiry_database_unchanged=yes\n";
+          } catch(\Throwable $e) {
+              echo "provider_inquiry_connection_failed=yes\n";
+          }
+          PHP
           REMOTE
