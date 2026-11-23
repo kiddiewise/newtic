@@ -36,6 +36,17 @@ final class RestorePendingBackup extends Command
                 } catch (Throwable) {
                     continue;
                 }
+                // Recover a store left in maintenance after a killed PHP process.
+                if (($job['status'] ?? '') === 'running'
+                    && strtotime((string) ($job['started_at'] ?? 'now')) < time() - 7200) {
+                    try { Artisan::call('up'); } catch (Throwable) {}
+                    $job['status'] = 'failed';
+                    $job['finished_at'] = now()->toIso8601String();
+                    $job['message'] = 'Geri yükleme beklenmedik biçimde kesildi. Verileri Hostinger yedeğiyle kontrol edin.';
+                    $service->write($job);
+                    Log::warning('hostinger_stale_restore_recovered');
+                    continue;
+                }
                 if (($job['status'] ?? '') !== 'queued') {
                     // No permanent ZIP buildup on shared hosting.
                     $status = (string) ($job['status'] ?? '');
