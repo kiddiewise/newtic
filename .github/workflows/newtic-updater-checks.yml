@@ -37,7 +37,7 @@ jobs:
           php -l app/Http/Controllers/Admin/SoftwareUpdateController.php
           php -l app/Http/Controllers/Admin/DashboardController.php
           php -l tests/Feature/NewticUpdaterPackageTest.php
-          php -l tests/Feature/NewticUpdaterEndToEndTest.php tests/Feature/NewticUpdateAdminTest.php
+          php -l tests/Feature/NewticUpdaterEndToEndTest.php
           php -l tests/Feature/NewticUpdateAdminTest.php
           php -l routes/web.php
           php -l routes/console.php
@@ -45,4 +45,4 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --force
-          php artisan test tests/Unit/NewticReleaseValidationTest.php tests/Feature/NewticUpdaterPackageTest.php tests/Feature/NewticUpdaterEndToEndTest.php
+          php artisan test tests/Unit/NewticReleaseValidationTest.php tests/Feature/NewticUpdaterPackageTest.php tests/Feature/NewticUpdaterEndToEndTest.php tests/Feature/NewticUpdateAdminTest.php
