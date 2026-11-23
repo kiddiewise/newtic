@@ -89,7 +89,7 @@ final class NewticUpdaterEndToEndTest extends TestCase
             Http::fake(function ($request) use ($zipPath, $root, $id, $url) {
                 $this->assertSame($url, $request->url());
                 $this->assertTrue(copy($zipPath, $root.'/stage-'.$id.'/release.zip'));
-                return Http::response('Simulated official release', 200);
+                return Http::response(file_get_contents($zipPath), 200, ['Content-Type' => 'application/zip']);
             });
 
             $releases->writeState([
