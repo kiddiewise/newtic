@@ -23,6 +23,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
           test "$(git describe --exact-match --tags HEAD)" = "$GITHUB_REF_NAME"
 
@@ -45,7 +46,7 @@ jobs:
 
       - name: Build frontend from tagged source
         run: |
-          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --ignore-scripts --no-audit --no-fund
           npm run build
           test -s public/build/manifest.json
           git rev-parse HEAD > public/build/newtic-revision.txt
