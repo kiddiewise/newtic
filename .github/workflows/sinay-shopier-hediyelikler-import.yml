@@ -1,0 +1,76 @@
+name: Sinay Design one-time Shopier Hediyelikler catalog import
+
+on:
+  push:
+    branches:
+      - ops/sinay-shopier-hediyelikler-20261123
+    paths:
+      - .github/workflows/sinay-shopier-hediyelikler-import.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinay-shopier-hediyelikler-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate reviewed Shopier price data and importer
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l ops/catalog/import-sinay-shopier.php
+          bash -n ops/catalog/run-sinay-shopier-import.sh
+          php -r '
+          $data=json_decode(file_get_contents("ops/catalog/sinay-shopier-hediyelikler-20261123.json"),true,512,JSON_THROW_ON_ERROR);
+          if(($data["merchant"]??"")!=="sinaydesign.com" || ($data["category"]??"")!=="Hediyelikler"
+            || count($data["products"]??[])!==24)exit(2);
+          $sum=0;
+          foreach($data["products"] as $i=>$p){
+            if(($p["sequence"]??null)!==$i+1 || !is_int($p["price_try"]??null)
+              || $p["price_try"]<=0 || empty($p["name"]))exit(3);
+            $sum+=$p["price_try"];
+          }
+          echo "source_products=24 currency=TRY catalog_price_sum=$sum\n";
+          '
+      - name: Configure existing Hostinger SSH deployment secret
+        shell: bash
+        env:
+          KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY" && test -n "$KNOWN"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/sinay-shopier-import
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/sinay-shopier-import ~/.ssh/known_hosts
+      - name: Stage catalog and checked importer only in Sinay private application path
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET="u880685189@147.79.123.121"
+          opts=(-o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15)
+          ssh -p 65002 -i ~/.ssh/sinay-shopier-import "${opts[@]}" "$TARGET" 'test -s ~/domains/sinaydesign.com/newtic/artisan && test -s ~/domains/sinaydesign.com/newtic/.env && mkdir -p ~/domains/sinaydesign.com/newtic/.deploy && chmod 700 ~/domains/sinaydesign.com/newtic/.deploy'
+          scp -P 65002 -i ~/.ssh/sinay-shopier-import -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes ops/catalog/import-sinay-shopier.php "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/import-sinay-shopier-hediyelikler.php"
+          scp -P 65002 -i ~/.ssh/sinay-shopier-import -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes ops/catalog/sinay-shopier-hediyelikler-20261123.json "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-shopier-hediyelikler-20261123.json"
+          ssh -p 65002 -i ~/.ssh/sinay-shopier-import "${opts[@]}" "$TARGET" 'chmod 600 ~/domains/sinaydesign.com/newtic/.deploy/import-sinay-shopier-hediyelikler.php ~/domains/sinaydesign.com/newtic/.deploy/sinay-shopier-hediyelikler-20261123.json'
+      - name: Verify private MySQL backup before applying 24 Shopier products
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET="u880685189@147.79.123.121"
+          ssh -p 65002 -i ~/.ssh/sinay-shopier-import -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 "$TARGET" 'bash -se' < ops/catalog/run-sinay-shopier-import.sh
+      - name: Verify public Hediyelikler category is reachable
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 --max-time 30 'https://sinaydesign.com/kategori/hediyelikler' -o /tmp/sinay-hediyelikler.html
+          grep -Fqi 'Hediyelikler' /tmp/sinay-hediyelikler.html
+          echo 'SINAY_HEDIYELIKLER_PUBLIC_PAGE_OK=yes'
