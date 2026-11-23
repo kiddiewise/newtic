@@ -227,7 +227,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Package verified customer-ready standalone ZIP (source, vendor, Vite, docs)
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
         run: |
           set -euo pipefail
           # All tests have finished; production-only vendor remains portable.
@@ -274,7 +274,7 @@ jobs:
           test -s storage/app/private/newtic-setup/mobile-install-code.txt
           echo "PASS: immutable standalone ZIP, real blank MySQL installation, no Composer/npm required, and private setup token."
       - name: Upload complete NEWTIC customer install ZIP
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
         uses: actions/upload-artifact@v4
         with:
           name: newtic-customer-complete-install
@@ -373,7 +373,7 @@ jobs:
   publish_customer_candidate:
     name: Publish permanent, traceable customer installation candidate
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/portable-install-readiness-audit'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -394,4 +394,4 @@ jobs:
             newtic-customer-install.zip newtic-customer-install.zip.sha256 \
             --target "$GITHUB_SHA" --prerelease \
             --title "NEWTIC | Portable customer installation candidate ${GITHUB_SHA:0:12}" \
-            --notes "One ZIP: application, tested production Composer dependencies, compiled Vite assets, CLI/bootstrap, web installer and Turkish installation guide. Fresh stores default to test/noindex and cannot collect real PAYTR payments or create real carrier shipments until separately approved. Source SHA: $GITHUB_SHA. Always confirm the published SHA256 before extraction. No customer records or credentials included."
+            --notes "One ZIP: application, tested production Composer dependencies, compiled Vite assets, CLI/bootstrap, web installer and Turkish installation guide. Fresh stores default to real-order configuration with payment and shipping providers OFF and SEO noindex. Bank transfers are shown only when a bank account and legal sale pages are ready; PAYTR and real carrier shipments remain unavailable until separately approved. Source SHA: $GITHUB_SHA. Always confirm the published SHA256 before extraction. No customer records or credentials included."
