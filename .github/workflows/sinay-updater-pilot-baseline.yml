@@ -1,0 +1,89 @@
+name: Sinay NEWTIC updater pilot baseline
+on:
+  push:
+    branches: ['feature/merchant-one-click-updates']
+    paths: ['VERSION', '.github/workflows/sinay-updater-pilot-baseline.yml']
+permissions:
+  contents: read
+concurrency:
+  group: sinay-newtic-pilot
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identify 1.0.0 baseline
+        id: phase
+        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+      - uses: shivammathur/setup-php@v2
+        if: steps.phase.outputs.version == '1.0.0'
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3, fileinfo, bcmath, gd, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        if: steps.phase.outputs.version == '1.0.0'
+        with:
+          node-version: '22'
+      - name: Verify source and build matching assets
+        if: steps.phase.outputs.version == '1.0.0'
+        run: |
+          set -Eeuo pipefail
+          bash -n scripts/deploy-sinaydesign-upgrade.sh
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan test tests/Unit/NewticReleaseValidationTest.php tests/Feature/NewticUpdaterPackageTest.php tests/Feature/NewticUpdaterEndToEndTest.php tests/Feature/NewticUpdateAdminTest.php
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          printf '%s\n' "$GITHUB_SHA" > public/build/newtic-revision.txt
+          tar -czf sinay-upgrade-build.tar.gz -C public build
+      - name: Set up existing Hostinger SSH keys
+        if: steps.phase.outputs.version == '1.0.0'
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
+      - name: Deploy ONLY existing sinaydesign.com and pin pilot release
+        if: steps.phase.outputs.version == '1.0.0'
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          TARGET=u880685189@147.79.123.121
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" 'cd ~/domains/sinaydesign.com/newtic && test -f .env && git fetch origin refs/heads/feature/merchant-one-click-updates && mkdir -p .deploy'
+          scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes sinay-upgrade-build.tar.gz "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-upgrade-build.tar.gz"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" "NEWTIC_EXPECTED_SHA=$SHA bash -se" < scripts/deploy-sinaydesign-upgrade.sh
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          cd "$HOME/domains/sinaydesign.com/newtic"
+          test "$(cat VERSION)" = '1.0.0'
+          if grep -q '^NEWTIC_UPDATE_PREVIEW_TAG=' .env; then
+            sed -i 's/^NEWTIC_UPDATE_PREVIEW_TAG=.*/NEWTIC_UPDATE_PREVIEW_TAG=v1.0.1/' .env
+          else
+            printf '\nNEWTIC_UPDATE_PREVIEW_TAG=v1.0.1\n' >> .env
+          fi
+          php artisan config:clear
+          php artisan config:cache
+          php artisan newtic:check-updates
+          test -f resources/views/admin/software-updates.blade.php
+          echo 'SINAY_UPDATER_BASELINE_OK'
+          REMOTE
+      - name: Verify storefront and admin login
+        if: steps.phase.outputs.version == '1.0.0'
+        run: |
+          set -Eeuo pipefail
+          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/admin/login -o /tmp/sinay-admin.html
+          grep -Fq 'NEWTIC' /tmp/sinay-admin.html
+          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/ -o /tmp/sinay-home.html
+          grep -Fqi 'Sinay' /tmp/sinay-home.html
+          echo 'SINAY_BASELINE_DEPLOYMENT_VERIFIED'
