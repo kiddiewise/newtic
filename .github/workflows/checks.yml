@@ -71,6 +71,7 @@ jobs:
         run: |
           bash -n scripts/install-production.sh
           bash -n scripts/build-customer-release.sh
+          bash -n scripts/quick-install.sh
           bash -n scripts/prepare-hostinger-webroot.sh
           bash -n scripts/verify-public-assets.sh
           bash -n scripts/deploy-staging.sh
@@ -97,6 +98,9 @@ jobs:
           fi
           sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
           bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=true/NEWTIC_CHECKOUT_TEST_MODE=false/' .env
+          bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=false/NEWTIC_CHECKOUT_TEST_MODE=true/' .env
           sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/' .env
           if bash scripts/install-production.sh --check; then
             echo "ERROR: temporary domain accepted with live payment enabled" >&2
@@ -242,6 +246,7 @@ jobs:
           php "$ROOT/NEWTIC/scripts/verify-customer-release.php" "$ROOT/NEWTIC"
           test ! -e "$ROOT/NEWTIC/.env"
           test -s "$ROOT/NEWTIC/vendor/autoload.php"
+          test -f "$ROOT/NEWTIC/scripts/quick-install.sh"
           test -s "$ROOT/NEWTIC/public/build/manifest.json"
           # Check that package-only mode needs no server-side Composer/npm.
           cd "$ROOT/NEWTIC"

@@ -79,7 +79,7 @@ SESSION_DRIVER=database
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 MAIL_MAILER=log
-NEWTIC_CHECKOUT_TEST_MODE=true
+NEWTIC_CHECKOUT_TEST_MODE=false
 NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
 NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
 NEWTIC_SHIPPING_DUMMY_ENABLED=false
@@ -93,19 +93,40 @@ olarak oluşturacaktır. Kurulu bir mağazanın APP_KEY'i sonradan değiştirilm
 Veritabanı şifresi özel karakterler içeriyorsa dotenv kurallarına uygun
 çift tırnak içinde kaydedin. DB anahtarlarını sohbetlere asla yapıştırmayın.
 
-### Hostinger geçici domaininde test kurulumu
+### Hostinger geçici domaininde güvenli ilk kurulum
 
-İlk kurulum provası `https://ornek.hostingersite.com` gibi geçici bir
-domain üzerinde yapılacaksa yalnızca o yeni mağazanın `.env` dosyasında
+`https://ornek.hostingersite.com` gibi geçici bir
+domain üzerinde kurulacaksa yalnızca o yeni mağazanın `.env` dosyasında
 `NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true` ayarlayın.
-Diğer beş güvenlik bayrağı mutlaka test/kapalı konumunda kalmalıdır.
-Bu özel izin yalnız geçici domainin kurulmasına yöneliktir, gerçek
-ödeme/kargo/toplu e-posta izni vermez. Yeni bir gerçek domaine
+Güvenli ilk kurulumda PAYTR, kargo ve toplu gönderim bayrakları kapalıdır;
+`NEWTIC_CHECKOUT_TEST_MODE=false` olabilir. Bu izin gerçek
+ödeme/kargo/toplu e-posta etkinleştirme yetkisi vermez. Yeni bir gerçek domaine
 geçişte bu bayrağı `false` yapın ve yeni domainin bağımsız kurulumunu
 ayrıca yapın. Kurulu bir mağazanın `APP_URL` değerini başka müşteri
 mağazası yapmak için değiştirmeyin.
 
-## 4 — Güvenli kurulum komutları
+## 4 — Kolay kurulum (önerilen)
+
+Müşterinin boş Hostinger PHP/HTML web sitesi ve yeni MySQL veritabanını
+hPanel üzerinden hazırlayın. Resmî ZIP dosyasını SHA256 ile doğrulayıp
+`NEWTIC/` içeriğini alan adının `newtic/` klasörüne çıkarın;
+`public_html` içine Laravel özel kodunu yüklemeyin.
+
+```bash
+cd ~/domains/MUSTERI-DOMAINI/newtic
+bash scripts/quick-install.sh
+```
+
+Komut, MySQL sunucusu/portu/veritabanı/kullanıcı/şifre bilgilerini
+sırayla ister (parola terminalde görünmez), güvenli üretim `.env`
+dosyasını oluşturur, dolu MySQL'i reddeder, migration'ları,
+gerekirse tek Hostinger `default.php` yedeğini, webroot yayınını,
+HTTPS denetimini ve ilk kurulum erişim anahtarını yönetir.
+Yalnızca boş veya varsayılan `public_html` kabul edilir;
+existing site, `.env` ya da MySQL üzerine yazılmaz.
+Daha sonra `https://ALANADI/install` üzerinden mağaza/yönetici oluşturun.
+
+## 4B — Ayrıntılı manuel kurulum komutları
 
 ```bash
 bash scripts/install-production.sh --check
