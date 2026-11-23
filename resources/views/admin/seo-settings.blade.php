@@ -14,13 +14,13 @@
   <div class="seo-overview-heading">
     <div>
       <p class="admin-eyebrow">BU ALAN ADININ SEO DURUMU</p>
-      <h2>{{ $isStaging ? 'Test ortamı · Arama motorlarına kapalı' : ($setting->noindex ? 'Site indeksleme kapalı' : 'Genel indeksleme açık') }}</h2>
+      <h2>{{ $isStaging ? 'Geçici domain · Arama motorlarına kapalı' : ($setting->noindex ? 'Site indeksleme kapalı' : 'Genel indeksleme açık') }}</h2>
       <p><strong>Aktif alan adı:</strong> <code>{{ $activeOrigin }}</code></p>
     </div>
     <span class="seo-status-dot {{ $isStaging || $setting->noindex ? 'is-private' : 'is-public' }}">{{ $isStaging || $setting->noindex ? 'NOINDEX' : 'INDEX' }}</span>
   </div>
   @if($isStaging)
-    <p class="seo-notice">Hostinger geçici alan adı, güvenlik nedeniyle <strong>zorunlu noindex/nofollow</strong> kullanır. Yönetim panelinde anahtarları kapatsan da test alan adı indekslemeye açılmaz. Yeni bir gerçek domaine geçildiğinde ayarlar otomatik olarak o alan adına uygulanır.</p>
+    <p class="seo-notice">Hostinger geçici alan adı, güvenlik nedeniyle <strong>zorunlu noindex/nofollow</strong> kullanır. Yönetim panelinde anahtarları kapatsan da geçici alan adı indekslemeye açılmaz. Yeni bir gerçek domaine geçildiğinde ayarlar otomatik olarak o alan adına uygulanır.</p>
   @else
     <p class="admin-description">Bu alan adı için ayarlar aktif. İndeksleme açık olsa bile Google'da görünme süresi ve uygunluk Google tarafından belirlenir.</p>
   @endif
@@ -72,7 +72,7 @@
       <a class="admin-secondary" href="{{ url('/robots.txt') }}" target="_blank" rel="noopener noreferrer">robots.txt</a>
       <a class="admin-secondary" href="{{ url('/sitemap.xml') }}" target="_blank" rel="noopener noreferrer">XML Site Haritası</a>
     </div>
-    <p class="admin-description">Sitemap'e yalnızca görünür, yayındaki, indekslemeye izin verilen ürün ve kategoriler eklenir. 404 dönen test sitemap'i Google'a gönderilmemelidir.</p>
+    <p class="admin-description">Sitemap'e yalnızca görünür, yayındaki, indekslemeye izin verilen ürün ve kategoriler eklenir. 404 dönen sitemap Google'a gönderilmemelidir.</p>
   </section>
 
   <section class="admin-panel" id="seo-social">

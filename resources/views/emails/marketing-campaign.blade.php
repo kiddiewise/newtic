@@ -22,7 +22,7 @@
     @if($mailData['unsubscribe_url'])
     <p style="margin:14px 0 0">Bu kampanya e-postalarını almak istemiyorsanız <a style="color:#092037;text-decoration:underline" href="{{ $mailData['unsubscribe_url'] }}">e-posta aboneliğinizi ücretsiz sonlandırın</a>.</p>
     @else
-    <p>Bu gönderim yalnızca yönetici test önizlemesidir. Gerçek alıcılara gönderilmedi.</p>
+    <p>Bu ileti yalnızca yönetici önizlemesidir. Gerçek abonelere gönderilmedi.</p>
     @endif
   </div>
 </td></tr>
