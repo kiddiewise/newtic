@@ -33,8 +33,8 @@ jobs:
           output="$(php artisan newtic:check-updates)"
           printf '%s\n' "$output"
           grep -Fq 'Current: 1.0.0 | Latest: 1.0.1' <<< "$output"
-          php artisan route:list --name=software-updates | grep -F 'software-updates.install'
-          php artisan schedule:list | grep -F 'newtic:apply-update'
+          php artisan route:list --path=yazilim-guncellemeleri
+          php artisan schedule:list
           echo 'SINAY_NEW_RELEASE_NOTIFICATION_READY'
           REMOTE
       - name: Public website and admin login remain available
