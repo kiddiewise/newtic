@@ -1,0 +1,87 @@
+name: Deploy approved NEWTIC merchant release ONLY to new customer preview
+
+on:
+  push:
+    branches:
+      - feat/deploy-merchant-ready-preview-v2-20261123
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newtic-humane-indigo-chough-50-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade-authorized-preview-only:
+    name: Safe one-store upgrade with private backup and rollback
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exactly the published, CI-approved immutable candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release"
+          cd "$RUNNER_TEMP/release"
+          gh release download newtic-customer-rc-0c22fcbfe0e1 \
+            --repo kiddiewise/newtic \
+            --pattern 'newtic-customer-install.zip*'
+          sha256sum -c newtic-customer-install.zip.sha256
+          unzip -p newtic-customer-install.zip NEWTIC/.newtic-release-revision \
+            | grep -Fxq '0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11'
+      - name: Prepare pre-existing verified SSH deployment identity
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/newtic-customer"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/newtic-customer" "$HOME/.ssh/known_hosts"
+      - name: Strictly verify target and create private staging folder
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i "$HOME/.ssh/newtic-customer" \
+            -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 u880685189@147.79.123.121 \
+            'bash -se' <<'REMOTE'
+          set -euo pipefail
+          SITE="$HOME/domains/humane-indigo-chough-50.hostingersite.com"
+          APP="$SITE/newtic"
+          test -d "$APP" && test -d "$SITE/public_html"
+          test -f "$APP/.env"
+          test "$(sed -n 's/^APP_URL=//p' "$APP/.env" | tr -d '"\r')" = \
+            "https://humane-indigo-chough-50.hostingersite.com"
+          test "$(sed -n 's/^DB_DATABASE=//p' "$APP/.env" | tr -d '"\r')" = \
+            "u880685189_newtic_test01"
+          STAGE="$SITE/.newtic-upgrade-stage-0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11"
+          test ! -e "$STAGE"
+          mkdir -m 700 "$STAGE"
+          echo "PRECHECK_OK: target preview merchant; no other store accessed"
+          REMOTE
+      - name: Upload verified package to isolated private staging (not public_html)
+        run: |
+          set -euo pipefail
+          scp -P 65002 -i "$HOME/.ssh/newtic-customer" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$RUNNER_TEMP/release/newtic-customer-install.zip" \
+            "$RUNNER_TEMP/release/newtic-customer-install.zip.sha256" \
+            u880685189@147.79.123.121:domains/humane-indigo-chough-50.hostingersite.com/.newtic-upgrade-stage-0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11/
+      - name: Private MySQL and files backup, safe upgrade, real HTTPS verification
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i "$HOME/.ssh/newtic-customer" \
+            -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 u880685189@147.79.123.121 \
+            'bash -se' < scripts/deploy-customer-preview-upgrade.sh
+      - name: Confirm deployed public website is reachable
+        run: |
+          set -euo pipefail
+          test "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+            https://humane-indigo-chough-50.hostingersite.com/)" = 200
+          test "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+            https://humane-indigo-chough-50.hostingersite.com/install)" = 404
