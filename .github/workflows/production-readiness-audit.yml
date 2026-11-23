@@ -128,3 +128,41 @@ jobs:
             echo "== end=$shop =="
           done
           REMOTE
+
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+      - name: Composer locked production package advisories (read only)
+        shell: bash
+        run: |
+          set +e
+          composer audit --locked --no-dev --format=json > composer-audit.json 2>/dev/null
+          exitcode=$?
+          set -e
+          php -r '
+            $d=json_decode(file_get_contents("composer-audit.json"),true);
+            if(!is_array($d)){echo "composer_audit_usable=no\n";exit;}
+            $count=0;$packages=0;
+            foreach(($d["advisories"]??[]) as $items){$packages++;$count+=count($items);}
+            echo "composer_audit_usable=yes\ncomposer_affected_packages=$packages\ncomposer_advisory_total=$count\n";
+            echo "composer_abandoned_packages=".count($d["abandoned"]??[])."\n";
+          '
+          echo "composer_audit_exit=$exitcode"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: NPM production dependency advisories (read only)
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > npm-audit.json 2>/dev/null
+          status=$?
+          set -e
+          node -e "const f=require('fs');try{const d=JSON.parse(f.readFileSync('npm-audit.json'));if(d.metadata?.vulnerabilities){console.log('npm_audit_usable=yes');for(const [k,v] of Object.entries(d.metadata.vulnerabilities))console.log('npm_'+k+'='+v)}else console.log('npm_audit_usable=no')}catch{console.log('npm_audit_usable=no')}"
+          echo "npm_audit_exit=$status"
