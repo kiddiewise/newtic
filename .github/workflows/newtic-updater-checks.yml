@@ -8,6 +8,7 @@ on:
       - 'app/Http/Controllers/Admin/SoftwareUpdateController.php'
       - 'app/Console/Commands/*NewticUpdate.php'
       - 'tests/Unit/NewticReleaseValidationTest.php'
+      - 'tests/Feature/NewticUpdaterPackageTest.php'
       - 'routes/**'
       - '.github/workflows/newtic-updater-checks.yml'
   push:
@@ -33,10 +34,11 @@ jobs:
           php -l app/Console/Commands/CheckNewticUpdates.php
           php -l app/Http/Controllers/Admin/SoftwareUpdateController.php
           php -l app/Http/Controllers/Admin/DashboardController.php
+          php -l tests/Feature/NewticUpdaterPackageTest.php
           php -l routes/web.php
           php -l routes/console.php
       - name: Regression tests
         run: |
           cp .env.example .env
           php artisan key:generate --force
-          php artisan test tests/Unit/NewticReleaseValidationTest.php
+          php artisan test tests/Unit/NewticReleaseValidationTest.php tests/Feature/NewticUpdaterPackageTest.php
