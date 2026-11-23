@@ -373,7 +373,7 @@ jobs:
   publish_customer_candidate:
     name: Publish permanent, traceable customer installation candidate
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -388,10 +388,18 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum -c newtic-customer-install.zip.sha256
-          tag="newtic-customer-rc-${GITHUB_SHA:0:12}"
           test ! -e .env
+          if [[ "$GITHUB_REF" == 'refs/heads/main' ]]; then
+            tag="newtic-v$(date -u +%Y.%m.%d)-${GITHUB_SHA:0:12}"
+            title="NEWTIC | Complete verified customer installation ${GITHUB_SHA:0:12}"
+            release_flags=()
+          else
+            tag="newtic-customer-rc-${GITHUB_SHA:0:12}"
+            title="NEWTIC | Portable customer installation candidate ${GITHUB_SHA:0:12}"
+            release_flags=(--prerelease)
+          fi
           gh release create "$tag" \
             newtic-customer-install.zip newtic-customer-install.zip.sha256 \
-            --target "$GITHUB_SHA" --prerelease \
-            --title "NEWTIC | Portable customer installation candidate ${GITHUB_SHA:0:12}" \
-            --notes "One ZIP: application, tested production Composer dependencies, compiled Vite assets, CLI/bootstrap, web installer and Turkish installation guide. Fresh stores default to real-order configuration with payment and shipping providers OFF and SEO noindex. Bank transfers are shown only when a bank account and legal sale pages are ready; PAYTR and real carrier shipments remain unavailable until separately approved. Source SHA: $GITHUB_SHA. Always confirm the published SHA256 before extraction. No customer records or credentials included."
+            --target "$GITHUB_SHA" "${release_flags[@]}" \
+            --title "$title" \
+            --notes "NEWTIC single customer-ready distribution: Laravel application, locked production PHP dependencies, compiled CSS/JS, quick installer and Turkish manual. Verified order tracking now celebrates a PAYTR-confirmed preparing order once per browser tab, never an unconfirmed payment. Fresh stores ship without merchant/customer data or secrets, with payment and shipping providers OFF until each merchant separately configures and activates them. Existing installed stores keep their separate database and settings. Source SHA: $GITHUB_SHA. Verify the provided SHA256 before installation."
