@@ -108,7 +108,6 @@ class ShippingIntegratorTest extends TestCase
             'warehouse_id' => $provider->warehouses()->firstOrFail()->id,
             'desi' => '1.25',
             'kg' => '0.35',
-            'payment_type' => 'cash_money',
         ];
     }
 
@@ -238,6 +237,8 @@ class ShippingIntegratorTest extends TestCase
             && $request['platform_d_id'] === $order->order_number
             && $request['is_pay_at_door'] === false
             && $request['payor_type'] === 'sender'
+            && $request['payment_type'] === 'cash_money'
+            && !isset($request['total'])
             && $request['lines'][0]['sku'] === 'SURF-75'
             && $request['lines'][0]['quantity'] === 2);
 
@@ -245,6 +246,38 @@ class ShippingIntegratorTest extends TestCase
             ->assertSessionHasErrors('shipping');
         $this->assertDatabaseCount('shipping_shipments', 1);
         Http::assertSentCount(2); // A provider GET and one shipment POST; duplicates make no external call.
+    }
+
+    public function test_buyer_shipping_fee_is_not_added_to_courier_cod_and_admin_cannot_override_sender(): void
+    {
+        $this->admin();
+        $provider = $this->provider();
+        $order = $this->order();
+
+        // The form only shows the existing order totals, not a courier payment selector.
+        $this->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('Taşıma ücretinin muhatabı mağazadır.')
+            ->assertSee('79,90 ₺')
+            ->assertDontSee('name="payment_type"', false);
+
+        $this->fakeCreateSuccess();
+        $forged = array_merge($this->createData($provider), [
+            'payment_type' => 'credit_card',
+            'payor_type' => 'receiver',
+            'is_pay_at_door' => '1',
+            'total' => '229.80',
+        ]);
+
+        $this->post(route('admin.shipping-shipments.create', $order), $forged)
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        Http::assertSent(fn ($request) => $request->method() === 'POST'
+            && str_ends_with($request->url(), '/shipments')
+            && $request['payment_type'] === 'cash_money'
+            && $request['payor_type'] === 'sender'
+            && $request['is_pay_at_door'] === false
+            && !isset($request['total']));
     }
 
     public function test_unconfirmed_api_response_is_not_retried_automatically(): void
