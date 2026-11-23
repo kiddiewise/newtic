@@ -26,6 +26,7 @@
 <div class="admin-panel">
   <div class="admin-panel-title"><h2>Örnek hesaplama</h2></div>
   <p class="admin-description">Şu an {{ number_format((float) $settings->free_shipping_threshold, 2, ',', '.') }} ₺ ve üzeri ücretsiz kargo. Daha düşük siparişlerde {{ number_format((float) $settings->shipping_fee, 2, ',', '.') }} ₺ kargo bedeli gösterilir.</p>
-  <p class="admin-description">Bu kurallar sepette anında uygulanır. Sipariş alma/ödeme sistemi henüz geliştirme aşamasındadır.</p>
+  <p class="admin-description">Ücretsiz kargo sınırı yalnız ürünlerin indirimli toplamına göre hesaplanır; kargo bedeli bu sınıra eklenmez. Örneğin ürünler 950 ₺ ve kargo 79 ₺ ise müşteri 1.029 ₺ öder fakat ücretsiz kargo kampanyasına hak kazanmaz.</p>
+  <p class="admin-description">Limitin altında müşteri kargo katkısını mağazaya öder. Limite ulaşıldığında bu katkı sıfırlanır. Her iki durumda da DHL veya diğer taşıyıcıyla mağaza kendi kargo anlaşması üzerinden hesaplaşır; kapıda ödeme yapılmaz.</p>
 </div>
 @endsection

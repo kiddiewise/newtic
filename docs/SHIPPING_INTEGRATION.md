@@ -17,7 +17,7 @@ DHL ve diğer gerçek kargo şirketleri senkronize edilir ve görüntülenir fak
 6. Bağlantıyı kontrol et ve hesapları yenile ile GET istekleriyle firma/depo listesini al.
 7. Dummy Kargo testini etkinleştir; gerçek kargo şirketleri kapalı kalır.
 8. Hazırlanıyor durumundaki ödemesi doğrulanmış test siparişinde Dummy Kargo seç,
-   depo, ödeme şekli, paket desisi ve opsiyonel ağırlığı kontrol et.
+   depo, paket desisi ve opsiyonel ağırlığı kontrol et.
 9. Dummy barkodu oluştur; PDF indir, panelden Dummy durumu değiştir,
    imzalı callback veya Durumu yenile işlevleriyle güncellemeyi doğrula.
 
@@ -31,6 +31,25 @@ DHL ve diğer gerçek kargo şirketleri senkronize edilir ve görüntülenir fak
 
 Tüm isteklerde sabit sağlayıcı HTTPS hostu ve Bearer API key kullanılır.
 Anahtar browser'a, loglara veya URL'ye verilmez; Laravel encrypted cast ile saklanır.
+
+## Sipariş kargosu ve taşıma bedeli
+
+- Müşterinin ödediği kargo katkısı **yalnız ürün ara toplamına** göre hesaplanır.
+  Varsayılan kampanya eşiği 1.000 TL, limit altı katkı 79,90 TL'dir.
+  Mağaza yöneticisi iki değeri de Kargo Ayarları'ndan değiştirebilir.
+- Örnek (kargo katkısı yönetimden 79,00 TL seçilmişse): 800 + 79 = 879 TL;
+  950 + 79 = 1.029 TL (hala ücretli), 1.000 TL ürün = ücretsiz kargo.
+- Siparişin kargo katkısı ödeme sırasında mağaza tarafından tahsil edilir.
+  Bu tutar taşıyıcıya ödenecek gerçek tutar veya kapıda ödeme tutarı değildir.
+- Entegratöre **payor_type=sender** ve **is_pay_at_door=false** gönderilir.
+  API uyumluluğu için gerekli **payment_type=cash_money** sabit gönderilir.
+  Bu değer kapıda tahsilat kapalıyken DHL'nin veya diğer kargo firmasının
+  mağazayla hangi yöntemle hesaplaşacağını seçmez.
+- Yönetici barkod formunda ödeme türü seçimi yoktur; eski form alanı
+  manipüle edilse dahi sunucu tarafından yok sayılır.
+- Gerçek taşıma bedeli ve faturalama, kargo şirketi sözleşmesi/cari hesabı ile
+  yönetilir. DHL ve diğer gerçek kargo şirketlerinin canlı gönderi erişimi
+  hâlâ ayrıca onay ve kabul testi gerektirir.
 
 ## Durum bildirimi
 

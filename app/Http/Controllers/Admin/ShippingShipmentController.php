@@ -31,7 +31,6 @@ final class ShippingShipmentController extends Controller
             'warehouse_id' => ['required','integer','min:1'],
             'desi' => ['required','numeric','gt:0','max:99999','decimal:0,2'],
             'kg' => ['nullable','numeric','gt:0','max:99999','decimal:0,2'],
-            'payment_type' => ['required','in:cash_money,credit_card'],
         ]);
 
         $provider = ShippingProvider::where('provider', 'kargoentegrator')->first();
@@ -128,7 +127,11 @@ final class ShippingShipmentController extends Controller
                 'cargo_integration_id' => (int)$carrier->remote_id,
                 'warehouse_id' => (int)$warehouse->remote_id,
                 'customer' => $customer,
-                'payment_type' => $data['payment_type'],
+                // Kargo Entegratör expects a payment_type field for the shipment.
+                // With COD disabled it is not the courier's billing method; the
+                // courier charges the sender under their separate carrier contract.
+                // Ignore any forged input named payment_type.
+                'payment_type' => 'cash_money',
                 'package_type' => 'box',
                 'payor_type' => 'sender',
                 'is_pay_at_door' => false,

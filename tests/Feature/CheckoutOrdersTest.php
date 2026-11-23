@@ -188,6 +188,28 @@ class CheckoutOrdersTest extends TestCase
         $this->assertSame(8, $product->fresh()->stock_quantity);
     }
 
+    public function test_950_lira_products_plus_79_lira_shipping_do_not_unlock_free_shipping(): void
+    {
+        \App\Models\StoreSetting::current()->update([
+            'free_shipping_threshold' => '1000.00',
+            'shipping_fee' => '79.00',
+        ]);
+
+        $product = $this->product('NEAR-THRESHOLD', '950.00');
+        $token = $this->ready($product);
+
+        $this->post(route('checkout.place'), $this->address([
+            'checkout_token' => $token,
+            'shipping_cents' => 0, // Buyer cannot zero out their shipping contribution.
+            'total_cents' => 95000,
+        ]))->assertRedirect()->assertSessionHasNoErrors();
+
+        $order = Order::firstOrFail();
+        $this->assertSame(95000, $order->subtotal_cents);
+        $this->assertSame(7900, $order->shipping_cents);
+        $this->assertSame(102900, $order->total_cents);
+    }
+
     public function test_changed_stock_rejects_order_without_creating_record_or_decrementing_twice(): void
     {
         $product = $this->product('LIMITED', '500.00', 2);

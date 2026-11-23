@@ -89,13 +89,18 @@
         <label>Paket ağırlığı (kg, isteğe bağlı)
           <input type="number" name="kg" min="0.01" max="99999" step="0.01" value="{{ old('kg') }}" placeholder="0.25">
         </label>
-        <label>Kargo bedelinin ödeme türü
-          <select name="payment_type" required>
-            <option value="cash_money" selected>Nakit / Havale</option>
-            <option value="credit_card">Kredi kartı</option>
-          </select>
-        </label>
-        <p class="admin-description">Kargo bedeli göndericiye ait olacaktır; kapıda ödeme yapılmayacaktır. Ödeme şekli müşteri siparişi için değil, taşıma bedeli içindir.</p>
+        <div class="ship-info" role="note">
+          <strong>Ödeme ve kargo tahsilatı</strong>
+          <p>Bu siparişte ürün toplamı: <strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong>.</p>
+          <p>Müşteriye yansıtılan kargo bedeli:
+            @if($order->shipping_cents > 0)
+              <strong>{{ number_format($order->shipping_cents / 100, 2, ',', '.') }} ₺</strong> (sipariş toplamına dahil).
+            @else
+              <strong>0,00 ₺</strong> (ücretsiz kargo kampanyası).
+            @endif
+          </p>
+          <p><strong>Taşıma ücretinin muhatabı mağazadır.</strong> DHL veya diğer kargo firmasına ödeme, mağazanın kendi kargo anlaşmasına göre yapılır. Müşteriden kapıda ücret alınmaz.</p>
+        </div>
         <button class="admin-primary" type="submit"><x-admin-icon name="truck"/> Dummy Kargo barkodu oluştur</button>
       </form>
     @else
