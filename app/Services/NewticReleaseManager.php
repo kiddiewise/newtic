@@ -81,7 +81,7 @@ final class NewticReleaseManager
         } catch (Throwable $e) {
             // Do not replace last known-good release metadata on network failure.
             Log::warning('newtic_release_lookup_failed', ['error_type' => $e::class]);
-            return $this->latest();
+            return null;
         }
     }
 
