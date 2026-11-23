@@ -87,6 +87,11 @@ jobs:
               echo 'latest_attempt_'.$index.'_order_status='.($a->order?->status??'missing').PHP_EOL;
           }
           echo 'callback_route_configured='.route('checkout.paytr.callback').PHP_EOL;
+          echo 'configured_log_level='.(string)config('logging.channels.single.level','unspecified').PHP_EOL;
+          $health=\Illuminate\Support\Facades\DB::table('system_health_monitors')->where('key','paytr_callback')->first();
+          echo 'paytr_monitor_exists='.($health?'yes':'no').PHP_EOL;
+          echo 'paytr_monitor_success_at='.($health?->last_success_at??'missing').PHP_EOL;
+          echo 'paytr_monitor_failure_at='.($health?->last_failure_at??'missing').PHP_EOL;
           echo 'screenshot_recent_processed_at_utc='.($latestFromScreenshot?->processed_at?->utc()?->format('Y-m-d H:i:s') ?? 'missing').PHP_EOL;
           $processed=\App\Models\PaytrPaymentAttempt::query()->where('status','success')
               ->orderByDesc('processed_at')->limit(10)->get();
