@@ -69,7 +69,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->post(route('cart.add'), ['items' => [$product->id => 2]])->assertRedirect();
         $this->get(route('checkout.index'))->assertOk()
             ->assertSee('Kredi / Banka Kartı')
-            ->assertSee('Güvenli Test Ödemesine Geç');
+            ->assertSee('PAYTR Ödeme Ekranına Geç');
         return (string) session('checkout_token');
     }
 
@@ -123,14 +123,14 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $admin->forceFill(['is_admin' => true])->save();
         $this->actingAs($admin);
         $this->get(route('admin.paytr-settings.edit'))->assertOk()
-            ->assertSee('Test ödemesini etkinleştir');
+            ->assertSee('Bağlantı doğrulamasını aç');
 
         $this->post(route('admin.paytr-settings.test-mode'), ['enabled' => 1])
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertTrue($merchant->fresh()->is_enabled);
 
         $this->get(route('admin.paytr-settings.edit'))->assertOk()
-            ->assertSee('Test ödemesini kapat');
+            ->assertSee('Bağlantı doğrulamasını kapat');
         $this->post(route('admin.paytr-settings.test-mode'), ['enabled' => 0])
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertFalse($merchant->fresh()->is_enabled);
@@ -177,7 +177,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame(8, $product->fresh()->stock_quantity);
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertSee('Siparişiniz hazırlanıyor')
-            ->assertSee('PAYTR test ödemeniz doğrulandı')
+            ->assertSee('PAYTR ödeme bildirimi doğrulandı')
             ->assertDontSee('Banka hesabını seç');
         $this->assertSame([], session('shopping_cart', []));
 
@@ -186,8 +186,8 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->actingAs($admin);
         $this->get(route('admin.orders.show', $order))->assertOk()
             ->assertSee('PAYTR kart ödeme geçmişi')
-            ->assertSee('Test ödemesi doğrulandı')
-            ->assertSee('PAYTR Kart (Test)');
+            ->assertSee('Ödeme bildirimi doğrulandı')
+            ->assertSee('PAYTR Kart');
         $this->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
             ->assertSessionHasErrors('status');
         $this->assertSame('preparing', $order->fresh()->status);
@@ -313,7 +313,7 @@ class PaytrTestCheckoutFlowTest extends TestCase
             ->assertSee($product->name);
         $this->assertSame(2, session('shopping_cart')[$product->id]);
         $this->get(route('checkout.success', $order))->assertOk()
-            ->assertSee('Test ödemeniz başarısız oldu.')
+            ->assertSee('Kart ödemeniz başarısız oldu.')
             ->assertSee('Sepete dön ve yeniden dene');
         $this->get(route('checkout.index'))->assertOk();
         $this->assertNotEmpty(session('checkout_token'));

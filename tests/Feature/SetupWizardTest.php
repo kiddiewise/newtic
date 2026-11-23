@@ -72,8 +72,11 @@ final class SetupWizardTest extends TestCase
         $this->assertFalse($installer->installationHostAllowed('hostingersite.com'));
         $this->assertFalse($installer->installationHostAllowed('bad..hostingersite.com'));
 
+        config()->set('newtic.checkout_test_mode', false);
+        $this->assertTrue($installer->installationHostAllowed($preview));
+        config()->set('newtic.checkout_test_mode', true);
+
         foreach ([
-            'checkout_test_mode' => false,
             'paytr_card_payments_enabled' => true,
             'paytr_webhooks_enabled' => true,
             'shipping_dummy_enabled' => true,
