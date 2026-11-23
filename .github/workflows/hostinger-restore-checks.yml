@@ -1,0 +1,39 @@
+name: Hostinger restore validation
+
+on:
+  pull_request:
+    paths:
+      - 'app/Services/HostingerRestore.php'
+      - 'app/Console/Commands/RestorePendingBackup.php'
+      - 'app/Http/Controllers/Admin/BackupRestoreController.php'
+      - 'tests/Feature/HostingerRestoreTest.php'
+      - 'routes/**'
+      - '.github/workflows/hostinger-restore-checks.yml'
+  push:
+    branches: ['feature/hostinger-backup-restore']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, phar, zlib
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Lint modified PHP files
+        run: |
+          php -l app/Services/HostingerRestore.php
+          php -l app/Console/Commands/RestorePendingBackup.php
+          php -l app/Http/Controllers/Admin/BackupRestoreController.php
+          php -l tests/Feature/HostingerRestoreTest.php
+          php -l routes/web.php
+          php -l routes/console.php
+      - name: Test backup parsing and safe extraction
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan test tests/Feature/HostingerRestoreTest.php
