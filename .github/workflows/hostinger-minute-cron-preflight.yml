@@ -47,6 +47,13 @@ jobs:
             php -r 'echo "php_binary=".PHP_BINARY.PHP_EOL; echo "php_version=".PHP_VERSION.PHP_EOL; echo "php_proc_open=".(function_exists("proc_open")?"yes":"no").PHP_EOL; echo "php_exec=".(function_exists("exec")?"yes":"no").PHP_EOL;'
             echo "schedule_entries:"
             php artisan schedule:list --no-ansi | head -n 26
+            # hPanel's custom Cron Job starts from an unspecified working directory.
+            # Check the exact full binary + absolute artisan path without running
+            # any scheduled job or modifying the store.
+            cd "$HOME"
+            /opt/alt/php83/usr/bin/php "$app/artisan" schedule:list --no-ansi >/dev/null
+            echo "hpanel_absolute_command_preflight=ok"
+            cd "$app"
             php <<'PHP'
           <?php
           require 'vendor/autoload.php';
