@@ -101,7 +101,8 @@ final class NewticUpdaterEndToEndTest extends TestCase
                 'status' => 'queued',
             ]);
 
-            $this->assertTrue($updater->run(), 'CLI updater did not apply a valid signed fixture.');
+            $success = $updater->run();
+            $this->assertTrue($success, 'CLI updater did not apply a valid signed fixture: '.json_encode($releases->state()));
             $this->assertSame('done', $releases->state()['status']);
             $this->assertSame('1.2.0', $releases->currentVersion());
             $this->assertFileExists($testMarker);
