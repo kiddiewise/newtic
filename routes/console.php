@@ -7,6 +7,12 @@ use App\Support\SystemHealthRecorder;
 
 Schedule::command('health:heartbeat')->everyMinute()->withoutOverlapping(2);
 
+// Hostinger restore runs only after an admin has uploaded and approved a backup.
+// It operates with a file lock and can finish even if the site enters maintenance.
+Schedule::command('backup:restore-pending')->everyMinute()
+    ->withoutOverlapping(120)->evenInMaintenanceMode();
+
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
