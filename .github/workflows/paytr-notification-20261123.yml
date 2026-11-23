@@ -1,0 +1,96 @@
+name: Diagnose PAYTR 2nd-step callback on isolated Polaris staging
+
+on:
+  push:
+    branches:
+      - fix/paytr-notification-20261123
+    paths:
+      - .github/workflows/paytr-notification-20261123.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Verify public PAYTR notification path without a payment
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE="powderblue-dinosaur-538060.hostingersite.com"
+          ROUTE="/odeme/paytr/bildirim"
+          TMP="$(mktemp -d)"
+          trap 'rm -rf "$TMP"' EXIT
+          for mode in public origin; do
+            args=()
+            if [[ "$mode" = origin ]]; then
+              args+=(--resolve "$SITE:443:147.79.123.121")
+            fi
+            set +e
+            RESULT="$(curl -4 --http1.1 -sS --connect-timeout 10 --max-time 18 "${args[@]}" -o "$TMP/$mode.body" -D "$TMP/$mode.head" -w 'status=%{http_code} tls=%{ssl_verify_result} redirects=%{num_redirects} seconds=%{time_total}' -X POST --data-urlencode 'merchant_oid=NEWTICINVALIDPROBE' --data-urlencode 'status=success' --data-urlencode 'total_amount=12345' --data-urlencode 'hash=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' --data-urlencode 'payment_type=card' --data-urlencode 'currency=TL' "https://$SITE$ROUTE")"
+            CODE=$?
+            set -e
+            echo "$mode curl_exit=$CODE $RESULT"
+            if grep -Fqx 'Invalid PAYTR notification' "$TMP/$mode.body"; then echo "$mode reached_laravel_hmac_guard=yes"; else echo "$mode reached_laravel_hmac_guard=no"; fi
+            if grep -Fqx 'PAYTR callback is not active' "$TMP/$mode.body"; then echo "$mode webhook_gate_disabled=yes"; fi
+            if grep -iq '^x-hcdn-request-id:' "$TMP/$mode.head"; then echo "$mode hostinger_cdn=yes"; fi
+          done
+      - name: Hostinger application diagnostic, sanitized callback counts and outbound PayTR TLS
+        env:
+          KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEY" && test -n "$KNOWN"
+          mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$KEY" > "$HOME/.ssh/paytr-diag"
+          printf '%s\n' "$KNOWN" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/paytr-diag" "$HOME/.ssh/known_hosts"
+          ssh -p 65002 -i "$HOME/.ssh/paytr-diag" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=12 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          echo "deployed_revision=$(git rev-parse --short HEAD)"
+          php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app=require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $yn=static fn($v)=>$v?'yes':'no';
+          $host=parse_url((string) config('app.url'),PHP_URL_HOST);
+          echo 'expected_host='.$yn($host==='powderblue-dinosaur-538060.hostingersite.com').PHP_EOL;
+          echo 'checkout_is_staging='.$yn((bool)config('newtic.checkout_test_mode')).PHP_EOL;
+          echo 'paytr_cards_gate='.$yn((bool)config('newtic.paytr_card_payments_enabled')).PHP_EOL;
+          echo 'paytr_webhook_gate='.$yn((bool)config('newtic.paytr_webhooks_enabled')).PHP_EOL;
+          $s=\App\Models\PaytrSetting::find(1);
+          echo 'paytr_settings_present='.$yn((bool)$s).PHP_EOL;
+          echo 'paytr_credentials_saved='.$yn((bool)$s?->hasCredentials()).PHP_EOL;
+          echo 'paytr_admin_active='.$yn((bool)$s?->is_enabled).PHP_EOL;
+          echo 'paytr_is_provider_test='.$yn((bool)$s?->test_mode).PHP_EOL;
+          echo 'attempt_count='.(int)\App\Models\PaytrPaymentAttempt::count().PHP_EOL;
+          foreach(['pending','success','failed'] as $state){echo 'attempt_'.$state.'_count='.(int)\App\Models\PaytrPaymentAttempt::where('status',$state)->count().PHP_EOL;}
+          echo 'unsigned_webhook_must_be_rejected=yes'.PHP_EOL;
+          PHP
+          php artisan route:list --path=odeme/paytr/bildirim --json | php -r '
+            $a=json_decode(stream_get_contents(STDIN),true)??[];
+            foreach($a as $r){if(($r["uri"]??"")==="odeme/paytr/bildirim"){
+              echo "callback_methods=".$r["method"]."\n";
+              echo "callback_auth_guard=". (str_contains(implode(",",$r["middleware"]??[]),"auth")?"yes":"no")."\n";
+            }}'
+          if [[ -f storage/logs/laravel.log ]]; then
+            for word in paytr_callback_accepted paytr_callback_rejected paytr_iframe_test_failure staging_gate settings_gate invalid_signature invalid_payment_context unknown_attempt order_state_mismatch; do
+              count="$(tail -n 8000 storage/logs/laravel.log | grep -Fc "$word" || true)"
+              printf 'last8000_%s=%s\n' "$word" "$count"
+            done
+          fi
+          for endpoint in 'https://www.paytr.com/odeme/api/get-token' 'https://dev.paytr.com/iframe-api/iframe-api-2-adim'; do
+            set +e
+            result="$(curl -4 -sS --connect-timeout 10 --max-time 15 -o /dev/null -w '%{http_code} tls=%{ssl_verify_result} connect=%{time_connect}' -I "$endpoint")"
+            exitcode=$?
+            set -e
+            if [[ "$endpoint" == *get-token ]]; then label=api; else label=docs; fi
+            echo "outbound_$label exit=$exitcode result=$result"
+          done
+          REMOTE
