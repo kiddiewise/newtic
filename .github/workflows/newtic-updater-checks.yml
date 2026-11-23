@@ -10,6 +10,7 @@ on:
       - 'tests/Unit/NewticReleaseValidationTest.php'
       - 'tests/Feature/NewticUpdaterPackageTest.php'
       - 'tests/Feature/NewticUpdaterEndToEndTest.php'
+      - 'tests/Feature/NewticUpdateAdminTest.php'
       - 'routes/**'
       - '.github/workflows/newtic-updater-checks.yml'
   push:
@@ -36,7 +37,8 @@ jobs:
           php -l app/Http/Controllers/Admin/SoftwareUpdateController.php
           php -l app/Http/Controllers/Admin/DashboardController.php
           php -l tests/Feature/NewticUpdaterPackageTest.php
-          php -l tests/Feature/NewticUpdaterEndToEndTest.php
+          php -l tests/Feature/NewticUpdaterEndToEndTest.php tests/Feature/NewticUpdateAdminTest.php
+          php -l tests/Feature/NewticUpdateAdminTest.php
           php -l routes/web.php
           php -l routes/console.php
       - name: Regression tests
