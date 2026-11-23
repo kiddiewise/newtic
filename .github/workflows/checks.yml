@@ -98,9 +98,10 @@ jobs:
           fi
           sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
           bash scripts/install-production.sh --check
-          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=true/NEWTIC_CHECKOUT_TEST_MODE=false/' .env
           bash scripts/install-production.sh --check
           sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=false/NEWTIC_CHECKOUT_TEST_MODE=true/' .env
+          bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=true/NEWTIC_CHECKOUT_TEST_MODE=false/' .env
           sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/' .env
           if bash scripts/install-production.sh --check; then
             echo "ERROR: temporary domain accepted with live payment enabled" >&2
@@ -177,8 +178,7 @@ jobs:
           DB_DATABASE=newtic_fresh_ci
           DB_USERNAME=newtic_install_ci
           DB_PASSWORD=newtic_ci_temporary_only
-          # NEWTIC_CHECKOUT_TEST_MODE=true is already set in .env.example
-          # Safe-mode defaults are already set in .env.example.
+          # .env.example uses normal checkout with all live integrations disabled.
           CONFIG
           mkdir -p "$RUNNER_TEMP/newtic-noexec-bin"
           PHP_REAL="$(command -v php)"

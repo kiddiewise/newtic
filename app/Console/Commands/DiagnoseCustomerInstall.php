@@ -61,10 +61,10 @@ final class DiagnoseCustomerInstall extends Command
         }
         try {
             // The diagnostic is read-only, including before initial setup.
-            $checks['SEO kontrollü başlangıç'] = (bool) SeoSetting::query()
-                ->whereKey(1)->value('noindex');
+            $checks['Mağaza SEO ayarları mevcut'] = SeoSetting::query()
+                ->whereKey(1)->exists();
         } catch (Throwable) {
-            $checks['SEO kontrollü başlangıç'] = false;
+            $checks['Mağaza SEO ayarları mevcut'] = false;
         }
 
         foreach ($checks as $label => $passed) {
@@ -80,7 +80,7 @@ final class DiagnoseCustomerInstall extends Command
         }
 
         $this->info('NEWTIC_INSTALL_DIAGNOSTIC_OK: İlk kurulum kontrolleri başarılı.');
-        $this->warn('Önemli: Canlı ödeme, kargo, SMTP, cron, yedekleme ve üçüncü taraf servisleri bu test onaylamaz.');
+        $this->warn('Önemli: PAYTR, kargo, SMTP, cron, yedekleme ve üçüncü taraf servisleri bu sağlık kontrolü tarafından etkinleştirilmez.');
         return self::SUCCESS;
     }
 }
