@@ -1,0 +1,76 @@
+name: NEWTIC customer preview isolated server audit
+
+on:
+  push:
+    branches:
+      - feat/customer-live-smoke-20261123
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  server-read-only:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Prepare existing verified Hostinger SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          VERIFIED_HOST_KEYS: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" && test -n "$VERIFIED_HOST_KEYS" || {
+            echo "BLOCKED: No accessible SSH deployment identity; no server operation was attempted."
+            exit 2
+          }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-qa
+          printf '%s\n' "$VERIFIED_HOST_KEYS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-qa ~/.ssh/known_hosts
+      - name: Inspect ONLY humane-indigo-chough-50 store; no mutations
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-qa -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          APP="$HOME/domains/humane-indigo-chough-50.hostingersite.com/newtic"
+          test -f "$APP/artisan" && test -f "$APP/.env" || {
+            echo "FAIL: Isolated NEWTIC folder not available"
+            exit 2
+          }
+          cd "$APP"
+          EXPECTED_URL="https://humane-indigo-chough-50.hostingersite.com"
+          ACTUAL_URL="$(sed -n 's/^APP_URL=//p' .env | tail -1 | tr -d '\r"' )"
+          DATABASE_NAME="$(sed -n 's/^DB_DATABASE=//p' .env | tail -1 | tr -d '\r"' )"
+          test "$ACTUAL_URL" = "$EXPECTED_URL" || { echo "FAIL: wrong shop URL; refusing inspection"; exit 2; }
+          test "$DATABASE_NAME" = "u880685189_newtic_test01" || {
+            echo "FAIL: wrong database; refusing inspection"
+            exit 2
+          }
+          echo "PASS: new preview hostname and isolated DB name match the authorized target"
+          php artisan newtic:doctor
+          php -r '
+          require "vendor/autoload.php";
+          $app=require "bootstrap/app.php";
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $db=Illuminate\Support\Facades\DB::connection();
+          if ($db->getDatabaseName() !== "u880685189_newtic_test01") {
+            fwrite(STDERR, "FAIL: application runtime DB mismatch\n"); exit(2);
+          }
+          echo "DB_NAME_MATCH=PASS\n";
+          foreach (["users","categories","products","orders","newtic_installations"] as $table) {
+            $count=Illuminate\Support\Facades\DB::table($table)->count();
+            echo "ROW_COUNT_".strtoupper($table)."=".$count."\n";
+          }
+          $guards=[
+            "TEST_CHECKOUT" => config("newtic.checkout_test_mode", false) === true,
+            "NO_LIVE_PAYTR" => !config("newtic.paytr_card_payments_enabled", false) && !config("newtic.paytr_webhooks_enabled", false),
+            "NO_SHIPPING" => !config("newtic.shipping_dummy_enabled", false),
+            "NO_MARKETING_SEND" => !config("newtic.marketing_live_enabled", false),
+          ];
+          foreach($guards as $name=>$pass) {
+            echo $name."=".($pass?"PASS":"FAIL")."\n";
+            if(!$pass)exit(3);
+          }'
+          REMOTE
