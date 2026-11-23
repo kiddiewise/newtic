@@ -113,6 +113,16 @@ jobs:
           }
           echo 'built_css_kb='.round($css/1024,1).PHP_EOL;
           echo 'built_js_kb='.round($js/1024,1).PHP_EOL;
+          $manifestPath=public_path('build/manifest.json');
+          $manifest=is_file($manifestPath)?json_decode(file_get_contents($manifestPath),true):[];
+          foreach(['resources/css/app.css'=>'css','resources/js/app.js'=>'js'] as $key=>$label){
+            $rel=$manifest[$key]['file']??null;
+            $file=$rel?public_path('build/'.$rel):null;
+            if(!$file || !is_file($file)){echo 'active_'.$label.'_missing=yes'.PHP_EOL;continue;}
+            $raw=file_get_contents($file);
+            echo 'active_'.$label.'_kb='.round(strlen($raw)/1024,1).PHP_EOL;
+            echo 'active_'.$label.'_gzip_kb='.round(strlen(gzencode($raw,6))/1024,1).PHP_EOL;
+          }
           PHP
             if command -v crontab >/dev/null 2>&1;then echo "ssh_crontab_available=yes";else echo "ssh_crontab_available=no";fi
             echo "== end=$shop =="
