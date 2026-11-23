@@ -3,7 +3,7 @@
 # It never touches Polaris, Sinay or the first-install wizard's database seeder.
 set -Eeuo pipefail
 umask 077
-REV="0e012072845dcd7425b5f49a3379e069e69ccc80"
+REV="0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11"
 TARGET="humane-indigo-chough-50.hostingersite.com"
 SITE="$HOME/domains/$TARGET"
 APP="$SITE/newtic"

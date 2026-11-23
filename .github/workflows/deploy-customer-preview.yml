@@ -25,12 +25,12 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/release"
           cd "$RUNNER_TEMP/release"
-          gh release download newtic-customer-rc-0e012072845d \
+          gh release download newtic-customer-rc-0c22fcbfe0e1 \
             --repo kiddiewise/newtic \
             --pattern 'newtic-customer-install.zip*'
           sha256sum -c newtic-customer-install.zip.sha256
           unzip -p newtic-customer-install.zip NEWTIC/.newtic-release-revision \
-            | grep -Fxq '0e012072845dcd7425b5f49a3379e069e69ccc80'
+            | grep -Fxq '0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11'
       - name: Prepare pre-existing verified SSH deployment identity
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
@@ -58,7 +58,7 @@ jobs:
             "https://humane-indigo-chough-50.hostingersite.com"
           test "$(sed -n 's/^DB_DATABASE=//p' "$APP/.env" | tr -d '"\r')" = \
             "u880685189_newtic_test01"
-          STAGE="$SITE/.newtic-upgrade-stage-0e012072845dcd7425b5f49a3379e069e69ccc80"
+          STAGE="$SITE/.newtic-upgrade-stage-0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11"
           test ! -e "$STAGE"
           mkdir -m 700 "$STAGE"
           echo "PRECHECK_OK: target preview merchant; no other store accessed"
@@ -70,7 +70,7 @@ jobs:
             -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             "$RUNNER_TEMP/release/newtic-customer-install.zip" \
             "$RUNNER_TEMP/release/newtic-customer-install.zip.sha256" \
-            u880685189@147.79.123.121:domains/humane-indigo-chough-50.hostingersite.com/.newtic-upgrade-stage-0e012072845dcd7425b5f49a3379e069e69ccc80/
+            u880685189@147.79.123.121:domains/humane-indigo-chough-50.hostingersite.com/.newtic-upgrade-stage-0c22fcbfe0e1b73ce104734c8c4e1bc4d371ed11/
       - name: Private MySQL and files backup, safe upgrade, real HTTPS verification
         run: |
           set -euo pipefail
