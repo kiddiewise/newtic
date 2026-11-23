@@ -1,0 +1,131 @@
+{
+  "source": "https://www.shopier.com/sinayy",
+  "captured_at": "2026-11-23",
+  "source_note": "Shopier most recent indexed listing (crawled around October 2026); older search snapshot disagrees; 3 distinct entries have the same displayed title ÇERÇEVE.",
+  "merchant": "sinaydesign.com",
+  "category": "Hediyelikler",
+  "currency": "TRY",
+  "stock_policy": "visible_unavailable_until_merchant_adds_stock",
+  "products": [
+    {
+      "sequence": 1,
+      "name": "DÜNYANIN EN GÜZEL ANNESİ A4 BOYUTU ÇERÇEVE",
+      "price_try": 699
+    },
+    {
+      "sequence": 2,
+      "name": "DÜNYANIN EN GÜZEL ANNESİ 15*20 BOYUTU",
+      "price_try": 599
+    },
+    {
+      "sequence": 3,
+      "name": "GELECEĞİN EN GÜZEL ANNESİ A4 BOYUTU ÇERÇEVE",
+      "price_try": 699
+    },
+    {
+      "sequence": 4,
+      "name": "GELECEĞİN EN GÜZEL ANNESİ 15*20 BOYUTU",
+      "price_try": 599
+    },
+    {
+      "sequence": 5,
+      "name": "GELECEĞİN EN GÜZEL ANNESİ ÇERÇEVE +AYICIK",
+      "price_try": 1500
+    },
+    {
+      "sequence": 6,
+      "name": "DÜNYANIN EN GÜZEL KIZI",
+      "price_try": 699
+    },
+    {
+      "sequence": 7,
+      "name": "Dünyanın en güzel kızı Çerçeve",
+      "price_try": 599
+    },
+    {
+      "sequence": 8,
+      "name": "Dünyanın en güzel kızı Çerçeve - güllü ayıcık",
+      "price_try": 1500
+    },
+    {
+      "sequence": 9,
+      "name": "35 cm GÜL AYICIK - ÇERÇEVE",
+      "price_try": 1999
+    },
+    {
+      "sequence": 10,
+      "name": "PRENSES BUKETİ",
+      "price_try": 1999
+    },
+    {
+      "sequence": 11,
+      "name": "KİŞİYE ÖZEL ÇİÇEK BUKETİ",
+      "price_try": 1999
+    },
+    {
+      "sequence": 12,
+      "name": "ANNE BEBEK ÇİÇEK BUKETİ",
+      "price_try": 1999
+    },
+    {
+      "sequence": 13,
+      "name": "PAPATYALI ÇİÇEK BUKETİ",
+      "price_try": 1999
+    },
+    {
+      "sequence": 14,
+      "name": "SATEN GÜL BUKETİ",
+      "price_try": 1699
+    },
+    {
+      "sequence": 15,
+      "name": "GÜLLÜ AYICIK 20 cm",
+      "price_try": 899
+    },
+    {
+      "sequence": 16,
+      "name": "GÜLLÜ AYICIK 35 CM",
+      "price_try": 1699
+    },
+    {
+      "sequence": 17,
+      "name": "DÜNYANIN EN İYİ ÖĞRETMENİ",
+      "price_try": 699
+    },
+    {
+      "sequence": 18,
+      "name": "ÇERÇEVE",
+      "price_try": 699
+    },
+    {
+      "sequence": 19,
+      "name": "ÇERÇEVE",
+      "price_try": 699
+    },
+    {
+      "sequence": 20,
+      "name": "ÇERÇEVE",
+      "price_try": 699
+    },
+    {
+      "sequence": 21,
+      "name": "PAPATYA DEMETİ - ÇERÇEVE",
+      "price_try": 1500
+    },
+    {
+      "sequence": 22,
+      "name": "ÖRGÜ ÇİÇEK BUKETİ",
+      "price_try": 1599
+    },
+    {
+      "sequence": 23,
+      "name": "ÇİFT PAPATYA BUKETİ",
+      "price_try": 1000
+    },
+    {
+      "sequence": 24,
+      "name": "SİYAH BEYAZ GÜL BUKETİ",
+      "price_try": 899
+    }
+  ]
+}
