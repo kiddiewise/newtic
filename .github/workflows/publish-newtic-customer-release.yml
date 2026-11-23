@@ -1,0 +1,84 @@
+name: Publish NEWTIC customer release
+
+# Only a deliberately created semantic-version tag publishes a merchant update.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged immutable commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check semantic version and release identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
+          test "$(git describe --exact-match --tags HEAD)" = "$GITHUB_REF_NAME"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, pdo_sqlite, zip, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Install locked PHP dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build frontend from tagged source
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          test -s public/build/manifest.json
+          git rev-parse HEAD > public/build/newtic-revision.txt
+
+      - name: Build standalone verified release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 022
+          mkdir -p "$RUNNER_TEMP/newtic-release"
+          TARGET="$RUNNER_TEMP/newtic-release"
+          cp -a artisan composer.json composer.lock VERSION .env.example "$TARGET/"
+          cp -a app bootstrap config database public resources routes scripts vendor "$TARGET/"
+          printf '%s\n' "$(git rev-parse HEAD)" > "$TARGET/.newtic-release-revision"
+          rm -rf "$TARGET/bootstrap/cache/"* "$TARGET/public/storage" "$TARGET/public/hot"
+          mkdir -p "$TARGET/bootstrap/cache"
+          test -s "$TARGET/vendor/autoload.php"
+          test -s "$TARGET/public/build/newtic-revision.txt"
+          test "$(cat "$TARGET/.newtic-release-revision")" = "$(cat "$TARGET/public/build/newtic-revision.txt")"
+          (cd "$TARGET" && find . -type f ! -name 'NEWTIC-RELEASE-SHA256SUMS.txt' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > NEWTIC-RELEASE-SHA256SUMS.txt)
+          php scripts/verify-customer-release.php "$TARGET"
+          (cd "$TARGET" && zip -q -r -X "$GITHUB_WORKSPACE/newtic-customer-install.zip" .)
+          unzip -t newtic-customer-install.zip >/dev/null
+          sha256sum newtic-customer-install.zip
+
+      - name: Publish release with immutable install archive
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh release create "$GITHUB_REF_NAME" "newtic-customer-install.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "NEWTIC $(cat VERSION)" \
+            --generate-notes
