@@ -55,13 +55,13 @@
   @endif
   <div class="ship-grid">
     <div class="ship-list-panel">
-      <h3>Kargo firmaları <small>{{ $carriers->count() }}</small></h3>
-      @forelse($carriers as $carrier)
+      <h3>Kargo firmaları <small>{{ $testAllowed ? $carriers->count() : $carriers->where('is_dummy', false)->count() }}</small></h3>
+      @forelse(($testAllowed ? $carriers : $carriers->where('is_dummy', false)) as $carrier)
         <div class="ship-account-row"><span><strong>{{ $carrier->name }}</strong>
           <small>Entegrasyon ID: {{ $carrier->remote_id }} · {{ $carrier->carrier_code ?: 'Taşıyıcı türü doğrulanamadı' }}</small></span>
-          <span class="ship-account-pill">{{ $carrier->is_dummy ? 'Simülasyon taşıyıcısı' : 'Canlı kapalı' }}</span>
+          <span class="ship-account-pill">{{ $carrier->is_dummy ? 'Bağlantı doğrulama hesabı' : 'Aktivasyon bekleniyor' }}</span>
         </div>
-      @empty <p class="admin-description">Henüz bağlı kargo firması yok. DHL, Dummy Kargo veya başka firmaları Kargo Entegratör panelinden ekle.</p>
+      @empty <p class="admin-description">Henüz bağlı kargo firması yok. DHL veya anlaşmalı diğer taşıyıcıları Kargo Entegratör panelinden tanımlayın.</p>
       @endforelse
     </div>
     <div class="ship-list-panel">
@@ -77,13 +77,13 @@
 
 <section class="admin-panel">
   <div class="admin-panel-title"><h2>3. Gönderi aktivasyonu</h2></div>
-  <p class="admin-description">Şu anda yalnızca simülasyon taşıyıcısı için bağlantı doğrulaması yapılabilir. Gerçek DHL, Aras, Yurtiçi vb. gönderileri sağlayıcı onayına kadar kapalıdır.</p>
+  <p class="admin-description">{{ $testAllowed ? 'Bağlantı doğrulama hesabı ile sınırlı kontrol yapılabilir; gerçek gönderiler kapalıdır.' : 'Gerçek gönderiler, sağlayıcı bağlantısı ve taşıyıcı onayı tamamlanana kadar kapalıdır.' }}</p>
   @if($testAllowed && $configured && $lastCheckedAt)
     <form method="POST" action="{{ route('admin.shipping-integrations.toggle') }}">
       @csrf
       <input type="hidden" name="enabled" value="{{ $enabled ? '0' : '1' }}">
       <button class="{{ $enabled ? 'admin-secondary' : 'admin-primary' }}" type="submit"><x-admin-icon name="check"/>
-        {{ $enabled ? 'Simülasyon kontrolünü kapat' : 'Simülasyon kontrolünü aç' }}
+        {{ $enabled ? 'Bağlantı kontrolünü kapat' : 'Bağlantı kontrolünü aç' }}
       </button>
     </form>
   @endif
@@ -98,11 +98,11 @@
   <div class="admin-panel-title"><h2>Kurulum rehberi</h2></div>
   <ol class="ship-steps">
     <li><a href="https://app.kargoentegrator.com/" target="_blank" rel="noopener noreferrer">Kargo Entegratör paneli</a> → Ayarlar → Satış Kanalları / API sayfasından API anahtarını al.</li>
-    <li>Panelde <strong>Kargo Hesapları</strong> bölümünde DHL anlaşmanı tanımla; bağlantıyı doğrulamak için <strong>Dummy Kargo</strong> ekle.</li>
+    <li>Panelde <strong>Kargo Hesapları</strong> bölümünde DHL anlaşmanı ve kullanacağın taşıyıcıları tanımla.</li>
     <li><strong>Depo Adresleri</strong> bölümünde gönderici deponu tanımla.</li>
     <li>Buraya dön ve <strong>Bağlantıyı kontrol et ve hesapları yenile</strong> butonuna bas.</li>
     <li>Sağlayıcı bağlantısını kontrol et; gerçek kargo gönderimleri için aktivasyon onayını bekle.</li>
-    <li>Dummy Kargo durumunu sağlayıcı panelinden değiştirip NEWTIC'teki takibi kontrol et.</li>
+    <li>Sağlayıcı doğrulamaları ve gönderi durum akışı tamamlandıktan sonra gönderi aktivasyonunu gözden geçir.</li>
   </ol>
   <p class="admin-description">Bu ekran gönderici depo veya DHL sözleşmesi açmaz. Kargo firması kimlik bilgileri Kargo Entegratör panelinde yönetilir; NEWTIC yalnızca entegratör API anahtarına ihtiyaç duyar.</p>
   <a class="admin-secondary" href="https://dev.kargoentegrator.com/" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link"/> Resmî API dokümantasyonu</a>
