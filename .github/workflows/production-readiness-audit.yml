@@ -1,0 +1,120 @@
+name: Read-only NEWTIC readiness audit
+on:
+  push:
+    branches: [audit/live-readiness-20261123]
+    paths: [.github/workflows/production-readiness-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check public HTTPS response headers
+        shell: bash
+        run: |
+          for domain in powderblue-dinosaur-538060.hostingersite.com sinaydesign.com; do
+            echo "domain=$domain"
+            header=$(mktemp)
+            curl -sSL --max-time 20 -D "$header" -o /dev/null -w 'http=%{http_code} tls_error=%{ssl_verify_result} redirects=%{num_redirects}\n' "https://$domain/" || true
+            for field in strict-transport-security content-security-policy x-frame-options x-content-type-options referrer-policy; do
+              if grep -iq "^$field:" "$header"; then echo "header_$field=present"; else echo "header_$field=absent"; fi
+            done
+            rm -f "$header"
+          done
+      - name: Inspect installations and image bytes without modifying data
+        env:
+          KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
+          KNOWN: ${{ secrets.NEWTIC_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEY" && test -n "$KNOWN"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/newtic-audit
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/newtic-audit ~/.ssh/known_hosts
+          ssh -p 65002 -i ~/.ssh/newtic-audit -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          for shop in polaris sinay; do
+            if [ "$shop" = polaris ]; then
+              target="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+            else
+              target="$HOME/domains/sinaydesign.com/newtic"
+            fi
+            echo "== shop=$shop =="
+            cd "$target"
+            echo "revision=$(git rev-parse --short HEAD)"
+            php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $flag = static fn($value) => $value ? 'yes' : 'no';
+          echo 'app_debug='.$flag(config('app.debug')).PHP_EOL;
+          echo 'app_key_exists='.$flag(filled(config('app.key'))).PHP_EOL;
+          echo 'https_cookie='.$flag(config('session.secure')===true).PHP_EOL;
+          echo 'http_only_cookie='.$flag(config('session.http_only')).PHP_EOL;
+          echo 'same_site_cookie='.config('session.same_site').PHP_EOL;
+          echo 'checkout_test_mode='.$flag(config('newtic.checkout_test_mode')).PHP_EOL;
+          echo 'paytr_webhook_gate='.$flag(config('newtic.paytr_webhooks_enabled')).PHP_EOL;
+          echo 'shipping_dummy_gate='.$flag(config('newtic.shipping_dummy_enabled')).PHP_EOL;
+          echo 'legal_checkout_ready='.$flag(\App\Support\LegalReadiness::checkoutReady()).PHP_EOL;
+          echo 'legal_missing_count='.count(\App\Support\LegalReadiness::requiredBeforeLive()).PHP_EOL;
+          echo 'seo_noindex='.$flag(\App\Models\SeoSetting::current()->noindex).PHP_EOL;
+          echo 'mail_active='.$flag(\App\Models\EmailSetting::current()->active()).PHP_EOL;
+          echo 'mail_preview_only='.$flag(\App\Models\EmailSetting::previewEnvironment()).PHP_EOL;
+          $ps=\App\Models\PaytrSetting::query()->first();
+          echo 'paytr_account_enabled='.$flag($ps?->is_enabled).PHP_EOL;
+          echo 'paytr_account_test='.$flag($ps?->test_mode).PHP_EOL;
+          $cs=\App\Models\ShippingProvider::query()->where('provider','kargoentegrator')->first();
+          echo 'shipping_provider_enabled='.$flag($cs?->is_enabled).PHP_EOL;
+          foreach(['scheduler','email_process','shipping_sync','backup','paytr_callback'] as $key){
+            $r=\App\Models\SystemHealthMonitor::query()->where('key',$key)->first();
+            echo 'health_'.$key.'_status='.($r?->status??'unknown').PHP_EOL;
+            echo 'health_'.$key.'_last='.($r?->last_success_at?->utc()?->format('Y-m-d H:i:s')??'none').PHP_EOL;
+          }
+          foreach(['products','categories','orders','shipping_shipments','paytr_payment_attempts'] as $table){
+            if(\Illuminate\Support\Facades\Schema::hasTable($table)){
+              echo 'table_'.$table.'_count='.\Illuminate\Support\Facades\DB::table($table)->count().PHP_EOL;
+            }
+          }
+          echo 'real_orders='.\App\Models\Order::where('is_test',false)->count().PHP_EOL;
+          echo 'test_orders='.\App\Models\Order::where('is_test',true)->count().PHP_EOL;
+          foreach(['uploaded'=>storage_path('app/public'),'assets'=>public_path('assets')] as $name=>$root){
+            $count=0;$sum=0;$large=0;$huge=0;$max=0;$types=[];
+            if(is_dir($root)){
+              try {
+                $it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+                foreach($it as $file){
+                  if(!$file->isFile())continue;
+                  $ext=strtolower(pathinfo($file->getFilename(), PATHINFO_EXTENSION));
+                  if(!in_array($ext,['jpg','jpeg','png','webp','avif','gif','svg'],true))continue;
+                  $size=$file->getSize();
+                  $count++;$sum+=$size;$large+=(int)($size>524288);$huge+=(int)($size>1048576);
+                  $max=max($max,$size);$types[$ext]=($types[$ext]??0)+1;
+                }
+              } catch(Throwable $e) {echo 'images_'.$name.'_partial_scan=yes'.PHP_EOL;}
+            }
+            ksort($types);
+            echo 'images_'.$name.'_count='.$count.PHP_EOL;
+            echo 'images_'.$name.'_total_mb='.round($sum/1048576,2).PHP_EOL;
+            echo 'images_'.$name.'_over512kb='.$large.PHP_EOL;
+            echo 'images_'.$name.'_over1mb='.$huge.PHP_EOL;
+            echo 'images_'.$name.'_max_mb='.round($max/1048576,2).PHP_EOL;
+            echo 'images_'.$name.'_formats='.json_encode($types).PHP_EOL;
+          }
+          $css=0;$js=0;
+          foreach(glob(public_path('build/assets/*'))?:[] as $file){
+            if(!is_file($file))continue;
+            if(str_ends_with($file,'.css'))$css+=filesize($file);
+            if(str_ends_with($file,'.js'))$js+=filesize($file);
+          }
+          echo 'built_css_kb='.round($css/1024,1).PHP_EOL;
+          echo 'built_js_kb='.round($js/1024,1).PHP_EOL;
+          PHP
+            if command -v crontab >/dev/null 2>&1;then echo "ssh_crontab_available=yes";else echo "ssh_crontab_available=no";fi
+            echo "== end=$shop =="
+          done
+          REMOTE
