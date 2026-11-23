@@ -35,6 +35,20 @@ final class NewticUpdaterEndToEndTest extends TestCase
         $previousVersion = is_file($versionFile) ? file_get_contents($versionFile) : null;
         $oldVersion = (string) file_get_contents(base_path('VERSION'));
         $envHash = hash_file('sha256', base_path('.env'));
+        $originalFiles = [];
+        foreach ([
+            'public/build/manifest.json',
+            'public/build/newtic-revision.txt',
+            'public/build/assets/app-smoke.css',
+            'public/build/assets/app-smoke.js',
+            '.newtic-release-revision',
+            'NEWTIC-RELEASE-SHA256SUMS.txt',
+        ] as $relative) {
+            $full = base_path($relative);
+            $originalFiles[$full] = is_file($full) ? file_get_contents($full) : null;
+        }
+        $statePath = $releases->path('state.json');
+        $previousState = is_file($statePath) ? file_get_contents($statePath) : null;
 
         File::ensureDirectoryExists(dirname($mediaMarker));
         file_put_contents($mediaMarker, 'merchant file survives');
@@ -111,6 +125,14 @@ final class NewticUpdaterEndToEndTest extends TestCase
             $this->assertSame($envHash, hash_file('sha256', base_path('.env')));
             $this->assertFalse(app()->isDownForMaintenance());
         } finally {
+            foreach ($originalFiles as $file => $previous) {
+                if ($previous === null) @unlink($file);
+                else file_put_contents($file, $previous);
+            }
+            File::deleteDirectory(public_path('assets/newtic-smoke'));
+            if ($previousState !== null) file_put_contents($statePath, $previousState);
+            else @unlink($statePath);
+            try { DB::statement('DROP TABLE IF EXISTS newtic_upgrade_probe'); } catch (\Throwable) {}
             @unlink($testMarker);
             @unlink($mediaMarker);
             @unlink($zipPath);
