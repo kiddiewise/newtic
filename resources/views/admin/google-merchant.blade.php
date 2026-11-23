@@ -108,7 +108,7 @@
 <section class="admin-panel google-merchant-section">
   <div class="admin-panel-title"><h2>4. Ürünleri Google'a gönder</h2></div>
   @if($isStaging)
-    <p class="seo-notice"><strong>Test ortamı koruması:</strong> Google ürün gönderimi ve XML ürün kaynağı bu geçici alan adında devre dışıdır. Gerçek alan adına taşındığında etkinleştirebilirsin.</p>
+    <p class="seo-notice"><strong>Geçici alan adı koruması:</strong> Google ürün gönderimi ve XML ürün kaynağı bu geçici alan adında devre dışıdır. Gerçek alan adına taşındığında etkinleştirebilirsin.</p>
   @endif
   <p class="admin-description">Yayınlanan ve fotoğrafı bulunan ürünler Google’a aktarılır. İndirim, stok durumu, başlık, açıklama ve ürün görselleri gönderilir. Her gramaj Google’da ayrı ürün olarak kalır.</p>
   <div data-google-merchant-sync

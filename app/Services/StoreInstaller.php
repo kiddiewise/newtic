@@ -53,14 +53,38 @@ final class StoreInstaller
         return true;
     }
 
+    /**
+     * Preview hosts are permitted only with a deliberate setup flag AND every
+     * payment, shipping and marketing safeguard still enabled. This is a
+     * one-time setup exception, not a license to use a preview domain live.
+     */
+    public function installationHostAllowed(string $host): bool
+    {
+        $host = strtolower($host);
+        if (!filter_var('https://'.$host, FILTER_VALIDATE_URL)) return false;
+
+        $temporary = str_ends_with($host, '.hostingersite.com');
+        $allowTemporary = (bool) config('newtic.install_allow_hostinger_temp_domain', false);
+
+        if (!$temporary) return !$allowTemporary;
+        if (!preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.hostingersite\\.com$/D', $host)) {
+            return false;
+        }
+
+        return $allowTemporary
+            && !config('newtic.paytr_card_payments_enabled', false)
+            && !config('newtic.paytr_webhooks_enabled', false)
+            && !config('newtic.shipping_dummy_enabled', false)
+            && !config('newtic.marketing_live_enabled', false);
+    }
+
     /** @return array<string, bool> */
     public function checks(?Request $request = null): array
     {
         $test = app()->environment('testing');
         $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
         $domainIsSafe = $test || (
-            filter_var('https://'.$host, FILTER_VALIDATE_URL)
-            && !str_ends_with(strtolower($host), '.hostingersite.com')
+            $this->installationHostAllowed($host)
             && str_starts_with((string) config('app.url'), 'https://')
         );
 
@@ -87,7 +111,19 @@ final class StoreInstaller
             'Dosya yazma izinleri' => is_writable(storage_path('app'))
                 && is_writable(storage_path('framework'))
                 && is_writable(base_path('bootstrap/cache')),
-            'Test ödeme modu etkin' => (bool) config('newtic.checkout_test_mode', true),
+            // CLI bootstrap verifies all SHA256 checksums once before the
+            // database is touched. The HTTP wizard verifies essentials only
+            // to avoid hashing thousands of files on every unauthenticated GET.
+            'Uygulama ve ön yüz dosyaları' => $test || (
+                is_file(base_path('vendor/autoload.php'))
+                && is_file(public_path('build/manifest.json'))
+                && is_file(public_path('build/newtic-revision.txt'))
+                && is_file(public_path('assets/branding/newtic-logo.webp'))
+            ),
+            'Toplu pazarlama gönderimi kapalı' => !config('newtic.marketing_live_enabled', false),
+            'Ödeme ve kargo açılışı güvenli' => !config('newtic.paytr_card_payments_enabled', false)
+                && !config('newtic.paytr_webhooks_enabled', false)
+                && !config('newtic.shipping_dummy_enabled', false),
             'Gerçek ödeme ve kargo kapalı' => !config('newtic.paytr_card_payments_enabled', false)
                 && !config('newtic.paytr_webhooks_enabled', false)
                 && !config('newtic.shipping_dummy_enabled', false),

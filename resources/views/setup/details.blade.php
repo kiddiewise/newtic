@@ -27,7 +27,7 @@
     </div>
     <label class="check-label">
       <input type="checkbox" name="accept_safe_mode" value="1" required>
-      <span>Yeni mağazanın ilk etapta test ödeme modunda ve arama motorlarına kapalı olacağını kabul ediyorum. Gerçek ödeme ve kargoyu ayrıca test edeceğim.</span>
+      <span>Mağazanın ilk açılışta arama motorlarına kapalı olacağını ve ödeme ile kargo hizmetlerini kendi firma bilgilerimle yapılandırıp doğruladıktan sonra etkinleştireceğimi kabul ediyorum.</span>
     </label>
     <div class="actions">
       <a href="{{ route('install.checks') }}" style="color:#092037">Önceki adıma dön</a>

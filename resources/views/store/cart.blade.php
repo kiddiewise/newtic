@@ -144,7 +144,7 @@
         <h2 id="cart-summary-title">Sepet özeti</h2>
         @include('store.partials.cart-summary-details', ['cart' => $cart])
         <a class="cart-checkout-action" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
-        <p class="cart-checkout-note">Test ortamında ödeme alınmaz; deneme siparişi oluşturulabilir.</p>
+        <p class="cart-checkout-note">Ödeme seçenekleri, mağaza tarafından etkinleştirildiğinde kullanılabilir.</p>
       </aside>
     </div>
   @endif
@@ -160,7 +160,7 @@
     </div>
     <div class="cart-sheet-scroll">
       @include('store.partials.cart-summary-details', ['cart' => $cart])
-      <p class="cart-checkout-note">Teslimat adresini girerek deneme siparişi oluşturabilirsin.</p>
+      <p class="cart-checkout-note">Teslimat adresini ve ödeme yöntemini kontrol ederek siparişini tamamlayabilirsin.</p>
     </div>
     <div class="cart-sheet-footer">
       <a class="cart-sheet-continue" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>

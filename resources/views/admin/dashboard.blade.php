@@ -9,8 +9,11 @@
   </div>
   <a href="{{ route('home') }}" class="admin-secondary" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link" /> Mağazayı görüntüle</a>
 </div>
-@if(config('newtic.checkout_test_mode', true))
-  <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Test ortamı:</strong> Gerçek tahsilat yapılmıyor. Ciro yalnızca doğrulanmış ve test dışı siparişlerden hesaplanır; deneme siparişleri sipariş sayaçlarına dahildir.</span></div>
+@if(!\App\Models\BankAccount::query()->where('is_active', true)->exists() && !\App\Support\PaytrTestAccess::available())
+  <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Ödeme kurulumu gerekiyor:</strong> Henüz etkin bir ödeme yöntemi yok. Havale/EFT için banka hesabı; kart için PAYTR bağlantısı ve sağlayıcı onayı gerekir. <a href="{{ route('admin.bank-accounts.index') }}">Banka hesapları</a> · <a href="{{ route('admin.paytr-settings.edit') }}">PAYTR ayarları</a></span></div>
+@endif
+@if(\App\Support\LegalReadiness::requiredBeforeLive() !== [])
+  <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Mağaza yayına hazırlık:</strong> Satıcı bilgileri ve zorunlu sözleşmeler tamamlanmadan gerçek sipariş açılamaz. <a href="{{ route('admin.legal.index') }}">Yasal sayfaları tamamla</a></span></div>
 @endif
 <div class="admin-kpi-grid">
   <a href="{{ route('admin.orders.index') }}" class="admin-kpi">
@@ -23,7 +26,7 @@
     <span class="admin-kpi-icon is-purple"><x-admin-icon name="chart" /></span>
     <span class="admin-kpi-label">Doğrulanmış ciro</span>
     <strong class="admin-kpi-money">{{ number_format($metrics['verified_revenue_cents']/100, 2, ',', '.') }} ₺</strong>
-    <small>Test dışı, banka onaylı</small>
+    <small>Yalnızca doğrulanmış satışlar</small>
   </div>
   <a href="{{ route('admin.orders.index', ['status' => 'pending_payment']) }}" class="admin-kpi">
     <span class="admin-kpi-icon is-orange"><x-admin-icon name="clock" /></span>
@@ -80,7 +83,7 @@
         <tbody>
         @forelse($recentOrders as $order)
           <tr>
-            <td><a href="{{ route('admin.orders.show', $order) }}" class="admin-table-link">{{ $order->order_number }}</a> @if($order->is_test)<small class="admin-test-tag">TEST</small>@endif</td>
+            <td><a href="{{ route('admin.orders.show', $order) }}" class="admin-table-link">{{ $order->order_number }}</a> @if($order->is_test)<small class="admin-test-tag">Tahsilatsız kayıt</small>@endif</td>
             <td>{{ $order->customer_name }}</td>
             <td>{{ $order->created_at->format('d.m.Y H:i') }}</td>
             <td><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></td>
@@ -130,7 +133,7 @@
         <div class="admin-distribution-track"><span style="background:{{ $color }};width:{{ ($count / $totalStatus)*100 }}%"></span></div>
       </div>
     @endforeach
-    <small class="admin-description">Gerçek veriler ve test siparişleri birlikte gösterilir.</small>
+    <small class="admin-description">Sipariş kayıtları ile doğrulanmış satışlar ayrı hesaplanır.</small>
   </section>
 </div>
 @endsection

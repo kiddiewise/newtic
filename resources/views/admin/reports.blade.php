@@ -9,9 +9,9 @@
   @endforeach
   </nav>
 </div>
-<div class="admin-dashboard-notice"><x-admin-icon name="info" /><span>Test siparişleri ciroya dahil değildir. Tutarlar yalnızca banka doğrulaması yapılmış, test dışı siparişlerden hesaplanır.</span></div>
+<div class="admin-dashboard-notice"><x-admin-icon name="info" /><span>Doğrulanmamış veya tahsilatsız işlemler ciroya dahil değildir. Tutarlar yalnızca onaylanmış satışlardan hesaplanır.</span></div>
 <div class="admin-kpi-grid">
-  <div class="admin-kpi"><span class="admin-kpi-icon is-blue"><x-admin-icon name="bag" /></span><span class="admin-kpi-label">Toplam sipariş</span><strong>{{ $totalOrders }}</strong><small>{{ $testOrders }} deneme siparişi dahil</small></div>
+  <div class="admin-kpi"><span class="admin-kpi-icon is-blue"><x-admin-icon name="bag" /></span><span class="admin-kpi-label">Toplam sipariş</span><strong>{{ $totalOrders }}</strong><small>{{ $testOrders }} tahsilatsız kayıt dahil</small></div>
   <div class="admin-kpi"><span class="admin-kpi-icon is-mint"><x-admin-icon name="chart" /></span><span class="admin-kpi-label">Doğrulanmış ciro</span><strong class="admin-kpi-money">{{ number_format($paidCents/100,2,',','.') }} ₺</strong><small>{{ $paidCount }} gerçek ödeme onaylı sipariş</small></div>
   <div class="admin-kpi"><span class="admin-kpi-icon is-orange"><x-admin-icon name="clock" /></span><span class="admin-kpi-label">Ödeme bekleyen</span><strong>{{ $paymentPending }}</strong><small>Bu dönemin siparişleri</small></div>
   <div class="admin-kpi"><span class="admin-kpi-icon is-purple"><x-admin-icon name="package" /></span><span class="admin-kpi-label">Ortalama onaylı sepet</span><strong class="admin-kpi-money">{{ number_format($averageCents/100,2,',','.') }} ₺</strong><small>Gerçek banka onaylı siparişlerde</small></div>

@@ -1,4 +1,10 @@
-# NEWTIC – Her müşteriye bağımsız Hostinger kurulumu (Model A)
+# NEWTIC – Her müşteriye bağımsız kurulum (Model A)
+
+**Güncel tek paket kurulum yolunun ayrıntılı ve sağlayıcıdan bağımsız
+rehberi: `docs/NEWTIC_INSTALLATION_MANUAL_TR.md`.** Aşağıdaki Git/Hostinger
+komutları, kaynaktan manuel kurulum yapmak isteyenler için alternatif olarak
+korunur. Resmi `newtic-customer-install.zip` paketinin içinde Composer
+bağımlılıkları ve derlenmiş CSS/JS zaten hazırdır; canlı ödeme/kargo kapalıdır.
 
 Bu doküman tek bir müşteriye değil, herhangi bir yeni domain için ilk kuruluma
 uygulanır. Polaris, Sinay veya başka mağazanın kullanıcıları ve ürünleri asla
@@ -49,7 +55,7 @@ Her müşterinin kendi ayarları:
     QUEUE_CONNECTION=database
     MAIL_MAILER=log
 
-    NEWTIC_CHECKOUT_TEST_MODE=true
+    NEWTIC_CHECKOUT_TEST_MODE=false
     NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
     NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
     NEWTIC_SHIPPING_DUMMY_ENABLED=false
@@ -63,7 +69,12 @@ loglara veya sohbete yapıştırmayın.
 
     bash scripts/install-production.sh --check
 
-Bu komut .env, PHP sürümü ve gerekli ayarları değiştirmeden denetler.
+Bu komut yalnızca **statik** PHP/.env kontrollerini yapar. MySQL bağlantısını,
+şemanın boşluğunu, DNS yönlendirmesini, SSL sertifikasını veya webroot'u tek başına
+doğrulamaz. `--install` gerçek veritabanına bağlanır ve herhangi bir tablo/görünüm
+tespit ederse migration işlemine **başlamadan** durur. Kısmi kurulum veya mevcut
+mağaza DB'si için yeniden kurulum yapılmaz; önce verilerin yedeği alınarak
+durum incelenir.
 İlk gerçek veritabanı tabloları --install sırasında oluşturulur.
 
 ## 3. Vite CSS/JS kurulum: iki seçenek
@@ -123,7 +134,11 @@ de kontrol edip dosyayı siler.
 
 Başarılı sonuç: NEWTIC_PUBLIC_ASSETS_OK: https://MUSTERI-DOMAINI
 
-Bu sonuç olmadan ilk kurulumu tamam kabul etmeyin.
+Bu sonuç olmadan ilk kurulumu tamam kabul etmeyin. Ek güvenlik kontrolü
+`/.env`, `/.env.example`, `/composer.json`, `/artisan`,
+`/vendor/autoload.php` ve `/storage/logs/laravel.log` adreslerinin
+HTTP 403, 404 veya 410 döndürdüğünü de doğrular. Bu dosyalar internetten
+sunuluyorsa kurulum kesinlikle tamam değildir.
 
 ## 6. Görsel ilk kurulum sihirbazı
 

@@ -68,7 +68,7 @@ class OrderTrackingExperienceTest extends TestCase
             ->assertSee('Ödeme bekleniyor')
             ->assertSee('Siparişinizin yolculuğu')
             ->assertSee('Ödeme bilgilerine git')
-            ->assertSee('Gerçek havale/EFT göndermeyin');
+            ->assertSee('Banka hesabına para göndermeyin.');
     }
 
     public function test_pending_bank_notice_has_review_hero_and_never_claims_payment_is_approved(): void

@@ -27,7 +27,7 @@
     <p class="order-stage-number">Sipariş numaran: <strong>{{ $order->order_number }}</strong></p>
     <span class="checkout-status order-stage-status">{{ $tracking['badge'] }}</span>
     @if($order->is_test)
-      <p class="checkout-testing-note"><strong>Test siparişi:</strong> Bu sipariş yalnızca deneme amaçlıdır. PAYTR test ödemelerinde gerçek kart tahsilatı yapılmaz; ödeme yalnızca sunucu bildirimiyle doğrulanır.</p>
+      <p class="checkout-testing-note"><strong>Gerçek tahsilat yapılmadı.</strong> Bu işlem ödeme aktivasyonu öncesinde oluşturulmuştur; ödeme durumu yalnızca doğrulanmış sunucu bildirimiyle güncellenir.</p>
     @endif
     @guest
       <div class="payment-guest-link">
@@ -75,7 +75,7 @@
       <span class="payment-status-pill {{ in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true) ? 'is-verified' : '' }} {{ $order->status === 'cancelled' ? 'is-cancelled' : '' }}">{{ $tracking['payment'] }}</span>
     </div>
     @if($order->is_test)
-      <p class="checkout-testing-note"><strong>TEST SİPARİŞİ:</strong> Bu ekran yalnızca ödeme akışını denemek içindir. Gerçek havale/EFT göndermeyin. “Ödeme Yaptım” işlemi test bildirimi oluşturur.</p>
+      <p class="checkout-testing-note"><strong>Gerçek ödeme alınmıyor.</strong> Banka hesabına para göndermeyin. Ödeme bildirimi gerçek banka tahsilatı anlamına gelmez.</p>
     @endif
     @if($order->status === 'pending_payment')
       @if($latestPaymentNotification?->status !== 'pending')
@@ -129,7 +129,7 @@
             <label class="checkout-field payment-note-label"><span>Ödeme yapan kişi / not (isteğe bağlı)</span>
               <input name="customer_note" maxlength="500" value="{{ old('customer_note') }}" placeholder="Örn. Havale farklı bir isimden yapıldı">
             </label>
-            <button type="submit" class="checkout-action payment-notify-button">{{ $order->is_test ? 'Ödeme Yaptım (Test Bildirimi)' : 'Ödeme Yaptım – Bildir' }}</button>
+            <button type="submit" class="checkout-action payment-notify-button">Ödeme Yaptım – Bildir</button>
             <small class="payment-verify-note">Bildiriminiz ödeme onayı değildir. Sipariş, banka hareketleri doğrulanınca hazırlanmaya alınır.</small>
         </form>
       @endif
@@ -225,7 +225,7 @@
     <p>{{ $order->customer_name }} · {{ $order->phone }}</p><p>{{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</p>
     @if($order->invoice_type === 'corporate')<p>Kurumsal fatura: {{ $order->company_title }}</p>@endif
     @if($order->order_note)<p><strong>Sipariş notu:</strong> {{ $order->order_note }}</p>@endif
-    <div class="checkout-payment-option"><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart (Test)' : 'Havale / EFT' }} · {{ $tracking['payment'] }}</strong></div>
+    <div class="checkout-payment-option"><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart' : 'Havale / EFT' }} · {{ $tracking['payment'] }}</strong></div>
     <p class="checkout-muted">{{ $order->status === 'pending_payment' ? ($order->payment_method === 'paytr' ? 'PAYTR bildirimi tamamlanana kadar ödeme onaylanmış sayılmaz.' : 'Banka kontrolü tamamlanana kadar ödeme onaylanmış sayılmaz.') : 'Güncel ödeme ve sipariş durumunu yukarıdaki takip alanından görebilirsiniz.' }}</p>
   </div>
   @if($order->status === 'pending_payment')

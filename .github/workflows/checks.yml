@@ -70,6 +70,8 @@ jobs:
       - name: Verify portable installer and webroot scripts
         run: |
           bash -n scripts/install-production.sh
+          bash -n scripts/build-customer-release.sh
+          bash -n scripts/quick-install.sh
           bash -n scripts/prepare-hostinger-webroot.sh
           bash -n scripts/verify-public-assets.sh
           bash -n scripts/deploy-staging.sh
@@ -85,7 +87,40 @@ jobs:
           sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           printf '\nDB_DATABASE=newtic_separate_ci\nDB_USERNAME=newtic_ci\nDB_PASSWORD=fake-ci-private-password\n' >> .env
+          # Safe-mode values are provided once in .env.example; duplicates are forbidden.
           bash scripts/install-production.sh --check
+          # Preview hostname is blocked by default and allowed only in test
+          # mode with an explicit, unique opt-in.
+          sed -i 's|^APP_URL=.*|APP_URL=https://customer-ci.hostingersite.com|' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary domain accepted without explicit opt-in" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
+          bash scripts/install-production.sh --check
+          bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=false/NEWTIC_CHECKOUT_TEST_MODE=true/' .env
+          bash scripts/install-production.sh --check
+          sed -i 's/^NEWTIC_CHECKOUT_TEST_MODE=true/NEWTIC_CHECKOUT_TEST_MODE=false/' .env
+          sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary domain accepted with live payment enabled" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=true/NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false/' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://independent.example|' .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: temporary-domain override accepted on a real domain" >&2
+            exit 1
+          fi
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/' .env
+          bash scripts/install-production.sh --check
+          # Repeated payment flag lines are dangerous: reject ambiguous .env.
+          printf '\nNEWTIC_PAYTR_WEBHOOKS_ENABLED=true\n' >> .env
+          if bash scripts/install-production.sh --check; then
+            echo "ERROR: conflicting duplicate environment keys accepted" >&2
+            exit 1
+          fi
           test -f .env.newtic-ci-backup
           mv -f .env.newtic-ci-backup .env
           trap - EXIT
@@ -143,11 +178,7 @@ jobs:
           DB_DATABASE=newtic_fresh_ci
           DB_USERNAME=newtic_install_ci
           DB_PASSWORD=newtic_ci_temporary_only
-          NEWTIC_CHECKOUT_TEST_MODE=true
-          NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED=false
-          NEWTIC_PAYTR_WEBHOOKS_ENABLED=false
-          NEWTIC_SHIPPING_DUMMY_ENABLED=false
-          NEWTIC_MARKETING_SEND_ENABLED=false
+          # .env.example uses normal checkout with all live integrations disabled.
           CONFIG
           mkdir -p "$RUNNER_TEMP/newtic-noexec-bin"
           PHP_REAL="$(command -v php)"
@@ -161,6 +192,11 @@ jobs:
           php -r 'if (function_exists("exec")) exit(1);'
           bash scripts/install-production.sh --check
           bash scripts/install-production.sh --install --assets-bundle "$PWD/newtic-smoke-assets.tar.gz"
+          # After initial migrations, a new first-install must be rejected.
+          if php artisan newtic:check-fresh-db; then
+            echo "ERROR: existing database accepted as an empty installation target" >&2
+            exit 1
+          fi
           test -L public/storage
           php artisan migrate:status | grep -F 'create_newtic_installations_table'
           WEBROOT="$RUNNER_TEMP/newtic-fresh-webroot"
@@ -190,30 +226,63 @@ jobs:
           path: newtic-install-assets.tar.gz
           if-no-files-found: error
           retention-days: 14
-      - name: Package complete NEWTIC first-install release (main branch only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Package verified customer-ready standalone ZIP (source, vendor, Vite, docs)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
         run: |
           set -euo pipefail
-          ROOT="$RUNNER_TEMP/newtic-package/NEWTIC"
+          # All tests have finished; production-only vendor remains portable.
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+          composer check-platform-reqs --no-dev --no-interaction
+          bash scripts/build-customer-release.sh --output "$GITHUB_WORKSPACE/newtic-customer-install.zip"
+          unzip -tq newtic-customer-install.zip
+          unzip -Z1 newtic-customer-install.zip | grep -Fxq 'NEWTIC/NEWTIC-RELEASE-SHA256SUMS.txt'
+          if unzip -Z1 newtic-customer-install.zip | grep -Eq '(^|/)(\.env|\.git|\.github|tests|node_modules)/'; then
+            echo "ERROR: private/development content leaked into customer package" >&2
+            exit 1
+          fi
+          ROOT="$RUNNER_TEMP/newtic-customer-package-smoke"
           mkdir -p "$ROOT"
-          git archive --format=tar HEAD | tar -xf - -C "$ROOT"
-          cp -a public/build "$ROOT/public/build"
-          printf '%s\n' "$GITHUB_SHA" > "$ROOT/.newtic-release-revision"
-          test -s "$ROOT/public/assets/branding/newtic-logo.webp"
-          test -s "$ROOT/public/assets/branding/newtic-mark.webp"
-          test "$(cat "$ROOT/public/build/newtic-revision.txt")" = "$GITHUB_SHA"
-          (cd "$RUNNER_TEMP/newtic-package" && zip -qr "$GITHUB_WORKSPACE/newtic-complete-install.zip" NEWTIC)
-          unzip -p newtic-complete-install.zip NEWTIC/.newtic-release-revision | grep -Fxq "$GITHUB_SHA"
-          unzip -p newtic-complete-install.zip NEWTIC/public/assets/branding/newtic-logo.webp | cmp - public/assets/branding/newtic-logo.webp
-          unzip -p newtic-complete-install.zip NEWTIC/public/assets/branding/newtic-mark.webp | cmp - public/assets/branding/newtic-mark.webp
-      - name: Upload complete NEWTIC first-install release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          unzip -q newtic-customer-install.zip -d "$ROOT"
+          php "$ROOT/NEWTIC/scripts/verify-customer-release.php" "$ROOT/NEWTIC"
+          test ! -e "$ROOT/NEWTIC/.env"
+          test -s "$ROOT/NEWTIC/vendor/autoload.php"
+          test -f "$ROOT/NEWTIC/scripts/quick-install.sh"
+          test -s "$ROOT/NEWTIC/public/build/manifest.json"
+          # Check that package-only mode needs no server-side Composer/npm.
+          cd "$ROOT/NEWTIC"
+          cp .env.example .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          sed -i 's|^APP_URL=.*|APP_URL=https://package-merchant.hostingersite.com|' .env
+          sed -i 's/^NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=false/NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true/' .env
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          printf '\nDB_DATABASE=newtic_fresh_ci\nDB_USERNAME=newtic_install_ci\nDB_PASSWORD=newtic_ci_temporary_only\n' >> .env
+          bash scripts/install-production.sh --check
+          # Create a second pristine schema: prove the extracted ZIP installs
+          # to real MySQL without invoking Composer or npm on the server.
+          php <<'PHP'
+          <?php
+          $db = new PDO('mysql:host=127.0.0.1;port=3306', 'root', 'newtic_ci_root_only');
+          $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $db->exec('CREATE DATABASE newtic_package_ci CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+          $db->exec("GRANT ALL PRIVILEGES ON newtic_package_ci.* TO 'newtic_install_ci'@'%'");
+          PHP
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=newtic_package_ci/' .env
+          bash scripts/install-production.sh --install
+          php artisan migrate:status | grep -F 'create_newtic_installations_table'
+          php artisan newtic:setup-token --private-file
+          test -s storage/app/private/newtic-setup/mobile-install-code.txt
+          echo "PASS: immutable standalone ZIP, real blank MySQL installation, no Composer/npm required, and private setup token."
+      - name: Upload complete NEWTIC customer install ZIP
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
         uses: actions/upload-artifact@v4
         with:
-          name: newtic-complete-install
-          path: newtic-complete-install.zip
+          name: newtic-customer-complete-install
+          path: |
+            newtic-customer-install.zip
+            newtic-customer-install.zip.sha256
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
       - name: Package verified frontend for staging
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true'
         run: |
@@ -300,3 +369,29 @@ jobs:
           grep -Fq '.admin-app-shell' deployed-admin.css
           grep -Fq '.admin-icon' deployed-admin.css
           echo "Staging storefront, admin login and published admin stylesheet verified"
+
+  publish_customer_candidate:
+    name: Publish permanent, traceable customer installation candidate
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/portable-install-readiness-audit' || github.ref == 'refs/heads/feat/merchant-ready-one-step-setup-20261123')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: newtic-customer-complete-install
+      - name: Verify release checksum and publish a GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          sha256sum -c newtic-customer-install.zip.sha256
+          tag="newtic-customer-rc-${GITHUB_SHA:0:12}"
+          test ! -e .env
+          gh release create "$tag" \
+            newtic-customer-install.zip newtic-customer-install.zip.sha256 \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "NEWTIC | Portable customer installation candidate ${GITHUB_SHA:0:12}" \
+            --notes "One ZIP: application, tested production Composer dependencies, compiled Vite assets, CLI/bootstrap, web installer and Turkish installation guide. Fresh stores default to real-order configuration with payment and shipping providers OFF and SEO noindex. Bank transfers are shown only when a bank account and legal sale pages are ready; PAYTR and real carrier shipments remain unavailable until separately approved. Source SHA: $GITHUB_SHA. Always confirm the published SHA256 before extraction. No customer records or credentials included."

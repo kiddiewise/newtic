@@ -234,7 +234,7 @@ class ProductReviewsExperienceTest extends TestCase
         $review = ProductReview::firstOrFail();
         $this->assertTrue($review->is_test);
         $this->actingAs($this->admin());
-        $this->get(route('admin.reviews.index'))->assertOk()->assertSee('TEST YORUMU');
+        $this->get(route('admin.reviews.index'))->assertOk()->assertSee('ÖNİZLEME KAYDI');
         $this->post(route('admin.reviews.moderate', $review), ['decision' => 'approved'])
             ->assertSessionHasNoErrors();
 

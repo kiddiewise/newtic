@@ -143,7 +143,7 @@ class BankTransferPaymentFlowTest extends TestCase
             ->assertSee('Banka hesabını seç')
             ->assertSee('data-copy-value="'.$bank->iban.'"', false)
             ->assertSee('data-copy-value="'.$order->order_number.'"', false)
-            ->assertSee('Ödeme Yaptım (Test Bildirimi)');
+            ->assertSee('Ödeme Yaptım – Bildir');
 
         $this->post(route('checkout.payment-notify', $order), [
             'bank_account_id' => $bank->id,
@@ -177,9 +177,9 @@ class BankTransferPaymentFlowTest extends TestCase
         $notice = PaymentNotification::firstOrFail();
         $this->actingAs($this->administrator());
         $this->get(route('admin.orders.show', $order))->assertOk()
-            ->assertSee('Gerçek banka transferi yapılmadığını biliyorum.');
+            ->assertSee('Bu kayıt gerçek bir banka tahsilatı içermiyor.');
         $this->get(route('admin.payment-notifications.index'))->assertOk()
-            ->assertSee('Gerçek banka transferi yapılmadığını biliyorum.');
+            ->assertSee('Bu işlemin gerçek banka tahsilatı olmadığını biliyorum.');
         $this->patch(route('admin.orders.update', $order), [
             'status' => 'preparing',
         ])->assertSessionHasErrors('status');
@@ -280,7 +280,7 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->get(route('checkout.success', $order))->assertNotFound();
         $this->get($link)->assertOk()
             ->assertSee('Sipariş bağlantını sakla')
-            ->assertSee('Ödeme Yaptım (Test Bildirimi)');
+            ->assertSee('Ödeme Yaptım – Bildir');
 
         $this->post($notify, ['bank_account_id' => $bank->id])
             ->assertRedirect()->assertSessionHasNoErrors();

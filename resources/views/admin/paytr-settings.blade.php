@@ -19,18 +19,18 @@
     <div>
       <h2>{{ $configured ? 'Mağaza bilgileri kayıtlı' : 'PAYTR bağlantı bilgileri bekleniyor' }}</h2>
       <p>{{ $configured
-          ? 'Kimlik bilgileri kayıtlı. Test ödeme seçeneği açılarak yalnızca sandbox işlemleri denenebilir.'
+          ? 'Kimlik bilgileri kaydedildi. Sağlayıcı onayı ve aktivasyon tamamlanmadan kartla ödeme açılmaz.'
           : 'İlk adımda Mağaza No, Mağaza Parola ve Mağaza Gizli Anahtar bilgilerini kaydedin.' }}</p>
     </div>
-    <span class="paytr-setup-pill">{{ $testEnabled ? 'Test modu açık' : ($configured ? 'Kayıtlı · Doğrulanmadı' : 'Kurulum gerekli') }}</span>
+    <span class="paytr-setup-pill">{{ $testEnabled ? 'Bağlantı doğrulaması açık' : ($configured ? 'Kayıtlı · Aktivasyon bekleniyor' : 'Kurulum gerekli') }}</span>
   </div>
 </section>
 
-<section class="admin-panel paytr-test-control" aria-label="PAYTR test ödemesini etkinleştir">
+<section class="admin-panel paytr-test-control" aria-label="PAYTR ödeme aktivasyonu">
   <div>
-    <span class="paytr-step">02 / TEST ÖDEME DURUMU</span>
-    <h2>PAYTR test ödemesi</h2>
-    <p>{{ $testEnabled ? 'Kartla ödeme test mağazasında kullanılabilir. Müşteri yalnızca PAYTR test formuna yönlendirilir.' : 'Test ödemesini açmak için kayıtlı bilgilerinizle sandbox modunu etkinleştirin.' }}</p>
+    <span class="paytr-step">02 / ÖDEME AKTİVASYONU</span>
+    <h2>Ödeme aktivasyonu</h2>
+    <p>{{ $testEnabled ? 'Bağlantı kontrolü açık. Gerçek kart tahsilatı yapılmaz; sağlayıcı onayı bekleniyor.' : 'Kartla ödeme için mağaza kimlik bilgilerini kaydedin ve sağlayıcı aktivasyonunu tamamlayın.' }}</p>
   </div>
   @if($testAllowed && $configured)
     <form method="POST" action="{{ route('admin.paytr-settings.test-mode') }}">
@@ -38,16 +38,16 @@
       <input type="hidden" name="enabled" value="{{ $testEnabled ? 0 : 1 }}">
       <button class="{{ $testEnabled ? 'admin-secondary' : 'admin-primary' }}" type="submit">
         <x-admin-icon name="{{ $testEnabled ? 'close' : 'check' }}" />
-        {{ $testEnabled ? 'Test ödemesini kapat' : 'Test ödemesini etkinleştir' }}
+        {{ $testEnabled ? 'Bağlantı doğrulamasını kapat' : 'Bağlantı doğrulamasını aç' }}
       </button>
     </form>
   @else
-    <div class="paytr-test-disabled">Önce mağaza bilgilerini kaydedin. Test modu yalnızca yetkili staging alan adında açılabilir.</div>
+    <div class="paytr-test-disabled">Ödeme yöntemi henüz etkin değil. Bilgileri tamamlayın ve sağlayıcı onayını bekleyin.</div>
   @endif
   <div class="paytr-callback-box">
     <strong>PAYTR Bildirim URL</strong>
     <code>{{ route('checkout.paytr.callback') }}</code>
-    <small>PAYTR Mağaza Paneli → Destek &amp; Kurulum → Ayarlar bölümüne bu HTTPS bildirim adresini tanımlayın. Bu olmadan test ödemeniz tamamlanmış sayılmaz.</small>
+    <small>PAYTR Mağaza Paneli → Destek &amp; Kurulum → Ayarlar bölümüne bu HTTPS bildirim adresini tanımlayın. Bu adres doğrulanmadan ödeme aktivasyonu tamamlanmış sayılmaz.</small>
   </div>
 </section>
 

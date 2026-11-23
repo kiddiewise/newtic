@@ -38,12 +38,12 @@
 </section>
 @if($campaign->exists)
 <section class="admin-panel" style="padding:22px;margin-bottom:18px">
- <div class="admin-panel-title"><h2>Önizleme ve test</h2></div>
- <p class="admin-description">Gerçek kampanya başlamadan önce gelen kutunda tasarımı incele. Test e-postasında gerçek alıcıya gönderim veya abonelikten çıkış işlemi yapılmaz.</p>
+ <div class="admin-panel-title"><h2>Önizleme ve gönderim doğrulaması</h2></div>
+ <p class="admin-description">Gerçek kampanya başlamadan önce gelen kutunda tasarımı incele. Önizleme iletisinde gerçek alıcıya gönderim veya abonelikten çıkış işlemi yapılmaz.</p>
  <div style="display:flex;flex-wrap:wrap;gap:10px">
  <a class="admin-secondary" href="{{ route('admin.marketing.preview',$campaign) }}" target="_blank" rel="noopener">E-postayı önizle</a>
  <form method="POST" action="{{ route('admin.marketing.test',$campaign) }}">@csrf
- <button type="submit" class="admin-secondary">Kendime test gönder</button></form>
+ <button type="submit" class="admin-secondary">Kendime doğrulama gönder</button></form>
  </div>
 </section>
 <section class="admin-panel" style="padding:22px;margin-bottom:18px">
@@ -77,7 +77,7 @@
    <thead><tr><th style="padding:10px">Alıcı</th><th>Durum</th><th>Deneme</th><th>Hata sınıfı</th></tr></thead>
    <tbody>@forelse($recipients as $r)
     <tr style="border-top:1px solid #e6eaf0">
-     <td style="padding:10px">{{ \App\Models\EmailSetting::previewEnvironment() ? 'Test alıcısı' : $r->contact?->email }}</td>
+     <td style="padding:10px">{{ \App\Models\EmailSetting::previewEnvironment() ? 'Doğrulama alıcısı' : $r->contact?->email }}</td>
      <td>{{ $r->status }}</td><td>{{ $r->attempts }}</td><td>{{ $r->last_error }}</td>
     </tr>
    @empty <tr><td colspan="4" style="padding:12px">Henüz gönderim planlanmadı.</td></tr>@endforelse</tbody>

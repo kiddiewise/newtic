@@ -40,9 +40,24 @@ for name in newtic-logo.webp newtic-mark.webp; do
   test -s "public/assets/branding/$name" || fail "Missing standard NEWTIC WebP logo: $name"
 done
 command -v php >/dev/null 2>&1 || fail "PHP CLI 8.3+ is required."
-command -v composer >/dev/null 2>&1 || fail "Composer is required."
-composer validate --strict --no-check-publish >/dev/null ||
-  fail "composer.json and composer.lock are inconsistent."
+# Official immutable customer ZIP includes production Composer dependencies,
+# so the destination hosting does not need Composer or Node/npm.
+# Source checkouts still use the normal lockfile-driven Composer installation.
+BUNDLED_RELEASE=false
+if [[ -f NEWTIC-RELEASE-SHA256SUMS.txt ]]; then
+  test -f scripts/verify-customer-release.php ||
+    fail "Release integrity verifier is missing."
+  php scripts/verify-customer-release.php "$APP" ||
+    fail "NEWTIC package failed checksum verification. Obtain a fresh official ZIP."
+  test -f vendor/autoload.php ||
+    fail "Standalone release has no production vendor/autoload.php."
+  BUNDLED_RELEASE=true
+else
+  command -v composer >/dev/null 2>&1 ||
+    fail "Composer is required when installing from Git source. Use the verified standalone customer ZIP instead."
+  composer validate --strict --no-check-publish >/dev/null ||
+    fail "composer.json and composer.lock are inconsistent."
+fi
 
 php -r 'if (PHP_VERSION_ID < 80300) {fwrite(STDERR, "PHP 8.3+ required\n"); exit(1);}
 foreach (["pdo_mysql", "mbstring", "openssl", "fileinfo", "xml", "ctype", "tokenizer"] as $e) {
@@ -62,6 +77,19 @@ env_value() {
   printf '%s' "$value"
 }
 
+# Laravel dotenv and shell extraction can interpret duplicate keys
+# differently. Refuse an ambiguous merchant configuration before any write.
+for name in \
+  APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL \
+  DB_CONNECTION DB_HOST DB_PORT DB_SOCKET DB_DATABASE DB_USERNAME DB_PASSWORD \
+  NEWTIC_CHECKOUT_TEST_MODE NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED \
+  NEWTIC_PAYTR_WEBHOOKS_ENABLED NEWTIC_SHIPPING_DUMMY_ENABLED \
+  NEWTIC_MARKETING_SEND_ENABLED NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN; do
+  occurrences="$(grep -c "^${name}=" .env || true)"
+  [[ "$occurrences" -le 1 ]] ||
+    fail "Duplicate .env key: $name. Remove ambiguous duplicate lines before first installation."
+done
+
 [[ "$(env_value APP_ENV)" == "production" ]] ||
   fail "APP_ENV must be production."
 [[ "$(env_value APP_DEBUG)" == "false" ]] ||
@@ -69,8 +97,26 @@ env_value() {
 SITE_URL="$(env_value APP_URL)"
 [[ "$SITE_URL" =~ ^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]{2,5})?/?$ ]] ||
   fail "APP_URL must be an HTTPS domain, e.g. https://sinaydesign.com."
-[[ "$SITE_URL" != *"hostingersite.com"* ]] ||
-  fail "Use an owned domain, not a Hostinger preview domain for a production install."
+# Hostinger temporary domain use is an *explicit first-install-only* exception.
+# Never switch this flag on for normal customer domains; no live integrations
+# are allowed when it is on. The strict safe-mode flags are checked below.
+CHECKOUT_MODE="$(env_value NEWTIC_CHECKOUT_TEST_MODE)"
+[[ "$CHECKOUT_MODE" == "true" || "$CHECKOUT_MODE" == "false" ]] ||
+  fail "NEWTIC_CHECKOUT_TEST_MODE must be true or false."
+SITE_HOST="${SITE_URL#https://}"
+SITE_HOST="${SITE_HOST%%[:/]*}"
+TEMP_FLAG="$(env_value NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN)"
+if [[ "$SITE_HOST" == *.hostingersite.com ]]; then
+  [[ "$SITE_HOST" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?\.hostingersite\.com$ ]] ||
+    fail "Hostinger test hostname is malformed."
+  [[ "$TEMP_FLAG" == "true" ]] ||
+    fail "Hostinger temporary domains require explicit NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN=true and all safe-mode flags."
+  note "Hostinger temporary domain: secure initial installation authorized; payment and shipping remain disabled."
+elif [[ "$TEMP_FLAG" == "true" ]]; then
+  fail "Disable NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN for real customer domains."
+elif [[ "$TEMP_FLAG" != "false" && -n "$TEMP_FLAG" ]]; then
+  fail "NEWTIC_INSTALL_ALLOW_HOSTINGER_TEMP_DOMAIN must be true or false."
+fi
 [[ "$(env_value DB_CONNECTION)" == "mysql" ]] ||
   fail "Set DB_CONNECTION=mysql for an isolated customer MySQL database."
 [[ -n "$(env_value DB_DATABASE)" && -n "$(env_value DB_USERNAME)" && -n "$(env_value DB_PASSWORD)" ]] ||
@@ -78,13 +124,26 @@ SITE_URL="$(env_value APP_URL)"
 [[ -n "$(env_value APP_NAME)" ]] || fail "Set this merchant's APP_NAME."
 [[ "$(env_value DB_DATABASE)" != "u880685189_newtic" ]] ||
   fail "The original development database is forbidden for new merchants."
-[[ "$(env_value NEWTIC_CHECKOUT_TEST_MODE)" != "false" ]] ||
-  fail "Real checkout is not approved for fresh installs: use NEWTIC_CHECKOUT_TEST_MODE=true."
+# Never enable real checkout during a fresh customer installation.
+# Fresh install flags must be explicit, not simply rely on framework defaults.
+# A mistyped boolean can silently enable real-world integrations.
+for pair in \
+  'NEWTIC_PAYTR_CARD_PAYMENTS_ENABLED:false' \
+  'NEWTIC_PAYTR_WEBHOOKS_ENABLED:false' \
+  'NEWTIC_SHIPPING_DUMMY_ENABLED:false' \
+  'NEWTIC_MARKETING_SEND_ENABLED:false'; do
+  name="${pair%%:*}"
+  expected="${pair#*:}"
+  [[ "$(env_value "$name")" == "$expected" ]] ||
+    fail "Missing or unsafe $name. Fresh installation requires $name=$expected."
+done
 
 note "NEWTIC isolated-install preflight passed for $SITE_URL."
 note "MySQL database configured: $(env_value DB_DATABASE)."
 if [[ "$MODE" == "--check" ]]; then
-  note "Read-only preflight: no files or database were changed."
+  note "Static preflight only: no files or database were changed."
+  note "NOTE: MySQL connectivity/emptiness, SSL, DNS and document root are NOT checked by --check."
+  note "During --install, the configured schema is checked as empty before key generation and migrations."
   note "Next: bash scripts/install-production.sh --install"
   exit 0
 fi
@@ -96,10 +155,21 @@ else
 fi
 
 mkdir -p storage/{app/public,framework/cache/data,framework/sessions,framework/views,logs} bootstrap/cache
-composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
-composer check-platform-reqs --no-dev --no-interaction
+if [[ "$BUNDLED_RELEASE" == true ]]; then
+  note "Using verified production dependencies bundled in this customer release; no Composer install required."
+else
+  composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+fi
+if [[ "$BUNDLED_RELEASE" == false ]]; then
+  composer check-platform-reqs --no-dev --no-interaction
+fi
 php -r 'require "vendor/autoload.php"; foreach (["Firebase\\JWT\\JWT", "Firebase\\JWT\\JWK"] as $class) { if (!class_exists($class)) { fwrite(STDERR, "Missing required JWT class: ".$class.PHP_EOL); exit(1); } }' ||
   fail "Missing required Google login signature verification package."
+
+# Reject an occupied or unreachable database BEFORE any new encryption key,
+# migrations, or installation records. This is a read-only Laravel/MySQL check.
+php artisan newtic:check-fresh-db --no-interaction ||
+  fail "MySQL target is not empty or accessible. No database migrations were started."
 
 if [[ -z "$(env_value APP_KEY)" ]]; then
   php artisan key:generate --force --no-interaction

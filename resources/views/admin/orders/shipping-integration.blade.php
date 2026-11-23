@@ -54,26 +54,26 @@
         </form>
         <a class="admin-primary" href="{{ route('admin.shipping-shipments.label', $order) }}"><x-admin-icon name="package"/> Barkod PDF indir</a>
       </div>
-      <p class="admin-description">Bu bir Dummy Kargo test gönderisidir. Barkod üretildi diye sipariş gerçek kargo firmasına teslim edilmiş sayılmaz.</p>
+      <p class="admin-description">Bu, simülasyon taşıyıcısı üzerinden oluşturulmuş bir denetim kaydıdır. Barkod üretildi diye sipariş gerçek kargo firmasına teslim edilmiş sayılmaz.</p>
       <p class="admin-description">Kargo firmasının gönderi durumu NEWTIC sipariş aşamasını yönetir. Yanlış aşamayı düzeltmek için Dummy Kargo panelinden değiştirip durumu yenile. İptal veya hata durumlarında webhook gönderilmeyebilir.</p>
     @endif
   @elseif(!$shippingTestAllowed || !$order->is_test)
-    <p class="ship-info">Canlı gönderi entegrasyonu henüz etkin değil. Güvenli testler tamamlandıktan sonra DHL ve diğer firmalar için kontrollü açılacak.</p>
+    <p class="ship-info">Canlı gönderi entegrasyonu henüz etkin değil. Sağlayıcı doğrulaması tamamlandıktan sonra DHL ve diğer firmalar için kontrollü açılacak.</p>
   @elseif($order->status !== 'preparing')
     <p class="ship-info">Gönderi oluşturmak için önce sipariş ödemesinin doğrulanması ve durumun “Hazırlanıyor” olması gerekir.</p>
   @elseif(!$shippingProvider?->is_enabled)
-    <p class="ship-info">Henüz etkin bir Kargo Entegratör test bağlantısı yok. Önce API ayarlarını ve Dummy Kargo hesabını kur.</p>
+    <p class="ship-info">Henüz etkin bir Kargo Entegratör bağlantısı yok. Önce API ayarlarını ve Dummy Kargo hesabını kur.</p>
     <a class="admin-secondary" href="{{ route('admin.shipping-integrations.index') }}">Kargo entegrasyonuna git</a>
   @else
-    <p class="ship-info">Yalnızca Dummy Kargo ile test barkodu oluşturulur. DHL ve diğer gerçek kargo firmaları henüz aktif değildir.</p>
+    <p class="ship-info">Yalnızca simülasyon taşıyıcısı üzerinden barkod üretilir. DHL ve diğer gerçek kargo firmaları henüz aktif değildir.</p>
     @if($shippingCarriers->where('is_dummy', true)->isNotEmpty() && $shippingWarehouses->isNotEmpty())
       <form class="admin-form ship-order-form" action="{{ route('admin.shipping-shipments.create', $order) }}" method="POST"
-        onsubmit="return confirm('Bu test siparişi için Dummy Kargo barkodu oluşturulsun mu? İşlem tekrar gönderilemez.')">
+        onsubmit="return confirm('Bu tahsilatsız kayıt için simülasyon taşıyıcısı barkodu oluşturulsun mu? İşlem tekrar gönderilemez.')">
         @csrf
         <label>Kargo firması
           <select name="carrier_id" required>
             @foreach($shippingCarriers as $carrier)
-              <option value="{{ $carrier->id }}" @disabled(!$carrier->is_dummy)>{{ $carrier->name }}{{ $carrier->is_dummy ? ' · Dummy test' : ' · Canlı gönderi kapalı' }}</option>
+              <option value="{{ $carrier->id }}" @disabled(!$carrier->is_dummy)>{{ $carrier->name }}{{ $carrier->is_dummy ? ' · Simülasyon' : ' · Canlı gönderi kapalı' }}</option>
             @endforeach
           </select>
         </label>

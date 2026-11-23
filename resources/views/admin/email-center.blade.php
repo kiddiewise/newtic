@@ -11,7 +11,7 @@
   <div class="admin-panel-title"><h2>Gönderim durumu</h2></div>
   <p><strong>{{ $settings->active() ? 'Bildirimler etkin' : ($settings->verified_at ? 'SMTP doğrulandı · Bildirimler kapalı' : 'Bağlantı doğrulanmadı · Bildirimler kapalı') }}</strong></p>
   @if(\App\Models\EmailSetting::previewEnvironment())
-    <p class="admin-description"><strong>Test güvenliği:</strong> Bu mağaza test ortamında. İşlemsel iletiler müşterilere değil yalnızca aşağıdaki güvenli test adresine yönlendirilir. Gerçek müşteri e-postaları gönderilmez.</p>
+    <p class="admin-description"><strong>Güvenli gönderim:</strong> Mağaza bildirimleri yalnızca doğrulama adresine yönlendirilir; müşteri e-postaları etkinleştirilmedi.</p>
   @endif
   <div style="display:flex;flex-wrap:wrap;gap:12px">
     @foreach(['pending'=>'Bekleyen','retry'=>'Yeniden denenecek','sent'=>'Gönderilen','failed'=>'Başarısız','skipped'=>'Atlanan'] as $key=>$label)
@@ -38,8 +38,8 @@
       <label>Gönderen e-posta <input name="from_address" type="email" required maxlength="255" value="{{ old('from_address',$settings->from_address) }}" placeholder="siparis@ornekmagaza.com"></label>
       <label>Gönderen adı <input name="from_name" required maxlength="140" value="{{ old('from_name',$settings->from_name ?: \App\Support\StoreIdentity::name()) }}"></label>
       <label>Yanıt adresi <input name="reply_to" type="email" maxlength="255" value="{{ old('reply_to',$settings->reply_to) }}" placeholder="destek@ornekmagaza.com"></label>
-      <label>Güvenli test alıcısı <input name="test_recipient" type="email" maxlength="255" value="{{ old('test_recipient',$settings->test_recipient) }}" placeholder="test@ornekmagaza.com" @required(\App\Models\EmailSetting::previewEnvironment())>
-        <small>Test mağazasında tüm bildirimlerin gideceği tek adres.</small></label>
+      <label>Doğrulama alıcısı <input name="test_recipient" type="email" maxlength="255" value="{{ old('test_recipient',$settings->test_recipient) }}" placeholder="dogrulama@ornekmagaza.com" @required(\App\Models\EmailSetting::previewEnvironment())>
+        <small>Canlı gönderim açılmadan önce bildirimin gönderileceği tek güvenli adres.</small></label>
       <label>Yorum daveti gecikmesi (gün) <input name="review_delay_days" type="number" min="1" max="14" required value="{{ old('review_delay_days',$settings->review_delay_days) }}"></label>
     </div>
     <label style="margin-top:14px">Yönetici alıcı e-postaları (virgül veya yeni satırla ayırın)
@@ -59,14 +59,14 @@
     <label style="display:flex;gap:12px;align-items:center;margin:20px 0">
       <input type="hidden" name="enabled" value="0">
       <input type="checkbox" name="enabled" value="1" @checked(old('enabled',$settings->enabled))>
-      <span><strong>Otomatik e-postaları etkinleştir</strong><small> SMTP testini başarıyla tamamlamadan açılmaz.</small></span>
+      <span><strong>Otomatik e-postaları etkinleştir</strong><small> SMTP bağlantısı doğrulanmadan açılmaz.</small></span>
     </label>
     <button type="submit" class="admin-primary">Ayarları güvenle kaydet</button>
   </form>
   <form method="POST" action="{{ route('admin.email-center.test') }}" style="margin-top:14px;display:inline-flex">
-    @csrf <button class="admin-secondary" type="submit">SMTP test e-postası gönder</button>
+    @csrf <button class="admin-secondary" type="submit">SMTP bağlantısını doğrula</button>
   </form>
-  <p class="admin-description" style="margin-top:12px">Teslimat garantisi SMTP kabulünün ötesinde SPF, DKIM, DMARC ve alıcı sunucu kontrollerine bağlıdır. Test etmeden gerçek gönderimleri açmayın. Kampanya e-postaları bu modülde bulunmaz.</p>
+  <p class="admin-description" style="margin-top:12px">Teslimat garantisi SMTP kabulünün ötesinde SPF, DKIM, DMARC ve alıcı sunucu kontrollerine bağlıdır. Doğrulamadan gerçek gönderimleri açmayın. Kampanya e-postaları bu modülde bulunmaz.</p>
 </section>
 <section class="admin-panel" style="padding:22px">
   <div class="admin-panel-title"><h2>E-posta işlem geçmişi</h2></div>
@@ -80,7 +80,7 @@
       @forelse($deliveries as $row)
         <tr style="border-top:1px solid #e6eaf0">
           <td style="padding:12px">{{ \App\Models\EmailSetting::EVENTS[$row->event] ?? $row->event }}</td>
-          <td>{{ \App\Models\EmailSetting::previewEnvironment() ? 'Test alıcısı' : $row->recipient_email }}</td>
+          <td>{{ \App\Models\EmailSetting::previewEnvironment() ? 'Doğrulama adresi' : $row->recipient_email }}</td>
           <td>{{ ['pending'=>'Bekliyor','retry'=>'Tekrar denenecek','processing'=>'İşleniyor','sent'=>'Gönderildi','failed'=>'Başarısız','skipped'=>'Gönderilmedi'][$row->status] ?? $row->status }}
             @if($row->last_error)<small>{{ $row->last_error }}</small>@endif
           </td>
@@ -90,7 +90,7 @@
           @endif</td>
         </tr>
       @empty
-        <tr><td colspan="6" style="padding:16px">Henüz bir bildirim kaydı yok. SMTP testleri gerçek sipariş bildirimi oluşturmaz.</td></tr>
+        <tr><td colspan="6" style="padding:16px">Henüz bir bildirim kaydı yok. SMTP doğrulaması gerçek sipariş bildirimi oluşturmaz.</td></tr>
       @endforelse
       </tbody>
     </table>
