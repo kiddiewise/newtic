@@ -154,6 +154,21 @@ final class HostingerRestore
                 throw new RuntimeException('Medya güvenlik sınırı aşıldı.');
             }
 
+            // Never follow an existing symlink into an unrelated server location.
+            $folder = dirname($relative);
+            $root = realpath($disk->path(''));
+            if (!$root) throw new RuntimeException('Medya depolama kökü bulunamadı.');
+            if (!$disk->exists($folder) && !$disk->makeDirectory($folder)) {
+                throw new RuntimeException('Medya klasörü oluşturulamadı.');
+            }
+            $destinationDirectory = realpath($disk->path($folder));
+            if (!$destinationDirectory || !str_starts_with($destinationDirectory.'/', rtrim($root, '/').'/')) {
+                throw new RuntimeException('Medya hedef yolu güvenli değil.');
+            }
+            if (is_link($disk->path($relative))) {
+                throw new RuntimeException('Sembolik bağlantıya dosya yazılamaz.');
+            }
+
             $stream = fopen($entry->getPathname(), 'rb');
             if ($stream === false) throw new RuntimeException('Medya dosyası açılamadı.');
             try {
@@ -270,11 +285,18 @@ final class HostingerRestore
 
         // Complete validation BEFORE any table is changed.
         $validated = 0;
+        $requiredTables = ['products' => false, 'orders' => false, 'users' => false];
         foreach ($this->sqlStatements($path) as $sql) {
             $this->assertAllowedSql($sql);
+            if (preg_match('/^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?`?([a-z_]+)`?/i', $sql, $match)
+                && array_key_exists(strtolower($match[1]), $requiredTables)) {
+                $requiredTables[strtolower($match[1])] = true;
+            }
             $validated++;
         }
-        if ($validated === 0) throw new RuntimeException('SQL yedeği boş.');
+        if ($validated === 0 || in_array(false, $requiredTables, true)) {
+            throw new RuntimeException('Yedek NEWTIC veritabanına ait görünmüyor; users, products veya orders tablosu eksik.');
+        }
 
         $connection = DB::connection();
         $connection->statement('SET FOREIGN_KEY_CHECKS=0');
