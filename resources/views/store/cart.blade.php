@@ -160,7 +160,7 @@
     </div>
     <div class="cart-sheet-scroll">
       @include('store.partials.cart-summary-details', ['cart' => $cart])
-      <p class="cart-checkout-note">Teslimat adresini girerek deneme siparişi oluşturabilirsin.</p>
+      <p class="cart-checkout-note">Teslimat adresini ve ödeme yöntemini kontrol ederek siparişini tamamlayabilirsin.</p>
     </div>
     <div class="cart-sheet-footer">
       <a class="cart-sheet-continue" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
