@@ -60,7 +60,7 @@
     @else
       <p style="font-size:12px">İlk kontrol cron tarafından otomatik yapılacak. İstersen manuel kontrol başlatabilirsin.</p>
     @endif
-    @if($updateState['status'] ?? 'idle' !== 'idle')
+    @if(($updateState['status'] ?? 'idle') !== 'idle')
       <div class="nu-state" role="status">
         <strong>{{ $stateLabels[$updateState['status'] ?? 'idle'] ?? 'Bilinmiyor' }}</strong>
         <p>{{ $updateState['message'] ?? '' }}</p>
