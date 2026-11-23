@@ -26,6 +26,7 @@ jobs:
           printf '%s\n' "$SSH_HOST_KEYS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/newtic-scheduler-audit" "$HOME/.ssh/known_hosts"
       # Rerun after user enabled Hostinger hPanel one-minute schedule to verify heartbeat.
+      # Re-audit Sinay after its new hPanel Cron Job was enabled; read-only verification.
       - name: Check PHP binary, schedule, heartbeat, and shell cron availability
         shell: bash
         run: |
