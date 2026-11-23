@@ -222,7 +222,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/yazilim-guncellemeleri/kontrol', [SoftwareUpdateController::class, 'check'])
         ->middleware('throttle:3,10')->name('software-updates.check');
     Route::post('/yazilim-guncellemeleri/yukle', [SoftwareUpdateController::class, 'install'])
-        ->middleware('throttle:2,10')->name('software-updates.install');
+        ->middleware('throttle:6,10')->name('software-updates.install');
     Route::get('/guvenlik', SystemHealthController::class)->middleware('throttle:30,1')->name('security');
     Route::get('/seo-ayarlari', [SeoSettingsController::class, 'edit'])->name('seo.edit');
     Route::get('/kampanya-eposta', [MarketingCampaignController::class,'index'])->name('marketing.index');
