@@ -68,7 +68,9 @@ jobs:
           test "$(cat "$TARGET/.newtic-release-revision")" = "$(cat "$TARGET/public/build/newtic-revision.txt")"
           (cd "$TARGET" && find . -type f ! -name 'NEWTIC-RELEASE-SHA256SUMS.txt' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > NEWTIC-RELEASE-SHA256SUMS.txt)
           php scripts/verify-customer-release.php "$TARGET"
-          (cd "$TARGET" && zip -q -r -X "$GITHUB_WORKSPACE/newtic-customer-install.zip" .)
+          (cd "$TARGET" && zip -q -r -X "$GITHUB_WORKSPACE/newtic-customer-install.zip" \
+            artisan app bootstrap config database public resources routes scripts vendor \
+            composer.json composer.lock VERSION .env.example .newtic-release-revision NEWTIC-RELEASE-SHA256SUMS.txt)
           unzip -t newtic-customer-install.zip >/dev/null
           sha256sum newtic-customer-install.zip
 
