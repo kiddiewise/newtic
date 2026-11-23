@@ -145,7 +145,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         // A pending payment must not be celebrated as a successful charge.
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertDontSee('order-preparing-confirmation')
-            ->assertDontSee('data-order-celebration-stage="preparing"', false);
+            ->assertDontSee('data-order-celebration-stage="preparing"', false)
+            ->assertDontSee('Gerçek tahsilat yapılmadı.')
+            ->assertDontSee('Ödeme aktivasyonu bekleniyor.');
 
         $this->assertSame(17970, $order->total_cents);
         // Once ordered, items are reserved and shown as a pending order,
@@ -186,6 +188,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
             ->assertSee('Kart ödemeniz güvenle doğrulandı.')
             ->assertSee('data-order-celebration-stage="preparing"', false)
             ->assertSee('PAYTR ödeme bildirimi doğrulandı')
+            ->assertDontSee('Gerçek tahsilat yapılmadı.')
+            ->assertDontSee('Ödeme aktivasyonu bekleniyor.')
+            ->assertDontSee('Bu işlemde gerçek para tahsil edilmez.')
             ->assertDontSee('Banka hesabını seç');
         $this->assertSame([], session('shopping_cart', []));
 
