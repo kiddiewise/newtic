@@ -17,6 +17,7 @@ use App\Support\CategoryHierarchy;
 use App\Support\OrderTracking;
 use App\Support\PaytrTestAccess;
 use App\Support\ShoppingCart;
+use App\Support\ShippingPricing;
 use App\Support\PendingPaytrCart;
 use App\Support\CartCustomerPhotos;
 use App\Support\TurkeyProvinces;
@@ -227,10 +228,10 @@ class CheckoutController extends Controller
                 $lines[] = compact('product', 'qty', 'unitCents', 'optionLabel', 'optionValue', 'key');
                 $subtotal += $unitCents * $qty;
             }
-            $settings = StoreSetting::current();
-            $freeThreshold = (int) round((float) $settings->free_shipping_threshold * 100);
-            $fee = (int) round((float) $settings->shipping_fee * 100);
-            $shipping = $subtotal >= $freeThreshold ? 0 : $fee;
+            // One authoritative policy for the cart and the committed order.
+            // The customer's shipping contribution is collected by NEWTIC;
+            // the carrier bills the merchant independently.
+            $shipping = ShippingPricing::forSubtotal($subtotal, StoreSetting::current())['shipping_cents'];
 
             $customer = $user;
             if (! $customer && $request->boolean('create_account')) {
