@@ -23,6 +23,8 @@
   $pendingPaymentCount = $adminAuthenticated
     ? \App\Models\PaymentNotification::query()->where('status', 'pending')->count()
     : 0;
+  $newticUpdateAvailable = $adminAuthenticated
+    && app(\App\Services\NewticReleaseManager::class)->hasUpdate();
   $menuGroups = [
     ['label' => 'GENEL BAKIŞ', 'items' => [
       ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
@@ -63,6 +65,7 @@
     ['label' => 'SİSTEM YÖNETİMİ', 'items' => [
       ['label' => 'Kullanıcılar ve Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
       ['label' => 'Sistem Sağlığı', 'name' => 'admin.system-health', 'active' => 'admin.system-health', 'icon' => 'chart'],
+      ['label' => 'Yazılım Güncellemeleri', 'name' => 'admin.software-updates.index', 'active' => 'admin.software-updates.*', 'icon' => 'refresh-cw', 'count' => $newticUpdateAvailable ? 1 : 0],
       ['label' => 'Güvenlik Kontrolü', 'name' => 'admin.security', 'active' => 'admin.security', 'icon' => 'shield', 'fragment' => '#guvenlik'],
       ['label' => 'Kullanıcı Girişi · Google', 'name' => 'admin.google-login.edit', 'active' => 'admin.google-login.*', 'icon' => 'users'],
       ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
