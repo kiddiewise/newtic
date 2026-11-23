@@ -41,7 +41,14 @@ final class HardenHttpResponses
         // An emailed signed order link contains private order and address
         // details. Cache/CDNs must never store the corresponding response.
         if ($sensitive) {
-            $headers->set('Cache-Control', 'private, no-store, max-age=0');
+            // Respect an existing, equally protective policy (e.g. the
+            // one-time admin recovery page explicitly uses "no-store, private").
+            // This avoids changing its contract or weakening route-specific
+            // response headers.
+            $cache = strtolower((string) $headers->get('Cache-Control', ''));
+            if (! str_contains($cache, 'no-store')) {
+                $headers->set('Cache-Control', 'private, no-store, max-age=0');
+            }
             $headers->set('Referrer-Policy', 'no-referrer');
         } elseif (! $headers->has('Referrer-Policy')) {
             $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
