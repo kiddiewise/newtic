@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // Optional, explicitly pinned preview release for the internal Sinay pilot only.
+    // Empty on every normal customer installation. Never shown as a public setting.
+    'update_preview_tag' => env('NEWTIC_UPDATE_PREVIEW_TAG', ''),
+
     // Protected server-side first-install wizard state. Never put this inside public_html.
     'install_private_directory' => storage_path('app/private/newtic-setup'),
     // Explicit opt-in for initial installation on a temporary Hostinger preview
