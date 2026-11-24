@@ -54,9 +54,23 @@
           </div>
         @endif
       @endforeach
-      <div class="checkout-price-line"><span>Ara toplam</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
-      <div class="checkout-price-line"><span>Kargo</span><strong>{{ number_format($order->shipping_cents / 100, 2, ',', '.') }} ₺</strong></div>
-      <div class="checkout-price-line is-total"><span>Toplam</span><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></div>
+    </section>
+    <section class="admin-panel" aria-label="Ödeme toplamı">
+      <div class="admin-panel-title"><h2>Ödeme toplamı</h2></div>
+      <div class="checkout-price-line"><span>Ürünlerin toplamı</span><strong>{{ number_format($paymentBreakdown['products_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+      @if($paymentBreakdown['provider_difference_cents'] > 0)
+        <div class="checkout-price-line"><span>Vade farkı / PAYTR ödeme farkı</span><strong>{{ number_format($paymentBreakdown['provider_difference_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+      @endif
+      <div class="checkout-price-line"><span>Kargo</span><strong>{{ number_format($paymentBreakdown['shipping_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+      <div class="checkout-price-line"><span>Sipariş tutarı</span><strong>{{ number_format($paymentBreakdown['order_total_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+      @if($paymentBreakdown['payment_verified'])
+        <div class="checkout-price-line is-total"><span>Ödendi (PAYTR / banka doğrulandı)</span><strong>{{ number_format($paymentBreakdown['paid_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
+        @if($paymentBreakdown['provider_difference_cents'] > 0)
+          <p class="admin-description">Fark, PayTR'nin doğrulanmış toplam tahsilatı ile sipariş tutarı arasındadır. Taksit/vade farkından kaynaklanabilir; ayrıntılı neden ve taksit sayısı bu bildirimle doğrulanmadığı için ayrıca belirtilmez.</p>
+        @endif
+      @else
+        <div class="checkout-price-line is-total"><span>Ödeme durumu</span><strong>Ödeme bekleniyor</strong></div>
+      @endif
     </section>
     @if($order->payment_method === 'paytr')
       <section class="admin-panel">
@@ -68,7 +82,10 @@
               {{ match($attempt->status) { 'success' => 'Ödeme bildirimi doğrulandı', 'failed' => 'Başarısız', default => 'Bildirim bekleniyor' } }}
             </span>
             <small>PAYTR işlem no: {{ $attempt->merchant_oid }} · {{ $attempt->created_at->format('d.m.Y H:i') }}</small>
-            <div class="admin-detail-line"><span>İşlem tutarı</span><strong>{{ number_format($attempt->amount_cents / 100, 2, ',', '.') }} ₺</strong></div>
+            <div class="admin-detail-line"><span>Başlangıç tutarı</span><strong>{{ number_format($attempt->amount_cents / 100, 2, ',', '.') }} ₺</strong></div>
+            @if($attempt->status === 'success' && $attempt->paid_total_cents !== null)
+              <div class="admin-detail-line"><span>PayTR doğrulanmış tahsilat</span><strong>{{ number_format($attempt->paid_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
+            @endif
             @if($attempt->failed_reason_code)
               <p class="admin-description">Hata kodu: {{ $attempt->failed_reason_code }} · {{ $attempt->failed_reason_message }}</p>
             @endif
