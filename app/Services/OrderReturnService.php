@@ -143,14 +143,16 @@ final class OrderReturnService
         }, 3);
     }
 
-    public function refundResult(OrderReturnRequest $case, string $state, int $actor, ?string $bankReference = null): void
+    public function refundResult(OrderReturnRequest $case, string $state, ?int $actor, ?string $bankReference = null): void
     {
         DB::transaction(function () use ($case, $state, $actor, $bankReference) {
             $order = Order::query()->whereKey($case->order_id)->lockForUpdate()->firstOrFail();
             $case = OrderReturnRequest::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+            if ($actor === null && ($case->refund_status === $state || $case->refund_status === 'verified' || $case->refund_status === 'none')) return;
             if (!in_array($case->refund_status, ['processing','uncertain','submitted'], true)
                 || !in_array($state, ['uncertain','submitted','verified','none'], true)) $this->fail('İade işlemi bu aşamada güncellenemez.');
             $case->refund_status = $state;
+            $case->refund_checked_at = now();
             if ($bankReference !== null) $case->bank_reference = $bankReference;
             if ($state === 'none') {
                 $case->status = $case->received_at ? 'received' : 'approved';
@@ -213,5 +215,6 @@ final class OrderReturnService
     {
         DB::table('order_return_events')->insert(['order_return_request_id' => $case->id,
             'user_id' => $actor, 'event' => $event, 'created_at' => now()]);
+        app(EmailPlanner::class)->returnChanged($case, $event);
     }
 }

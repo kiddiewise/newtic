@@ -131,4 +131,66 @@ final class OrderReturnWorkflowTest extends TestCase
         Http::assertNothingSent();
         $this->assertSame('none',$case->fresh()->refund_status);
     }
+
+    public function test_scheduler_only_queries_and_notifies_verified_refund_once(): void
+    {
+        $settings=\App\Models\EmailSetting::current();
+        $settings->update(['enabled'=>true,'smtp_host'=>'smtp.example.test','smtp_port'=>587,'smtp_scheme'=>'smtp',
+            'smtp_username'=>'notifications@example.test','smtp_password'=>'secret','from_address'=>'notifications@example.test',
+            'from_name'=>'NEWTIC','test_recipient'=>'sandbox@example.test','admin_emails'=>'admin@example.test',
+            'verified_at'=>now(),'events'=>array_keys(\App\Models\EmailSetting::EVENTS)]);
+        $order=$this->order('pending_payment');
+        $attempt=PaytrPaymentAttempt::createForOrder($order);
+        $attempt->update(['status'=>'success','paid_total_cents'=>13000,'processed_at'=>now()]);
+        $order->update(['status'=>'completed']);
+        PaytrSetting::create(['merchant_id'=>'1234','merchant_key'=>'key','merchant_salt'=>'salt']);
+        $admin=$this->admin();$service=app(OrderReturnService::class);
+        $case=$service->create($order,$this->payload($order),$admin->id);
+        $this->assertDatabaseHas('email_deliveries',['event'=>'customer_return_requested','reference_id'=>$case->id]);
+        $this->assertDatabaseHas('email_deliveries',['event'=>'admin_return_requested','reference_id'=>$case->id]);
+        $service->review($case,['action'=>'approve'],$admin->id);
+        $case=$service->reserveRefund($case,['confirmed'=>1],$admin->id);
+        $service->refundResult($case,'submitted',$admin->id);
+        $this->travel(15)->minutes();
+        Http::fake(['https://www.paytr.com/odeme/durum-sorgu'=>Http::response([
+            'status'=>'success','currency'=>'TL','test_mode'=>'1','payment_amount'=>'120.00','payment_total'=>'130.00',
+            'returns'=>[['return_amount'=>'50.00','reference_no'=>$case->reference,'date_completed'=>'2026-11-24 10:00:00']],
+        ])]);
+        $this->artisan('returns:reconcile')->assertExitCode(0);
+        $this->artisan('returns:reconcile')->assertExitCode(0);
+        Http::assertSentCount(1);
+        Http::assertSent(fn($r)=>$r->url()==='https://www.paytr.com/odeme/durum-sorgu');
+        $this->assertSame('verified',$case->fresh()->refund_status);
+        $this->assertNull($case->fresh()->restocked_at);
+        $this->assertSame(1,\App\Models\EmailDelivery::where('event','customer_return_refunded')->where('reference_id',$case->id)->count());
+        $delivery=\App\Models\EmailDelivery::where('event','customer_return_refunded')->where('reference_id',$case->id)->firstOrFail();
+        $email=app(\App\Services\EmailComposer::class)->build($delivery);
+        $this->assertSame('Para iadeniz doğrulandı',$email['heading']);
+        $this->assertContains('İade edilen sipariş bedeli: 50,00 TL',$email['lines']);
+        $this->assertStringContainsString('signature=',$email['action']['url']);
+    }
+
+    public function test_missing_provider_return_list_before_first_refund_is_allowed_but_uncertain_result_is_not_retried(): void
+    {
+        $order=$this->order('pending_payment');
+        $attempt=PaytrPaymentAttempt::createForOrder($order);
+        $attempt->update(['status'=>'success','paid_total_cents'=>12000,'processed_at'=>now()]);
+        $order->update(['status'=>'completed']);
+        PaytrSetting::create(['merchant_id'=>'1234','merchant_key'=>'key','merchant_salt'=>'salt']);
+        $admin=$this->admin();$service=app(OrderReturnService::class);
+        $case=$service->create($order,$this->payload($order),$admin->id);
+        $service->review($case,['action'=>'approve'],$admin->id);
+        Http::fake([
+            'https://www.paytr.com/odeme/durum-sorgu'=>Http::response(['status'=>'success','currency'=>'TL','test_mode'=>'1','payment_amount'=>'120.00','payment_total'=>'120.00']),
+            'https://www.paytr.com/odeme/iade'=>Http::response([],503),
+        ]);
+        $this->actingAs($admin)->post(route('admin.returns.update',$case),['action'=>'refund','confirmed'=>1])->assertRedirect();
+        $this->assertSame('uncertain',$case->fresh()->refund_status);
+        $this->travel(15)->minutes();
+        $this->artisan('returns:reconcile')->assertExitCode(0);
+        $this->assertSame('uncertain',$case->fresh()->refund_status);
+        Http::assertSentCount(3);
+        $this->post(route('admin.returns.update',$case),['action'=>'refund','confirmed'=>1])->assertSessionHasErrors('return');
+        Http::assertSentCount(3);
+    }
 }

@@ -9,7 +9,7 @@ final class OrderReturnRequest extends Model
 {
     protected $guarded = ['id'];
     protected $casts = ['items' => 'array', 'items_cents' => 'integer', 'shipping_cents' => 'integer',
-        'refund_cents' => 'integer', 'received_at' => 'datetime', 'restocked_at' => 'datetime'];
+        'refund_cents' => 'integer', 'refund_checked_at' => 'datetime', 'received_at' => 'datetime', 'restocked_at' => 'datetime'];
 
     public const ACTIVE = ['requested', 'approved', 'awaiting_return', 'received', 'refund_review'];
     public const LABELS = [

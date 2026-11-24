@@ -99,6 +99,27 @@ final class EmailPlanner
         }
     }
 
+    public function returnChanged(\App\Models\OrderReturnRequest $case, string $event): void
+    {
+        $order = $case->order;
+        if (!$order) return;
+        $notification = match ($event) {
+            'requested' => 'customer_return_requested',
+            'approve' => 'customer_return_approved',
+            'return_code' => 'customer_return_code',
+            'received' => 'customer_return_received',
+            'refund_verified' => 'customer_return_refunded',
+            'completed','complete_unpaid','already_cancelled' => 'customer_return_completed',
+            'reject' => 'customer_return_decision',
+            default => null,
+        };
+        if ($event === 'requested') $this->admins('admin_return_requested', $order, $case->id);
+        if ($notification) {
+            $suffix = $event === 'return_code' ? hash('sha256', $case->return_carrier.'|'.$case->return_code) : '';
+            $this->queue($notification, $order->customer_email, $order, null, $case->id, null, $suffix);
+        }
+    }
+
     public function reviewSubmitted(ProductReview $review): void
     {
         $this->admins('admin_review_pending', $review->order, $review->id,

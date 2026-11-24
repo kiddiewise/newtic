@@ -9,3 +9,5 @@ Kargo: taşıyıcı panelinden alınan iade kodu müşteriye iletilir. Otomatik 
 Banka: gerçek transferi yönetici bankadan yapar ve referansı kaydeder. Test havale siparişlerinde gerçek para iadesi kaydedilemez. Ödenmemiş havale tam iptali için banka hareketi kontrolü gerekir. PayTR bekleyen ödeme iptali henüz otomatik değildir.
 
 Canlı PayTR iadeleri yeni kurulumda kapalıdır. Yönetici test iadesini doğruladıktan sonra PayTR ayarlarında canlı iade yetkisini açar. Gerçek ödeme modu ve HTTPS mağaza adresi zorunludur. Önceki iade kayıtları ve sağlayıcı bakiyesi karşılaştırılır.
+
+1.0.11: `returns:reconcile` cron yalnızca durum sorgusu yapar; iade POST işlemini tekrarlamaz. Son kontrol zamanı admin ekranında gösterilir. E-posta merkezinde yeni iade olayları seçilebilir; mevcut seçili olay listeleri ve SMTP etkinlik durumu değiştirilmez. Test mağazaları yalnızca güvenli test alıcısına gönderir.

@@ -35,6 +35,66 @@ final class EmailComposer
 
         $subject = $heading = $body = '';
         switch ($event) {
+            case 'admin_return_requested':
+            case 'customer_return_requested':
+            case 'customer_return_approved':
+            case 'customer_return_code':
+            case 'customer_return_received':
+            case 'customer_return_refunded':
+            case 'customer_return_completed':
+            case 'customer_return_decision':
+                if (!$order) return null;
+                $case = $order->returnRequests()->whereKey($delivery->reference_id)->first();
+                if (!$case) return null;
+                $lines = ['Sipariş: '.$order->order_number, 'Talep: '.$case->reference];
+                $action = ['title'=>'Talebimi görüntüle','url'=>$orderUrl];
+                switch ($event) {
+                    case 'admin_return_requested':
+                        if ($case->status !== 'requested') return null;
+                        $heading = 'Yeni iptal veya iade talebi';
+                        $body = 'Müşteri talebi incelemeniz için yönetim panelinde bekliyor.';
+                        $action = ['title'=>'Talebi incele','url'=>route('admin.orders.show',$order).'#order-returns'];
+                        break;
+                    case 'customer_return_requested':
+                        $heading = 'Talebiniz alındı';
+                        $body = 'İptal veya iade talebinizi aldık. Gelişmeleri sipariş ekranından takip edebilirsiniz.';
+                        break;
+                    case 'customer_return_approved':
+                        if ($case->status !== 'approved') return null;
+                        $heading = 'Talebiniz onaylandı';
+                        $body = 'İşlemin sonraki adımlarını sipariş ekranında görebilirsiniz. Bu bildirim para iadesi değildir.';
+                        break;
+                    case 'customer_return_code':
+                        if (!$case->return_code || $case->status !== 'awaiting_return') return null;
+                        $heading = 'İade kargo kodunuz hazır';
+                        $body = 'İade gönderiniz için taşıyıcı ve kod bilgileri sipariş ekranınızda yer alıyor.';
+                        $lines[] = 'Taşıyıcı: '.$case->return_carrier;
+                        // The current code is shown only on the authorized order page.
+                        break;
+                    case 'customer_return_received':
+                        if (!$case->received_at) return null;
+                        $heading = 'İade ürününüz teslim alındı';
+                        $body = 'Ürün geri dönüşü kaydedildi. Para iadesi durumunu ayrıca takip edebilirsiniz.';
+                        break;
+                    case 'customer_return_refunded':
+                        if ($case->refund_status !== 'verified') return null;
+                        $heading = 'Para iadeniz doğrulandı';
+                        $body = 'İadenin sonucu doğrulandı. Bankanızın hesabınıza veya kartınıza yansıtma süresi farklı olabilir.';
+                        $lines[] = 'İade edilen sipariş bedeli: '.number_format($case->refund_cents/100,2,',','.').' TL';
+                        break;
+                    case 'customer_return_completed':
+                        if ($case->status !== 'completed') return null;
+                        $heading = 'Talebiniz tamamlandı';
+                        $body = 'İptal veya iade talebiniz sonuçlandırıldı. İşlem ayrıntıları sipariş ekranınızda.';
+                        break;
+                    case 'customer_return_decision':
+                        if ($case->status !== 'rejected') return null;
+                        $heading = 'Talebiniz hakkında karar';
+                        $body = 'Mağazanın gerekçesini sipariş ekranınızdan inceleyebilirsiniz. Yasal haklarınız saklıdır.';
+                        break;
+                }
+                $subject = $heading.' · '.$order->order_number;
+                break;
             case 'customer_order_received':
                 if (!$order) return null;
                 $subject = 'Siparişiniz alındı · '.$order->order_number;

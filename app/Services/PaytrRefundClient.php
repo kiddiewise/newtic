@@ -54,13 +54,13 @@ final class PaytrRefundClient
             || (string)($json['test_mode'] ?? '') !== ($attempt->is_test ? '1' : '0')
             || $this->cents($json['payment_amount'] ?? null) !== $attempt->amount_cents
             || $this->cents($json['payment_total'] ?? null) !== $attempt->paid_total_cents
-            || !is_array($json['returns'] ?? null)) throw new RuntimeException('status_mismatch');
+            || (array_key_exists('returns',$json) && !is_array($json['returns']))) throw new RuntimeException('status_mismatch');
         $returns = [];
-        foreach ($json['returns'] as $row) {
+        foreach (($json['returns'] ?? []) as $row) {
             if (!is_array($row)) throw new RuntimeException('return_shape');
             $returns[] = ['amount' => $this->cents($row['return_amount'] ?? null),
                 'reference' => (string)($row['reference_no'] ?? ''),
-                'completed' => filled($row['date_completed'] ?? null)];
+                'completed' => is_string($row['date_completed'] ?? null) && preg_match('/^20[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/D', $row['date_completed']) === 1];
         }
         return $returns;
     }
@@ -69,7 +69,8 @@ final class PaytrRefundClient
     {
         [$settings, $attempt] = $this->context($case);
         if (!$attempt->is_test && (!$settings->live_refunds_enabled || !\App\Support\PaytrTestAccess::canonicalHost())) return 'none';
-        $returns = $this->status($settings, $attempt);
+        try { $returns = $this->status($settings, $attempt); }
+        catch (\Throwable) { return 'none'; } // read-only preflight failed; no financial POST sent
         // A provider-side refund (including outside NEWTIC) reserves balance.
         // Unknown provider records fail closed rather than over-refund.
         foreach ($returns as $row) {
@@ -87,7 +88,7 @@ final class PaytrRefundClient
         if (($json['status'] ?? null) !== 'success'
             || ($json['merchant_oid'] ?? null) !== $attempt->merchant_oid
             || ($json['reference_no'] ?? null) !== $case->reference
-            || (string)($json['is_test'] ?? '') !== ($attempt->is_test ? '1' : '0')
+            || (string)($json['is_test'] ?? ($attempt->is_test ? '' : '0')) !== ($attempt->is_test ? '1' : '0')
             || $this->cents($json['return_amount'] ?? null) !== $case->refund_cents) return 'uncertain';
         return 'submitted';
     }

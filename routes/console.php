@@ -51,6 +51,9 @@ Schedule::command('orders:expire-unpaid --limit=50')->everyFifteenMinutes()
     ->onSuccess(fn () => SystemHealthRecorder::record('bank_expiry', true, 'command_completed'))
     ->onFailure(fn () => SystemHealthRecorder::record('bank_expiry', false, 'command_failed'));
 
+// Read-only PayTR reconciliation. Never retry the refund POST.
+Schedule::command('returns:reconcile --limit=10')->everyFifteenMinutes()->withoutOverlapping(10);
+
 // Privacy: automatically purge events after 90 days and expired sessions.
 Schedule::command('analytics:prune')->dailyAt('03:25')->withoutOverlapping(15)
     ->onSuccess(fn () => SystemHealthRecorder::record('analytics_prune', true, 'command_completed'))

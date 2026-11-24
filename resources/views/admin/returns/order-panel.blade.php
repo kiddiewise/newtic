@@ -32,6 +32,7 @@
       @if($case->return_code)<p>İade kodu: {{ $case->return_carrier }} · {{ $case->return_code }}</p>@endif
       @if($case->public_note)<p>Müşteriye not: {{ $case->public_note }}</p>@endif
       @if($case->refund_cents)<div class="admin-detail-line"><span>İade ana tutarı</span><strong>{{ number_format($case->refund_cents/100,2,',','.') }} ₺</strong></div>@endif
+      @if($case->refund_checked_at)<p class="admin-description">Son PayTR iade kontrolü: {{ $case->refund_checked_at->format('d.m.Y H:i') }}</p>@endif
       @if($case->refund_status === 'verified')<p>Para iadesi doğrulandı. Stok ve teslimat ayrı kontrol edilir.</p>
       @elseif(in_array($case->refund_status,['processing','submitted','uncertain'],true))<p>İade sonucu bekleniyor. Tekrar para göndermeyin; önce sağlayıcıyı sorgulayın.</p>@endif
       @if(in_array($case->status,\App\Models\OrderReturnRequest::ACTIVE,true))
