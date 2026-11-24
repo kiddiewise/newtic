@@ -115,7 +115,8 @@ final class PaytrSettingsController extends Controller
 
         $validated = $validator->validated();
 
-        DB::transaction(function () use ($validated): void {
+        try {
+            DB::transaction(function () use ($validated): void {
             // Create once, then lock the singleton row for concurrent updates.
             PaytrSetting::query()->firstOrCreate(['id' => 1]);
             $settings = PaytrSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
@@ -132,8 +133,7 @@ final class PaytrSettingsController extends Controller
                 $settings->merchant_salt = $validated['merchant_salt'];
             }
 
-            // Stage one only: NEVER auto-activate real card collection by
-            // accepting keys. Webhooks/token validation are not wired yet.
+            // Never auto-activate card collection simply by accepting keys.
             // Changing either secret invalidates any previous opt-in. Keeping
             // identical credentials does not silently switch test mode off.
             if (filled($validated['merchant_key'] ?? null)
@@ -143,7 +143,12 @@ final class PaytrSettingsController extends Controller
                 $settings->test_mode = true;
             }
             $settings->save();
-        }, 3);
+            }, 3);
+        } catch (ValidationException $e) {
+            // Do not flash merchant_key or merchant_salt from a failed rotation.
+            return redirect()->route('admin.paytr-settings.edit')
+                ->withErrors($e->errors())->withInput($request->only('merchant_id'));
+        }
 
         return redirect()->route('admin.paytr-settings.edit')
             ->with('success', 'PAYTR bilgileri güvenli şekilde kaydedildi. Ödeme alma henüz etkin değil.');

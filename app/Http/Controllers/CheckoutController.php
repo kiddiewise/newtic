@@ -64,6 +64,7 @@ class CheckoutController extends Controller
             'bankAccountsAvailable' => BankAccount::query()->where('is_active', true)->exists()
                 && (config('newtic.checkout_test_mode', true) || LegalReadiness::checkoutReady()),
             'paytrAvailable' => PaytrTestAccess::available(),
+            'paytrIsTest' => (bool) PaytrSetting::query()->find(1)?->test_mode,
         ]);
     }
 

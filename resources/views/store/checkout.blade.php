@@ -133,7 +133,7 @@
               <label class="paytr-method-option">
                 <input type="radio" name="payment_method" value="paytr" @checked(old('payment_method', 'paytr') === 'paytr') required>
                 <span class="paytr-method-icon"><x-store-icon name="shopping-cart" /></span>
-                <span class="paytr-method-copy"><strong>Kredi / Banka Kartı</strong><small>PAYTR güvenli ödeme ekranı</small></span>
+                <span class="paytr-method-copy"><strong>Kredi / Banka Kartı</strong><small>{{ ($paytrIsTest ?? false) ? 'PAYTR test ödemesi · gerçek tahsilat yok' : 'PAYTR güvenli ödeme ekranı' }}</small></span>
                 <span class="paytr-method-check" aria-hidden="true"><x-store-icon name="check" /></span>
               </label>
             @endif
