@@ -5,8 +5,7 @@ name: Sinay Design verified NEWTIC upgrade
 
 on:
   push:
-    branches: [main]
-    paths: [.github/workflows/sinaydesign-upgrade.yml]
+    branches: [deploy/sinay-paytr-1-0-9]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +21,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 3cc8996035370ce4fb17c70970d20d7ac06ec3be
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -47,7 +48,7 @@ jobs:
           grep -Fq 'data-order-celebration-stage' resources/views/store/order-success.blade.php
           grep -RFlq --include='*.css' '.order-preparing-confirmation' public/build/assets
           grep -RFlq --include='*.js' 'newtic:order-celebrated' public/build/assets
-          printf '%s\n' "$GITHUB_SHA" > public/build/newtic-revision.txt
+          printf '%s\n' "3cc8996035370ce4fb17c70970d20d7ac06ec3be" > public/build/newtic-revision.txt
           tar -czf sinay-upgrade-build.tar.gz -C public build
       - name: Configure existing Hostinger connection
         env:
@@ -63,13 +64,27 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upgrade existing installed Sinay with private backup
         env:
-          SHA: ${{ github.sha }}
+          SHA: 3cc8996035370ce4fb17c70970d20d7ac06ec3be
         run: |
           set -euo pipefail
           TARGET=u880685189@147.79.123.121
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" 'test -f ~/domains/sinaydesign.com/newtic/.env && mkdir -p ~/domains/sinaydesign.com/newtic/.deploy'
           scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes sinay-upgrade-build.tar.gz "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-upgrade-build.tar.gz"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" "NEWTIC_EXPECTED_SHA=$SHA bash -se" < scripts/deploy-sinaydesign-upgrade.sh
+      - name: Verify installed merchant PayTR settings and version
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd "$HOME/domains/sinaydesign.com/newtic"
+          test "$(git rev-parse HEAD)" = '3cc8996035370ce4fb17c70970d20d7ac06ec3be'
+          test "$(cat VERSION)" = '1.0.9'
+          php artisan migrate:status | grep 'add_merchant_paytr_activation' | grep -F Ran
+          grep -Fq 'installments_enabled' resources/views/admin/paytr-settings.blade.php
+          grep -Fq 'Canlı (gerçek tahsilat)' resources/views/admin/paytr-settings.blade.php
+          cmp public/build/manifest.json ../public_html/build/manifest.json
+          echo 'SINAY_PAYTR_1_0_9_VERIFIED'
+          REMOTE
       - name: Verify Sinay homepage blog and admin are reachable
         run: |
           set -euo pipefail
