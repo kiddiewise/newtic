@@ -22,6 +22,9 @@ final class PaytrSetting extends Model
         'merchant_salt' => 'encrypted',
         'is_enabled' => 'boolean',
         'test_mode' => 'boolean',
+        'admin_managed' => 'boolean',
+        'installments_enabled' => 'boolean',
+        'max_installment' => 'integer',
     ];
 
     public function hasCredentials(): bool

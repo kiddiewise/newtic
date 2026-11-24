@@ -382,4 +382,41 @@ class PaytrGatewayFoundationTest extends TestCase
         $this->assertSame('pending_payment', $order->fresh()->status);
     }
 
+
+    public function test_merchant_managed_test_mode_works_on_independent_https_domain_with_installments(): void
+    {
+        $host = 'shop.example.test';
+        config()->set('app.url', 'https://'.$host);
+        \Illuminate\Support\Facades\URL::forceRootUrl('https://'.$host);
+        app('request')->headers->set('host', $host);
+        $this->withServerVariables(['HTTP_HOST' => $host, 'SERVER_NAME' => $host, 'HTTPS' => 'on']);
+        config()->set('newtic.paytr_card_payments_enabled', false);
+        config()->set('newtic.paytr_webhooks_enabled', false);
+        $settings = $this->credentials();
+        $settings->forceFill(['admin_managed' => true, 'is_enabled' => true, 'installments_enabled' => true, 'max_installment' => 6])->save();
+        $order = $this->order();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' => Http::response(['status' => 'success', 'token' => str_repeat('a', 48)])]);
+        app(PaytrTokenService::class)->requestIframeToken($order, $attempt, '203.0.113.15', 'https://'.$host.'/ok', 'https://'.$host.'/fail');
+        Http::assertSent(fn ($r) => $r['no_installment'] === '0' && $r['max_installment'] === '6' && $r['test_mode'] === '1');
+        $settings->forceFill(['is_enabled' => false])->save();
+        $this->post('https://'.$host.'/odeme/paytr/bildirim', $this->signed($attempt->merchant_oid))->assertOk()->assertSeeText('OK');
+        $this->assertSame('success', $attempt->fresh()->status);
+    }
+
+    public function test_live_attempt_rejects_explicit_test_callback_but_accepts_signed_live_result(): void
+    {
+        $settings = $this->credentials();
+        $settings->forceFill(['admin_managed' => true, 'is_enabled' => true, 'test_mode' => false])->save();
+        $order = $this->order();
+        $order->forceFill(['is_test' => false])->save();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        $payload = $this->signed($attempt->merchant_oid, 'success', '18970');
+        $this->post(route('checkout.paytr.callback'), $payload)->assertStatus(422);
+        $this->assertSame('pending', $attempt->fresh()->status);
+        unset($payload['test_mode']);
+        $this->post(route('checkout.paytr.callback'), $payload)->assertOk()->assertSeeText('OK');
+        $this->assertSame(18970, $attempt->fresh()->paid_total_cents);
+        $this->assertSame(17970, $order->fresh()->total_cents);
+    }
 }

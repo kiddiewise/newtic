@@ -25,9 +25,9 @@ final class PaytrPaymentAttempt extends Model
     public static function createForOrder(Order $order): self
     {
         if ($order->payment_method !== 'paytr' || $order->status !== 'pending_payment'
-            || ! $order->is_test || $order->total_cents <= 0
+            || $order->total_cents <= 0
             || $order->currency !== 'TRY') {
-            throw new RuntimeException('Only pending PAYTR test orders can create attempts.');
+            throw new RuntimeException('Only pending PAYTR orders can create attempts.');
         }
 
         // Independent alphanumeric attempt ID: customer-facing PK-... order
@@ -38,7 +38,7 @@ final class PaytrPaymentAttempt extends Model
             'amount_cents' => $order->total_cents,
             'currency' => 'TRY',
             'status' => 'pending',
-            'is_test' => true,
+            'is_test' => $order->is_test,
         ]);
     }
 

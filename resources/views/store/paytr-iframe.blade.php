@@ -8,7 +8,7 @@
     <span><x-store-icon name="landmark" /></span>
   </div>
   <div class="paytr-checkout-heading">
-    <div class="paytr-test-tag"><x-store-icon name="check" /> PAYTR BAĞLANTI KONTROLÜ</div>
+    <div class="paytr-test-tag"><x-store-icon name="check" /> {{ $order->is_test ? 'PAYTR BAĞLANTI KONTROLÜ' : 'PAYTR GÜVENLİ ÖDEME' }}</div>
     <h1>Kartla ödeme işlemi</h1>
     <p>Ödeme işlemi PAYTR'nin güvenli ödeme penceresinde tamamlanır. Kart bilgileri NEWTIC'e kaydedilmez.</p>
   </div>
@@ -16,7 +16,7 @@
     <section class="checkout-card paytr-iframe-panel" aria-labelledby="paytr-form-title">
       <div class="paytr-iframe-top">
         <span><x-store-icon name="check" /> PAYTR Güvenli Ödeme</span>
-        <span class="paytr-test-indicator">Aktivasyon bekleniyor · Tahsilat yok</span>
+        <span class="paytr-test-indicator">{{ $order->is_test ? 'Test modu · Tahsilat yok' : 'Güvenli kart ödemesi' }}</span>
       </div>
       <h2 id="paytr-form-title">Ödeme ekranı</h2>
       @if($token)
@@ -68,7 +68,7 @@
       <div class="checkout-price-line"><span>Ürünler</span><strong>{{ number_format($order->subtotal_cents / 100, 2, ',', '.') }} ₺</strong></div>
       <div class="checkout-price-line"><span>Kargo</span><strong>{{ $order->shipping_cents ? number_format($order->shipping_cents / 100, 2, ',', '.').' ₺' : 'Ücretsiz' }}</strong></div>
       <div class="checkout-price-line is-total"><span>Toplam</span><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></div>
-      <p class="paytr-test-disclaimer">Ödeme aktivasyonu henüz tamamlanmadı. Gerçek kart bilgisi girmeyin; bu aşamada para tahsil edilmez.</p>
+      @if($order->is_test)<p class="paytr-test-disclaimer">Test işlemi: gerçek tahsilat yapılmaz.</p>@endif
     </aside>
   </div>
 </main>

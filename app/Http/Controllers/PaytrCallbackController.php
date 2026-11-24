@@ -17,19 +17,11 @@ final class PaytrCallbackController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        // Stage two is installed but DISABLED until the order/checkout workflow
-        // and verified PAYTR test transaction have passed acceptance testing.
-        if (! PaytrTestAccess::onStaging() || ! config('newtic.paytr_webhooks_enabled', false)) {
-            Log::warning('paytr_callback_rejected', ['reason' => 'staging_gate']);
-            return response('PAYTR callback is not active', 503)
-                ->header('Content-Type', 'text/plain; charset=UTF-8');
-        }
-
         $settings = PaytrSetting::query()->find(1);
-        if (! $settings?->is_enabled || ! $settings->test_mode
-            || ! $settings->hasCredentials()) {
+        if (!PaytrTestAccess::acceptsCallbacks($settings)) {
             Log::warning('paytr_callback_rejected', ['reason' => 'settings_gate']);
-            return response('PAYTR integration is not active', 503);
+            return response('PAYTR integration is not active', 503)
+                ->header('Content-Type', 'text/plain; charset=UTF-8');
         }
 
         $payload = $request->only([
@@ -45,13 +37,6 @@ final class PaytrCallbackController extends Controller
             return response('Invalid PAYTR notification', 403);
         }
 
-        // Per PayTR iFrame API 2. Adim, test_mode is OPTIONAL.
-        // The merchant settings, persisted attempt and order still enforce
-        // sandbox-only processing. An explicit live-mode marker is rejected.
-        if (array_key_exists('test_mode', $payload) && (string) $payload['test_mode'] !== '1') {
-            Log::warning('paytr_callback_rejected', ['reason' => 'invalid_test_mode']);
-            return response('Unexpected payment context', 422);
-        }
         // These unsigned auxiliary fields must not override signed or
         // persisted data. Payment type and currency are mandatory per API.
         if (($payload['payment_type'] ?? null) !== 'card'
@@ -70,6 +55,13 @@ final class PaytrCallbackController extends Controller
                 return 404;
             }
 
+            // A missing test_mode field is documented as optional. An explicit
+            // marker must agree with the immutable attempt, not current settings.
+            if (array_key_exists('test_mode', $payload)
+                && (string) $payload['test_mode'] !== ($attempt->is_test ? '1' : '0')) {
+                return 422;
+            }
+
             // Retry deliveries must NEVER create a second order transition,
             // customer notification, or inventory adjustment.
             if (in_array($attempt->status, ['success', 'failed'], true)) {
@@ -78,7 +70,7 @@ final class PaytrCallbackController extends Controller
 
             $order = $attempt->order()->lockForUpdate()->firstOrFail();
 
-            if (! $attempt->is_test || ! $order->is_test
+            if ($attempt->is_test !== $order->is_test
                 || $order->payment_method !== 'paytr'
                 || $order->currency !== 'TRY'
                 || $attempt->currency !== 'TRY'
@@ -124,7 +116,7 @@ final class PaytrCallbackController extends Controller
                 'failed_reason_message' => mb_substr((string) ($payload['failed_reason_msg'] ?? ''), 0, 300),
             ]);
 
-            // A failed test transaction closes this single-attempt order
+            // A failed transaction closes this single-attempt order
             // and releases the stock reserved during checkout exactly once.
             // Row and attempt locks make repeated PAYTR callbacks idempotent.
             $quantities = $order->items()->whereNotNull('product_id')

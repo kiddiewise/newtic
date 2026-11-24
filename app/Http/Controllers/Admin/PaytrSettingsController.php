@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaytrSetting;
+use App\Models\PaytrPaymentAttempt;
+use Illuminate\Validation\ValidationException;
 use App\Support\PaytrTestAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -22,41 +24,51 @@ final class PaytrSettingsController extends Controller
         $hasKey = $settings && filled($settings->getRawOriginal('merchant_key'));
         $hasSalt = $settings && filled($settings->getRawOriginal('merchant_salt'));
         $configured = $settings?->hasCredentials() ?? false;
-        $testAllowed = PaytrTestAccess::onStaging() && config('newtic.paytr_card_payments_enabled', false)
-            && config('newtic.paytr_webhooks_enabled', false);
-        $testEnabled = $configured && $testAllowed && $settings->is_enabled;
+        $testAllowed = PaytrTestAccess::canonicalHost();
+        $testEnabled = $configured && $testAllowed && PaytrTestAccess::available($settings);
+        $liveAllowed = PaytrTestAccess::liveAllowed();
+        $mode = $settings?->test_mode === false ? 'live' : 'test';
+        $installments = (bool) $settings?->installments_enabled;
+        $maxInstallment = (int) ($settings?->max_installment ?? 0);
+        $callbackUrl = rtrim((string) config('app.url'), '/').'/odeme/paytr/bildirim';
 
         return response()->view('admin.paytr-settings', compact(
-            'merchantId', 'hasKey', 'hasSalt', 'configured', 'testAllowed', 'testEnabled'
+            'merchantId', 'hasKey', 'hasSalt', 'configured', 'testAllowed', 'testEnabled',
+            'liveAllowed', 'mode', 'installments', 'maxInstallment', 'callbackUrl'
         ))->header('Cache-Control', 'private, no-store, max-age=0')
           ->header('Pragma', 'no-cache');
     }
 
     public function testMode(Request $request): RedirectResponse
     {
-        $data = $request->validate(['enabled' => ['required', 'boolean']]);
-        if (! PaytrTestAccess::onStaging()
-            || ! config('newtic.paytr_card_payments_enabled', false)
-            || ! config('newtic.paytr_webhooks_enabled', false)) {
-            abort(403, 'PAYTR test modu yalnızca NEWTIC test mağazasında kullanılabilir.');
-        }
-
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'mode' => ['sometimes', 'in:test,live'],
+            'installments_enabled' => ['sometimes', 'boolean'],
+            'max_installment' => ['sometimes', 'integer', 'in:0,2,3,4,5,6,7,8,9,10,11,12'],
+            'live_confirmed' => ['sometimes', 'accepted'],
+        ]);
+        abort_unless(PaytrTestAccess::canonicalHost(), 403);
         DB::transaction(function () use ($data): void {
             $settings = PaytrSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
-            if (! $settings->hasCredentials()) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'paytr' => 'Önce PAYTR mağaza bilgilerini kaydedin.',
-                ]);
+            if (!$settings->hasCredentials()) {
+                throw ValidationException::withMessages(['paytr' => 'Önce PAYTR mağaza bilgilerini kaydedin.']);
+            }
+            $enabled = (bool) $data['enabled'];
+            $test = ($data['mode'] ?? ($settings->test_mode ? 'test' : 'live')) === 'test';
+            if ($enabled && !$test && (!PaytrTestAccess::liveAllowed()
+                || !in_array($data['live_confirmed'] ?? null, [true, 1, '1', 'yes', 'on', 'true'], true))) {
+                throw ValidationException::withMessages(['paytr' => 'Canlı ödeme için mağazanın canlı ve yasal olarak hazır olması, PayTR onayı ve açık onayınız gerekir.']);
             }
             $settings->forceFill([
-                'is_enabled' => (bool) $data['enabled'],
-                'test_mode' => true,
+                'is_enabled' => $enabled,
+                'admin_managed' => true,
+                'test_mode' => $test,
+                'installments_enabled' => (bool) ($data['installments_enabled'] ?? $settings->installments_enabled),
+                'max_installment' => (int) ($data['max_installment'] ?? $settings->max_installment ?? 0),
             ])->save();
         }, 3);
-
-        return back()->with('success', (bool) $data['enabled']
-            ? 'PAYTR test modu açıldı. Sadece test mağazasında test kart işlemleri yapılabilir.'
-            : 'PAYTR test modu kapatıldı.');
+        return back()->with('success', (bool) $data['enabled'] ? 'PAYTR ödeme ayarları kaydedildi.' : 'Yeni PAYTR ödemeleri kapatıldı. Bekleyen bildirimler alınmaya devam eder.');
     }
 
     public function update(Request $request): RedirectResponse
@@ -107,6 +119,11 @@ final class PaytrSettingsController extends Controller
             // Create once, then lock the singleton row for concurrent updates.
             PaytrSetting::query()->firstOrCreate(['id' => 1]);
             $settings = PaytrSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
+            $rotating = $settings->merchant_id !== $validated['merchant_id']
+                || filled($validated['merchant_key'] ?? null) || filled($validated['merchant_salt'] ?? null);
+            if ($rotating && PaytrPaymentAttempt::query()->where('status', 'pending')->exists()) {
+                throw ValidationException::withMessages(['paytr' => 'Bekleyen PAYTR işlemleri sonuçlanmadan mağaza bilgileri değiştirilemez.']);
+            }
             $settings->merchant_id = $validated['merchant_id'];
             if (filled($validated['merchant_key'] ?? null)) {
                 $settings->merchant_key = $validated['merchant_key'];
@@ -123,8 +140,8 @@ final class PaytrSettingsController extends Controller
                 || filled($validated['merchant_salt'] ?? null)
                 || $settings->isDirty('merchant_id')) {
                 $settings->is_enabled = false;
+                $settings->test_mode = true;
             }
-            $settings->test_mode = true;
             $settings->save();
         }, 3);
 

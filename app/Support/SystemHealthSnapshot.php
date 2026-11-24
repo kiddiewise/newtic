@@ -122,9 +122,7 @@ final class SystemHealthSnapshot
     private function paytr(Collection $monitors): array
     {
         $settings = PaytrSetting::query()->find(1);
-        $enabled = $settings?->hasCredentials() && $settings->is_enabled
-            && config('newtic.paytr_webhooks_enabled', false)
-            && PaytrTestAccess::onStaging();
+        $enabled = PaytrTestAccess::available($settings);
         $record = $monitors->get('paytr_callback');
         $processed = PaytrPaymentAttempt::query()->whereNotNull('processed_at')
             ->orderByDesc('processed_at')->first();

@@ -23,7 +23,7 @@ final class PaytrCheckoutController extends Controller
             $order->id, (array) $request->session()->get('confirmed_order_ids', []), true
         );
         abort_unless($isOwner || $sessionOwned || $request->hasValidSignature(false), 404);
-        abort_unless($order->payment_method === 'paytr' && $order->is_test, 404);
+        abort_unless($order->payment_method === 'paytr', 404);
 
         if ($order->status !== 'pending_payment') {
             return response()->view('store.paytr-iframe', [
@@ -36,7 +36,7 @@ final class PaytrCheckoutController extends Controller
         $token = null;
         $message = null;
         if (! PaytrTestAccess::available()) {
-            $message = 'PAYTR test ödemesi kapalı. Yönetim panelinden test modunu etkinleştirin.';
+            $message = 'Kartla ödeme şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
         } else {
             $attempt = PaytrPaymentAttempt::query()->where('order_id', $order->id)
                 ->where('status', 'pending')->latest('id')->first();
@@ -54,13 +54,13 @@ final class PaytrCheckoutController extends Controller
                     // Only a whitelisted failure class, never customer/merchant
                     // data, gateway text, token, URL or IP address, is recorded.
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => $e->safeCode]);
-                    $message = 'PAYTR test formu açılamadı ('.$e->safeCode.'). Ödeme alınmadı. Tekrar deneyin.';
+                    $message = 'PAYTR ödeme formu açılamadı ('.$e->safeCode.'). Ödeme alınmadı. Tekrar deneyin.';
                 } catch (\InvalidArgumentException $e) {
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => 'invalid_checkout_network']);
                     $message = 'Güvenli ödeme için müşteri bağlantısı doğrulanamadı. Ödeme alınmadı. Tekrar deneyin.';
                 } catch (RuntimeException $e) {
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => 'test_configuration']);
-                    $message = 'PAYTR test formu henüz açılamadı. Ödeme alınmadı. Test ayarlarını kontrol edin.';
+                    $message = 'PAYTR ödeme formu henüz açılamadı. Ödeme alınmadı. Lütfen tekrar deneyin.';
                 }
             }
         }

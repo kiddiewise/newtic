@@ -34,12 +34,12 @@ final class PaytrTokenService
             || $order->payment_method !== 'paytr'
             || $order->status !== 'pending_payment'
             || $attempt->status !== 'pending'
-            || ! $attempt->is_test
-            || ! $order->is_test
+            || $attempt->is_test !== $order->is_test
+            || $attempt->is_test !== $settings->test_mode
             || $attempt->amount_cents !== $order->total_cents
             || $order->currency !== 'TRY'
             || $attempt->currency !== 'TRY') {
-            throw new RuntimeException('PAYTR test ödemesi henüz kullanıma açık değil.');
+            throw new RuntimeException('PAYTR ödemesi henüz kullanıma açık değil.');
         }
 
         if (! filter_var($userIp, FILTER_VALIDATE_IP) || strlen($userIp) > 39) {
@@ -91,11 +91,11 @@ final class PaytrTokenService
             'email' => mb_substr($order->customer_email, 0, 100),
             'payment_amount' => (string) $order->total_cents,
             'user_basket' => $basketEncoded,
-            'no_installment' => '1',
-            'max_installment' => '0',
+            'no_installment' => $settings->installments_enabled ? '0' : '1',
+            'max_installment' => $settings->installments_enabled ? (string) ($settings->max_installment ?? 0) : '0',
             'currency' => 'TL',
-            'test_mode' => '1',
-            'debug_on' => '1', // Test mode only; reason is classified, never displayed or logged.
+            'test_mode' => $attempt->is_test ? '1' : '0',
+            'debug_on' => $attempt->is_test ? '1' : '0',
             'user_name' => mb_substr($order->customer_name, 0, 60),
             'user_address' => mb_substr($address, 0, 400),
             'user_phone' => mb_substr($order->phone, 0, 20),

@@ -9,6 +9,7 @@ use App\Models\BankAccount;
 use App\Models\Order;
 use App\Services\MarketingConsentService;
 use App\Models\PaytrPaymentAttempt;
+use App\Models\PaytrSetting;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\User;
@@ -169,6 +170,13 @@ class CheckoutController extends Controller
                     'payment_method' => 'Havale/EFT şu anda kullanılamıyor. Aktif banka hesabı bulunamadı.',
                 ]);
             }
+            $paytrSettings = null;
+            if ($method === 'paytr') {
+                $paytrSettings = PaytrSetting::query()->whereKey(1)->lockForUpdate()->first();
+                if (!$paytrSettings || !PaytrTestAccess::available($paytrSettings)) {
+                    throw ValidationException::withMessages(['payment_method' => 'Kartla ödeme şu anda kullanılamıyor.']);
+                }
+            }
             // Stock is rechecked under row locks and never derived from the client's
             // subtotal. Stable ID ordering prevents deadlocks between checkout requests.
             $raw = ShoppingCart::raw($request);
@@ -283,7 +291,7 @@ class CheckoutController extends Controller
                 'shipping_cents' => $shipping,
                 'total_cents' => $subtotal + $shipping,
                 'currency' => 'TRY',
-                'is_test' => (bool) config('newtic.checkout_test_mode', true),
+                'is_test' => $method === 'paytr' ? (bool) $paytrSettings->test_mode : (bool) config('newtic.checkout_test_mode', true),
                 'placed_at' => now(),
                 'legal_acknowledgement' => $legalEvidence,
             ]);
