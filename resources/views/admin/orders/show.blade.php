@@ -15,9 +15,6 @@
     <a class="admin-primary" href="{{ route('admin.orders.document', [$order, 'proforma']) }}" title="Fiyatlı A4 promofaturayı PDF olarak indir">
       <x-admin-icon name="download" /> Promofatura PDF
     </a>
-    <a class="admin-secondary" href="{{ route('admin.orders.document', [$order, 'packing']) }}" title="Fiyatsız A4 ürün toplama formunu indir">
-      <x-admin-icon name="package" /> Hazırlama Formu
-    </a>
     <a class="admin-secondary is-preview" href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer" title="A4 belgeyi yeni sekmede görüntüle ve yazdır">
       <x-admin-icon name="external-link" /> Önizle / Yazdır
     </a>
