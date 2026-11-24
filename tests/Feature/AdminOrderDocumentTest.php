@@ -86,6 +86,7 @@ final class AdminOrderDocumentTest extends TestCase
         $this->assertStringContainsString('Promofatura.pdf', $response->headers->get('Content-Disposition'));
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertGreaterThan(7000, strlen($response->getContent()));
+        $this->assertStringContainsString('/Subtype /Image', $response->getContent(), 'QR image must be embedded in the PDF itself.');
         $this->assertSame('noindex, nofollow, noarchive', $response->headers->get('X-Robots-Tag'));
     }
 
@@ -96,11 +97,15 @@ final class AdminOrderDocumentTest extends TestCase
         $detail = $this->get(route('admin.orders.show', $order))
             ->assertOk()
             ->assertSee('Promofatura PDF')
-            ->assertSee('Hazırlama Formu')
+            ->assertDontSee('Hazırlama Formu')
             ->assertSee('Önizle / Yazdır');
 
         $this->assertStringContainsString(
             route('admin.orders.document', [$order, 'proforma']),
+            $detail->getContent()
+        );
+        $this->assertStringNotContainsString(
+            route('admin.orders.document', [$order, 'packing']),
             $detail->getContent()
         );
 
@@ -147,6 +152,17 @@ final class AdminOrderDocumentTest extends TestCase
         $this->assertStringContainsString('1.029,00', $proforma);
         $this->assertStringContainsString('PROMOFATURA', $proforma);
         $this->assertStringContainsString('MALİ BELGE DEĞİLDİR', $proforma);
+        $this->assertStringContainsString('MÜŞTERİ BİLGİLERİ', $proforma);
+        $this->assertStringContainsString('TESLİMAT VE FATURA ADRESİ', $proforma);
+        $this->assertStringContainsString('SİPARİŞ KALEMLERİ', $proforma);
+        $this->assertStringContainsString('HAZIRLIK KONTROLÜ', $proforma);
+        $this->assertStringContainsString('margin: 18mm 19mm 36mm', $proforma);
+        $this->assertStringContainsString('.footer { position: fixed; left: 0; right: 0; bottom: 0;', $proforma);
+        $this->assertStringContainsString('.items .product { font-weight: normal;', $proforma);
+        $this->assertStringNotContainsString('01 /', $proforma);
+        $this->assertStringNotContainsString('02 /', $proforma);
+        $this->assertStringNotContainsString('03 /', $proforma);
+        $this->assertStringNotContainsString('04 /', $proforma);
     }
 
     public function test_custom_brand_logo_is_loaded_from_private_local_store_files_without_external_requests(): void
