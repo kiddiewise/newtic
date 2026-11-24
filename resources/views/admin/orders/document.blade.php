@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <title>{{ $order->order_number }} | {{ $mode === 'proforma' ? 'Promofatura' : 'Sipariş Hazırlama Formu' }}</title>
 <style>
-@page { size: A4 portrait; margin: 18mm 19mm 36mm; }
+@page { size: A4 portrait; margin: 19mm 19mm 38mm; }
 * { box-sizing: border-box; }
-html, body { padding: 0; margin: 0; width: 100%; }
-body { font-family: "DejaVu Sans", sans-serif; font-size: 9px; color: #132b41; line-height: 1.48; }
+html, body { padding: 0; margin: 0; }
+body { width: 164mm; margin-left: 4mm; margin-right: 4mm; font-family: "DejaVu Sans", sans-serif; font-size: 9px; color: #132b41; line-height: 1.48; }
 h1, h2, h3, p { padding: 0; margin: 0; }
 table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout: fixed; }
 .topline { height: 4px; background: #092037; margin-bottom: 13px; }
 .header td { vertical-align: middle; }
 .brand { width: 44%; }
-.logo { max-width: 180px; max-height: 62px; }
+.logo { display: block; max-width: 165px; max-height: 56px; }
 .brand-fallback { font-size: 20px; font-weight: bold; letter-spacing: -.5px; }
 .header-right { text-align: right; width: 56%; padding-left: 7px; }
 .eyebrow { font-size: 7px; letter-spacing: .5px; font-weight: bold; color: #65798a; text-transform: uppercase; }
@@ -40,9 +40,11 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
 .heading-row small { float: right; font-size: 8px; color: #778997; font-weight: normal; }
 .items { width: 100%; table-layout: fixed; }
 .items thead { display: table-header-group; }
+.items tfoot { display: table-footer-group; }
+.heading-row { page-break-after: avoid; }
 .items th { overflow-wrap: anywhere; background: #edf2f6; color: #465c6e; font-weight: bold; font-size: 8px; padding: 8px 5px; text-align: left; border-bottom: 1px solid #d7e0e7; }
 .items td { padding: 8px 5px; vertical-align: top; border-bottom: 1px solid #e5ebef; font-size: 9px; word-wrap: break-word; }
-.items tr { page-break-inside: avoid; }
+.items tbody tr { page-break-inside: avoid; page-break-after: auto; }
 .items .rowno { color: #8ca0ad; font-size: 8px; }
 .items .product { font-weight: normal; font-size: 9px; line-height: 1.5; }
 .items .sku { font-size: 7.5px; color: #6c8190; margin-top: 3px; }
@@ -52,7 +54,8 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
 .items .check { text-align: center; color: #2b465c; font-size: 16px; line-height: 13px; }
 .items th.money { text-align: right; }
 .items th.check { text-align: center; font-size: 7px; }
-.after-table { margin-top: 12px; }
+.after-table { margin-top: 12px; page-break-inside: avoid; }
+.after-table tr { page-break-inside: avoid; }
 .after-table td { vertical-align: top; }
 .note-box { border-left: 3px solid #e99b59; background: #fff9f2; padding: 9px 11px; margin: 0 0 10px; }
 .note-box .section-head { margin-bottom: 4px; color: #935b29; }
@@ -61,17 +64,17 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
 .ops-box .section-head { margin-bottom: 9px; }
 .ops-line { margin-bottom: 7px; font-size: 9px; }
 .sq { font-family: "DejaVu Sans", sans-serif; font-size: 13px; margin-right: 8px; color: #3a556a; }
-.price-box { border: 1px solid #dbe3ea; margin-left: 3%; width: 97%; table-layout: fixed; }
+.price-box { border: 1px solid #dbe3ea; margin: 0; width: 100%; table-layout: fixed; }
 .price-box td { padding: 8px 10px; border-bottom: 1px solid #e8eef2; font-size: 9px; }
 .price-box td:first-child { width: 54%; } .price-box td:last-child { width: 46%; text-align: right; font-weight: bold; white-space: normal; }
 .price-box tr:last-child td { background: #092037; border-bottom: 0; color: #fff; font-size: 11px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; }
 .payment-details { margin-top: 11px; font-size: 8px; color: #657889; }
 .warning { border: 1px solid #eac6a4; color: #8b5328; background: #fff7ed; padding: 7px 10px; font-weight: bold; margin-bottom: 10px; }
-.footer { position: fixed; left: 0; right: 0; bottom: 0; height: 32mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
+.footer { position: fixed; left: 4mm; right: 4mm; bottom: 0; height: 32mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
 .footer-main { width: 72%; }
-.footer .doc-label { font-size: 9px; color: #233f56; font-weight: bold; margin-bottom: 3px; }
+.footer .doc-label { display: none; }
 .footer .fineprint { font-size: 7.3px; line-height: 1.55; margin-top: 4px; }
-.footer .qr { position: absolute; top: 1mm; right: 0; text-align: center; width: 29mm; height: 29mm; }
+.footer .qr { position: absolute; top: 1mm; right: 1mm; text-align: center; width: 29mm; height: 29mm; }
 .footer .qr img { display: block; margin: 0 auto; width: 24mm; height: 24mm; }
 .footer .qr span { display: block; font-size: 6.7px; font-weight: bold; color: #223e54; margin-top: 2px; }
 </style>
@@ -180,7 +183,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
     </tbody>
   </table>
 
-  <table class="after-table">
+  <table class="after-table" style="page-break-inside: avoid;">
     <tr>
       <td style="width:{{ $mode === 'proforma' ? '57%' : '100%' }};padding-right:{{ $mode === 'proforma' ? '8px' : '0' }};">
         @if($order->order_note)
@@ -213,7 +216,6 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
 
   <div class="footer">
     <div class="footer-main">
-      <div class="doc-label">{{ $shopName }} · {{ $order->order_number }}</div>
       <p>Belge yalnızca mağaza içi sipariş hazırlama ve operasyon amacıyla düzenlenmiştir.</p>
       <p class="fineprint">
         {{ $mode === 'proforma'
