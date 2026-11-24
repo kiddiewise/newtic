@@ -169,6 +169,7 @@ class QuickCartSheetTest extends TestCase
     {
         $product = $this->demo();
         $other = Product::query()->where('sku','DEMO-SURF-150')->firstOrFail();
+        $this->get(route('category.show', $product->category->slug))->assertOk();
         $card = fn($p) => view('store.partials.product-card',['product'=>$p->fresh()->load('options','badges')])->render();
         $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s+hidden\s*>\\s*<\/span>/', $card($product));
         $this->postJson(route('cart.add'), ['items'=>[$product->id=>2,$other->id=>1]])

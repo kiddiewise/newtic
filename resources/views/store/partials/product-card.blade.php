@@ -1,5 +1,5 @@
 @php($cardCartQuantity = \App\Support\ShoppingCart::quantityForProduct(request(), $product))
-<article class="product-card" data-card-product-id="{{ $product->id }}">
+<article class="product-card">
   <a href="{{ route('product.show', $product->slug) }}" class="product-card-media" aria-label="{{ $product->name }} ürün detayını görüntüle">
     @if($product->discount_percent > 0)<span class="product-discount-pill">-%{{ $product->discount_percent }}</span>@endif
     <img src="{{ $product->image_path ? asset($product->image_path) : asset('assets/products/demo-sinker.svg') }}" alt="{{ $product->name }}" width="360" height="360" loading="lazy">
@@ -17,7 +17,7 @@
       </a>
     @endif
     @if($product->discount_percent > 0)<s class="product-card-old-price">{{ number_format((float) $product->compare_at_price, 2, ',', '.') }} ₺</s>@endif
-    <div class="product-card-bottom">
+    <div class="product-card-bottom" data-card-product-id="{{ $product->id }}">
       <strong>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
       @if($product->options->isNotEmpty() || $product->requires_customer_photos)
       <a class="product-card-action product-card-option-link" href="{{ route('product.show', $product->slug) }}" aria-label="{{ $product->name }} için {{ $product->requires_customer_photos ? 'fotoğraf yükle' : 'ürün seçeneği belirle' }}" @if($cardCartQuantity > 0) aria-description="Sepette {{ $cardCartQuantity }} adet" @endif>
