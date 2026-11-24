@@ -2,6 +2,9 @@ name: Deploy NEWTIC staging
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'deploy/polaris-proforma-multipage-1-0-6'
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 07e96d314897ebaaf556eb357c830047f24cc19a
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -69,7 +74,7 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upload asset bundle and deploy
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: 07e96d314897ebaaf556eb357c830047f24cc19a
         run: |
           set -euo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
@@ -78,6 +83,34 @@ jobs:
           "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
           "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
           "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify 1.0.6 printable A4 and thirty-row handling on Polaris
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          test "$(git rev-parse HEAD)" = '07e96d314897ebaaf556eb357c830047f24cc19a'
+          test "$(cat VERSION)" = '1.0.6'
+          cmp "$APP/public/build/manifest.json" "$WEB/build/manifest.json"
+          grep -Fq 'width: 164mm; margin-left: 4mm; margin-right: 4mm' resources/views/admin/orders/document.blade.php
+          grep -Fq '.items thead { display: table-header-group;' resources/views/admin/orders/document.blade.php
+          grep -Fq 'Thirty products must continue onto additional A4 pages' tests/Feature/AdminOrderDocumentTest.php
+          ! grep -Fq 'class="doc-label"' resources/views/admin/orders/document.blade.php
+          php artisan migrate:status > /dev/null
+          php artisan route:list --name=orders.document | grep -F 'admin.orders.document'
+          php <<'PHP'
+          <?php
+          require "vendor/autoload.php";
+          $app = require "bootstrap/app.php";
+          $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+          $appearance = App\\Models\\ShopAppearance::current();
+          $logo = (string) ($appearance->desktop_logo_path ?: $appearance->mobile_logo_path);
+          echo $logo === "" ? "POLARIS_BRAND_LOGO_NOT_UPLOADED\\n" : "POLARIS_BRAND_LOGO_CONFIGURED\\n";
+          PHP
+          echo 'NEWTIC_1_0_6_A4_MULTIPAGE_VERIFIED'
+          REMOTE
       - name: Verify public staging homepage
         run: |
           set -euo pipefail
