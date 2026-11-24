@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <title>{{ $order->order_number }} | {{ $mode === 'proforma' ? 'Promofatura' : 'Sipariş Hazırlama Formu' }}</title>
 <style>
-@page { size: A4 portrait; margin: 19mm 19mm 38mm; }
+@page { size: A4 portrait; margin: 16mm 16mm 36mm; }
 * { box-sizing: border-box; }
 html, body { padding: 0; margin: 0; }
-body { width: 164mm; margin-left: 4mm; margin-right: 4mm; font-family: "DejaVu Sans", sans-serif; font-size: 9px; color: #132b41; line-height: 1.48; }
+body { width: 100%; margin: 0; padding: 0; font-family: "DejaVu Sans", sans-serif; font-size: 9px; color: #132b41; line-height: 1.48; }
 h1, h2, h3, p { padding: 0; margin: 0; }
 table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout: fixed; }
 .topline { height: 4px; background: #092037; margin-bottom: 13px; }
@@ -70,7 +70,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout:
 .price-box tr:last-child td { background: #092037; border-bottom: 0; color: #fff; font-size: 11px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; }
 .payment-details { margin-top: 11px; font-size: 8px; color: #657889; }
 .warning { border: 1px solid #eac6a4; color: #8b5328; background: #fff7ed; padding: 7px 10px; font-weight: bold; margin-bottom: 10px; }
-.footer { position: fixed; left: 4mm; right: 4mm; bottom: 0; height: 32mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
+.footer { position: fixed; left: 0; right: 0; bottom: 0; height: 32mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
 .footer-main { width: 72%; }
 .footer .doc-label { display: none; }
 .footer .fineprint { font-size: 7.3px; line-height: 1.55; margin-top: 4px; }
