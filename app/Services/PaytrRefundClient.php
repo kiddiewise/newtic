@@ -68,11 +68,18 @@ final class PaytrRefundClient
     public function send(OrderReturnRequest $case): string
     {
         [$settings, $attempt] = $this->context($case);
+        if (!$attempt->is_test && (!$settings->live_refunds_enabled || !\App\Support\PaytrTestAccess::canonicalHost())) return 'none';
         $returns = $this->status($settings, $attempt);
         // A provider-side refund (including outside NEWTIC) reserves balance.
         // Unknown provider records fail closed rather than over-refund.
         foreach ($returns as $row) {
             if ($row['reference'] === $case->reference) return 'uncertain';
+        }
+        // Reconcile prior local refunds with provider history before another
+        // financial POST. Stale/missing provider history must fail closed.
+        foreach ($case->order->returnRequests()->where('id','!=',$case->id)->where('refund_status','verified')->get() as $prior) {
+            $matches = array_values(array_filter($returns, fn ($r) => $r['reference'] === $prior->reference));
+            if (count($matches) !== 1 || $matches[0]['amount'] !== $prior->refund_cents) return 'none';
         }
         if (array_sum(array_column($returns,'amount')) + $case->refund_cents > $attempt->amount_cents) return 'none';
         $amount = sprintf('%d.%02d', intdiv($case->refund_cents, 100), $case->refund_cents % 100);

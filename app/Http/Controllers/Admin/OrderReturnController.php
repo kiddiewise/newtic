@@ -53,6 +53,9 @@ final class OrderReturnController extends Controller
             if ($order->payment_method === 'bank_transfer' && (blank($data['bank_reference'] ?? null) || $order->is_test)) {
                 throw ValidationException::withMessages(['return'=>'Havale iadesi için gerçek banka transferi ve işlem referansı gerekir; test siparişinden gerçek iade kaydı oluşturulamaz.']);
             }
+            if ($order->payment_method === 'paytr' && !$order->is_test && (!\App\Models\PaytrSetting::query()->find(1)?->live_refunds_enabled || !\App\Support\PaytrTestAccess::canonicalHost() || config('newtic.checkout_test_mode', true))) {
+                throw ValidationException::withMessages(['return'=>'Canlı PayTR iadesi mağaza ayarlarından açıkça etkinleştirilmelidir.']);
+            }
             $case = $service->reserveRefund($returnRequest, $data, $actor);
             if ($order->payment_method === 'bank_transfer') {
                 $service->refundResult($case, 'verified', $actor, $data['bank_reference']);
@@ -63,6 +66,7 @@ final class OrderReturnController extends Controller
                     $state = 'uncertain';
                 }
                 $service->refundResult($case, $state, $actor);
+                if ($state === 'none') return redirect()->route('admin.orders.show',$order)->with('error','PayTR geçmişi veya kalan iade tutarı uyuşmadı. Para iadesi gönderilmedi; sağlayıcı panelinden kontrol edin.');
             }
         } elseif ($data['action'] === 'reconcile') {
             if ($returnRequest->order->payment_method !== 'paytr' || !in_array($returnRequest->refund_status, ['processing','uncertain','submitted'], true)) {

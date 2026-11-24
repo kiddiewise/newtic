@@ -51,6 +51,10 @@
           @foreach(range(2, 12) as $count)<option value="{{ $count }}" @selected($maxInstallment === $count)>{{ $count }} taksit</option>@endforeach
         </select>
       </label>
+      <label>Canlı para iadesi
+        <select name="live_refunds_enabled"><option value="0" @selected(!$liveRefundsEnabled)>Kapalı</option><option value="1" @selected($liveRefundsEnabled) @disabled(!$liveAllowed)>Açık (gerçek iade)</option></select>
+      </label>
+      <small>PayTR test iadesi ve durum sorgusu doğrulandıktan sonra açın. Gerçek iade işlemleri geri alınamaz.</small>
       <label><input type="checkbox" name="live_confirmed" value="1"> PayTR mağazam canlı onaylı, bildirim URL'si kayıtlı; gerçek tahsilatı onaylıyorum.</label>
       <button class="admin-primary" type="submit"><x-admin-icon name="check" /> Ödeme ayarlarını kaydet</button>
     </form>

@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        Schema::table('paytr_settings', function (Blueprint $table) {
+            $table->boolean('live_refunds_enabled')->default(false);
+        });
         Schema::create('order_return_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->restrictOnDelete();
@@ -43,5 +46,6 @@ return new class extends Migration {
     {
         Schema::dropIfExists('order_return_events');
         Schema::dropIfExists('order_return_requests');
+        Schema::table('paytr_settings', fn (Blueprint $table) => $table->dropColumn('live_refunds_enabled'));
     }
 };

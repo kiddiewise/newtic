@@ -29,12 +29,13 @@ final class PaytrSettingsController extends Controller
         $liveAllowed = PaytrTestAccess::liveAllowed();
         $mode = $settings?->test_mode === false ? 'live' : 'test';
         $installments = (bool) $settings?->installments_enabled;
+        $liveRefundsEnabled = (bool) $settings?->live_refunds_enabled;
         $maxInstallment = (int) ($settings?->max_installment ?? 0);
         $callbackUrl = rtrim((string) config('app.url'), '/').'/odeme/paytr/bildirim';
 
         return response()->view('admin.paytr-settings', compact(
             'merchantId', 'hasKey', 'hasSalt', 'configured', 'testAllowed', 'testEnabled',
-            'liveAllowed', 'mode', 'installments', 'maxInstallment', 'callbackUrl'
+            'liveAllowed', 'mode', 'installments', 'maxInstallment', 'callbackUrl', 'liveRefundsEnabled'
         ))->header('Cache-Control', 'private, no-store, max-age=0')
           ->header('Pragma', 'no-cache');
     }
@@ -45,6 +46,7 @@ final class PaytrSettingsController extends Controller
             'enabled' => ['required', 'boolean'],
             'mode' => ['sometimes', 'in:test,live'],
             'installments_enabled' => ['sometimes', 'boolean'],
+            'live_refunds_enabled' => ['sometimes', 'boolean'],
             'max_installment' => ['sometimes', 'integer', 'in:0,2,3,4,5,6,7,8,9,10,11,12'],
             'live_confirmed' => ['sometimes', 'accepted'],
         ]);
@@ -60,9 +62,14 @@ final class PaytrSettingsController extends Controller
                 || !in_array($data['live_confirmed'] ?? null, [true, 1, '1', 'yes', 'on', 'true'], true))) {
                 throw ValidationException::withMessages(['paytr' => 'Canlı ödeme için mağazanın canlı ve yasal olarak hazır olması, PayTR onayı ve açık onayınız gerekir.']);
             }
+            $refunds = (bool) ($data['live_refunds_enabled'] ?? $settings->live_refunds_enabled);
+            if ($refunds && ($test || !PaytrTestAccess::liveAllowed())) {
+                $refunds = false;
+            }
             $settings->forceFill([
                 'is_enabled' => $enabled,
                 'admin_managed' => true,
+                'live_refunds_enabled' => $refunds,
                 'test_mode' => $test,
                 'installments_enabled' => (bool) ($data['installments_enabled'] ?? $settings->installments_enabled),
                 'max_installment' => (int) ($data['max_installment'] ?? $settings->max_installment ?? 0),
@@ -141,6 +148,7 @@ final class PaytrSettingsController extends Controller
                 || $settings->isDirty('merchant_id')) {
                 $settings->is_enabled = false;
                 $settings->test_mode = true;
+                $settings->live_refunds_enabled = false;
             }
             $settings->save();
             }, 3);

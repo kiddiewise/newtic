@@ -112,4 +112,23 @@ final class OrderReturnWorkflowTest extends TestCase
         $this->assertSame('cancelled',$bank->fresh()->status);
         $this->assertSame('completed',$case->fresh()->status);
     }
+
+    public function test_live_refund_is_disabled_by_default_and_does_not_contact_gateway(): void
+    {
+        $order=$this->order('pending_payment');
+        $order->update(['is_test'=>false]);
+        $attempt=PaytrPaymentAttempt::createForOrder($order);
+        $attempt->update(['status'=>'success','paid_total_cents'=>12000,'processed_at'=>now()]);
+        $order->update(['status'=>'completed']);
+        config()->set('newtic.checkout_test_mode',false);
+        PaytrSetting::create(['merchant_id'=>'1234','merchant_key'=>'key','merchant_salt'=>'salt']);
+        $admin=$this->admin();
+        $service=app(OrderReturnService::class);
+        $case=$service->create($order,$this->payload($order),$admin->id);
+        $service->review($case,['action'=>'approve'],$admin->id);
+        Http::fake();
+        $this->actingAs($admin)->post(route('admin.returns.update',$case),['action'=>'refund','confirmed'=>1])->assertSessionHasErrors('return');
+        Http::assertNothingSent();
+        $this->assertSame('none',$case->fresh()->refund_status);
+    }
 }

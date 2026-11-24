@@ -24,6 +24,7 @@ final class PaytrSetting extends Model
         'test_mode' => 'boolean',
         'admin_managed' => 'boolean',
         'installments_enabled' => 'boolean',
+        'live_refunds_enabled' => 'boolean',
         'max_installment' => 'integer',
     ];
 

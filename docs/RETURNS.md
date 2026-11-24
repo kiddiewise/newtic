@@ -7,3 +7,5 @@ PayTR: https://dev.paytr.com/iade-api ve https://dev.paytr.com/durum-sorgu. İad
 Kargo: taşıyıcı panelinden alınan iade kodu müşteriye iletilir. Otomatik iade gönderisi ve kargo iptal API'si sağlayıcı şeması doğrulanmadan etkinleştirilmez. Yasal iade süreleri manuel takip edilir. İade talebi tek başına gönderiyi durdurmaz.
 
 Banka: gerçek transferi yönetici bankadan yapar ve referansı kaydeder. Test havale siparişlerinde gerçek para iadesi kaydedilemez. Ödenmemiş havale tam iptali için banka hareketi kontrolü gerekir. PayTR bekleyen ödeme iptali henüz otomatik değildir.
+
+Canlı PayTR iadeleri yeni kurulumda kapalıdır. Yönetici test iadesini doğruladıktan sonra PayTR ayarlarında canlı iade yetkisini açar. Gerçek ödeme modu ve HTTPS mağaza adresi zorunludur. Önceki iade kayıtları ve sağlayıcı bakiyesi karşılaştırılır.

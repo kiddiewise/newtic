@@ -69,6 +69,15 @@ final class OrderReturnService
             $case = OrderReturnRequest::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
             $action = $data['action'];
             if (!in_array($case->status, OrderReturnRequest::ACTIVE, true)) $this->fail('Bu talep sonuçlandırılmış.');
+            if ($action === 'complete_unpaid' && $order->status === 'cancelled' && $case->refund_status === 'none'
+                && !$order->paytrAttempts()->whereIn('status',['pending','success'])->exists()
+                && !$order->paymentNotifications()->whereIn('status',['pending','verified'])->exists()) {
+                $case->status = 'completed';
+                $case->handled_by = $actor;
+                $case->save();
+                $this->event($case, 'already_cancelled', $actor);
+                return;
+            }
             if ($case->refund_status !== 'none' && !($action === 'received' && $case->status === 'refund_review' && !$case->received_at)) $this->fail('Finansal işlem başladı; önce sonucunu kontrol edin.');
             if ($action === 'approve' && $case->status === 'requested') {
                 $case->status = 'approved';

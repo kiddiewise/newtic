@@ -19,10 +19,13 @@
       </form>
     </details>
   @endif
+  @php($confirmedRefund = $cases->where('refund_status','verified')->sum('refund_cents'))
+  @if($confirmedRefund)<div class="admin-detail-line"><span>Doğrulanan ana bedel iadeleri</span><strong>{{ number_format($confirmedRefund/100,2,',','.') }} ₺</strong></div><div class="admin-detail-line"><span>İade sonrası kalan sipariş bedeli</span><strong>{{ number_format(max(0,$order->total_cents-$confirmedRefund)/100,2,',','.') }} ₺</strong></div>@endif
   @forelse($cases as $case)
     <article class="admin-payment-history">
       <strong>{{ $case->kind==='cancel'?'İptal':'İade' }} · {{ $case->label() }}</strong>
       <small>{{ $case->reference }} · {{ $case->created_at->format('d.m.Y H:i') }}</small>
+      @if(in_array($case->status,\App\Models\OrderReturnRequest::ACTIVE,true))<p class="admin-description">İç takip hedefi: {{ $case->created_at->copy()->addDays(14)->format('d.m.Y') }} · Yasal süreyi teslimat ve cayma bildirimine göre ayrıca kontrol edin.</p>@endif
       <p>{{ \App\Models\OrderReturnRequest::REASONS[$case->reason] ?? $case->reason }} — {{ $case->customer_note }}</p>
       @foreach($case->items as $line)<div class="admin-detail-line"><span>{{ $line['name'] }} {{ $line['option'] ?? '' }} × {{ $line['quantity'] }}</span><strong>{{ number_format($line['cents']/100,2,',','.') }} ₺</strong></div>@endforeach
       <div class="admin-detail-line"><span>İstenen ürün bedeli</span><strong>{{ number_format($case->items_cents/100,2,',','.') }} ₺</strong></div>
@@ -46,11 +49,14 @@
                 <div class="admin-form-actions"><button class="admin-secondary" name="action" value="return_code">İade kodunu müşteriye ilet</button><button class="admin-secondary" name="action" value="received">Ürün teslim alındı</button></div>
               @endif
               <label><input type="checkbox" name="shipping" value="1"> İlk kargo bedelini iade et (tam caymada otomatik)</label>
+              <p>Ürün bedeli: {{ number_format($case->items_cents/100,2,',','.') }} ₺. İlk kargo dahil üst tutar: {{ number_format(($case->items_cents + max(0,$order->shipping_cents-$cases->whereIn('refund_status',['processing','uncertain','submitted','verified'])->sum('shipping_cents')))/100,2,',','.') }} ₺. Vade farkı ayrıca eklenmez.</p>
               @if($order->payment_method==='bank_transfer')<label>Banka iade işlem referansı (gerçek transfer sonrası)<input name="bank_reference" maxlength="100"></label>@endif
               <label><input type="checkbox" name="confirmed" value="1"> Ödeme / kargo ve iade tutarını kontrol ettim; işlemi onaylıyorum.</label>
               <div class="admin-form-actions">
                 @if($paymentBreakdown['payment_verified'])
                 <button class="admin-primary" name="action" value="refund" onclick="return confirm('Para iadesi geri alınamaz. Devam edilsin mi?')">{{ $order->payment_method==='paytr'?'PAYTR iadesini başlat':'Banka iadesini kaydet' }}</button>
+                @elseif($order->status==='cancelled' && $case->refund_status==='none')
+                <button class="admin-secondary" name="action" value="complete_unpaid">Mevcut iptali talebe işle (stok değişmez)</button>
                 @elseif($order->payment_method==='bank_transfer' && $order->status==='pending_payment')
                 <button class="admin-primary" name="action" value="complete_unpaid" onclick="return confirm('Banka hareketlerinde ödeme olmadığını doğruladınız mı?')">Ödenmemiş siparişi iptal et</button>
                 @endif
