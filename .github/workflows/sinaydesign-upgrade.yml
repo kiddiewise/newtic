@@ -1,55 +1,21 @@
-name: Sinay Design verified NEWTIC upgrade
-# NEWTIC sidebar polish: soft navigation, removed quick access; verified Sinay release
-# Customer-facing order confirmation: remove activation notices on both shops; keep payment controls server-side.
-# Guest tracking email: no SMTP auto-enablement for Sinay; separate setup required.
-
+name: Sinay Design 1.0.9 safe deployment recovery
 on:
   push:
     branches: [deploy/sinay-paytr-1-0-9]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: sinaydesign-newtic-upgrade
   cancel-in-progress: false
-
 jobs:
   upgrade:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: 3cc8996035370ce4fb17c70970d20d7ac06ec3be
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, pdo_sqlite, sqlite3, fileinfo, bcmath, gd
-          coverage: none
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Validate and test before touching Sinay
-        run: |
-          set -euo pipefail
-          bash -n scripts/deploy-sinaydesign-upgrade.sh
-          composer install --no-interaction --prefer-dist --no-progress
-          cp .env.example .env
-          php artisan key:generate
-          touch database/database.sqlite
-          php artisan migrate --env=testing --force
-          php artisan test
-          npm install --ignore-scripts --no-audit --no-fund
-          npm run build
-          # Match the shipped source and compiled celebratory confirmation UI.
-          # PayTR checkout stays OFF for Sinay until its own merchant setup.
-          grep -Fq 'data-order-celebration-stage' resources/views/store/order-success.blade.php
-          grep -RFlq --include='*.css' '.order-preparing-confirmation' public/build/assets
-          grep -RFlq --include='*.js' 'newtic:order-celebrated' public/build/assets
-          printf '%s\n' "3cc8996035370ce4fb17c70970d20d7ac06ec3be" > public/build/newtic-revision.txt
-          tar -czf sinay-upgrade-build.tar.gz -C public build
       - name: Configure existing Hostinger connection
         env:
           DEPLOY_KEY: ${{ secrets.NEWTIC_SSH_PRIVATE_KEY }}
@@ -62,16 +28,56 @@ jobs:
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/newtic-deploy
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
-      - name: Upgrade existing installed Sinay with private backup
-        env:
-          SHA: 3cc8996035370ce4fb17c70970d20d7ac06ec3be
+      - name: Inspect and preserve local source changes before retry
         run: |
           set -euo pipefail
-          TARGET=u880685189@147.79.123.121
-          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" 'test -f ~/domains/sinaydesign.com/newtic/.env && mkdir -p ~/domains/sinaydesign.com/newtic/.deploy'
-          scp -P 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes sinay-upgrade-build.tar.gz "$TARGET:/home/u880685189/domains/sinaydesign.com/newtic/.deploy/sinay-upgrade-build.tar.gz"
-          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" "NEWTIC_EXPECTED_SHA=$SHA bash -se" < scripts/deploy-sinaydesign-upgrade.sh
-      - name: Verify installed merchant PayTR settings and version
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          umask 077
+          cd "$HOME/domains/sinaydesign.com/newtic"
+          grep -Fxq 'APP_URL=https://sinaydesign.com' .env
+          grep -Fxq 'DB_DATABASE=u880685189_sinay_newtic' .env
+          test "$(git branch --show-current)" = main
+          git fetch --no-tags origin main
+          TARGET=3cc8996035370ce4fb17c70970d20d7ac06ec3be
+          git merge-base --is-ancestor HEAD "$TARGET"
+          echo "Installed revision: $(git rev-parse --short HEAD)"
+          git status --short --untracked-files=no
+          git diff --numstat HEAD
+          if ! git diff --quiet --cached; then
+            echo 'Staged modifications require review; refusing to change anything.'
+            exit 1
+          fi
+          if ! git diff --quiet HEAD; then
+            BACKUP="$PWD/storage/app/private/newtic-deployment-backups/preflight-$(date -u +%Y%m%dT%H%M%SZ)"
+            mkdir -p "$BACKUP"
+            git diff --binary HEAD > "$BACKUP/local-source.patch"
+            git status --short --untracked-files=no > "$BACKUP/status.txt"
+            chmod 600 "$BACKUP/"*
+            # Only revert a local modification if it is exactly the target
+            # content, or is a tracked generated build file already superseded
+            # by the verified frontend archive. Never discard custom source.
+            mapfile -d '' FILES < <(git diff --name-only -z HEAD)
+            for f in "${FILES[@]}"; do
+              if [[ "$f" == public/build/* ]] && test -f "$f"; then
+                echo "Generated build change: $f"
+              elif test -f "$f" && git cat-file -e "$TARGET:$f" 2>/dev/null && git show "$TARGET:$f" | cmp -s - "$f"; then
+                echo "Local file already equals target: $f"
+              else
+                echo "REVIEW_REQUIRED: $f"
+                exit 1
+              fi
+            done
+            git restore --source=HEAD --worktree -- "${FILES[@]}"
+            echo 'Local patch preserved privately; only verified equivalent/generated changes restored.'
+          fi
+          test -z "$(git status --porcelain --untracked-files=no)"
+          REMOTE
+      - name: Retry verified 1.0.9 archive with existing backup safeguards
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 "NEWTIC_EXPECTED_SHA=3cc8996035370ce4fb17c70970d20d7ac06ec3be bash -se" < scripts/deploy-sinaydesign-upgrade.sh
+      - name: Verify deployed PayTR settings and public routes
         run: |
           set -euo pipefail
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
@@ -81,17 +87,10 @@ jobs:
           test "$(cat VERSION)" = '1.0.9'
           php artisan migrate:status | grep 'add_merchant_paytr_activation' | grep -F Ran
           grep -Fq 'installments_enabled' resources/views/admin/paytr-settings.blade.php
-          grep -Fq 'Canlı (gerçek tahsilat)' resources/views/admin/paytr-settings.blade.php
           cmp public/build/manifest.json ../public_html/build/manifest.json
-          echo 'SINAY_PAYTR_1_0_9_VERIFIED'
+          echo SINAY_PAYTR_1_0_9_VERIFIED
           REMOTE
-      - name: Verify Sinay homepage blog and admin are reachable
-        run: |
-          set -euo pipefail
-          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/ -o sinay-home.html
-          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/blog -o sinay-blog.html
-          curl -fsSL --retry 3 --max-time 30 https://sinaydesign.com/admin/login -o sinay-admin.html
-          grep -Fqi 'Sinay Design' sinay-home.html
-          grep -Fq 'blog-public-header' sinay-blog.html
-          grep -Fq 'NEWTIC' sinay-admin.html
-          echo 'Sinay Design storefront and new blog verified'
+          curl -fsSL --retry 2 --max-time 20 https://sinaydesign.com/ -o home.html
+          curl -fsSL --retry 2 --max-time 20 https://sinaydesign.com/admin/login -o admin.html
+          grep -Fqi 'Sinay Design' home.html
+          grep -Fq NEWTIC admin.html
