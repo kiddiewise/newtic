@@ -74,6 +74,13 @@ final class OrderDocumentService
     private function logoDataUri(): ?string
     {
         $logo = ShopAppearance::current()->desktopLogo();
+        // A merchant without an uploaded brand should not print NEWTIC's
+        // platform logo on its own customer paperwork.
+        if (($logo === ShopAppearance::DEFAULT_DESKTOP_LOGO
+                || $logo === ShopAppearance::DEFAULT_MOBILE_LOGO)
+            && !in_array(mb_strtolower(StoreIdentity::name()), ['newtic', 'newtic e-ticaret'], true)) {
+            return null;
+        }
         if (str_starts_with($logo, 'storage/')) {
             $relative = substr($logo, strlen('storage/'));
             if (!preg_match('~^branding/[a-zA-Z0-9_.-]+\.(?:png|jpe?g|webp|avif)$~Di', $relative)) {

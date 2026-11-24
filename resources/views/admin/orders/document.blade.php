@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <title>{{ $order->order_number }} | {{ $mode === 'proforma' ? 'Promofatura' : 'Sipariş Hazırlama Formu' }}</title>
 <style>
-@page { size: A4 portrait; margin: 14mm 14mm 40mm; }
+@page { size: A4 portrait; margin: 18mm 19mm 36mm; }
 * { box-sizing: border-box; }
-html, body { padding: 0; margin: 0; }
+html, body { padding: 0; margin: 0; width: 100%; }
 body { font-family: "DejaVu Sans", sans-serif; font-size: 9px; color: #132b41; line-height: 1.48; }
 h1, h2, h3, p { padding: 0; margin: 0; }
-table { border-spacing: 0; border-collapse: collapse; width: 100%; }
+table { border-spacing: 0; border-collapse: collapse; width: 100%; table-layout: fixed; }
 .topline { height: 4px; background: #092037; margin-bottom: 13px; }
 .header td { vertical-align: middle; }
 .brand { width: 44%; }
 .logo { max-width: 180px; max-height: 62px; }
 .brand-fallback { font-size: 20px; font-weight: bold; letter-spacing: -.5px; }
-.header-right { text-align: right; }
-.eyebrow { font-size: 8px; letter-spacing: 1.5px; font-weight: bold; color: #65798a; text-transform: uppercase; }
+.header-right { text-align: right; width: 56%; padding-left: 7px; }
+.eyebrow { font-size: 7px; letter-spacing: .5px; font-weight: bold; color: #65798a; text-transform: uppercase; }
 .document-title { font-size: 18px; letter-spacing: -.35px; font-weight: bold; margin-top: 3px; }
 .subline { font-size: 8px; color: #697b89; margin-top: 2px; }
 .meta { margin: 16px 0 13px; border: 1px solid #dbe3ea; background: #f7f9fb; }
@@ -25,7 +25,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
 .caption { font-size: 8px; color: #6b8191; display: block; margin-bottom: 3px; letter-spacing: .2px; }
 .value { font-size: 10px; font-weight: bold; word-wrap: break-word; }
 .status { font-size: 9px; font-weight: bold; }
-.section-head { font-weight: bold; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #203c54; margin-bottom: 7px; }
+.section-head { font-weight: bold; font-size: 9px; text-transform: none; letter-spacing: .25px; color: #203c54; margin-bottom: 7px; }
 .details { table-layout: fixed; margin-bottom: 14px; }
 .details td { width: 50%; vertical-align: top; padding: 0; }
 .details td:first-child { padding-right: 7px; }
@@ -40,18 +40,18 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
 .heading-row small { float: right; font-size: 8px; color: #778997; font-weight: normal; }
 .items { width: 100%; table-layout: fixed; }
 .items thead { display: table-header-group; }
-.items th { background: #edf2f6; color: #465c6e; font-weight: bold; font-size: 8px; padding: 8px 5px; text-align: left; border-bottom: 1px solid #d7e0e7; }
+.items th { overflow-wrap: anywhere; background: #edf2f6; color: #465c6e; font-weight: bold; font-size: 8px; padding: 8px 5px; text-align: left; border-bottom: 1px solid #d7e0e7; }
 .items td { padding: 8px 5px; vertical-align: top; border-bottom: 1px solid #e5ebef; font-size: 9px; word-wrap: break-word; }
 .items tr { page-break-inside: avoid; }
 .items .rowno { color: #8ca0ad; font-size: 8px; }
-.items .product { font-weight: bold; font-size: 9px; line-height: 1.5; }
+.items .product { font-weight: normal; font-size: 9px; line-height: 1.5; }
 .items .sku { font-size: 7.5px; color: #6c8190; margin-top: 3px; }
 .items .option { font-size: 8px; margin-top: 2px; }
 .items .qty { font-size: 12px; font-weight: bold; }
-.items .money { text-align: right; font-size: 8.5px; white-space: nowrap; }
+.items .money { text-align: right; font-size: 8px; white-space: normal; overflow-wrap: break-word; }
 .items .check { text-align: center; color: #2b465c; font-size: 16px; line-height: 13px; }
 .items th.money { text-align: right; }
-.items th.check { text-align: center; }
+.items th.check { text-align: center; font-size: 7px; }
 .after-table { margin-top: 12px; }
 .after-table td { vertical-align: top; }
 .note-box { border-left: 3px solid #e99b59; background: #fff9f2; padding: 9px 11px; margin: 0 0 10px; }
@@ -61,19 +61,19 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
 .ops-box .section-head { margin-bottom: 9px; }
 .ops-line { margin-bottom: 7px; font-size: 9px; }
 .sq { font-family: "DejaVu Sans", sans-serif; font-size: 13px; margin-right: 8px; color: #3a556a; }
-.price-box { border: 1px solid #dbe3ea; margin-left: 12px; }
+.price-box { border: 1px solid #dbe3ea; margin-left: 3%; width: 97%; table-layout: fixed; }
 .price-box td { padding: 8px 10px; border-bottom: 1px solid #e8eef2; font-size: 9px; }
-.price-box td:last-child { text-align: right; font-weight: bold; white-space: nowrap; }
+.price-box td:first-child { width: 54%; } .price-box td:last-child { width: 46%; text-align: right; font-weight: bold; white-space: normal; }
 .price-box tr:last-child td { background: #092037; border-bottom: 0; color: #fff; font-size: 11px; font-weight: bold; padding-top: 10px; padding-bottom: 10px; }
 .payment-details { margin-top: 11px; font-size: 8px; color: #657889; }
 .warning { border: 1px solid #eac6a4; color: #8b5328; background: #fff7ed; padding: 7px 10px; font-weight: bold; margin-bottom: 10px; }
-.footer { position: fixed; left: 0; right: 0; bottom: -32mm; height: 31mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
-.footer-main { width: 76%; }
+.footer { position: fixed; left: 0; right: 0; bottom: 0; height: 32mm; border-top: 1px solid #cbd5de; padding-top: 7px; color: #70818f; }
+.footer-main { width: 72%; }
 .footer .doc-label { font-size: 9px; color: #233f56; font-weight: bold; margin-bottom: 3px; }
 .footer .fineprint { font-size: 7.3px; line-height: 1.55; margin-top: 4px; }
-.footer .qr { position: absolute; bottom: 0; right: 0; text-align: center; width: 29mm; }
-.footer .qr img { width: 26mm; height: 26mm; }
-.footer .qr span { display: block; font-size: 7px; font-weight: bold; color: #223e54; margin-top: 2px; }
+.footer .qr { position: absolute; top: 1mm; right: 0; text-align: center; width: 29mm; height: 29mm; }
+.footer .qr img { display: block; margin: 0 auto; width: 24mm; height: 24mm; }
+.footer .qr span { display: block; font-size: 6.7px; font-weight: bold; color: #223e54; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -114,7 +114,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
     <tr>
       <td>
         <div class="detail-box">
-          <h2 class="section-head">01 / Müşteri bilgileri</h2>
+          <h2 class="section-head">MÜŞTERİ BİLGİLERİ</h2>
           <p class="name">{{ $order->customer_name }}</p>
           <p class="line"><b>Telefon:</b> {{ $order->phone }}</p>
           <p class="line"><b>E-posta:</b> {{ $order->customer_email }}</p>
@@ -123,7 +123,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
       </td>
       <td>
         <div class="detail-box">
-          <h2 class="section-head">02 / Teslimat ve fatura adresi</h2>
+          <h2 class="section-head">TESLİMAT VE FATURA ADRESİ</h2>
           <p class="subtle">Fatura için siparişte kayıtlı teslimat adresi kullanılır.</p>
           @if($order->invoice_type === 'corporate' && $order->company_title)
             <p class="name">{{ $order->company_title }}</p>
@@ -142,7 +142,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
   </table>
 
   <div class="heading-row">
-    <span>03 / SİPARİŞ KALEMLERİ</span>
+    <span>SİPARİŞ KALEMLERİ</span>
     <small>{{ $order->items->sum('quantity') }} adet · {{ $order->items->count() }} kalem</small>
   </div>
   <table class="items">
@@ -190,7 +190,7 @@ table { border-spacing: 0; border-collapse: collapse; width: 100%; }
           </div>
         @endif
         <div class="ops-box">
-          <h3 class="section-head">04 / HAZIRLIK KONTROLÜ</h3>
+          <h3 class="section-head">HAZIRLIK KONTROLÜ</h3>
           <div class="ops-line"><span class="sq">□</span> Ürünler sayıldı ve toplandı</div>
           <div class="ops-line"><span class="sq">□</span> Ürünler / seçenekler kontrol edildi</div>
           <div class="ops-line"><span class="sq">□</span> Paketleme tamamlandı</div>
