@@ -1,6 +1,17 @@
 @extends('admin.layout')
 @section('title', 'Genel Bakış | NEWTIC')
 @section('content')
+<section class="admin-panel admin-dashboard-actions admin-dashboard-actions-first">
+    <div class="admin-panel-title"><h2>Hızlı işlemler</h2></div>
+    <div class="admin-action-grid">
+      <a href="{{ route('admin.products.create') }}"><span class="is-mint"><x-admin-icon name="plus" /></span>Yeni ürün</a>
+      <a href="{{ route('admin.orders.index') }}"><span class="is-blue"><x-admin-icon name="bag" /></span>Siparişleri yönet</a>
+      <a href="{{ route('admin.payment-notifications.index') }}"><span class="is-orange"><x-admin-icon name="landmark" /></span>Ödeme bildirimleri</a>
+      <a href="{{ route('admin.categories.index') }}"><span class="is-purple"><x-admin-icon name="grid" /></span>Kategoriler</a>
+      <a href="{{ route('admin.index') }}"><span class="is-mint"><x-admin-icon name="layout" /></span>Vitrin düzenle</a>
+      <a href="{{ route('admin.bank-accounts.index') }}"><span class="is-blue"><x-admin-icon name="settings" /></span>Banka hesapları</a>
+    </div>
+  </section>
 <div class="admin-page-heading admin-heading-actions admin-welcome">
   <div>
     <p class="admin-eyebrow">MAĞAZA YÖNETİMİ</p>
@@ -69,17 +80,7 @@
     @endif
   </section>
 
-  <section class="admin-panel admin-dashboard-actions">
-    <div class="admin-panel-title"><h2>Hızlı işlemler</h2></div>
-    <div class="admin-action-grid">
-      <a href="{{ route('admin.products.create') }}"><span class="is-mint"><x-admin-icon name="plus" /></span>Yeni ürün</a>
-      <a href="{{ route('admin.orders.index') }}"><span class="is-blue"><x-admin-icon name="bag" /></span>Siparişleri yönet</a>
-      <a href="{{ route('admin.payment-notifications.index') }}"><span class="is-orange"><x-admin-icon name="landmark" /></span>Ödeme bildirimleri</a>
-      <a href="{{ route('admin.categories.index') }}"><span class="is-purple"><x-admin-icon name="grid" /></span>Kategoriler</a>
-      <a href="{{ route('admin.index') }}"><span class="is-mint"><x-admin-icon name="layout" /></span>Vitrin düzenle</a>
-      <a href="{{ route('admin.bank-accounts.index') }}"><span class="is-blue"><x-admin-icon name="settings" /></span>Banka hesapları</a>
-    </div>
-  </section>
+
   <section class="admin-panel admin-dashboard-orders">
     <div class="admin-panel-title">
       <h2>Son siparişler</h2><a class="admin-text-link" href="{{ route('admin.orders.index') }}">Tüm siparişler <x-admin-icon name="arrow-right" /></a>

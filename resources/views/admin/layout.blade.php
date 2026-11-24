@@ -83,7 +83,7 @@
     }
   }
 @endphp
-<body class="admin-body {{ $adminAuthenticated ? 'admin-app-active' : 'admin-auth-only' }}">
+<body class="admin-body {{ $adminAuthenticated ? 'admin-app-active' : 'admin-auth-only' }} {{ $adminAuthenticated && request()->routeIs('admin.dashboard') ? 'admin-dashboard-page' : '' }}">
 @if($adminAuthenticated)
 <div class="admin-app-shell">
   <div class="admin-sidebar-backdrop" data-admin-sidebar-backdrop hidden></div>
@@ -164,6 +164,7 @@
     </main>
     <footer class="admin-footer"><img class="admin-footer-brandmark" src="{{ asset($adminAppearance->compactLogo()) }}" width="22" height="22" alt=""> NEWTIC · {{ \App\Support\StoreIdentity::name() }} · Yönetim Paneli</footer>
   </div>
+  @include('admin.partials.mobile-navigation')
 </div>
 @else
   <main class="admin-main admin-login-main">

@@ -25,6 +25,9 @@
 @case('download')<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>@break
 @case('trash-2')<path d="M3 6h18M8 6V4h8v2M5 6l1 15h12l1-15M10 10v7M14 10v7"/>@break
 @case('external-link')<path d="M13 5h6v6M19 5l-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>@break
+@case('more')<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>@break
+@case('file-text')<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h8"/>@break
+@case('megaphone')<path d="M3 10v4h4l11 5V5L7 10H3zM7 14l2 6h3l-2-5"/>@break
 @case('menu')<path d="M4 6h16M4 12h16M4 18h16"/>@break
 @case('close')<path d="M5 5 19 19M19 5 5 19"/>@break
 @case('search')<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>@break

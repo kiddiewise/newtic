@@ -105,3 +105,5 @@ import './admin-analytics-center.js';
 
 import { installCartFeedback } from './cart-feedback.js';
 installCartFeedback();
+
+import './admin-mobile-navigation.js';
