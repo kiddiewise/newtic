@@ -135,6 +135,8 @@ final class AdminCatalogDeleteAndInstallDomainTest extends TestCase
     public function test_payment_callback_and_shipping_cron_are_installation_specific(): void
     {
         $this->actingAs($this->admin());
+        config()->set('app.url', 'https://sinaydesign.com');
+        // The canonical installation URL must be used even behind a reverse proxy.
         $html = $this->get('https://sinaydesign.com/admin/odeme-ayarlari/paytr')->assertOk()->getContent();
         $this->assertStringContainsString('https://sinaydesign.com/odeme/paytr/bildirim', $html);
         $this->assertStringNotContainsString('powderblue-dinosaur-538060', $html);
