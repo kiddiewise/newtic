@@ -104,10 +104,10 @@ jobs:
           <?php
           require "vendor/autoload.php";
           $app = require "bootstrap/app.php";
-          $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
-          $appearance = App\\Models\\ShopAppearance::current();
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $appearance = App\Models\ShopAppearance::current();
           $logo = (string) ($appearance->desktop_logo_path ?: $appearance->mobile_logo_path);
-          echo $logo === "" ? "POLARIS_BRAND_LOGO_NOT_UPLOADED\\n" : "POLARIS_BRAND_LOGO_CONFIGURED\\n";
+          echo $logo === "" ? "POLARIS_BRAND_LOGO_NOT_UPLOADED\n" : "POLARIS_BRAND_LOGO_CONFIGURED\n";
           PHP
           echo 'NEWTIC_1_0_6_A4_MULTIPAGE_VERIFIED'
           REMOTE
