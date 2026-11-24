@@ -2,6 +2,9 @@ name: Deploy NEWTIC staging
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'deploy/polaris-payment-breakdown-1-0-8'
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 9e58a6b3bcb5fb9cd7d8dcf93a89fc1f1647a94b
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -69,7 +74,7 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upload asset bundle and deploy
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: 9e58a6b3bcb5fb9cd7d8dcf93a89fc1f1647a94b
         run: |
           set -euo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
@@ -78,6 +83,24 @@ jobs:
           "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
           "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
           "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify NEWTIC 1.0.8 admin payment breakdown on Polaris
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          test "$(git rev-parse HEAD)" = '9e58a6b3bcb5fb9cd7d8dcf93a89fc1f1647a94b'
+          test "$(cat VERSION)" = '1.0.8'
+          cmp "$APP/public/build/manifest.json" "$WEB/build/manifest.json"
+          grep -Fq 'Vade farkı / PAYTR ödeme farkı' resources/views/admin/orders/show.blade.php
+          grep -Fq 'PayTR doğrulanmış tahsilat' resources/views/admin/orders/show.blade.php
+          grep -Fq 'OrderPaymentBreakdown::fromOrder' app/Http/Controllers/Admin/OrderController.php
+          php artisan migrate:status > /dev/null
+          php artisan route:list --name=orders.show | grep -F 'admin.orders.show'
+          echo 'NEWTIC_1_0_8_ADMIN_PAYMENT_BREAKDOWN_VERIFIED'
+          REMOTE
       - name: Verify public staging homepage
         run: |
           set -euo pipefail
