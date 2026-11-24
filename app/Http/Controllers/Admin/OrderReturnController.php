@@ -25,6 +25,18 @@ final class OrderReturnController extends Controller
         return view('admin.returns.index', compact('cases','status'));
     }
 
+    public function store(Request $request, \App\Models\Order $order, OrderReturnService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'kind' => ['required','in:cancel,return'],
+            'reason' => ['required', Rule::in(array_keys(OrderReturnRequest::REASONS))],
+            'note' => ['nullable','string','max:1000'], 'items' => ['required','array','max:100'],
+            'items.*' => ['required','integer','min:0','max:100000'],
+        ]);
+        $service->create($order, $data, $request->user()->id);
+        return redirect()->route('admin.orders.show',$order)->with('success','Talep oluşturuldu.');
+    }
+
     public function update(Request $request, OrderReturnRequest $returnRequest, OrderReturnService $service, PaytrRefundClient $paytr): RedirectResponse
     {
         $data = $request->validate([

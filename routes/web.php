@@ -279,6 +279,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/payment-notifications/{paymentNotification}/verify', [AdminPaymentNotificationController::class, 'verify'])->name('payment-notifications.verify');
     Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/{order}/iade-talebi', [\App\Http\Controllers\Admin\OrderReturnController::class, 'store'])->middleware('throttle:8,1')->name('returns.store');
     Route::get('/iade-talepleri', [\App\Http\Controllers\Admin\OrderReturnController::class, 'index'])->name('returns.index');
     Route::post('/iade-talepleri/{returnRequest}', [\App\Http\Controllers\Admin\OrderReturnController::class, 'update'])->middleware('throttle:8,1')->name('returns.update');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');

@@ -158,6 +158,9 @@ class OrderController extends Controller
         DB::transaction(function () use ($order, $data, $request) {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             $next = $data['status'];
+            if ($locked->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                throw ValidationException::withMessages(['status'=>'Açık iptal/iade talebi var. Önce talebi sonuçlandırın.']);
+            }
             if ($locked->shippingShipment()->exists()) {
                 throw ValidationException::withMessages([
                     'status' => 'Entegratöre bağlı siparişin kargo aşamasını sağlayıcı yönetir. Kargo durumunu sağlayıcıdan düzeltip senkronize edin.',
@@ -225,6 +228,9 @@ class OrderController extends Controller
 
         DB::transaction(function () use ($request, $order, $data) {
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                throw ValidationException::withMessages(['status'=>'Açık iptal/iade talebi var. Önce talebi sonuçlandırın.']);
+            }
             if (!in_array($locked->status, self::CORRECTABLE_STATES, true)
                 || $locked->shippingShipment()->exists()) {
                 throw ValidationException::withMessages([
@@ -266,6 +272,9 @@ class OrderController extends Controller
         ]);
         DB::transaction(function () use ($request, $order, $data) {
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                throw ValidationException::withMessages(['payment'=>'Açık iptal/iade talebi varken ödeme kaydı değiştirilemez.']);
+            }
             if ($locked->payment_method !== 'bank_transfer'
                 || $locked->status !== 'preparing'
                 || $locked->shippingShipment()->exists()) {

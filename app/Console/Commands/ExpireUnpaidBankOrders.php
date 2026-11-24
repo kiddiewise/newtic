@@ -23,6 +23,7 @@ final class ExpireUnpaidBankOrders extends Command
             ->where('placed_at', '<=', now()->subHours($hours))
             ->whereDoesntHave('paymentNotifications', fn ($q) =>
                 $q->whereIn('status', ['pending', 'verified']))
+            ->whereDoesntHave('returnRequests', fn ($q) => $q->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE))
             ->orderBy('id')->limit($limit)->pluck('id');
 
         $cancelled = 0;
@@ -32,7 +33,8 @@ final class ExpireUnpaidBankOrders extends Command
                 if (!$order || $order->payment_method !== 'bank_transfer'
                     || $order->status !== 'pending_payment'
                     || $order->placed_at?->gt(now()->subHours($hours))
-                    || $order->paymentNotifications()->whereIn('status', ['pending', 'verified'])->exists()) {
+                    || $order->paymentNotifications()->whereIn('status', ['pending', 'verified'])->exists()
+                    || $order->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
                     return;
                 }
 

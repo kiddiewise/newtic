@@ -47,6 +47,9 @@ final class OrderReturnService
                     'quantity' => $qty, 'cents' => $line->unit_price_cents * $qty];
             }
             if (!$selected) $this->fail('En az bir ürün ve adet seçin.');
+            if (in_array($order->status, ['pending_payment','preparing'], true) && collect($selected)->sum('quantity') !== $lines->sum('quantity')) {
+                $this->fail('Gönderim öncesinde tam sipariş iptali seçin. Kısmi gönderim henüz desteklenmiyor.');
+            }
             $itemsCents = array_sum(array_column($selected, 'cents'));
             $case = $order->returnRequests()->create([
                 'reference' => 'IR'.Str::upper(Str::random(24)), 'kind' => $kind,
@@ -66,7 +69,7 @@ final class OrderReturnService
             $case = OrderReturnRequest::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
             $action = $data['action'];
             if (!in_array($case->status, OrderReturnRequest::ACTIVE, true)) $this->fail('Bu talep sonuçlandırılmış.');
-            if ($case->refund_status !== 'none') $this->fail('Finansal işlem başladı; önce sonucunu kontrol edin.');
+            if ($case->refund_status !== 'none' && !($action === 'received' && $case->status === 'refund_review' && !$case->received_at)) $this->fail('Finansal işlem başladı; önce sonucunu kontrol edin.');
             if ($action === 'approve' && $case->status === 'requested') {
                 $case->status = 'approved';
             } elseif ($action === 'return_code' && in_array($case->status, ['approved','awaiting_return'], true)) {
@@ -74,9 +77,9 @@ final class OrderReturnService
                 $case->return_carrier = $data['return_carrier'];
                 $case->return_code = $data['return_code'];
                 $case->status = 'awaiting_return';
-            } elseif ($action === 'received' && in_array($case->status, ['approved','awaiting_return'], true)) {
+            } elseif ($action === 'received' && in_array($case->status, ['approved','awaiting_return','refund_review'], true) && !$case->received_at) {
                 $case->received_at = now();
-                $case->status = 'received';
+                if ($case->status !== 'refund_review') $case->status = 'received';
             } elseif ($action === 'reject' && $case->status === 'requested') {
                 if (blank($data['public_note'] ?? null)) $this->fail('Müşteriye açık gerekçeyi yazın; yasal haklar saklıdır.');
                 $case->status = 'rejected';
@@ -113,15 +116,13 @@ final class OrderReturnService
             }
             if ($order->status === 'cancelled') $this->fail('İptal edilen siparişin ödemesi ayrıca incelenmelidir.');
             // A separate cancellation never claims the parcel has stopped.
-            if ($case->kind === 'cancel' && !$case->received_at && ($order->shippingShipment()->exists() || filled($order->tracking_number)
-                || !in_array($order->status, ['pending_payment','preparing'], true))) {
-                $this->fail('Gönderi varsa önce geri dönüşü veya ürünün geri alındığını doğrulayın.');
-            }
+            // An administrator may have to refund before physical receipt due to legal deadlines.
+            // The shipment is never marked cancelled and stock remains reserved until receipt.
             $usedShipping = (int) $order->returnRequests()->where('id','!=',$case->id)
                 ->whereIn('refund_status', ['processing','uncertain','submitted','verified'])->sum('shipping_cents');
             $shipping = !empty($data['shipping']) ? max(0, $order->shipping_cents - $usedShipping) : 0;
             // Full withdrawal before shipping includes the original delivery charge.
-            if ($this->allItems($order, $case) && $case->reason === 'withdrawal') $shipping = max(0, $order->shipping_cents - $usedShipping);
+            if ($this->allItems($order, $case) && ($case->reason === 'withdrawal' || in_array($order->status, ['pending_payment','preparing'], true))) $shipping = max(0, $order->shipping_cents - $usedShipping);
             $amount = $case->items_cents + $shipping;
             $used = (int) $order->returnRequests()->where('id','!=',$case->id)
                 ->whereIn('refund_status', ['processing','uncertain','submitted','verified'])->sum('refund_cents');
@@ -158,13 +159,15 @@ final class OrderReturnService
         DB::transaction(function () use ($case, $data, $actor) {
             $order = Order::query()->whereKey($case->order_id)->lockForUpdate()->firstOrFail();
             $case = OrderReturnRequest::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+            if ($order->status === 'cancelled') $this->fail('Sipariş başka bir işlemle iptal edilmiş. Stok kontrolü gerekir.');
             if ($case->status !== 'refund_review' || $case->refund_status !== 'verified') $this->fail('Önce para iadesini doğrulayın.');
             $unshipped = !$order->shippingShipment()->exists() && blank($order->tracking_number) && $order->status === 'preparing';
+            if (!$case->received_at && !$unshipped) $this->fail('Fiziksel iade sürecini sonuçlandırmadan talebi kapatmayın.');
             if (!empty($data['restock'])) {
                 if (!$case->received_at && !$unshipped) $this->fail('Ürün geri alınmadan stok artırılamaz.');
                 $this->restock($case);
             }
-            if ($case->kind === 'cancel' && $this->allItems($order, $case) && $unshipped && $case->refund_cents === $order->total_cents) {
+            if ($this->allItems($order, $case) && $unshipped && $case->refund_cents === $order->total_cents) {
                 $this->cancelOrder($order, $actor);
             }
             $case->status = 'completed';

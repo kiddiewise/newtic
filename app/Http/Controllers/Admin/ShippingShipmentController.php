@@ -71,6 +71,9 @@ final class ShippingShipmentController extends Controller
 
         $reserved = DB::transaction(function () use ($order, $provider, $carrier, $warehouse, $data): ShippingShipment {
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($locked->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                throw ValidationException::withMessages(['shipping'=>'Açık iptal/iade talebi var. Yeni gönderi oluşturulamaz.']);
+            }
             if (!$locked->is_test || $locked->status !== 'preparing') {
                 throw ValidationException::withMessages(['shipping' => 'Sadece ödemesi doğrulanmış, hazırlanıyor durumundaki test siparişleri gönderilebilir.']);
             }

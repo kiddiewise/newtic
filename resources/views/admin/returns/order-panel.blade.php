@@ -1,6 +1,25 @@
 <section class="admin-panel" id="order-returns">
   <div class="admin-panel-title"><h2>İptal ve iade</h2><a class="admin-text-link" href="{{ route('admin.returns.index') }}">Tüm talepler</a></div>
-  @forelse($order->returnRequests()->get() as $case)
+  @php
+    $cases = $order->returnRequests()->get();
+    $used = [];
+    foreach($cases->where('status','completed') as $previous) foreach($previous->items as $line) $used[$line['id']] = ($used[$line['id']] ?? 0) + $line['quantity'];
+  @endphp
+  @if($order->status !== 'cancelled' && !$cases->contains(fn($c)=>in_array($c->status,\App\Models\OrderReturnRequest::ACTIVE,true)) && $order->items->contains(fn($line)=>$line->quantity > ($used[$line->id] ?? 0)))
+    <details style="margin-bottom:12px"><summary class="admin-secondary">Yeni iptal / iade talebi</summary>
+      <form method="POST" action="{{ route('admin.returns.store',$order) }}" class="admin-form">@csrf
+        <label>Talep türü<select name="kind"><option value="cancel" @selected(in_array($order->status,['pending_payment','preparing'],true))>İptal</option><option value="return" @selected(!in_array($order->status,['pending_payment','preparing'],true))>İade</option></select></label>
+        @foreach($order->items as $line)
+          @php($remaining=max(0,$line->quantity-($used[$line->id] ?? 0)))
+          @if($remaining)<label>{{ $line->product_name }} {{ $line->option_value }} ({{ $remaining }} adet)<input name="items[{{ $line->id }}]" type="number" min="0" max="{{ $remaining }}" value="{{ in_array($order->status,['pending_payment','preparing'],true)?$remaining:0 }}" required></label>@endif
+        @endforeach
+        <label>Neden<select name="reason">@foreach(\App\Models\OrderReturnRequest::REASONS as $key=>$label)<option value="{{ $key }}">{{ $label }}</option>@endforeach</select></label>
+        <label>Not<textarea name="note" rows="2" maxlength="1000"></textarea></label>
+        <button class="admin-primary">Talep oluştur</button>
+      </form>
+    </details>
+  @endif
+  @forelse($cases as $case)
     <article class="admin-payment-history">
       <strong>{{ $case->kind==='cancel'?'İptal':'İade' }} · {{ $case->label() }}</strong>
       <small>{{ $case->reference }} · {{ $case->created_at->format('d.m.Y H:i') }}</small>
@@ -38,8 +57,10 @@
               </div>
             @endif
           @elseif(in_array($case->refund_status,['processing','submitted','uncertain'],true) && $order->payment_method==='paytr')
+            @if(!$case->received_at)<button class="admin-secondary" name="action" value="received">Ürün teslim alındı</button>@endif
             <button class="admin-primary" name="action" value="reconcile">PayTR iade durumunu sorgula</button>
           @elseif($case->refund_status==='verified')
+            @if(!$case->received_at)<button class="admin-secondary" name="action" value="received">Ürün teslim alındı</button>@endif
             <label><input type="checkbox" name="restock" value="1"> Teslim alınmış veya gönderilmemiş satılabilir ürünleri stoğa ekle</label>
             <button class="admin-primary" name="action" value="finish">Talebi tamamla</button>
           @endif
