@@ -2,6 +2,9 @@ name: Deploy NEWTIC staging
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'deploy/polaris-proforma-fix-1-0-5'
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: eec609f2de481c27cdc291a38a8739ac9ed0fe8c
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -69,7 +74,7 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upload asset bundle and deploy
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: eec609f2de481c27cdc291a38a8739ac9ed0fe8c
         run: |
           set -euo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
@@ -78,6 +83,31 @@ jobs:
           "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
           "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
           "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify 1.0.5 Turkish proforma and QR page layout on Hostinger
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          test "$(git rev-parse HEAD)" = 'eec609f2de481c27cdc291a38a8739ac9ed0fe8c'
+          test "$(cat VERSION)" = '1.0.5'
+          test -s "$APP/public/build/manifest.json"
+          cmp "$APP/public/build/manifest.json" "$WEB/build/manifest.json"
+          grep -Fq 'MÜŞTERİ BİLGİLERİ' resources/views/admin/orders/document.blade.php
+          grep -Fq 'TESLİMAT VE FATURA ADRESİ' resources/views/admin/orders/document.blade.php
+          grep -Fq 'margin: 18mm 19mm 36mm' resources/views/admin/orders/document.blade.php
+          grep -Fq 'bottom: 0; height: 32mm' resources/views/admin/orders/document.blade.php
+          grep -Fq 'font-weight: normal' resources/views/admin/orders/document.blade.php
+          if grep -Fq '> Hazırlama Formu' resources/views/admin/orders/show.blade.php; then
+            echo 'Unexpected packing action remains' >&2
+            exit 1
+          fi
+          php artisan route:list --name=orders.document | grep -F 'admin.orders.document'
+          php artisan migrate:status > /dev/null
+          echo 'NEWTIC_1_0_5_PRINT_LAYOUT_AND_QR_VERIFIED'
+          REMOTE
       - name: Verify public staging homepage
         run: |
           set -euo pipefail
