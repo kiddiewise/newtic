@@ -49,7 +49,7 @@ final class PaytrPaymentAttempt extends Model
 
     public function canRequestToken(): bool
     {
-        return $this->status === 'pending' && $this->created_at
+        return $this->status === 'pending' && $this->reconciliation_result !== 'external_refund' && $this->created_at
             && $this->created_at->gt(now()->subMinutes(30));
     }
 

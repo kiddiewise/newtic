@@ -27,6 +27,6 @@ final class ReconcilePendingPaytrPayments extends Command
             $results[$result] = ($results[$result] ?? 0) + 1;
         }
         $this->info('Pending PayTR checks: '.json_encode($results));
-        return isset($results['provider_error'],$results['context_mismatch']) || isset($results['provider_error']) || isset($results['context_mismatch']) || isset($results['external_refund']) ? self::FAILURE : self::SUCCESS;
+        return isset($results['provider_error']) || isset($results['context_mismatch']) || isset($results['external_refund']) ? self::FAILURE : self::SUCCESS;
     }
 }

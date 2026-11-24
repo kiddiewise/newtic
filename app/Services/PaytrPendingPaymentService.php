@@ -35,8 +35,7 @@ final class PaytrPendingPaymentService
             // Proven no external request was ever started for this attempt.
             // A token request and this cancellation cannot race past the lock.
             if ($order->shippingShipment()->exists() || filled($order->tracking_number)
-                || $order->paymentNotifications()->whereIn('status',['pending','verified'])->exists()
-                || $order->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                || $order->paymentNotifications()->whereIn('status',['pending','verified'])->exists()) {
                 $attempt->update(['reconciliation_checked_at'=>now(),'reconciliation_result'=>'context_mismatch']);
                 return 'context_mismatch';
             }
@@ -105,7 +104,12 @@ final class PaytrPendingPaymentService
         return DB::transaction(function () use ($attempt,$data,$settings) {
             $locked = PaytrPaymentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
             $order = Order::query()->whereKey($locked->order_id)->lockForUpdate()->firstOrFail();
-            if (!$this->validContext($order,$locked)) return 'unchanged';
+            if (!$this->validContext($order,$locked)) {
+                if ($data['result'] === 'external_refund' && $locked->status === 'success') {
+                    $locked->update(['reconciliation_result'=>'external_refund','reconciliation_checked_at'=>now()]);
+                }
+                return 'unchanged';
+            }
             $result = $data['result'];
             // A later callback may have already settled the row. A known
             // external refund must stay visible until reviewed, not disappear.

@@ -670,4 +670,42 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('pending_payment',$order->fresh()->status);
         $this->assertSame(8,$product->fresh()->stock_quantity);
     }
+
+    public function test_external_refund_is_flagged_without_fulfilling_or_releasing_stock(): void
+    {
+        $this->merchant();$product=$this->product();$order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        $attempt->update(['token_request_started_at'=>now()]);
+        Http::fake(['https://www.paytr.com/odeme/durum-sorgu'=>Http::response($this->statusResponse($attempt,[
+            'returns'=>[['return_amount'=>'10.00']],
+        ]))]);
+        $this->travel(6)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(1);
+        $this->assertSame('external_refund',$attempt->fresh()->reconciliation_result);
+        $this->assertFalse($attempt->fresh()->canRequestToken());
+        $this->post(route('checkout.paytr.callback'),$this->signedPayload($attempt,'failed','0'))->assertStatus(409);
+        $this->post(route('checkout.paytr.callback'),$this->signedPayload($attempt))->assertStatus(409);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        Http::assertSentCount(1);
+    }
+
+    public function test_admin_payment_reconcile_requires_admin_and_does_not_approve_004(): void
+    {
+        $this->merchant();$product=$this->product();$order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        $attempt->update(['token_request_started_at'=>now()]);
+        Http::fake(['https://www.paytr.com/odeme/durum-sorgu'=>Http::response(['status'=>'error','err_no'=>'004'])]);
+        $url=route('admin.orders.paytr-reconcile',$order);
+        $this->post($url)->assertRedirect();
+        $customer=User::factory()->create();
+        $this->actingAs($customer)->post($url)->assertForbidden();
+        Http::assertNothingSent();
+        $customer->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($customer)->post($url)->assertRedirect()->assertSessionHas('success');
+        $this->assertSame('no_success_yet',$attempt->fresh()->reconciliation_result);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        Http::assertSentCount(1);
+    }
 }

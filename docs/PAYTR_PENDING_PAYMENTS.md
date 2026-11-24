@@ -5,3 +5,5 @@
 - 004 başarılı ödeme bulunamadı; kesin başarısızlık değildir. Ağ hatası, iade kaydı veya uyuşmazlık durumunda otomatik stok açılmaz. İmzalı başarısız callback mevcut güvenli stok iadesi akışını çalıştırır.
 - Yönetici sipariş detayından sorgu yapabilir. Cron sağlık merkezi üzerinden izlenir. Yeni bir gerçek ödeme, iade veya tahsilat işlemi başlatılmaz.
 - Kaynaklar: https://dev.paytr.com/durum-sorgu ve https://dev.paytr.com/iframe-api/iframe-api-2-adim .
+
+- 1.0.15: Ödeme durumu veya iade kaydı çelişirse işlem otomatik sonuçlandırılmaz. PayTR mağaza panelinden İşlemler / Mağaza Bildirimleri kaydı incelenir; kesin sonuç yoksa rezervasyon tutulur. Süresi dolan ödeme ekranına sepetten yeniden yönlendirilmez.

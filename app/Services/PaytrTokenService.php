@@ -158,6 +158,11 @@ final class PaytrTokenService
             throw new PaytrTokenException('invalid_token_response');
         }
 
+        // A signed notification or status reconciliation can settle the order
+        // while the token endpoint is responding. Never render another iframe.
+        if ($attempt->fresh()?->status !== 'pending' || $order->fresh()?->status !== 'pending_payment') {
+            throw new RuntimeException('PAYTR payment already settled.');
+        }
         return $json['token'];
     }
 }

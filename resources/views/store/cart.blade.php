@@ -39,7 +39,11 @@
         </div>
       </div>
       <div class="cart-pending-paytr-actions">
-        <a class="cart-pending-paytr-resume" href="{{ route('checkout.paytr.frame', $pendingPaytrOrder) }}">Ödemeye devam et</a>
+        @if($pendingPaytrOrder->paytrAttempts()->where('status','pending')->first()?->canRequestToken())
+          <a class="cart-pending-paytr-resume" href="{{ route('checkout.paytr.frame', $pendingPaytrOrder) }}">Ödemeye devam et</a>
+        @else
+          <p>Ödeme sonucu kontrol ediliyor. Aynı sipariş için yeniden ödeme yapmayın.</p>
+        @endif
         <a class="cart-pending-paytr-status" href="{{ route('checkout.success', $pendingPaytrOrder) }}">Sipariş durumunu gör</a>
       </div>
     </section>

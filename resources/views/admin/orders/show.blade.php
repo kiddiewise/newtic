@@ -87,7 +87,7 @@
               <p class="admin-description">Son ödeme kontrolü: {{ $attempt->reconciliation_checked_at->format('d.m.Y H:i') }} · {{ $attempt->reconciliationLabel() }}</p>
             @endif
             @if($attempt->status === 'pending')
-              @if(!$attempt->canRequestToken())<p class="admin-description">Ödeme ekranı süresi doldu. Kesin ödeme sonucu alınana kadar stok korunur.</p>@endif
+              @if(!$attempt->canRequestToken())<p class="admin-description">Ödeme ekranı kapalı. Kesin ödeme sonucu alınana kadar stok korunur. PayTR mağaza panelindeki İşlemler / Mağaza Bildirimleri bölümünden sonucu ve bildirim durumunu kontrol edin.</p>@endif
               <form method="POST" action="{{ route('admin.orders.paytr-reconcile',$order) }}">@csrf<button type="submit" class="admin-secondary">PayTR ödeme durumunu kontrol et</button></form>
             @endif
             <div class="admin-detail-line"><span>Başlangıç tutarı</span><strong>{{ number_format($attempt->amount_cents / 100, 2, ',', '.') }} ₺</strong></div>
@@ -236,7 +236,7 @@
           @foreach($order->statusChanges as $change)
             <li>
               <strong>{{ \App\Models\Order::labelForStatus($change->from_status) }} → {{ \App\Models\Order::labelForStatus($change->to_status) }}</strong>
-              <small>{{ $change->created_at?->format('d.m.Y H:i') }} · {{ $change->user?->name ?: 'Kargo Entegratör' }} · {{ $change->source }}</small>
+              <small>{{ $change->created_at?->format('d.m.Y H:i') }} · {{ $change->user?->name ?: (str_starts_with($change->source,'paytr_') ? 'PayTR otomatik kontrol' : ($change->source === 'automatic_bank_expiry' ? 'Otomatik havale kontrolü' : 'Kargo Entegratör')) }} · {{ $change->source }}</small>
               @if($change->reason)<p>{{ $change->reason }}</p>@endif
             </li>
           @endforeach
