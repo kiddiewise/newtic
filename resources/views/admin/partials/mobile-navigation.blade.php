@@ -14,11 +14,17 @@
     ['title'=>'Mağaza Vitrini','icon'=>'layout','route'=>'admin.index','active'=>'admin.index','tone'=>'mint'],
   ];
   $mobileMoreActive = collect($mobileMoreLinks)->contains(fn($item)=>request()->routeIs($item['active'])) || request()->routeIs('admin.sections.*','admin.slides.*');
+  $mobileActiveIndex = -1;
+  foreach ($mobileLinks as $index => $item) {
+    if (request()->routeIs($item['active'])) { $mobileActiveIndex = $index; break; }
+  }
+  if ($mobileMoreActive) $mobileActiveIndex = 3;
 @endphp
-<nav class="admin-mobile-nav" aria-label="Mobil yönetim" data-admin-mobile-nav data-order-badge-url="{{ route('admin.orders.badge', [], false) }}">
+<nav class="admin-mobile-nav" aria-label="Mobil yönetim" data-admin-mobile-nav data-active-index="{{ $mobileActiveIndex }}" style="--admin-nav-index:{{ max(0,$mobileActiveIndex) }}" data-order-badge-url="{{ route('admin.orders.badge', [], false) }}">
+  <span class="admin-mobile-nav-slider" data-admin-nav-slider aria-hidden="true" @if($mobileActiveIndex < 0) hidden @endif></span>
   @foreach($mobileLinks as $item)
     @php($active = request()->routeIs($item['active']))
-    <a href="{{ route($item['route']) }}" @class(['admin-mobile-nav-item','is-active'=>$active])
+    <a href="{{ route($item['route']) }}" @class(['admin-mobile-nav-item','is-active'=>$active]) data-admin-nav-index="{{ $loop->index }}"
       @if($active) aria-current="page" @endif
       @if($loop->first) data-admin-order-link aria-label="Siparişler{{ $mobileOrderCount ? ', '.$mobileOrderCount.' yeni sipariş' : '' }}" @endif>
       <span class="admin-mobile-nav-icon"><x-admin-icon :name="$item['icon']" />
@@ -29,7 +35,7 @@
       <span>{{ $item['title'] }}</span>
     </a>
   @endforeach
-  <button type="button" @class(['admin-mobile-nav-item','is-active'=>$mobileMoreActive]) data-admin-more-open aria-expanded="false" aria-haspopup="dialog" aria-controls="admin-mobile-more">
+  <button type="button" @class(['admin-mobile-nav-item','is-active'=>$mobileMoreActive]) data-admin-more-open data-admin-nav-index="3" aria-expanded="false" aria-haspopup="dialog" aria-controls="admin-mobile-more">
     <span class="admin-mobile-nav-icon"><x-admin-icon name="more" /></span>
     <span>Daha Fazla</span>
   </button>

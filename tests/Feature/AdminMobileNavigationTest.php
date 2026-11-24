@@ -35,7 +35,8 @@ final class AdminMobileNavigationTest extends TestCase
     {
         $response=$this->actingAs($this->admin())->get(route('admin.dashboard'))->assertOk()
             ->assertSee('data-admin-mobile-nav',false)->assertSee('data-admin-more-dialog',false)
-            ->assertSee('admin-dashboard-actions-first',false);
+            ->assertSee('admin-dashboard-actions-first',false)
+            ->assertSee('data-admin-nav-slider',false)->assertSee('data-active-index="-1"',false);
         $html=$response->getContent();
         $this->assertLessThan(strpos($html,'class="admin-kpi-grid"'),strpos($html,'<h2>Hızlı işlemler</h2>'));
         $this->assertSame(1,substr_count($html,'<h2>Hızlı işlemler</h2>'));
