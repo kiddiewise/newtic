@@ -40,7 +40,7 @@
           <x-store-icon name="x" />
           <div><strong>Ödeme formu açılamadı</strong><p>{{ $message }}</p></div>
         </div>
-        @if($order->status === 'pending_payment')
+        @if($order->status === 'pending_payment' && $order->paytrAttempts()->where('status','pending')->first()?->canRequestToken())
           <a class="checkout-action paytr-retry-cta" href="{{ request()->fullUrl() }}">Tekrar dene</a>
         @endif
       @endif

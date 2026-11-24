@@ -76,13 +76,20 @@
     @if($order->payment_method === 'paytr')
       <section class="admin-panel">
         <div class="admin-panel-title"><h2>PAYTR kart ödeme geçmişi</h2></div>
-        <p class="admin-description">PAYTR ödeme işlemi yalnızca doğrulanmış sunucu bildirimiyle sonuçlandırılır. Müşterinin ödeme ekranına dönmesi onay anlamına gelmez.</p>
+        <p class="admin-description">PAYTR ödemesi imzalı bildirim veya doğrulanmış sunucu durum sorgusuyla onaylanır. Müşterinin ödeme ekranına dönmesi onay anlamına gelmez.</p>
         @forelse($order->paytrAttempts as $attempt)
           <article class="admin-payment-history">
             <span @class(['admin-state-pill', 'state-completed' => $attempt->status === 'success', 'state-cancelled' => $attempt->status === 'failed', 'state-pending_payment' => $attempt->status === 'pending'])>
               {{ match($attempt->status) { 'success' => 'Ödeme bildirimi doğrulandı', 'failed' => 'Başarısız', default => 'Bildirim bekleniyor' } }}
             </span>
             <small>PAYTR işlem no: {{ $attempt->merchant_oid }} · {{ $attempt->created_at->format('d.m.Y H:i') }}</small>
+            @if($attempt->reconciliation_checked_at)
+              <p class="admin-description">Son ödeme kontrolü: {{ $attempt->reconciliation_checked_at->format('d.m.Y H:i') }} · {{ $attempt->reconciliationLabel() }}</p>
+            @endif
+            @if($attempt->status === 'pending')
+              @if(!$attempt->canRequestToken())<p class="admin-description">Ödeme ekranı süresi doldu. Kesin ödeme sonucu alınana kadar stok korunur.</p>@endif
+              <form method="POST" action="{{ route('admin.orders.paytr-reconcile',$order) }}">@csrf<button type="submit" class="admin-secondary">PayTR ödeme durumunu kontrol et</button></form>
+            @endif
             <div class="admin-detail-line"><span>Başlangıç tutarı</span><strong>{{ number_format($attempt->amount_cents / 100, 2, ',', '.') }} ₺</strong></div>
             @if($attempt->status === 'success' && $attempt->paid_total_cents !== null)
               <div class="admin-detail-line"><span>PayTR doğrulanmış tahsilat</span><strong>{{ number_format($attempt->paid_total_cents / 100, 2, ',', '.') }} ₺</strong></div>

@@ -65,7 +65,14 @@ final class PaytrCallbackController extends Controller
             // Retry deliveries must NEVER create a second order transition,
             // customer notification, or inventory adjustment.
             if (in_array($attempt->status, ['success', 'failed'], true)) {
+                if ($attempt->status !== $payload['status']) {
+                    $attempt->update(['reconciliation_result'=>'callback_conflict','reconciliation_checked_at'=>now()]);
+                    return 409;
+                }
                 return 200;
+            }
+            if ($payload['status'] === 'success' && $attempt->reconciliation_result === 'external_refund') {
+                return 409;
             }
 
             $order = $attempt->order()->lockForUpdate()->firstOrFail();
@@ -104,6 +111,7 @@ final class PaytrCallbackController extends Controller
                 $attempt->update([
                     'status' => 'success', 'paid_total_cents' => $total,
                     'processed_at' => $now,
+                    'reconciliation_result' => 'callback_success',
                 ]);
                 $order->update(['status' => 'preparing']);
 
@@ -112,6 +120,7 @@ final class PaytrCallbackController extends Controller
 
             $attempt->update([
                 'status' => 'failed', 'processed_at' => $now,
+                'reconciliation_result' => 'callback_failed',
                 'failed_reason_code' => mb_substr((string) ($payload['failed_reason_code'] ?? ''), 0, 12),
                 'failed_reason_message' => mb_substr((string) ($payload['failed_reason_msg'] ?? ''), 0, 300),
             ]);

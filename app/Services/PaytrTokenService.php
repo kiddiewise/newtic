@@ -10,6 +10,7 @@ use App\Support\PaytrSignature;
 use App\Support\PaytrTestAccess;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 final class PaytrTokenService
@@ -109,9 +110,24 @@ final class PaytrTokenService
             $fields, $settings->merchant_key, $settings->merchant_salt
         );
 
+        // Persist the fact that a provider request MAY be sent before doing
+        // network I/O. A timeout or crash is not evidence of non-issuance.
+        // Lock in the same order as callback/reconciliation: attempt, order.
+        DB::transaction(function () use ($attempt, $order): void {
+            $locked = PaytrPaymentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if (!$locked->canRequestToken() || $lockedOrder->status !== 'pending_payment'
+                || $locked->order_id !== $lockedOrder->id
+                || $lockedOrder->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists()) {
+                throw new RuntimeException('PAYTR payment window closed.');
+            }
+            $locked->update(['token_request_started_at' => now()]);
+        }, 3);
+
         // Never log the POST body, secret credentials or returned iframe token.
         try {
-            $response = Http::asForm()->acceptJson()->timeout(20)
+            $response = Http::asForm()->acceptJson()->connectTimeout(5)->timeout(20)
+                ->withOptions(['allow_redirects'=>false, 'verify'=>true])
                 ->post(self::ENDPOINT, $fields);
         } catch (ConnectionException $exception) {
             throw new PaytrTokenException('connection_failed');

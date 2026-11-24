@@ -43,6 +43,8 @@ final class PaytrCheckoutController extends Controller
 
             if (! $attempt) {
                 $message = 'Aktif PAYTR ödeme girişimi bulunamadı.';
+            } elseif (!$attempt->canRequestToken()) {
+                $message = 'Ödeme ekranını açma süresi doldu. Önce sipariş durumunu kontrol edin; sonuç doğrulanmadan tekrar ödeme yapmayın.';
             } else {
                 try {
                     $token = $service->requestIframeToken(
@@ -54,13 +56,13 @@ final class PaytrCheckoutController extends Controller
                     // Only a whitelisted failure class, never customer/merchant
                     // data, gateway text, token, URL or IP address, is recorded.
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => $e->safeCode]);
-                    $message = 'PAYTR ödeme formu açılamadı ('.$e->safeCode.'). Ödeme alınmadı. Tekrar deneyin.';
+                    $message = 'PAYTR ödeme formu açılamadı ('.$e->safeCode.'). Sipariş durumunu kontrol edip tekrar deneyin.';
                 } catch (\InvalidArgumentException $e) {
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => 'invalid_checkout_network']);
                     $message = 'Güvenli ödeme için müşteri bağlantısı doğrulanamadı. Ödeme alınmadı. Tekrar deneyin.';
                 } catch (RuntimeException $e) {
                     Log::warning('paytr_iframe_test_failure', ['safe_code' => 'test_configuration']);
-                    $message = 'PAYTR ödeme formu henüz açılamadı. Ödeme alınmadı. Lütfen tekrar deneyin.';
+                    $message = 'PAYTR ödeme formu şu anda açılamıyor. Lütfen sipariş durumunu kontrol edin.';
                 }
             }
         }

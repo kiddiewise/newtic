@@ -17,7 +17,13 @@
       <x-store-icon name="clock-3" />
       <div><strong>PAYTR ödeme bildirimi bekleniyor</strong><p>Ödeme penceresinde işlem yaptıysanız birazdan buraya dönüp durumu yenileyin. Ödeme ekranındaki yönlendirme tek başına onay değildir.</p></div>
     </div>
-    <a href="{{ route('checkout.paytr.frame', $order) }}" class="checkout-outline-action">Ödeme ekranına dön</a>
+    @php($pendingAttempt = $order->paytrAttempts()->where('status','pending')->first())
+    @if($pendingAttempt?->canRequestToken())
+      <a href="{{ route('checkout.paytr.frame', $order) }}" class="checkout-outline-action">Ödeme ekranına dön</a>
+    @else
+      <p class="payment-guide">Ödeme ekranını açma süresi doldu. Sistem PayTR'den sonucu kontrol ediyor. Ödeme yaptıysanız tekrar ödeme yapmayın. Güncel sonucu bu sayfadan takip edebilirsiniz.</p>
+      <a href="{{ request()->fullUrl() }}" class="checkout-outline-action">Ödeme durumunu yenile</a>
+    @endif
   @elseif($order->status === 'cancelled')
     <div class="paytr-token-error" role="status"><x-store-icon name="x" /><div><strong>Kart ödemeniz başarısız oldu.</strong><p>Bu sipariş sonlandırıldı, ayrılan stok iade edildi. Sepetinizden yeniden deneyebilirsiniz.</p></div></div>
     <a href="{{ route('cart.index') }}" class="checkout-outline-action">Sepete dön ve yeniden dene</a>

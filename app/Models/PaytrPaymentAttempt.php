@@ -13,6 +13,7 @@ final class PaytrPaymentAttempt extends Model
         'order_id', 'merchant_oid', 'amount_cents', 'currency',
         'status', 'is_test', 'paid_total_cents',
         'failed_reason_code', 'failed_reason_message', 'processed_at',
+        'issuance_tracked', 'token_request_started_at', 'reconciliation_checked_at', 'reconciliation_result',
     ];
 
     protected $casts = [
@@ -20,6 +21,9 @@ final class PaytrPaymentAttempt extends Model
         'paid_total_cents' => 'integer',
         'is_test' => 'boolean',
         'processed_at' => 'datetime',
+        'issuance_tracked' => 'boolean',
+        'token_request_started_at' => 'datetime',
+        'reconciliation_checked_at' => 'datetime',
     ];
 
     public static function createForOrder(Order $order): self
@@ -38,8 +42,31 @@ final class PaytrPaymentAttempt extends Model
             'amount_cents' => $order->total_cents,
             'currency' => 'TRY',
             'status' => 'pending',
+            'issuance_tracked' => true,
             'is_test' => $order->is_test,
         ]);
+    }
+
+    public function canRequestToken(): bool
+    {
+        return $this->status === 'pending' && $this->created_at
+            && $this->created_at->gt(now()->subMinutes(30));
+    }
+
+    public function reconciliationLabel(): string
+    {
+        return match ($this->reconciliation_result) {
+            'paid' => 'PayTR durum sorgusu ile ödeme doğrulandı',
+            'no_success_yet' => 'Başarılı ödeme henüz doğrulanmadı; stok korunuyor',
+            'provider_error' => 'PayTR sorgusu başarısız; yeniden kontrol edilecek',
+            'context_mismatch' => 'Ödeme bilgileri uyuşmuyor; inceleme gerekli',
+            'external_refund' => 'PayTR üzerinde iade bulundu; inceleme gerekli',
+            'unopened_expired' => 'Ödeme ekranı açılmadan süre doldu',
+            'callback_conflict' => 'Çelişkili PayTR bildirimi; inceleme gerekli',
+            'callback_success' => 'İmzalı ödeme bildirimi ile doğrulandı',
+            'callback_failed' => 'İmzalı başarısız ödeme bildirimi alındı',
+            default => 'Henüz otomatik sorgu yapılmadı',
+        };
     }
 
     public function order(): BelongsTo

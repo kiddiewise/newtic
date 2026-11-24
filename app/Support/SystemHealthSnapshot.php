@@ -21,6 +21,7 @@ final class SystemHealthSnapshot
         'marketing_process' => ['Kampanya işlemleri', 'Her dakika', 5],
         'shipping_sync' => ['Kargo kontrolü', '15 dakikada bir', 45],
         'merchant_sync' => ['Google Merchant', '15 dakikada bir', 45],
+        'paytr_reconcile' => ['Bekleyen PayTR ödeme kontrolü', '5 dakikada bir', 15],
         'bank_expiry' => ['Ödenmemiş havale kontrolü', '15 dakikada bir', 45],
         'analytics_prune' => ['Analitik veri temizliği', 'Her gün 03.25', 1560],
         'photo_prune' => ['Sahipsiz fotoğraf temizliği', 'Her gün 03.45', 1560],

@@ -44,12 +44,17 @@ Schedule::command('merchant:sync --steps=6')->everyFifteenMinutes()->withoutOver
     ->onSuccess(fn () => SystemHealthRecorder::record('merchant_sync', true, 'command_completed'))
     ->onFailure(fn () => SystemHealthRecorder::record('merchant_sync', false, 'command_failed'));
 
-// Release stale bank transfer reservations; never expire PAYTR payments or
+// Release stale bank transfer reservations; never expire bank orders with
 // orders with an unreviewed/verified bank payment notification.
 Schedule::command('orders:expire-unpaid --limit=50')->everyFifteenMinutes()
     ->withoutOverlapping(10)
     ->onSuccess(fn () => SystemHealthRecorder::record('bank_expiry', true, 'command_completed'))
     ->onFailure(fn () => SystemHealthRecorder::record('bank_expiry', false, 'command_failed'));
+
+// Verify paid attempts and safely release orders for which no token request was started.
+Schedule::command('paytr:reconcile-pending --limit=10')->everyFiveMinutes()->withoutOverlapping(4)
+    ->onSuccess(fn () => SystemHealthRecorder::record('paytr_reconcile', true, 'command_completed'))
+    ->onFailure(fn () => SystemHealthRecorder::record('paytr_reconcile', false, 'command_failed'));
 
 // Read-only PayTR reconciliation. Never retry the refund POST.
 Schedule::command('returns:reconcile --limit=10')->everyFifteenMinutes()->withoutOverlapping(10);

@@ -580,4 +580,94 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->assertSame('pending_payment', $order->fresh()->status);
     }
 
+
+    private function statusResponse(PaytrPaymentAttempt $attempt, array $overrides = []): array
+    {
+        return array_replace([
+            'status'=>'success','currency'=>'TL','test_mode'=>'1','odeme_tipi'=>'KART',
+            'payment_amount'=>number_format($attempt->amount_cents/100,2,'.',''),
+            'payment_total'=>number_format(($attempt->amount_cents+1000)/100,2,'.',''),
+        ],$overrides);
+    }
+
+    public function test_unopened_pending_order_expires_once_and_can_restore_cart(): void
+    {
+        $this->merchant(); $product=$this->product(); $order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        $this->assertTrue($attempt->issuance_tracked);
+        $this->assertNull($attempt->token_request_started_at);
+        Http::fake();
+        $this->travel(29)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        $this->travel(2)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->assertSame('cancelled',$order->fresh()->status);
+        $this->assertSame('UNOPENED',$attempt->fresh()->failed_reason_code);
+        $this->assertSame(10,$product->fresh()->stock_quantity);
+        $this->get(route('checkout.paytr.frame',$order))->assertOk();
+        $this->get(route('cart.index'))->assertOk()->assertSee($product->name);
+        Http::assertNothingSent();
+    }
+
+    public function test_status_query_recovers_missing_success_callback_without_releasing_stock(): void
+    {
+        $this->merchant();$product=$this->product();$order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        Http::fake(['https://www.paytr.com/odeme/api/get-token'=>Http::response(['status'=>'success','token'=>str_repeat('a',48)]),
+            'https://www.paytr.com/odeme/durum-sorgu'=>Http::response($this->statusResponse($attempt))]);
+        $this->get(route('checkout.paytr.frame',$order))->assertOk();
+        $this->assertNotNull($attempt->fresh()->token_request_started_at);
+        $this->travel(6)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->assertSame('preparing',$order->fresh()->status);
+        $this->assertSame($attempt->amount_cents+1000,$attempt->fresh()->paid_total_cents);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        $this->post(route('checkout.paytr.callback'),$this->signedPayload($attempt,'success',(string)($attempt->amount_cents+1000)))->assertOk();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        Http::assertSent(fn($r)=>$r->url()==='https://www.paytr.com/odeme/durum-sorgu'
+            && $r['paytr_token']===base64_encode(hash_hmac('sha256','123456'.$attempt->merchant_oid.'sandbox_salt_for_tests','sandbox_key_for_tests',true)));
+        Http::assertSentCount(2);
+    }
+
+    public function test_004_and_network_uncertainty_never_release_stock_then_signed_failure_does(): void
+    {
+        $this->merchant();$product=$this->product();$order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        Http::fake(['https://www.paytr.com/odeme/api/get-token'=>Http::response([],503),
+            'https://www.paytr.com/odeme/durum-sorgu'=>Http::sequence()->push(['status'=>'error','err_no'=>'004'])->push([],503)]);
+        $this->get(route('checkout.paytr.frame',$order))->assertOk();
+        $this->assertNotNull($attempt->fresh()->token_request_started_at);
+        $this->travel(40)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(0);
+        $this->assertSame('no_success_yet',$attempt->fresh()->reconciliation_result);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        $this->get(route('checkout.paytr.frame',$order))->assertOk()->assertSee('Ödeme ekranını açma süresi doldu');
+        $this->travel(6)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(1);
+        $this->assertSame('provider_error',$attempt->fresh()->reconciliation_result);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+        $failed=$this->signedPayload($attempt,'failed','0');
+        $this->post(route('checkout.paytr.callback'),$failed)->assertOk();
+        $this->post(route('checkout.paytr.callback'),$failed)->assertOk();
+        $this->assertSame(10,$product->fresh()->stock_quantity);
+        $this->assertSame('cancelled',$order->fresh()->status);
+        Http::assertSentCount(3);
+    }
+
+    public function test_legacy_attempt_is_not_treated_as_unopened_and_wrong_mode_is_not_paid(): void
+    {
+        $this->merchant();$product=$this->product();$order=$this->place($product);
+        $attempt=$order->paytrAttempts()->firstOrFail();
+        $attempt->update(['issuance_tracked'=>false]);
+        Http::fake(['https://www.paytr.com/odeme/durum-sorgu'=>Http::response($this->statusResponse($attempt,['test_mode'=>'0']))]);
+        $this->travel(60)->minutes();
+        $this->artisan('paytr:reconcile-pending')->assertExitCode(1);
+        $this->assertSame('context_mismatch',$attempt->fresh()->reconciliation_result);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        $this->assertSame(8,$product->fresh()->stock_quantity);
+    }
 }
