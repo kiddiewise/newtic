@@ -419,4 +419,53 @@ class PaytrGatewayFoundationTest extends TestCase
         $this->assertSame(18970, $attempt->fresh()->paid_total_cents);
         $this->assertSame(17970, $order->fresh()->total_cents);
     }
+
+    public function test_admin_can_activate_live_after_test_on_own_domain_without_environment_payment_flags(): void
+    {
+        $host = 'merchant.example.test';
+        config()->set('app.url', 'https://'.$host);
+        config()->set('newtic.checkout_test_mode', false);
+        config()->set('newtic.paytr_card_payments_enabled', false);
+        config()->set('newtic.paytr_webhooks_enabled', false);
+        \Illuminate\Support\Facades\URL::forceRootUrl('https://'.$host);
+        app('request')->headers->set('host', $host);
+        $this->withServerVariables(['HTTP_HOST' => $host, 'SERVER_NAME' => $host, 'HTTPS' => 'on']);
+        \App\Models\MerchantLegalProfile::query()->create([
+            'id' => 1, 'legal_name' => 'Merchant Example',
+            'registered_address' => 'Izmir, Turkey', 'contact_email' => 'merchant@example.test',
+            'contact_phone' => '+902320000000',
+        ]);
+        foreach (\App\Models\MerchantLegalPage::LABELS as $slug => $title) {
+            \App\Models\MerchantLegalPage::query()->create([
+                'slug' => $slug, 'title' => $title, 'body' => str_repeat('Merchant legal terms. ', 12),
+                'is_published' => true, 'published_at' => now(),
+            ]);
+        }
+        $settings = $this->credentials();
+        $admin = \App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin);
+        $route = 'https://'.$host.'/'.ltrim(route('admin.paytr-settings.test-mode', [], false), '/');
+        $this->post($route, ['enabled' => 1, 'mode' => 'test', 'installments_enabled' => 1, 'max_installment' => 0])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertTrue($settings->fresh()->test_mode);
+        $this->post($route, ['enabled' => 1, 'mode' => 'live'])->assertSessionHasErrors('paytr');
+        $this->assertTrue($settings->fresh()->test_mode);
+        $this->post($route, ['enabled' => 1, 'mode' => 'live', 'live_confirmed' => '1', 'installments_enabled' => 1, 'max_installment' => 0])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertFalse($settings->fresh()->test_mode);
+        $this->assertTrue($settings->fresh()->admin_managed);
+        $order = $this->order();
+        $order->forceFill(['is_test' => false])->save();
+        $attempt = PaytrPaymentAttempt::createForOrder($order);
+        Http::fake(['https://www.paytr.com/odeme/api/get-token' => Http::response(['status' => 'success', 'token' => str_repeat('b', 48)])]);
+        app(PaytrTokenService::class)->requestIframeToken($order, $attempt, '203.0.113.15', 'https://'.$host.'/ok', 'https://'.$host.'/fail');
+        Http::assertSent(fn ($r) => $r['test_mode'] === '0' && $r['debug_on'] === '0' && $r['no_installment'] === '0' && $r['max_installment'] === '0');
+        $this->patch('https://'.$host.'/'.ltrim(route('admin.paytr-settings.update', [], false), '/'), [
+            'merchant_id' => '123456', 'merchant_key' => 'new_secret_key', 'merchant_salt' => 'new_secret_salt',
+        ])->assertSessionHasErrors('paytr')->assertSessionMissing('_old_input.merchant_key')->assertSessionMissing('_old_input.merchant_salt');
+        config()->set('newtic.checkout_test_mode', true);
+        $this->post($route, ['enabled' => 1, 'mode' => 'live', 'live_confirmed' => '1'])->assertSessionHasErrors('paytr');
+        $this->assertFalse(\App\Support\PaytrTestAccess::available($settings->fresh()));
+    }
 }
