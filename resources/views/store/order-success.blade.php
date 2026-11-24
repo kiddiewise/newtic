@@ -72,6 +72,7 @@
   @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
   @if($errors->any())<div class="cart-flash is-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
+  @include('store.partials.order-returns')
   @if($order->payment_method === 'paytr')
     @include('store.partials.paytr-order-status')
   @else

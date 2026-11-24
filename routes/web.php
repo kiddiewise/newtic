@@ -129,6 +129,7 @@ Route::get('/odeme/paytr/{order}', [PaytrCheckoutController::class, 'show'])
 Route::get('/odeme', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/odeme/siparis', [CheckoutController::class, 'place'])->middleware('throttle:10,1')->name('checkout.place');
 Route::get('/siparis/onay/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/siparis/onay/{order}/iade-talebi', [\App\Http\Controllers\OrderReturnController::class, 'store'])->middleware('throttle:5,1')->name('checkout.returns.store');
 Route::post('/siparis/onay/{order}/odeme-bildir', [PaymentNotificationController::class, 'store'])
     ->middleware('throttle:5,1')->name('checkout.payment-notify');
 
@@ -278,6 +279,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/payment-notifications/{paymentNotification}/verify', [AdminPaymentNotificationController::class, 'verify'])->name('payment-notifications.verify');
     Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/iade-talepleri', [\App\Http\Controllers\Admin\OrderReturnController::class, 'index'])->name('returns.index');
+    Route::post('/iade-talepleri/{returnRequest}', [\App\Http\Controllers\Admin\OrderReturnController::class, 'update'])->middleware('throttle:8,1')->name('returns.update');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/documents/{mode}', [OrderDocumentController::class, 'download'])
         ->whereIn('mode', ['proforma', 'packing'])->middleware('throttle:12,1')->name('orders.document');

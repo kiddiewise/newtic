@@ -54,7 +54,7 @@ final class OrderTracking
             ],
             $order->status === 'pending_payment' && $order->payment_method === 'paytr' => [
                 'key' => 'paytr_pending', 'icon' => 'review', 'title' => 'Kart ödemeniz kontrol ediliyor',
-                'description' => 'PAYTR test ödemesinin kesin sonucu bekleniyor. Yalnızca doğrulanmış sunucu bildirimi sonrasında siparişiniz hazırlanır.',
+                'description' => 'PAYTR ödemesinin kesin sonucu bekleniyor. Yalnızca doğrulanmış sunucu bildirimi sonrasında siparişiniz hazırlanır.',
                 'badge' => 'Ödeme doğrulanıyor', 'progress' => 1, 'payment' => 'Kart ödemesi bekleniyor',
             ],
             $order->status === 'pending_payment' => [

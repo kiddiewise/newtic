@@ -36,6 +36,11 @@ class Order extends Model
         return $this->hasMany(OrderStatusChange::class)->orderByDesc('id');
     }
 
+    public function returnRequests(): HasMany
+    {
+        return $this->hasMany(OrderReturnRequest::class)->latest('id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);

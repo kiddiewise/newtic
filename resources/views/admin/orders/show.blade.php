@@ -55,6 +55,7 @@
         @endif
       @endforeach
     </section>
+    @include('admin.returns.order-panel')
     <section class="admin-panel" aria-label="Ödeme toplamı">
       <div class="admin-panel-title"><h2>Ödeme toplamı</h2></div>
       <div class="checkout-price-line"><span>Ürünlerin toplamı</span><strong>{{ number_format($paymentBreakdown['products_cents'] / 100, 2, ',', '.') }} ₺</strong></div>

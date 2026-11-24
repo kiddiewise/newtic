@@ -31,6 +31,7 @@
     ]],
     ['label' => 'SATIŞ VE KATALOG', 'items' => [
       ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
+      ['label' => 'İptal ve İade Talepleri', 'name' => 'admin.returns.index', 'active' => 'admin.returns.*', 'icon' => 'bag'],
       ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
       ['label' => 'Kategoriler', 'name' => 'admin.categories.index', 'active' => 'admin.categories.*', 'icon' => 'grid'],
       ['label' => 'Stok Yönetimi', 'name' => 'admin.stock', 'active' => 'admin.stock', 'icon' => 'package'],
