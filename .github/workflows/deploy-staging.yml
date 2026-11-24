@@ -2,6 +2,9 @@ name: Deploy NEWTIC staging
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'deploy/polaris-proforma-width-1-0-7'
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 442c3194c83edd629d94e309fc426b97a0d3de09
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -69,7 +74,7 @@ jobs:
           chmod 600 ~/.ssh/newtic-deploy ~/.ssh/known_hosts
       - name: Upload asset bundle and deploy
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: 442c3194c83edd629d94e309fc426b97a0d3de09
         run: |
           set -euo pipefail
           SSH=(ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
@@ -78,6 +83,24 @@ jobs:
           "${SSH[@]}" "$REMOTE" 'mkdir -p ~/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy'
           "${SCP[@]}" newtic-build.tar.gz "$REMOTE:/home/u880685189/domains/powderblue-dinosaur-538060.hostingersite.com/newtic/.deploy/newtic-build.tar.gz"
           "${SSH[@]}" "$REMOTE" "NEWTIC_EXPECTED_SHA=$EXPECTED_SHA bash -se" < scripts/deploy-staging.sh
+      - name: Verify NEWTIC 1.0.7 balanced A4 PDF styling on Hostinger
+        run: |
+          set -Eeuo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes u880685189@147.79.123.121 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          APP="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic"
+          WEB="$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/public_html"
+          cd "$APP"
+          test "$(git rev-parse HEAD)" = '442c3194c83edd629d94e309fc426b97a0d3de09'
+          test "$(cat VERSION)" = '1.0.7'
+          cmp "$APP/public/build/manifest.json" "$WEB/build/manifest.json"
+          grep -Fq 'size: A4 portrait; margin: 16mm 16mm 36mm;' resources/views/admin/orders/document.blade.php
+          grep -Fq 'body { width: 100%; margin: 0; padding: 0;' resources/views/admin/orders/document.blade.php
+          ! grep -Fq 'width: 164mm' resources/views/admin/orders/document.blade.php
+          grep -Fq '.footer { position: fixed; left: 0; right: 0;' resources/views/admin/orders/document.blade.php
+          php artisan route:list --name=orders.document | grep -F 'admin.orders.document'
+          echo 'NEWTIC_1_0_7_FULL_WIDTH_PRINT_VERIFIED'
+          REMOTE
       - name: Verify public staging homepage
         run: |
           set -euo pipefail
