@@ -156,11 +156,13 @@ final class AdminOrderDocumentTest extends TestCase
         $this->assertStringContainsString('TESLİMAT VE FATURA ADRESİ', $proforma);
         $this->assertStringContainsString('SİPARİŞ KALEMLERİ', $proforma);
         $this->assertStringContainsString('HAZIRLIK KONTROLÜ', $proforma);
-        $this->assertStringContainsString('margin: 19mm 19mm 38mm', $proforma);
-        $this->assertStringContainsString('width: 164mm; margin-left: 4mm; margin-right: 4mm;', $proforma);
+        $this->assertStringContainsString('margin: 16mm 16mm 36mm', $proforma);
+        $this->assertStringContainsString('width: 100%; margin: 0; padding: 0;', $proforma);
+        $this->assertStringNotContainsString('width: 164mm', $proforma);
+        $this->assertStringContainsString('table-layout: fixed;', $proforma);
         $this->assertStringContainsString('table-header-group', $proforma);
         $this->assertStringNotContainsString('doc-label">{{ $shopName }}', $proforma);
-        $this->assertStringContainsString('.footer { position: fixed; left: 4mm; right: 4mm; bottom: 0;', $proforma);
+        $this->assertStringContainsString('.footer { position: fixed; left: 0; right: 0; bottom: 0;', $proforma);
         $this->assertStringContainsString('.items .product { font-weight: normal;', $proforma);
         $this->assertStringNotContainsString('01 /', $proforma);
         $this->assertStringNotContainsString('02 /', $proforma);
