@@ -1,4 +1,5 @@
-<article class="product-card">
+@php($cardCartQuantity = \App\Support\ShoppingCart::quantityForProduct(request(), $product))
+<article class="product-card" data-card-product-id="{{ $product->id }}">
   <a href="{{ route('product.show', $product->slug) }}" class="product-card-media" aria-label="{{ $product->name }} ürün detayını görüntüle">
     @if($product->discount_percent > 0)<span class="product-discount-pill">-%{{ $product->discount_percent }}</span>@endif
     <img src="{{ $product->image_path ? asset($product->image_path) : asset('assets/products/demo-sinker.svg') }}" alt="{{ $product->name }}" width="360" height="360" loading="lazy">
@@ -19,17 +20,19 @@
     <div class="product-card-bottom">
       <strong>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
       @if($product->options->isNotEmpty() || $product->requires_customer_photos)
-      <a class="product-card-action product-card-option-link" href="{{ route('product.show', $product->slug) }}" aria-label="{{ $product->name }} için {{ $product->requires_customer_photos ? 'fotoğraf yükle' : 'ürün seçeneği belirle' }}">
+      <a class="product-card-action product-card-option-link" href="{{ route('product.show', $product->slug) }}" aria-label="{{ $product->name }} için {{ $product->requires_customer_photos ? 'fotoğraf yükle' : 'ürün seçeneği belirle' }}" @if($cardCartQuantity > 0) aria-description="Sepette {{ $cardCartQuantity }} adet" @endif>
         <x-store-icon name="shopping-cart" />
         <span class="product-card-action-label">{{ $product->cart_quantity_limit > 0 ? ($product->requires_customer_photos ? 'Fotoğraf Yükle' : 'Seçenek Seç') : 'Tükendi' }}</span>
+        @include('store.partials.product-card-cart-quantity')
       </a>
       @else
       <form class="product-card-add-form" method="POST" action="{{ route('cart.add') }}" data-quick-add data-quick-product="{{ $product->id }}">
         @csrf
         <input type="hidden" name="items[{{ $product->id }}]" value="1">
-        <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" title="{{ $product->cart_quantity_limit > 0 ? 'Sepete ekle' : 'Tükendi' }}" @disabled($product->cart_quantity_limit <= 0)>
+        <button class="product-card-action" type="submit" aria-label="{{ $product->name }} sepete ekle" @if($cardCartQuantity > 0) aria-description="Sepette {{ $cardCartQuantity }} adet" @endif title="{{ $product->cart_quantity_limit > 0 ? 'Sepete ekle' : 'Tükendi' }}" @disabled($product->cart_quantity_limit <= 0)>
           <x-store-icon name="shopping-cart" />
           <span class="product-card-action-label">{{ $product->cart_quantity_limit > 0 ? 'Sepete Ekle' : 'Tükendi' }}</span>
+          @include('store.partials.product-card-cart-quantity')
         </button>
       </form>
       @endif

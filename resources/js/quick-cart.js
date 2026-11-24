@@ -76,6 +76,26 @@ if (quickSheet) {
     if (bottomLabel) bottomLabel.textContent = count ? 'Sepet (' + count + ')' : 'Sepet';
   };
 
+  // Use the entire authoritative cart map, not a local increment. All copies
+  // of a product card (campaigns, popular products, search) stay in sync.
+  let latestProductQuantities = null;
+  const syncCardQuantities = () => {
+    if (latestProductQuantities === null) return;
+    document.querySelectorAll('[data-card-product-id]').forEach((card) => {
+      const badge = card.querySelector('[data-card-cart-quantity]');
+      const action = card.querySelector('.product-card-action');
+      if (!badge || !action) return;
+      const quantity = Number(latestProductQuantities[card.dataset.cardProductId] ?? 0);
+      const visible = Number.isInteger(quantity) && quantity > 0;
+      badge.textContent = visible ? String(quantity) : '';
+      badge.hidden = !visible;
+      if (visible) action.setAttribute('aria-description', 'Sepette ' + quantity + ' adet');
+      else action.removeAttribute('aria-description');
+    });
+  };
+  document.addEventListener('newtic:catalog-items-added', syncCardQuantities);
+  document.addEventListener('newtic:catalog-results-replaced', syncCardQuantities);
+
   const render = (data, changedProductId = null, direction = null) => {
     const scrollTop = changedProductId ? scrollArea.scrollTop : 0;
     content.innerHTML = data.html;
@@ -84,6 +104,10 @@ if (quickSheet) {
     messageBox.textContent = '';
     messageBox.hidden = true;
     updateBadges(data.count);
+    if (data.product_quantities && typeof data.product_quantities === 'object') {
+      latestProductQuantities = data.product_quantities;
+      syncCardQuantities();
+    }
 
     if (changedProductId) {
       scrollArea.scrollTop = scrollTop;
@@ -243,7 +267,7 @@ if (quickSheet) {
   window.addEventListener('pageshow', (event) => {
     const nav = performance.getEntriesByType('navigation')[0];
     if ((event.persisted || nav?.type === 'back_forward')
-      && document.querySelector('[data-quick-add]')) {
+      && document.querySelector('[data-quick-add], [data-card-product-id]')) {
       window.location.reload();
     }
   });

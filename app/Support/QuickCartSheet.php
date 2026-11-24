@@ -41,6 +41,7 @@ class QuickCartSheet
         return [
             'ok' => true,
             'count' => $cart['count'],
+            'product_quantities' => (object) $cartQuantities,
             'subtotal_cents' => $cart['subtotal_cents'],
             'shipping_cents' => $cart['shipping_cents'],
             'remaining_cents' => $cart['remaining_cents'],

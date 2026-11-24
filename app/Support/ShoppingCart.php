@@ -157,6 +157,29 @@ class ShoppingCart
         $request->session()->put('product_picker_reset', true);
     }
 
+    /** Read-only per-product count for catalogue cards, including valid options.
+     * Do not query or rewrite the session for every card. The catalogue already
+     * loads product options; stale option IDs and quantities beyond stock are ignored.
+     */
+    public static function quantityForProduct(Request $request, Product $product): int
+    {
+        $total = 0;
+        $limit = $product->cart_quantity_limit;
+        if ($limit < 1 || !$product->is_active) return 0;
+        $options = $product->options;
+        foreach (array_slice(self::raw($request), 0, self::MAX_LINES, true) as $key => $quantity) {
+            $parts = self::parseKey($key);
+            if (!$parts || $parts[0] !== $product->id || !is_numeric($quantity)
+                || (int)$quantity != $quantity || (int)$quantity < 1) continue;
+            if ($options->isNotEmpty()
+                ? !$options->contains('id', $parts[1])
+                : $parts[1] !== null) continue;
+            $total += min(self::MAX_QUANTITY, (int)$quantity);
+            if ($total >= $limit) return $limit;
+        }
+        return min($total, $limit);
+    }
+
     public static function itemCount(): int
     {
         $items = session(self::SESSION_KEY, []);

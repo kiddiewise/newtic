@@ -1,0 +1,30 @@
+/* Number-only quantity indicator; leave the existing button geometry intact. */
+.product-card .product-card-action {
+  position: relative;
+  overflow: visible;
+}
+.product-card .product-card-cart-quantity {
+  position: absolute;
+  z-index: 2;
+  top: -7px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #b94b08;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgb(9 32 55 / 16%);
+  pointer-events: none;
+}
+.product-card .product-card-cart-quantity[hidden] { display: none !important; }

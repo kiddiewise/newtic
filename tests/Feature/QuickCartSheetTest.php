@@ -164,4 +164,39 @@ class QuickCartSheetTest extends TestCase
         $this->post(route('cart.add'), ['items' => [$product->id => 1]])
             ->assertRedirect(route('cart.index'));
     }
+
+    public function test_product_card_quantity_is_numeric_and_tracks_cart_updates(): void
+    {
+        $product = $this->demo();
+        $other = Product::query()->where('sku','DEMO-SURF-150')->firstOrFail();
+        $card = fn($p) => view('store.partials.product-card',['product'=>$p->fresh()->load('options','badges')])->render();
+        $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s+hidden\s*>\\s*<\/span>/', $card($product));
+        $this->postJson(route('cart.add'), ['items'=>[$product->id=>2,$other->id=>1]])
+            ->assertOk()->assertJsonPath('product_quantities.'.$product->id,2)
+            ->assertJsonPath('product_quantities.'.$other->id,1);
+        $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s*>2<\/span>/', $card($product));
+        $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s*>1<\/span>/', $card($other));
+        $this->patchJson(route('cart.update',$product),['quantity'=>0])->assertOk()
+            ->assertJsonMissingPath('product_quantities.'.$product->id)
+            ->assertJsonPath('product_quantities.'.$other->id,1);
+        $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s+hidden\s*>\\s*<\/span>/', $card($product));
+    }
+
+    public function test_option_card_sums_only_valid_options_and_keeps_other_products_separate(): void
+    {
+        $product=$this->demo();
+        $other=Product::query()->where('sku','DEMO-SURF-150')->firstOrFail();
+        $product->update(['option_label'=>'İğne kalınlığı','stock_quantity'=>12]);
+        $a=$product->options()->create(['value'=>'0,25']);
+        $b=$product->options()->create(['value'=>'0,30']);
+        $this->postJson(route('cart.add'),['items'=>[$product->id=>2],'options'=>[$product->id=>$a->id]])->assertOk();
+        $this->postJson(route('cart.add'),['items'=>[$product->id=>3],'options'=>[$product->id=>$b->id]])
+            ->assertOk()->assertJsonPath('product_quantities.'.$product->id,5);
+        $html=view('store.partials.product-card',['product'=>$product->fresh()->load('options','badges')])->render();
+        $this->assertStringContainsString('product-card-option-link',$html);
+        $this->assertMatchesRegularExpression('/data-card-cart-quantity aria-hidden="true"\s*>5<\/span>/',$html);
+        $this->assertSame(0,\App\Support\ShoppingCart::quantityForProduct(request(),$other));
+        $b->delete();
+        $this->assertSame(2,\App\Support\ShoppingCart::quantityForProduct(request(),$product->fresh()));
+    }
 }
