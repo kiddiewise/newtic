@@ -156,13 +156,43 @@ final class AdminOrderDocumentTest extends TestCase
         $this->assertStringContainsString('TESLİMAT VE FATURA ADRESİ', $proforma);
         $this->assertStringContainsString('SİPARİŞ KALEMLERİ', $proforma);
         $this->assertStringContainsString('HAZIRLIK KONTROLÜ', $proforma);
-        $this->assertStringContainsString('margin: 18mm 19mm 36mm', $proforma);
-        $this->assertStringContainsString('.footer { position: fixed; left: 0; right: 0; bottom: 0;', $proforma);
+        $this->assertStringContainsString('margin: 19mm 19mm 38mm', $proforma);
+        $this->assertStringContainsString('width: 164mm; margin-left: 4mm; margin-right: 4mm;', $proforma);
+        $this->assertStringContainsString('table-header-group', $proforma);
+        $this->assertStringNotContainsString('doc-label">{{ $shopName }}', $proforma);
+        $this->assertStringContainsString('.footer { position: fixed; left: 4mm; right: 4mm; bottom: 0;', $proforma);
         $this->assertStringContainsString('.items .product { font-weight: normal;', $proforma);
         $this->assertStringNotContainsString('01 /', $proforma);
         $this->assertStringNotContainsString('02 /', $proforma);
         $this->assertStringNotContainsString('03 /', $proforma);
         $this->assertStringNotContainsString('04 /', $proforma);
+    }
+
+    public function test_thirty_line_items_paginate_without_losing_the_order_summary_or_qr(): void
+    {
+        $order = $this->order(true);
+        for ($index = 3; $index <= 30; $index++) {
+            $order->items()->create([
+                'sku' => sprintf('MULTIPAGE-%02d', $index),
+                'product_name' => sprintf('Özel İğneli Ürün Kalemi %02d ve Açıklaması', $index),
+                'quantity' => 1,
+                'unit_price_cents' => 1200,
+                'line_total_cents' => 1200,
+                'option_label' => 'Ölçü',
+                'option_value' => '0.25',
+            ]);
+        }
+
+        $this->actingAs($this->admin());
+        $response = $this->get(route('admin.orders.document', [$order, 'proforma']))
+            ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $pdf = $response->getContent();
+        // Dompdf emits page objects as /Type /Page, distinct from /Type /Pages.
+        $pages = preg_match_all('~/Type\\s*/Page\\b~', $pdf);
+        $this->assertGreaterThanOrEqual(2, $pages, 'Thirty products must continue onto additional A4 pages');
+        $this->assertLessThanOrEqual(5, $pages, 'Unnecessary blank pages must not be introduced');
+        $this->assertStringContainsString('/Subtype /Image', $pdf, 'A scannable QR image must remain in the printed pages');
+        $this->assertSame(30, $order->items()->count(), 'Printing must not change order items');
     }
 
     public function test_custom_brand_logo_is_loaded_from_private_local_store_files_without_external_requests(): void
