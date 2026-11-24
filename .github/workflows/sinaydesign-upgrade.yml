@@ -57,9 +57,14 @@ jobs:
             # Only revert a local modification if it is exactly the target
             # content, or is a tracked generated build file already superseded
             # by the verified frontend archive. Never discard custom source.
-            mapfile -d '' FILES < <(git diff --name-only -z HEAD)
+            git diff --name-only -z HEAD > "$BACKUP/paths.bin"
+            mapfile -d '' FILES < "$BACKUP/paths.bin"
             for f in "${FILES[@]}"; do
-              if [[ "$f" == public/build/* ]] && test -f "$f"; then
+              if [[ "$f" == VERSION ]] && test -f VERSION && grep -Exq '[0-9]+\.[0-9]+\.[0-9]+' VERSION && php -r 'exit(version_compare(trim(file_get_contents("VERSION")), "1.0.9", "<=") ? 0 : 1);'; then
+                echo "Superseded local numeric version marker: $(cat VERSION)"
+              elif [[ "$f" == scripts/quick-install.sh ]] && git show HEAD:scripts/quick-install.sh | cmp -s - scripts/quick-install.sh; then
+                echo "Installer executable-bit difference only"
+              elif [[ "$f" == public/build/* ]] && test -f "$f"; then
                 echo "Generated build change: $f"
               elif test -f "$f" && git cat-file -e "$TARGET:$f" 2>/dev/null && git show "$TARGET:$f" | cmp -s - "$f"; then
                 echo "Local file already equals target: $f"
