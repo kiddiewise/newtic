@@ -14,6 +14,7 @@ use App\Models\PaymentNotification;
 use App\Models\Product;
 use App\Models\ShippingProvider;
 use App\Support\ShippingTestAccess;
+use App\Support\OrderPaymentBreakdown;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +98,7 @@ class OrderController extends Controller
         $verifiedPaytr = $order->payment_method === 'paytr'
             && $order->paytrAttempts->contains(fn ($attempt) => $attempt->status === 'success');
         $paymentVerified = (bool) $verifiedBankNotice || $verifiedPaytr;
+        $paymentBreakdown = OrderPaymentBreakdown::fromOrder($order);
         $canCorrectFulfillment = !$order->shippingShipment && $paymentVerified
             && in_array($order->status, self::CORRECTABLE_STATES, true);
         $canCorrectBankPayment = $order->status === 'preparing'
@@ -110,7 +112,7 @@ class OrderController extends Controller
         return view('admin.orders.show', compact(
             'order','allowed','shippingProvider','shippingCarriers',
             'shippingWarehouses','shippingTestAllowed', 'paymentVerified',
-            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice','emailDeliveries'
+            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice','emailDeliveries','paymentBreakdown'
         ));
     }
 
