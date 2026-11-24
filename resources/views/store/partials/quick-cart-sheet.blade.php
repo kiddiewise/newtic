@@ -1,5 +1,5 @@
 <div class="quick-cart-backdrop" data-quick-backdrop aria-hidden="true"></div>
-<section id="quick-cart-sheet" class="quick-cart-sheet" data-quick-sheet aria-hidden="true" inert aria-labelledby="quick-cart-heading">
+<section id="quick-cart-sheet" class="quick-cart-sheet" data-quick-sheet data-cart-status-url="{{ route('cart.status', [], false) }}" aria-hidden="true" inert aria-labelledby="quick-cart-heading">
   <div class="quick-cart-handle" aria-hidden="true"></div>
   <div class="quick-cart-heading">
     <div class="quick-cart-heading-info">

@@ -29,6 +29,39 @@ class CartController extends Controller
         return view('store.cart', compact('cart', 'wishlistIds', 'pendingPaytrOrder'));
     }
 
+    // Read-only recovery of the current session's cart. A lost mutation
+    // response is never a reason to repeat an add-to-cart POST.
+    public function status(Request $request): JsonResponse
+    {
+        $cart = ShoppingCart::snapshot($request);
+        $quantities = collect($cart['lines'])->groupBy(fn ($line) => $line['product']->id)
+            ->map(fn ($lines) => $lines->sum('quantity'))->all();
+        $operation = $request->query('operation');
+        return response()->json([
+            'ok' => true,
+            'count' => $cart['count'],
+            'product_quantities' => (object) $quantities,
+            'subtotal_label' => QuickCartSheet::money($cart['subtotal_cents']),
+            'operation_confirmed' => $this->validOperation($operation)
+                && $request->session()->get('cart_last_operation') === $operation,
+        ])->header('Cache-Control','private, no-store, max-age=0');
+    }
+
+    private function validOperation(mixed $operation): bool
+    {
+        return is_string($operation) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/Di', $operation) === 1;
+    }
+
+    private function recordOperation(Request $request): void
+    {
+        $operation = $request->input('cart_operation');
+        if ($this->validOperation($operation)) {
+            $request->session()->put('cart_last_operation', $operation);
+        } else {
+            $request->session()->forget('cart_last_operation');
+        }
+    }
+
     public function add(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
@@ -140,6 +173,7 @@ class CartController extends Controller
 
         CartCustomerPhotos::addMany($request, $incomingPhotos);
         ShoppingCart::put($request, $existing);
+        $this->recordOperation($request);
 
         if ($request->expectsJson()) {
             $first = $products->get(array_key_first($requested));
@@ -198,6 +232,7 @@ class CartController extends Controller
         }
 
         ShoppingCart::put($request, $items);
+        $this->recordOperation($request);
 
         if ($request->expectsJson()) {
             return $this->quickResponse($request, $product);
@@ -215,6 +250,7 @@ class CartController extends Controller
         unset($items[$key]);
         CartCustomerPhotos::forget($request, $key);
         ShoppingCart::put($request, $items);
+        $request->session()->forget('cart_last_operation');
 
         return redirect()->route('cart.index')->with('success', 'Ürün sepetten çıkarıldı.');
     }
@@ -223,6 +259,7 @@ class CartController extends Controller
     {
         PendingPaytrCart::prepare($request);
         ShoppingCart::clear($request);
+        $request->session()->forget('cart_last_operation');
 
         return redirect()->route('cart.index')->with('success', 'Sepet boşaltıldı.');
     }

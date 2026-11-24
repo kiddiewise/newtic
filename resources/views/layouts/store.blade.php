@@ -227,8 +227,8 @@
 
 @yield('content')
 @include('store.partials.quick-cart-sheet')
-@if(session('success'))
-<div class="cart-add-toast cart-add-fallback-toast" role="status">
+@if(session('success') && !request()->routeIs('cart.index'))
+<div class="cart-add-toast cart-add-fallback-toast" role="status" data-cart-auto-dismiss>
   <span class="cart-add-toast-icon" aria-hidden="true"><x-store-icon name="check" /></span>
   <span>{{ session('success') }}</span>
 </div>

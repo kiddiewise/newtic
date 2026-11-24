@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:4,1')->name('product.reviews.store');
 });
 Route::get('/sepet', [CartController::class, 'index'])->name('cart.index');
+Route::get('/sepet/durum', [CartController::class, 'status'])->middleware('throttle:60,1')->name('cart.status');
 Route::post('/sepet/ekle', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/sepet/urun/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/sepet/urun/{product}', [CartController::class, 'remove'])->name('cart.remove');

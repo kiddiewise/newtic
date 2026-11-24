@@ -1,3 +1,5 @@
+import { dismissFeedback, sendCartRequest } from './cart-feedback.js';
+
 // Progressive enhancement: product card and detail add-to-cart use JSON and
 // display a non-modal toast. Server-side cart validation remains authoritative.
 const quickSheet = document.querySelector('[data-quick-sheet]');
@@ -13,7 +15,6 @@ if (quickSheet) {
   let lastTrigger = null;
   let activeProductId = null;
   let busy = false;
-  let toastTimer = null;
 
   const showToast = (message, kind = 'success') => {
     const toast = document.querySelector('[data-cart-toast]');
@@ -23,39 +24,22 @@ if (quickSheet) {
     toast.dataset.kind = kind;
     toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
-    toast.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.hidden = true; }, 3000);
-  };
-
-  const errorMessage = (body, fallback) => {
-    const firstError = body?.errors && Object.values(body.errors)[0];
-    return (Array.isArray(firstError) ? firstError[0] : firstError)
-      || body?.message || fallback;
+    dismissFeedback(toast, kind === 'error' ? 6000 : 3000);
   };
 
   const showError = (error) => {
-    messageBox.hidden = false;
     messageBox.textContent = error;
     live.textContent = error;
+    dismissFeedback(messageBox, 6000);
   };
 
   const requestCart = async (url, data) => {
-    const response = await fetch(url, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: data,
-    });
-    let json = null;
-    try { json = await response.json(); } catch { /* upstream HTML error */ }
-    if (!response.ok || !json?.ok) {
-      if (response.status === 419) {
-        throw new Error('Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.');
-      }
-      throw new Error(errorMessage(json, 'Ürün eklenemedi. Tekrar deneyin.'));
+    try {
+      return await sendCartRequest(url, data, {statusUrl:quickSheet.dataset.cartStatusUrl});
+    } catch (error) {
+      if (error.snapshot) render(error.snapshot);
+      throw error;
     }
-    return json;
   };
 
   const updateBadges = (count) => {
@@ -98,7 +82,11 @@ if (quickSheet) {
 
   const render = (data, changedProductId = null, direction = null) => {
     const scrollTop = changedProductId ? scrollArea.scrollTop : 0;
-    content.innerHTML = data.html;
+    if (typeof data.html === 'string') content.innerHTML = data.html;
+    else {
+      content.replaceChildren();
+      if (document.body.classList.contains('quick-cart-open')) close(false);
+    }
     quickSheet.querySelector('[data-quick-count]').textContent = formatter.format(data.count) + ' adet';
     quickSheet.querySelector('[data-quick-total]').textContent = data.subtotal_label;
     messageBox.textContent = '';
@@ -155,6 +143,7 @@ if (quickSheet) {
     // PDP submit buttons are outside their <form>, linked by the form attribute.
     const button = event.submitter || form.querySelector('[type="submit"]');
     const wasDisabled = button?.disabled ?? false;
+    form.closest('.product-card')?.querySelector('.quick-cart-card-error')?.remove();
     if (button) {
       button.disabled = true;
       button.classList.add('is-loading');
@@ -178,17 +167,7 @@ if (quickSheet) {
       // Do not open the quick-cart drawer or navigate away after adding.
     } catch (error) {
       const text = error instanceof Error ? error.message : 'İşlem tamamlanamadı.';
-      button?.setAttribute('title', text);
       showToast(text, 'error');
-      // Error is visible even if the sheet was never opened.
-      let errorNode = form.closest('.product-card')?.querySelector('.quick-cart-card-error');
-      if (!errorNode) {
-        errorNode = document.createElement('p');
-        errorNode.className = 'quick-cart-card-error';
-        errorNode.setAttribute('role', 'alert');
-        form.closest('.product-card')?.querySelector('.product-card-content')?.appendChild(errorNode);
-      }
-      if (errorNode) errorNode.textContent = text;
     } finally {
       busy = false;
       if (button) {
@@ -226,11 +205,14 @@ if (quickSheet) {
     try {
       const response = await requestCart(endpoint, data);
       render(response, productId, plus ? 'plus' : 'minus');
+      showToast('Sepet güncellendi');
       if (plus) document.dispatchEvent(new CustomEvent('newtic:cart-added', {
         detail: { productId },
       }));
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Miktar güncellenemedi.');
+      const text = error instanceof Error ? error.message : 'Miktar güncellenemedi.';
+      if (document.body.classList.contains('quick-cart-open')) showError(text);
+      else showToast(text, 'error');
       allButtons.forEach((item) => {
         const r = item.closest('[data-quick-row]');
         const q = Number(r?.dataset.quantity);

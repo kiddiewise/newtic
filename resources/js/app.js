@@ -102,3 +102,6 @@ import './admin-product-quick-edit.js';
 import './sticky-sibling-navigation.js';
 import './store-analytics.js';
 import './admin-analytics-center.js';
+
+import { installCartFeedback } from './cart-feedback.js';
+installCartFeedback();

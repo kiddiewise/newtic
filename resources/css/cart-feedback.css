@@ -1,0 +1,17 @@
+/* A single dismiss lifecycle for AJAX toasts and server-rendered feedback. */
+.cart-add-toast.is-feedback-leaving,
+.cart-flash.is-feedback-leaving,
+.quick-cart-message.is-feedback-leaving {
+  animation: newtic-feedback-leave .28s ease-in forwards !important;
+  pointer-events: none;
+}
+.cart-flash[hidden], .quick-cart-message[hidden], .cart-add-toast[hidden] { display: none !important; }
+@keyframes newtic-feedback-leave {
+  from { opacity: 1; translate: 0 0; }
+  to { opacity: 0; translate: 0 -7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cart-add-toast.is-feedback-leaving,
+  .cart-flash.is-feedback-leaving,
+  .quick-cart-message.is-feedback-leaving { animation: none !important; opacity: 0; }
+}

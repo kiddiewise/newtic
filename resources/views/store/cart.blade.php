@@ -45,8 +45,8 @@
     </section>
   @endif
 
-  @if(session('success'))<div class="cart-flash is-success" role="status">{{ session('success') }}</div>@endif
-  @if(session('error'))<div class="cart-flash is-error" role="alert">{{ session('error') }}</div>@endif
+  @if(session('success'))<div class="cart-flash is-success" role="status" data-cart-auto-dismiss>{{ session('success') }}</div>@endif
+  @if(session('error'))<div class="cart-flash is-error" role="alert" data-cart-auto-dismiss="6000">{{ session('error') }}</div>@endif
   @if($errors->any())
     <div class="cart-flash is-error" role="alert"><strong>Sepet güncellenemedi:</strong>
       @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach

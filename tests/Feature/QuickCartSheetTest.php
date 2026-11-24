@@ -200,4 +200,31 @@ class QuickCartSheetTest extends TestCase
         $b->delete();
         $this->assertSame(2,\App\Support\ShoppingCart::quantityForProduct(request(),$product->fresh()));
     }
+
+    public function test_lost_response_can_be_checked_without_repeating_cart_add(): void
+    {
+        $product = $this->demo();
+        $operation = (string) \Illuminate\Support\Str::uuid();
+        $url = route('cart.status',['operation'=>$operation]);
+        $this->getJson($url)->assertOk()->assertJsonPath('operation_confirmed',false)->assertJsonPath('count',0);
+        $this->postJson(route('cart.add'),['items'=>[$product->id=>1],'cart_operation'=>$operation])->assertOk();
+        $response = $this->getJson($url)->assertOk()->assertJsonPath('operation_confirmed',true)
+            ->assertJsonPath('count',1)->assertJsonPath('product_quantities.'.$product->id,1);
+        $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        $this->getJson($url)->assertJsonPath('count',1);
+        $other = (string) \Illuminate\Support\Str::uuid();
+        $this->getJson(route('cart.status',['operation'=>$other]))->assertJsonPath('operation_confirmed',false);
+        $this->patchJson(route('cart.update',$product),['quantity'=>0,'cart_operation'=>$other])->assertOk();
+        $this->getJson($url)->assertJsonPath('operation_confirmed',false)->assertJsonPath('count',0);
+        $this->getJson(route('cart.status',['operation'=>$other]))->assertJsonPath('operation_confirmed',true);
+    }
+
+    public function test_cart_flash_is_dismissible_without_duplicate_success_toast(): void
+    {
+        $product = $this->demo();
+        $this->post(route('cart.add'),['items'=>[$product->id=>1]])->assertRedirect();
+        $page = $this->get(route('cart.index'))->assertOk();
+        $page->assertSee('data-cart-auto-dismiss',false)->assertDontSee('cart-add-fallback-toast',false);
+        $this->get(route('home'))->assertOk()->assertSee('data-cart-status-url=',false);
+    }
 }
