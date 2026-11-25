@@ -36,7 +36,7 @@ final class StoreIdentityIsolationTest extends TestCase
         $this->get('https://new-shop.example/sitemap.xml')->assertNotFound();
     }
 
-    public function test_brand_identity_propagates_to_storefront_product_schema_admin_login_and_feed(): void
+    public function test_brand_identity_propagates_to_storefront_product_schema_and_feed_but_not_admin_login(): void
     {
         $seo = SeoSetting::current();
         $seo->update([
@@ -84,7 +84,10 @@ final class StoreIdentityIsolationTest extends TestCase
         $this->assertStringContainsString('"price":"249.90"', $html);
         $this->assertStringContainsString('https://sinaydesign.com/storage/products/vazo.webp', $html);
 
-        $this->get('https://sinaydesign.com/admin/login')->assertOk()->assertSee('Sinay Design');
+        $this->get('https://sinaydesign.com/admin/login')->assertOk()
+            ->assertSee('assets/brand/newtic-logo.webp')
+            ->assertDontSee('Sinay Design')
+            ->assertDontSee('Polaris Kurşun');
 
         $xml = $this->get('https://sinaydesign.com/google/merchant-products.xml')->assertOk()->streamedContent();
         $this->assertStringContainsString('Sinay Design Ürün Kataloğu', $xml);
