@@ -69,3 +69,6 @@ Schedule::command('customer-photos:prune-drafts --days=7 --limit=200')
     ->dailyAt('03:45')->withoutOverlapping(30)
     ->onSuccess(fn () => SystemHealthRecorder::record('photo_prune', true, 'command_completed'))
     ->onFailure(fn () => SystemHealthRecorder::record('photo_prune', false, 'command_failed'));
+
+// Bounded Web Push delivery; no long-lived worker is required on shared hosting.
+Schedule::command('admin:push-orders')->everyMinute()->withoutOverlapping(3);

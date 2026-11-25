@@ -47,6 +47,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        \App\Services\AdminWebPush::revokeSession($request);
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

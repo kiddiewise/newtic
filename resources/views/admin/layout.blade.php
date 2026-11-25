@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta name="theme-color" content="#092037">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="{{ asset('newtic-admin.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ asset('newtic-admin-192.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" type="image/webp" href="{{ asset(\App\Models\ShopAppearance::current()->compactLogo()) }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +32,7 @@
   $menuGroups = [
     ['label' => 'GENEL BAKIŞ', 'items' => [
       ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
+      ['label' => 'Mobil Uygulama ve Bildirimler', 'name' => 'admin.pwa.index', 'active' => 'admin.pwa.*', 'icon' => 'bell'],
     ]],
     ['label' => 'SATIŞ VE KATALOG', 'items' => [
       ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],

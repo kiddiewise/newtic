@@ -13,6 +13,7 @@
     ['title'=>'Duyuru','icon'=>'megaphone','route'=>'admin.announcements.index','active'=>'admin.announcements.*','tone'=>'orange'],
     ['title'=>'Menü Ayarları','icon'=>'menu','route'=>'admin.menus.mega-menu.edit','active'=>'admin.menus.*','tone'=>'blue'],
     ['title'=>'Mağaza Vitrini','icon'=>'layout','route'=>'admin.index','active'=>'admin.index','tone'=>'mint'],
+    ['title'=>'Mobil Uygulama ve Bildirimler','icon'=>'bell','route'=>'admin.pwa.index','active'=>'admin.pwa.*','tone'=>'blue'],
   ];
   $mobileMoreActive = collect($mobileMoreLinks)->contains(fn($item)=>request()->routeIs($item['active'])) || request()->routeIs('admin.sections.*','admin.slides.*');
   $mobileActiveIndex = -1;

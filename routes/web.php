@@ -280,6 +280,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/payment-notifications/{paymentNotification}/verify', [AdminPaymentNotificationController::class, 'verify'])->name('payment-notifications.verify');
     Route::post('/payment-notifications/{paymentNotification}/reject', [AdminPaymentNotificationController::class, 'reject'])->name('payment-notifications.reject');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/uygulama', [\App\Http\Controllers\Admin\PwaController::class,'index'])->name('pwa.index');
+    Route::get('/uygulama/durum', [\App\Http\Controllers\Admin\PwaController::class,'status'])->middleware('throttle:15,1')->name('pwa.status');
+    Route::post('/uygulama/abonelik', [\App\Http\Controllers\Admin\PwaController::class,'subscribe'])->middleware('throttle:8,1')->name('pwa.subscribe');
+    Route::delete('/uygulama/abonelik', [\App\Http\Controllers\Admin\PwaController::class,'unsubscribe'])->middleware('throttle:8,1')->name('pwa.unsubscribe');
+    Route::post('/uygulama/test', [\App\Http\Controllers\Admin\PwaController::class,'test'])->middleware('throttle:3,1')->name('pwa.test');
     Route::get('/siparis-bildirim-sayaci', \App\Http\Controllers\Admin\OrderBadgeController::class)->middleware('throttle:12,1')->name('orders.badge');
     Route::post('/orders/{order}/iade-talebi', [\App\Http\Controllers\Admin\OrderReturnController::class, 'store'])->middleware('throttle:8,1')->name('returns.store');
     Route::get('/iade-talepleri', [\App\Http\Controllers\Admin\OrderReturnController::class, 'index'])->name('returns.index');
