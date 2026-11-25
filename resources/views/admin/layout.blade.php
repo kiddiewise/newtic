@@ -172,8 +172,8 @@
   @include('admin.partials.mobile-navigation')
 </div>
 @else
-  <main class="admin-main admin-login-main">
-    @if($errors->any())<div class="admin-alert admin-alert-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+  <main class="admin-main admin-login-main {{ request()->routeIs('admin.login') ? 'newtic-signin-main' : '' }}">
+    @if($errors->any() && !request()->routeIs('admin.login'))<div class="admin-alert admin-alert-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
     @yield('content')
   </main>
 @endif

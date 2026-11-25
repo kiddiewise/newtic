@@ -363,11 +363,13 @@ jobs:
           grep -Fqi "POLARIS" homepage.html
           curl --fail --show-error --silent --location --retry 3 "$SITE/admin/login" -o admin-login.html
           grep -Fq "NEWTIC" admin-login.html
+          grep -Fq "data-newtic-admin-signin" admin-login.html
           ASSET=$(node -e "const m=require('./public/build/manifest.json'); process.stdout.write(m['resources/css/app.css'].file)")
           test -n "$ASSET"
           curl --fail --show-error --silent --location --retry 3 "$SITE/build/$ASSET" -o deployed-admin.css
           grep -Fq '.admin-app-shell' deployed-admin.css
           grep -Fq '.admin-icon' deployed-admin.css
+          grep -Fq '.newtic-admin-signin' deployed-admin.css
           echo "Staging storefront, admin login and published admin stylesheet verified"
 
   publish_customer_candidate:
