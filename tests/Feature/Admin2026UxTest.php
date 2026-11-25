@@ -228,9 +228,16 @@ class Admin2026UxTest extends TestCase
             ->assertSee('autocomplete="current-password"', false)
             ->assertSee('data-admin-password-toggle', false)
             ->assertDontSee('admin-mobile-nav"');
+        // Carry the browser's session cookie across the failed POST and redirect.
+        $this->withCookie(config('session.cookie'), session()->getId());
         $this->from(route('admin.login'))->post(route('admin.login.submit'), [
             'email'=>'missing@example.test','password'=>'incorrect-password',
-        ])->assertRedirect(route('admin.login'))->assertSessionHasErrors('email');
+        ])->assertRedirect(route('admin.login'))
+            ->assertSessionHasErrors(['email'=>'E-posta veya şifre hatalı.'])
+            ->assertSessionHasInput('email','missing@example.test');
+        $this->assertGuest();
+        $this->assertNull(session()->getOldInput('password'));
+        $this->withCookie(config('session.cookie'), session()->getId());
         $this->get(route('admin.login'))->assertOk()->assertSee('E-posta veya şifre hatalı.')
             ->assertSee('missing@example.test')->assertDontSee('incorrect-password');
     }
