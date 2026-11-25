@@ -74,6 +74,7 @@ final class AdminOrderPaymentBreakdownTest extends TestCase
 
         $this->admin();
         $this->get(route('admin.orders.show', $order))->assertOk()
+            ->assertSeeInOrder(['newtic-detail-overview','id="order-manage"','id="order-items"','id="order-payment"'],false)
             ->assertSee('Ödeme toplamı')
             ->assertSee('Ürünlerin toplamı')
             ->assertSee('Vade farkı / PAYTR ödeme farkı')

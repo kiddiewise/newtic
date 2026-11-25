@@ -1,48 +1,111 @@
 @extends('admin.layout')
 @section('title', $order->order_number.' | NEWTIC')
 @section('content')
-<div class="admin-page-heading admin-heading-actions">
-  <div>
+<div class="newtic-order-detail">
+  <header class="newtic-detail-heading">
     <a class="admin-back" href="{{ route('admin.orders.index') }}">← Siparişler</a>
-    <p class="admin-eyebrow">SİPARİŞ / DETAY VE OPERASYON</p>
-    <h1>{{ $order->order_number }}</h1>
-    <p>{{ $order->created_at->format('d.m.Y H:i') }}
-      · <span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
-      @if($order->is_test)<span class="admin-test-tag">Gerçek tahsilat yok</span>@endif
-    </p>
-  </div>
-  <div class="admin-order-document-actions" aria-label="Sipariş hazırlama belgeleri">
-    <a class="admin-primary" href="{{ route('admin.orders.document', [$order, 'proforma']) }}" title="Fiyatlı A4 promofaturayı PDF olarak indir">
-      <x-admin-icon name="download" /> Promofatura PDF
-    </a>
-    <a class="admin-secondary is-preview" href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer" title="A4 belgeyi yeni sekmede görüntüle ve yazdır">
-      <x-admin-icon name="external-link" /> Önizle / Yazdır
-    </a>
-  </div>
-</div>
-<div class="admin-order-detail-grid">
-  <div class="admin-order-detail-primary">
-    <section class="admin-panel">
-      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="users" /></span><div><h2>Müşteri ve teslimat</h2><p>Sipariş iletişim ve teslimat bilgileri</p></div></div>
-      <div class="admin-detail-line"><span>Müşteri</span><strong>{{ $order->customer_name }}</strong></div>
-      <div class="admin-detail-line"><span>E-posta</span><strong>{{ $order->customer_email }}</strong></div>
-      <div class="admin-detail-line"><span>Telefon</span><strong>{{ $order->phone }}</strong></div>
-      <div class="admin-detail-line"><span>Teslimat adresi</span><strong>{{ $order->address_label }} · {{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</strong></div>
-      <div class="admin-detail-line"><span>Fatura</span><strong>{{ $order->invoice_type === 'corporate' ? 'Kurumsal' : 'Bireysel' }}</strong></div>
-      @if($order->invoice_type === 'corporate')
-        <div class="admin-detail-line"><span>Şirket</span><strong>{{ $order->company_title }}</strong></div>
-        <div class="admin-detail-line"><span>Vergi</span><strong>{{ $order->tax_office }} · {{ $order->tax_number }}</strong></div>
+    <div class="newtic-detail-heading-row">
+      <div><h1>{{ $order->order_number }}</h1><p>{{ $order->created_at->format('d.m.Y · H:i') }}</p></div>
+      <details class="newtic-order-actions newtic-detail-documents">
+        <summary>Belgeler <x-admin-icon name="more"/></summary>
+        <div>
+          <a href="{{ route('admin.orders.document', [$order, 'proforma']) }}"><x-admin-icon name="download"/> Promofatura PDF</a>
+          <a href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link"/> Önizle / Yazdır</a>
+        </div>
+      </details>
+    </div>
+  </header>
+  <section class="newtic-detail-overview" aria-label="Sipariş özeti">
+    <div class="newtic-detail-overview-top">
+      <div><span>Sipariş tutarı</span><strong>{{ number_format($paymentBreakdown['order_total_cents']/100, 2, ',', '.') }} ₺</strong></div>
+      <div class="newtic-detail-status"><span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
+      @if($order->is_test)<span class="admin-test-tag">Gerçek tahsilat yok</span>@endif</div>
+    </div>
+    <div class="newtic-detail-overview-meta">
+      <div><span>Müşteri</span><strong>{{ $order->customer_name }}</strong></div>
+      <div><span>Ödeme</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart' : 'Havale / EFT' }}</strong><small class="{{ $paymentVerified ? 'is-verified' : '' }}">{{ $paymentVerified ? 'Ödeme doğrulandı' : 'Ödeme bekleniyor' }}</small></div>
+      <div><span>Ürün adedi</span><strong>{{ number_format($order->items->sum('quantity'),0,',','.') }}</strong></div>
+    </div>
+  </section>
+  <nav class="newtic-detail-jumps" aria-label="Sipariş bölümleri">
+    <a href="#order-manage">Durum</a><a href="#order-items">Ürünler</a><a href="#order-payment">Ödeme</a><a href="#order-customer">Müşteri</a><a href="#order-shipping">Kargo</a><a href="#order-returns">İptal / iade</a>
+  </nav>
+  <div class="newtic-detail-management">
+    <section class="admin-panel admin-order-detail-actions" id="order-manage">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-orange"><x-admin-icon name="settings" /></span><div><h2>Durum yönetimi</h2></div></div>
+      @if($allowed)
+        <form class="admin-form" method="POST" action="{{ route('admin.orders.update', $order) }}">
+          @csrf @method('PATCH')
+          <label>Yeni durum
+            <select name="status" required>
+              @foreach($allowed as $state)
+                <option value="{{ $state }}">{{ match($state) {
+                  'preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı',
+                  'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı', 'cancelled' => 'İptal edildi', default => $state
+                } }}</option>
+              @endforeach
+            </select>
+          </label>
+          <button type="submit" class="admin-primary"><x-admin-icon name="check" /> Durumu güncelle</button>
+        </form>
+      @else
+        <p class="admin-description">Sipariş bu durumdan sonra değiştirilemez.</p>
       @endif
-      @if($order->order_note)<div class="admin-detail-line"><span>Sipariş notu</span><strong>{{ $order->order_note }}</strong></div>@endif
+      <p class="admin-description">Ödeme onaylanmadan “Hazırlanıyor” seçilemez. Onaylanmış ödeme iade kaydı olmadan iptal edilemez.</p>
+      @if($order->shippingShipment)
+        <p class="ship-info">Bu siparişin kargo aşaması Kargo Entegratör tarafından yönetiliyor. Değişiklikleri sağlayıcı panelinden yapıp aşağıdaki “Kargo durumunu yenile” işlemini kullan.</p>
+      @endif
+      @if($canCorrectFulfillment)
+        <details class="ship-correction-panel newtic-order-advanced" @if($errors->has('reason') || $errors->has('status')) open @endif>
+          <summary>Yanlış sipariş aşamasını düzelt</summary>
+          <p>Hazırlık veya teslimat aşamasını geri ya da ileri alabilirsin. Bu işlem ödeme kaydını veya stoğu değiştirmez ve gerekçesi kaydedilir.</p>
+          <form class="admin-form" method="POST" action="{{ route('admin.orders.correct', $order) }}">
+            @csrf @method('PATCH')
+            <label>Doğru sipariş aşaması
+              <select name="status" required>
+                @foreach(['preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı', 'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı'] as $key => $label)
+                  <option value="{{ $key }}" @selected($order->status === $key)>{{ $label }}</option>
+                @endforeach
+              </select>
+            </label>
+            <label>Düzeltme gerekçesi (zorunlu)
+              <textarea name="reason" rows="2" required minlength="15" maxlength="500" placeholder="Hatalı durum seçildi, paket henüz kargoya teslim edilmedi..."></textarea>
+            </label>
+            <button class="admin-secondary" type="submit"><x-admin-icon name="check"/> Durumu gerekçeyle düzelt</button>
+          </form>
+        </details>
+      @endif
+      @if($canCorrectBankPayment)
+        <details class="ship-correction-panel is-warning newtic-order-advanced" @if($errors->has('reason') || $errors->has('bank_not_received')) open @endif>
+          <summary>Hatalı havale onayını geri al</summary>
+          <p><strong>Yalnızca banka hesabına gerçekten para ulaşmadıysa kullan.</strong> Sipariş “Ödeme bekleniyor” durumuna döner; eski ödeme onayı geri çekilir ve işlem kaydedilir. Bankaya para geldiyse iade işlemi ayrıca yapılmalıdır.</p>
+          <form class="admin-form" method="POST" action="{{ route('admin.orders.revoke-bank-verification', $order) }}">
+            @csrf
+            <label>Geri alma gerekçesi
+              <textarea name="reason" rows="2" minlength="15" maxlength="500" required placeholder="Banka hareketi tekrar kontrol edildi; bu siparişe ait tahsilat bulunamadı..."></textarea>
+            </label>
+            <label class="ship-correction-confirm"><input type="checkbox" name="bank_not_received" value="1" required>
+              Banka hesabına bu sipariş için ödeme ulaşmadığını kontrol ettim.
+            </label>
+            <button class="admin-danger" type="submit"><x-admin-icon name="alert"/> Hatalı ödeme onayını geri al</button>
+          </form>
+        </details>
+      @elseif($order->payment_method === 'paytr')
+        <p class="admin-description">PAYTR tarafından doğrulanan kart ödemesi yönetim panelinden geri alınmaz; bunun için ayrı iade akışı gerekir.</p>
+      @endif
     </section>
-    <section class="admin-panel">
-      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="package" /></span><div><h2>Ürünler ve sipariş özeti</h2><p>Ürün ve toplam tutar değiştirilemez sipariş kaydından alınır.</p></div></div>
+
+  </div>
+  <div class="admin-order-detail-grid">
+    <div class="admin-order-detail-primary">
+    <section class="admin-panel" id="order-items">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="package" /></span><div><h2>Ürünler ve sipariş özeti</h2></div></div>
       @foreach($order->items as $line)
-        <div class="admin-order-row"><span><strong>{{ $line->product_name }}</strong><small>SKU: {{ $line->sku }} @if($line->option_value)· {{ $line->option_label }}: {{ $line->option_value }} @endif · {{ $line->quantity }} adet · Birim {{ number_format($line->unit_price_cents / 100, 2, ',', '.') }} ₺</small></span>
+        <div class="admin-order-row newtic-order-item"><span><strong>{{ $line->product_name }}</strong><small>SKU: {{ $line->sku }} @if($line->option_value)· {{ $line->option_label }}: {{ $line->option_value }} @endif · {{ $line->quantity }} adet · Birim {{ number_format($line->unit_price_cents / 100, 2, ',', '.') }} ₺</small></span>
           <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
         @if(!empty($line->customer_photos))
           <div class="order-customer-photo-grid" aria-label="{{ $line->product_name }} için müşteri fotoğrafları">
-            <p class="admin-description">Müşteri tarafından yüklenen fotoğraflar ({{ count($line->customer_photos) }}): Yönetici erişimiyle görüntülenir.</p>
+            <p class="admin-description">Müşteri fotoğrafları ({{ count($line->customer_photos) }})</p>
             @foreach($line->customer_photos as $index => $photo)
               <a href="{{ route('admin.orders.customer-photo', [$order, $line, $index]) }}"
                  target="_blank" rel="noopener noreferrer" title="{{ $photo['name'] ?? 'Müşteri fotoğrafı' }}">
@@ -55,8 +118,7 @@
         @endif
       @endforeach
     </section>
-    @include('admin.returns.order-panel')
-    <section class="admin-panel" aria-label="Ödeme toplamı">
+    <section class="admin-panel" id="order-payment" aria-label="Ödeme toplamı">
       <div class="admin-panel-title"><h2>Ödeme toplamı</h2></div>
       <div class="checkout-price-line"><span>Ürünlerin toplamı</span><strong>{{ number_format($paymentBreakdown['products_cents'] / 100, 2, ',', '.') }} ₺</strong></div>
       @if($paymentBreakdown['provider_difference_cents'] > 0)
@@ -72,6 +134,19 @@
       @else
         <div class="checkout-price-line is-total"><span>Ödeme durumu</span><strong>Ödeme bekleniyor</strong></div>
       @endif
+    </section>
+    <section class="admin-panel" id="order-customer">
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="users" /></span><div><h2>Müşteri ve teslimat</h2></div></div>
+      <div class="admin-detail-line"><span>Müşteri</span><strong>{{ $order->customer_name }}</strong></div>
+      <div class="admin-detail-line"><span>E-posta</span><strong>{{ $order->customer_email }}</strong></div>
+      <div class="admin-detail-line"><span>Telefon</span><strong>{{ $order->phone }}</strong></div>
+      <div class="admin-detail-line"><span>Teslimat adresi</span><strong>{{ $order->address_label }} · {{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</strong></div>
+      <div class="admin-detail-line"><span>Fatura</span><strong>{{ $order->invoice_type === 'corporate' ? 'Kurumsal' : 'Bireysel' }}</strong></div>
+      @if($order->invoice_type === 'corporate')
+        <div class="admin-detail-line"><span>Şirket</span><strong>{{ $order->company_title }}</strong></div>
+        <div class="admin-detail-line"><span>Vergi</span><strong>{{ $order->tax_office }} · {{ $order->tax_number }}</strong></div>
+      @endif
+      @if($order->order_note)<div class="admin-detail-line"><span>Sipariş notu</span><strong>{{ $order->order_note }}</strong></div>@endif
     </section>
     @if($order->payment_method === 'paytr')
       <section class="admin-panel">
@@ -141,108 +216,11 @@
       @endforelse
     </section>
     @endif
-  </div>
-  <div class="admin-order-detail-sidebar">
-    <section class="admin-panel">
-      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-purple"><x-admin-icon name="clock" /></span><div><h2>Sipariş süreci</h2><p>Siparişin hangi aşamada olduğunu takip et</p></div></div>
-      @php
-        $step = match($order->status){'preparing'=>2,'shipped'=>3,'out_for_delivery'=>3,'completed'=>4,default=>0};
-        $timeline = ['Sipariş oluşturuldu','Ödeme doğrulandı','Sipariş hazırlanıyor','Kargoya verildi','Tamamlandı'];
-      @endphp
-      <div class="admin-detail-timeline">
-        @foreach($timeline as $index => $label)
-          <div @class(['admin-detail-stage','is-done' => $step >= $index && $order->status !== 'cancelled','is-now' => $index === $step && $order->status !== 'cancelled'])>
-            <i>@if($step >= $index && $order->status !== 'cancelled')✓@else{{ $index + 1 }}@endif</i>
-            <span>{{ $label }}<small>
-              @if($index === 0){{ $order->created_at->format('d.m.Y H:i') }}
-              @elseif($index === 1 && $step === 0){{ $order->payment_method === 'paytr' ? 'PAYTR bildirimi bekleniyor' : 'Banka kontrolü bekleniyor' }}
-              @elseif($index <= $step)Tamamlandı
-              @else Henüz değil @endif
-            </small></span>
-          </div>
-        @endforeach
-      </div>
-      @if($order->status === 'cancelled')<span class="admin-state-pill state-cancelled">Sipariş iptal edildi</span>@endif
-    </section>
-    <section class="admin-panel admin-order-detail-actions">
-      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-orange"><x-admin-icon name="settings" /></span><div><h2>Durum yönetimi</h2><p>Bir sonraki sipariş adımını seç</p></div></div>
-      @if($allowed)
-        <form class="admin-form" method="POST" action="{{ route('admin.orders.update', $order) }}">
-          @csrf @method('PATCH')
-          <label>Yeni durum
-            <select name="status" required>
-              @foreach($allowed as $state)
-                <option value="{{ $state }}">{{ match($state) {
-                  'preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı',
-                  'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı', 'cancelled' => 'İptal edildi', default => $state
-                } }}</option>
-              @endforeach
-            </select>
-          </label>
-          <button type="submit" class="admin-primary"><x-admin-icon name="check" /> Durumu güncelle</button>
-        </form>
-      @else
-        <p class="admin-description">Sipariş bu durumdan sonra değiştirilemez.</p>
-      @endif
-      <p class="admin-description">Ödeme onaylanmadan “Hazırlanıyor” seçilemez. Onaylanmış ödeme iade kaydı olmadan iptal edilemez.</p>
-      @if($order->shippingShipment)
-        <p class="ship-info">Bu siparişin kargo aşaması Kargo Entegratör tarafından yönetiliyor. Değişiklikleri sağlayıcı panelinden yapıp aşağıdaki “Kargo durumunu yenile” işlemini kullan.</p>
-      @endif
-      @if($canCorrectFulfillment)
-        <div class="ship-correction-panel">
-          <h3>Yanlış sipariş aşamasını düzelt</h3>
-          <p>Hazırlık veya teslimat aşamasını geri ya da ileri alabilirsin. Bu işlem ödeme kaydını veya stoğu değiştirmez ve gerekçesi kaydedilir.</p>
-          <form class="admin-form" method="POST" action="{{ route('admin.orders.correct', $order) }}">
-            @csrf @method('PATCH')
-            <label>Doğru sipariş aşaması
-              <select name="status" required>
-                @foreach(['preparing' => 'Hazırlanıyor', 'shipped' => 'Kargolandı', 'out_for_delivery' => 'Dağıtıma çıktı', 'completed' => 'Tamamlandı'] as $key => $label)
-                  <option value="{{ $key }}" @selected($order->status === $key)>{{ $label }}</option>
-                @endforeach
-              </select>
-            </label>
-            <label>Düzeltme gerekçesi (zorunlu)
-              <textarea name="reason" rows="2" required minlength="15" maxlength="500" placeholder="Hatalı durum seçildi, paket henüz kargoya teslim edilmedi..."></textarea>
-            </label>
-            <button class="admin-secondary" type="submit"><x-admin-icon name="check"/> Durumu gerekçeyle düzelt</button>
-          </form>
-        </div>
-      @endif
-      @if($canCorrectBankPayment)
-        <div class="ship-correction-panel is-warning">
-          <h3>Hatalı havale onayını geri al</h3>
-          <p><strong>Yalnızca banka hesabına gerçekten para ulaşmadıysa kullan.</strong> Sipariş “Ödeme bekleniyor” durumuna döner; eski ödeme onayı geri çekilir ve işlem kaydedilir. Bankaya para geldiyse iade işlemi ayrıca yapılmalıdır.</p>
-          <form class="admin-form" method="POST" action="{{ route('admin.orders.revoke-bank-verification', $order) }}">
-            @csrf
-            <label>Geri alma gerekçesi
-              <textarea name="reason" rows="2" minlength="15" maxlength="500" required placeholder="Banka hareketi tekrar kontrol edildi; bu siparişe ait tahsilat bulunamadı..."></textarea>
-            </label>
-            <label class="ship-correction-confirm"><input type="checkbox" name="bank_not_received" value="1" required>
-              Banka hesabına bu sipariş için ödeme ulaşmadığını kontrol ettim.
-            </label>
-            <button class="admin-danger" type="submit"><x-admin-icon name="alert"/> Hatalı ödeme onayını geri al</button>
-          </form>
-        </div>
-      @elseif($order->payment_method === 'paytr')
-        <p class="admin-description">PAYTR tarafından doğrulanan kart ödemesi yönetim panelinden geri alınmaz; bunun için ayrı iade akışı gerekir.</p>
-      @endif
-    </section>
-    @include('admin.orders.shipping-integration')
-    @if($order->statusChanges->isNotEmpty())
-      <section class="admin-panel ship-order-audit">
-        <h2>Sipariş durum değişiklikleri</h2>
-        <p class="admin-description">Yönetici düzeltmeleri ve kargo kaynaklı değişiklikler kaydedilir.</p>
-        <ol>
-          @foreach($order->statusChanges as $change)
-            <li>
-              <strong>{{ \App\Models\Order::labelForStatus($change->from_status) }} → {{ \App\Models\Order::labelForStatus($change->to_status) }}</strong>
-              <small>{{ $change->created_at?->format('d.m.Y H:i') }} · {{ $change->user?->name ?: (str_starts_with($change->source,'paytr_') ? 'PayTR otomatik kontrol' : ($change->source === 'automatic_bank_expiry' ? 'Otomatik havale kontrolü' : 'Kargo Entegratör')) }} · {{ $change->source }}</small>
-              @if($change->reason)<p>{{ $change->reason }}</p>@endif
-            </li>
-          @endforeach
-        </ol>
-      </section>
-    @endif
+      @include('admin.returns.order-panel')
+    </div>
+    <div class="admin-order-detail-sidebar">
+      <div id="order-shipping">
+        @include('admin.orders.shipping-integration')
     @if(in_array($order->status, ['shipped', 'out_for_delivery', 'completed'], true) && !$order->shippingShipment)
     <section class="admin-panel admin-shipping-editor">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-blue"><x-admin-icon name="truck" /></span>
@@ -264,8 +242,45 @@
       </form>
     </section>
     @endif
+
+      </div>
     <section class="admin-panel">
-      <h2>Bildirim ve e-posta geçmişi</h2>
+      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-purple"><x-admin-icon name="clock" /></span><div><h2>Sipariş süreci</h2></div></div>
+      @php
+        $step = match($order->status){'preparing'=>2,'shipped'=>3,'out_for_delivery'=>3,'completed'=>4,default=>0};
+        $timeline = ['Sipariş oluşturuldu','Ödeme doğrulandı','Sipariş hazırlanıyor','Kargoya verildi','Tamamlandı'];
+      @endphp
+      <div class="admin-detail-timeline">
+        @foreach($timeline as $index => $label)
+          <div @class(['admin-detail-stage','is-done' => $step >= $index && $order->status !== 'cancelled','is-now' => $index === $step && $order->status !== 'cancelled'])>
+            <i>@if($step >= $index && $order->status !== 'cancelled')✓@else{{ $index + 1 }}@endif</i>
+            <span>{{ $label }}<small>
+              @if($index === 0){{ $order->created_at->format('d.m.Y H:i') }}
+              @elseif($index === 1 && $step === 0){{ $order->payment_method === 'paytr' ? 'PAYTR bildirimi bekleniyor' : 'Banka kontrolü bekleniyor' }}
+              @elseif($index <= $step)Tamamlandı
+              @else Henüz değil @endif
+            </small></span>
+          </div>
+        @endforeach
+      </div>
+      @if($order->status === 'cancelled')<span class="admin-state-pill state-cancelled">Sipariş iptal edildi</span>@endif
+    </section>
+    @if($order->statusChanges->isNotEmpty())
+      <section class="admin-panel ship-order-audit">
+        <details class="newtic-order-history"><summary>Sipariş durum değişiklikleri</summary>
+        <ol>
+          @foreach($order->statusChanges as $change)
+            <li>
+              <strong>{{ \App\Models\Order::labelForStatus($change->from_status) }} → {{ \App\Models\Order::labelForStatus($change->to_status) }}</strong>
+              <small>{{ $change->created_at?->format('d.m.Y H:i') }} · {{ $change->user?->name ?: (str_starts_with($change->source,'paytr_') ? 'PayTR otomatik kontrol' : ($change->source === 'automatic_bank_expiry' ? 'Otomatik havale kontrolü' : 'Kargo Entegratör')) }} · {{ $change->source }}</small>
+              @if($change->reason)<p>{{ $change->reason }}</p>@endif
+            </li>
+          @endforeach
+        </ol></details>
+      </section>
+    @endif
+    <section class="admin-panel">
+      <details class="newtic-order-history"><summary>Bildirim ve e-posta geçmişi</summary>
       <p class="admin-description">Siparişe ilişkin müşteri ve yönetici e-postalarının gönderim durumu. SMTP sağlayıcısının teslimat garantisi değildir.</p>
       @forelse($emailDeliveries as $delivery)
         <div class="admin-detail-line">
@@ -276,9 +291,9 @@
         <p class="admin-description">Bu sipariş için henüz bir e-posta kaydı bulunmuyor.</p>
       @endforelse
       <a class="admin-secondary" href="{{ route('admin.email-center.index') }}">E-posta bildirim merkezine git</a>
-    </section>
+    </details></section>
     <section class="admin-panel">
-      <h2>Operasyon bilgileri</h2>
+      <details class="newtic-order-history"><summary>Operasyon bilgileri</summary>
       <div class="admin-detail-line"><span>Ödeme yöntemi</span><strong>{{ $order->payment_method === 'paytr' ? 'PAYTR Kart' : 'Havale / EFT' }}</strong></div>
       <div class="admin-detail-line"><span>Ödeme durumu</span>
         <strong>{{ $paymentVerified ? 'Ödeme doğrulandı' : ($order->payment_method === 'paytr' ? 'PAYTR ödeme bildirimi bekleniyor / başarısız' : 'Havale/EFT doğrulaması bekleniyor') }}</strong>
@@ -286,7 +301,8 @@
       <div class="admin-detail-line"><span>Sipariş durumu</span><strong>{{ $order->statusLabel() }}</strong></div>
       <div class="admin-detail-line"><span>Oluşturulma</span><strong>{{ $order->created_at->format('d.m.Y H:i') }}</strong></div>
       <div class="admin-detail-line"><span>Tür</span><strong>{{ $order->is_test ? 'Tahsilatsız kayıt' : 'Sipariş' }}</strong></div>
-    </section>
+    </details></section>
+    </div>
   </div>
 </div>
 @endsection

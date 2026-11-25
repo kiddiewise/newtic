@@ -59,3 +59,79 @@
   .admin-order-sound-toggle span{display:none}
   .admin-order-toast{top:auto;bottom:calc(86px + env(safe-area-inset-bottom,0px));left:12px;right:12px;justify-content:space-between}
 }
+
+/* Order detail: operational overview, compact panels and clear mobile actions. */
+.newtic-order-detail{color:#092037;min-width:0}
+.newtic-detail-heading{margin-bottom:12px}
+.newtic-detail-heading .admin-back{display:inline-flex;margin-bottom:8px;color:#315e85;font-size:12px}
+.newtic-detail-heading-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.newtic-detail-heading-row>div{min-width:0}
+.newtic-detail-heading h1{font:700 clamp(20px,2.8vw,30px)/1.3 'Plus Jakarta Sans',sans-serif;margin:0 0 4px;overflow-wrap:anywhere}
+.newtic-detail-heading p{margin:0;color:#64748b;font-size:12px}
+.newtic-detail-documents summary{display:flex;align-items:center;gap:6px;min-height:40px}
+.newtic-detail-documents summary .admin-icon{width:17px;height:17px}
+.newtic-detail-overview{background:#fff;border:1px solid #e2e7ed;border-radius:12px;padding:16px;margin-bottom:12px}
+.newtic-detail-overview-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.newtic-detail-overview-top>div:first-child{display:grid;gap:4px;min-width:0}
+.newtic-detail-overview-top>div:first-child>span,.newtic-detail-overview-meta>div>span{font-size:11px;color:#64748b}
+.newtic-detail-overview-top>div:first-child>strong{font:700 clamp(25px,4vw,34px)/1.2 'Plus Jakarta Sans',sans-serif;color:#092037;overflow-wrap:anywhere}
+.newtic-detail-status{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0}
+.newtic-detail-status .admin-state-pill{white-space:normal;text-align:right}
+.newtic-detail-overview-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;border-top:1px solid #e9edf1;margin-top:14px;padding-top:12px}
+.newtic-detail-overview-meta>div{display:grid;gap:4px;align-content:start;min-width:0}
+.newtic-detail-overview-meta strong{font-size:13px;overflow-wrap:anywhere}
+.newtic-detail-overview-meta small{font-size:10px;color:#936a26}
+.newtic-detail-overview-meta small.is-verified{color:#187b61}
+.newtic-detail-jumps{display:flex;gap:6px;overflow-x:auto;padding:0 0 8px;margin-bottom:10px;scrollbar-width:thin}
+.newtic-detail-jumps a{flex:none;display:flex;align-items:center;min-height:36px;padding:6px 11px;color:#315e85;background:white;border:1px solid #dfe5ec;border-radius:7px;font-size:11px;text-decoration:none;white-space:nowrap}
+.newtic-order-detail [id^="order-"]{scroll-margin-top:150px}
+.admin-app-active .newtic-order-detail .admin-order-detail-grid{gap:12px;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.newtic-order-detail .admin-order-detail-primary,.newtic-order-detail .admin-order-detail-sidebar{display:flex;flex-direction:column;gap:12px;min-width:0}
+.admin-app-active .newtic-order-detail .admin-panel{min-width:0;padding:16px;border:1px solid #e2e7ed;border-radius:12px;box-shadow:none;margin:0;overflow-wrap:anywhere}
+.newtic-order-detail #order-shipping{display:grid;gap:12px}
+.newtic-detail-management{margin-bottom:12px}
+.newtic-order-detail .admin-editor-heading{gap:8px;margin-bottom:12px;align-items:center}
+.admin-app-active .newtic-order-detail .admin-editor-heading-icon{width:34px;height:34px;min-width:34px;background:#eef3f8;color:#315e85;border-radius:8px}
+.newtic-order-detail .admin-editor-heading-icon .admin-icon{width:18px;height:18px}
+.admin-app-active .newtic-order-detail .admin-panel h2{font:650 16px/1.4 'Plus Jakarta Sans',sans-serif;margin:0;color:#092037}
+.newtic-order-detail .admin-editor-heading p{font-size:11px}
+.newtic-order-detail .admin-panel-title{margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.newtic-order-detail .admin-detail-line{font-size:12px;padding:9px 0;gap:12px}
+.newtic-order-detail .admin-detail-line>span{color:#64748b;flex:0 1 40%}
+.newtic-order-detail .admin-detail-line>strong{color:#253f55;flex:1;min-width:0;font-weight:500}
+.newtic-order-detail .admin-detail-line:last-child{border-bottom:0}
+.admin-app-active .newtic-order-detail .newtic-order-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 0;align-items:start}
+.newtic-order-item>span{min-width:0;display:grid;gap:5px}
+.newtic-order-item>span>strong{font-size:13px;color:#092037}
+.newtic-order-item>span>small{font-size:11px;color:#64748b;line-height:1.5}
+.newtic-order-item>strong{font-size:13px;white-space:nowrap;color:#092037}
+.newtic-order-detail .checkout-price-line{font-size:12px;padding:9px 0;gap:12px}
+.newtic-order-detail .checkout-price-line.is-total{border-top:1px solid #e2e7ed;padding-top:12px;font-weight:600}
+.newtic-order-detail .admin-description{color:#64748b;font-size:11px;line-height:1.6}
+.newtic-order-detail .admin-form{min-width:0}
+.newtic-order-detail .admin-form :is(select,textarea,input:not([type=checkbox]):not([type=radio])){width:100%;min-width:0;box-sizing:border-box}
+.newtic-order-detail .admin-form button,.newtic-order-detail .ship-order-actions a{white-space:normal;min-height:40px}
+.newtic-order-detail .admin-payment-history{background:#f8fafc;border-color:#e9edf1;padding:12px}
+.newtic-order-detail .ship-order-facts>div{min-width:0;overflow-wrap:anywhere}
+.newtic-order-advanced,.newtic-order-history{min-width:0}
+.newtic-order-advanced>summary,.newtic-order-history>summary{cursor:pointer;font:600 13px/1.5 'Plus Jakarta Sans',sans-serif;color:#253f55;padding:5px 0}
+.newtic-order-advanced[open]>summary,.newtic-order-history[open]>summary{margin-bottom:10px}
+.newtic-order-detail :is(a,button,summary,input,select,textarea):focus-visible{outline:2px solid #315e85;outline-offset:2px}
+@media(max-width:900px){.admin-app-active .newtic-order-detail .admin-order-detail-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:710px){
+ .admin-app-active:has(.newtic-order-detail) .admin-topbar-inner{flex-wrap:wrap;row-gap:0}
+ .admin-app-active:has(.newtic-order-detail) .admin-global-search{position:static;flex:0 0 100%;order:10;margin-bottom:8px;border:1px solid #e1e9ed;border-radius:8px}
+ .admin-app-active:has(.newtic-order-detail) .admin-main{padding-top:16px}
+ .newtic-detail-heading h1{font-size:19px}
+ .newtic-detail-overview{padding:12px}
+ .newtic-detail-overview-meta{grid-template-columns:1fr 1fr;gap:10px}
+ .newtic-detail-overview-meta>div:first-child{grid-column:1/-1}
+ .admin-app-active .newtic-order-detail .admin-panel{padding:12px}
+ .newtic-order-detail .admin-detail-line{gap:10px;font-size:11px}
+ .newtic-order-detail .admin-detail-line>strong{text-align:right}
+ .newtic-order-detail .admin-form :is(select,textarea,input:not([type=checkbox]):not([type=radio])){font-size:16px}
+ .newtic-order-detail .admin-form-actions,.newtic-order-detail .ship-order-actions{flex-wrap:wrap}
+ .newtic-order-detail .admin-form-actions>*{flex:1 1 140px}
+ .newtic-order-detail .admin-payment-actions{grid-template-columns:minmax(0,1fr)}
+ .newtic-order-detail .checkout-price-line{font-size:12px}
+}
