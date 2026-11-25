@@ -33,7 +33,7 @@ final class AdminPwaTest extends TestCase
         $this->order();
         $endpoint='https://fcm.googleapis.com/fcm/send/example-token';
         $this->postJson(route('admin.pwa.subscribe'),compact('endpoint'))->assertOk();
-        Http::fake(['fcm.googleapis.com/*'=>Http::response('',201)]);
+        Http::fake(['fcm.googleapis.com/*'=>Http::sequence()->push('',201)->push('',410)]);
         $push=app(AdminWebPush::class);
         $this->assertSame(0,$push->deliverPending());
         $order=$this->order();
@@ -43,7 +43,6 @@ final class AdminPwaTest extends TestCase
         $read=$this->order();
         \App\Support\AdminOrderNotifications::markOrderSeen($admin,$read);
         $this->assertSame(0,$push->deliverPending());
-        Http::fake(['fcm.googleapis.com/*'=>Http::response('',410)]);
         $this->order();
         $this->assertSame(0,$push->deliverPending());
         $this->assertDatabaseCount('admin_push_subscriptions',0);
