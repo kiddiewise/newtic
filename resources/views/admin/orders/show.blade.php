@@ -105,7 +105,7 @@
           <strong>{{ number_format($line->line_total_cents / 100, 2, ',', '.') }} ₺</strong></div>
         @if(!empty($line->customer_photos))
           <div class="order-customer-photo-grid" aria-label="{{ $line->product_name }} için müşteri fotoğrafları">
-            <p class="admin-description">Müşteri fotoğrafları ({{ count($line->customer_photos) }})</p>
+            <p class="admin-description">Müşteri tarafından yüklenen fotoğraflar ({{ count($line->customer_photos) }})</p>
             @foreach($line->customer_photos as $index => $photo)
               <a href="{{ route('admin.orders.customer-photo', [$order, $line, $index]) }}"
                  target="_blank" rel="noopener noreferrer" title="{{ $photo['name'] ?? 'Müşteri fotoğrafı' }}">
