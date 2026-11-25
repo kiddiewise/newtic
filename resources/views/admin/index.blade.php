@@ -1,8 +1,8 @@
 @extends('admin.layout')
-@section('title', 'Ana Sayfa Yönetimi | NEWTIC')
+@section('title', 'Anasayfa Düzenle | NEWTIC')
 @section('content')
   <div class="admin-page-heading">
-    <div><p class="admin-eyebrow">VİTRİN YÖNETİMİ</p><h1>Ana sayfa blokları</h1><p>Blokları düzenleyin ve sıralamalarını belirleyin.</p></div>
+    <div><p class="admin-eyebrow">SİSTEM AYARLARI</p><h1>Anasayfa Düzenle</h1><p>Ana sayfa blokları</p><p>Blokları düzenleyin ve sıralamalarını belirleyin.</p></div>
   </div>
   <div class="admin-quick-links">
     <a href="{{ route('admin.products.create') }}"><strong>+ Ürün ekle</strong><small>Fotoğraf, fiyat ve stok</small></a>

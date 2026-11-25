@@ -70,7 +70,8 @@ if (analyticsRoot) {
         const data = await response.json();
         if (!Array.isArray(data.visitors)) return;
         count.textContent = String(data.online ?? 0);
-        updated.textContent = data.updated_at || '';
+        if (updated) updated.textContent = data.updated_at || '';
+        if (!tbody) return;
         tbody.replaceChildren();
         if (!data.visitors.length) {
           const row = tbody.insertRow();

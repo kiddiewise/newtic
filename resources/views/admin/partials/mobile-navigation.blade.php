@@ -6,16 +6,15 @@
     ['title'=>'Ürünler','icon'=>'package','route'=>'admin.products.index','active'=>'admin.products.*'],
     ['title'=>'Analizler','icon'=>'chart','route'=>'admin.analytics','active'=>'admin.analytics*'],
   ];
-  $mobileMoreLinks = [
-    ['title'=>'Kategoriler','icon'=>'grid','route'=>'admin.categories.index','active'=>'admin.categories.*','tone'=>'blue'],
-    ['title'=>'Banka hesapları','icon'=>'landmark','route'=>'admin.bank-accounts.index','active'=>'admin.bank-accounts.*','tone'=>'orange'],
-    ['title'=>'Blog','icon'=>'file-text','route'=>'admin.blog.posts.index','active'=>'admin.blog.*','tone'=>'purple'],
-    ['title'=>'Duyuru','icon'=>'megaphone','route'=>'admin.announcements.index','active'=>'admin.announcements.*','tone'=>'orange'],
-    ['title'=>'Menü Ayarları','icon'=>'menu','route'=>'admin.menus.mega-menu.edit','active'=>'admin.menus.*','tone'=>'blue'],
-    ['title'=>'Mağaza Vitrini','icon'=>'layout','route'=>'admin.index','active'=>'admin.index','tone'=>'mint'],
-    ['title'=>'Mobil Uygulama ve Bildirimler','icon'=>'bell','route'=>'admin.pwa.index','active'=>'admin.pwa.*','tone'=>'blue'],
-  ];
-  $mobileMoreActive = collect($mobileMoreLinks)->contains(fn($item)=>request()->routeIs($item['active'])) || request()->routeIs('admin.sections.*','admin.slides.*');
+  // Reuse the sidebar groups so mobile and desktop never drift apart.
+  $mobileDirectRoutes = collect($mobileLinks)->pluck('route')->all();
+  $mobileMoreGroups = collect($menuGroups)->map(fn($group)=>[
+    'label'=>$group['label'],
+    'items'=>collect($group['items'])->reject(fn($item)=>in_array($item['name'],$mobileDirectRoutes,true))->values(),
+  ]);
+  $mobileMoreActive = request()->routeIs('admin.dashboard')
+    || $mobileMoreGroups->contains(fn($group)=>$group['items']->contains(fn($item)=>request()->routeIs($item['active'])))
+    || request()->routeIs('admin.sections.*','admin.slides.*');
   $mobileActiveIndex = -1;
   foreach ($mobileLinks as $index => $item) {
     if (request()->routeIs($item['active'])) { $mobileActiveIndex = $index; break; }
@@ -47,16 +46,25 @@
   <div class="admin-mobile-more-inner">
     <div class="admin-mobile-more-handle" aria-hidden="true"></div>
     <header class="admin-mobile-more-header">
-      <div><h2 id="admin-mobile-more-title">Daha Fazla</h2><p>Mağazanı kolayca yönet</p></div>
+      <div><h2 id="admin-mobile-more-title">Daha Fazla</h2></div>
       <button type="button" class="admin-mobile-more-close" data-admin-more-close aria-label="Menüyü kapat"><x-admin-icon name="close" /></button>
     </header>
     <div class="admin-mobile-more-grid">
-      @foreach($mobileMoreLinks as $item)
-        @php($active = request()->routeIs($item['active']) || ($item['route']==='admin.index' && request()->routeIs('admin.sections.*','admin.slides.*')))
-        <a href="{{ route($item['route']) }}" @class(['admin-mobile-more-link','is-active'=>$active]) @if($active) aria-current="page" @endif>
-          <span class="admin-mobile-more-icon tone-{{ $item['tone'] }}"><x-admin-icon :name="$item['icon']" /></span>
-          <span>{{ $item['title'] }}</span>
-        </a>
+      <a href="{{ route('admin.dashboard') }}" @class(['admin-mobile-more-link','is-active'=>request()->routeIs('admin.dashboard')]) @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif>
+        <span class="admin-mobile-more-icon"><x-admin-icon name="home"/></span><span>Genel Bakış</span>
+      </a>
+      @foreach($mobileMoreGroups as $group)
+        @php($groupActive = $group['items']->contains(fn($item)=>request()->routeIs($item['active']) || ($item['name']==='admin.index' && request()->routeIs('admin.sections.*','admin.slides.*'))))
+        <details class="newtic-mobile-more-group" @if($groupActive || $group['label']==='Ürün & Sipariş Yönetimi') open @endif>
+          <summary>{{ $group['label'] }}<x-admin-icon name="arrow-right"/></summary>
+          @foreach($group['items'] as $item)
+            @php($active = request()->routeIs($item['active']) || ($item['name']==='admin.index' && request()->routeIs('admin.sections.*','admin.slides.*')))
+            <a href="{{ route($item['name']).($item['fragment'] ?? '') }}" @class(['admin-mobile-more-link','is-active'=>$active]) @if($active) aria-current="page" @endif>
+              <span class="admin-mobile-more-icon"><x-admin-icon :name="$item['icon']"/></span><span>{{ $item['label'] }}</span>
+              @if(($item['count'] ?? 0)>0)<strong class="admin-side-count">{{ $item['count'] }}</strong>@endif
+            </a>
+          @endforeach
+        </details>
       @endforeach
     </div>
   </div>

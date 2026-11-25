@@ -1,25 +1,29 @@
 @extends('admin.layout')
 @section('title', 'Genel Bakış | NEWTIC')
 @section('content')
+<div class="newtic-dashboard" data-analytics-dashboard data-live-url="{{ route('admin.analytics.live', [], false) }}">
+<div class="newtic-dashboard-welcome admin-welcome">
+  <div>
+    <p class="admin-eyebrow">MAĞAZA YÖNETİMİ</p>
+    <h1>Merhaba, {{ explode(' ', trim(auth()->user()->name))[0] }} 👋</h1>
+  </div>
+  <a href="{{ route('home') }}" class="newtic-dashboard-store-link" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link" /> Mağazayı görüntüle</a>
+</div>
 <section class="admin-panel admin-dashboard-actions admin-dashboard-actions-first">
     <div class="admin-panel-title"><h2>Hızlı işlemler</h2></div>
     <div class="admin-action-grid">
       <a href="{{ route('admin.products.create') }}"><span class="is-mint"><x-admin-icon name="plus" /></span>Yeni ürün</a>
-      <a href="{{ route('admin.orders.index') }}"><span class="is-blue"><x-admin-icon name="bag" /></span>Siparişleri yönet</a>
+      <a href="{{ route('admin.orders.index') }}"><span class="is-blue"><x-admin-icon name="bag" /></span>Siparişler</a>
       <a href="{{ route('admin.payment-notifications.index') }}"><span class="is-orange"><x-admin-icon name="landmark" /></span>Ödeme bildirimleri</a>
       <a href="{{ route('admin.categories.index') }}"><span class="is-purple"><x-admin-icon name="grid" /></span>Kategoriler</a>
-      <a href="{{ route('admin.index') }}"><span class="is-mint"><x-admin-icon name="layout" /></span>Vitrin düzenle</a>
+      <a href="{{ route('admin.index') }}"><span class="is-mint"><x-admin-icon name="layout" /></span>Anasayfa Düzenle</a>
       <a href="{{ route('admin.bank-accounts.index') }}"><span class="is-blue"><x-admin-icon name="settings" /></span>Banka hesapları</a>
     </div>
   </section>
-<div class="admin-page-heading admin-heading-actions admin-welcome">
-  <div>
-    <p class="admin-eyebrow">MAĞAZA YÖNETİMİ</p>
-    <h1>Merhaba, {{ explode(' ', trim(auth()->user()->name))[0] }} 👋</h1>
-    <p>Mağazanın son durumuna tek ekrandan ulaş, öncelikli işleri hızlıca tamamla.</p>
-  </div>
-  <a href="{{ route('home') }}" class="admin-secondary" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link" /> Mağazayı görüntüle</a>
-</div>
+<a class="newtic-dashboard-live" href="{{ route('admin.analytics') }}" data-live-section>
+  <div><span class="newtic-dashboard-live-label"><i aria-hidden="true"></i> Canlı</span><strong>Şu anda sitede</strong><small>Son 5 dk · İzinli oturumlar</small></div>
+  <div class="newtic-dashboard-live-count"><strong data-live-count aria-live="polite">{{ $liveOnline }}</strong><span>aktif oturum</span><small data-live-updated>{{ now()->format('H:i:s') }}</small></div><x-admin-icon name="arrow-right"/>
+</a>
 @if($updateAvailable && $updateRelease)
   <section class="admin-dashboard-notice" style="display:flex;align-items:center;gap:13px;background:#edf2f8;border:1px solid #cbd7e5;border-left:4px solid #092037;border-radius:12px;padding:15px 17px;margin-bottom:18px;color:#092037" aria-label="Yeni NEWTIC sürümü">
     <x-admin-icon name="refresh-cw" />
@@ -33,33 +37,39 @@
 @if(\App\Support\LegalReadiness::requiredBeforeLive() !== [])
   <div class="admin-dashboard-notice"><x-admin-icon name="info" /><span><strong>Mağaza yayına hazırlık:</strong> Satıcı bilgileri ve zorunlu sözleşmeler tamamlanmadan gerçek sipariş açılamaz. <a href="{{ route('admin.legal.index') }}">Yasal sayfaları tamamla</a></span></div>
 @endif
+<div class="newtic-dashboard-section-heading"><h2>Mağaza performansı</h2><span>Tüm zamanlar</span></div>
+<a href="{{ route('admin.reports') }}" class="newtic-dashboard-revenue">
+  <div><span>Doğrulanmış ciro</span><strong>{{ number_format($metrics['verified_revenue_cents']/100,2,',','.') }} ₺</strong><small>Yalnızca doğrulanmış satışlar</small></div>
+  <div class="newtic-dashboard-revenue-visual"><x-admin-icon name="chart"/><svg viewBox="0 0 140 48" role="img" aria-label="Son 7 günlük doğrulanmış ciro">
+    <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="@foreach($trend as $day){{ 3+$loop->index*22 }},{{ 44-round($day['revenue']/$chartMax*40) }} @endforeach"/>
+  </svg><small>Son 7 gün</small></div>
+</a>
 <div class="admin-kpi-grid">
-  <a href="{{ route('admin.orders.index') }}" class="admin-kpi">
-    <span class="admin-kpi-icon is-mint"><x-admin-icon name="bag" /></span>
-    <span class="admin-kpi-label">Toplam sipariş</span>
-    <strong>{{ number_format($metrics['orders'], 0, ',', '.') }}</strong>
-    <small>Tüm sipariş kayıtları</small>
-  </a>
-  <div class="admin-kpi">
-    <span class="admin-kpi-icon is-purple"><x-admin-icon name="chart" /></span>
-    <span class="admin-kpi-label">Doğrulanmış ciro</span>
-    <strong class="admin-kpi-money">{{ number_format($metrics['verified_revenue_cents']/100, 2, ',', '.') }} ₺</strong>
-    <small>Yalnızca doğrulanmış satışlar</small>
-  </div>
-  <a href="{{ route('admin.orders.index', ['status' => 'pending_payment']) }}" class="admin-kpi">
-    <span class="admin-kpi-icon is-orange"><x-admin-icon name="clock" /></span>
-    <span class="admin-kpi-label">Ödeme bekleyen</span>
-    <strong>{{ number_format($metrics['unpaid'], 0, ',', '.') }}</strong>
-    <small>Ödeme kontrolüne geç</small>
-  </a>
-  <a href="{{ route('admin.orders.index', ['status' => 'preparing']) }}" class="admin-kpi">
-    <span class="admin-kpi-icon is-blue"><x-admin-icon name="package" /></span>
-    <span class="admin-kpi-label">Hazırlanan sipariş</span>
-    <strong>{{ number_format($metrics['preparing'], 0, ',', '.') }}</strong>
-    <small>Paketleme sırasındaki işler</small>
-  </a>
+  @foreach([
+    ['label'=>'Toplam sipariş','value'=>$metrics['orders'],'icon'=>'bag','url'=>route('admin.orders.index')],
+    ['label'=>'Hazırlanan sipariş','value'=>$metrics['preparing'],'icon'=>'package','url'=>route('admin.orders.index',['status'=>'preparing'])],
+    ['label'=>'Ödeme bekleyen','value'=>$metrics['unpaid'],'icon'=>'clock','url'=>route('admin.orders.index',['status'=>'pending_payment'])],
+    ['label'=>'Düşük stoklu ürün','value'=>$metrics['low_stock'],'icon'=>'alert','url'=>route('admin.products.index',['status'=>'low_stock'])],
+  ] as $metric)
+    <a href="{{ $metric['url'] }}" class="admin-kpi">
+      <div class="newtic-dashboard-kpi-top"><span class="admin-kpi-icon"><x-admin-icon :name="$metric['icon']"/></span><x-admin-icon name="arrow-right"/></div>
+      <strong>{{ number_format($metric['value'],0,',','.') }}</strong><span class="admin-kpi-label">{{ $metric['label'] }}</span>
+    </a>
+  @endforeach
 </div>
 <div class="admin-dashboard-grid">
+  <section class="admin-panel admin-dashboard-orders">
+    <div class="admin-panel-title"><h2>Son siparişler</h2><a class="admin-text-link" href="{{ route('admin.orders.index') }}">Tüm siparişler <x-admin-icon name="arrow-right"/></a></div>
+    <div class="newtic-dashboard-recent">
+      @forelse($recentOrders as $order)
+        <a class="newtic-dashboard-order" href="{{ route('admin.orders.show',$order) }}">
+          <div><strong>{{ $order->order_number }}</strong><span>{{ $order->customer_name }}</span><small>{{ $order->created_at->format('d.m.Y H:i') }}</small></div>
+          <div class="newtic-dashboard-order-meta"><strong>{{ number_format($order->total_cents/100,2,',','.') }} ₺</strong><span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>@if($order->is_test)<small class="admin-test-tag">Tahsilatsız kayıt</small>@endif @if($order->pending_claims_count)<small class="admin-table-alert">Bildirim var</small>@endif</div>
+          <x-admin-icon name="arrow-right"/>
+        </a>
+      @empty <div class="admin-empty">Henüz sipariş bulunmuyor.</div> @endforelse
+    </div>
+  </section>
   <section class="admin-panel admin-chart-card">
     <div class="admin-panel-title">
       <div><h2>Satış performansı</h2><p class="admin-description">Son 7 gün · Doğrulanmış gerçek sipariş cirosu</p></div>
@@ -76,36 +86,11 @@
       @endforeach
     </div>
     @if($trend->every(fn ($day) => $day['revenue'] === 0))
-      <p class="admin-chart-empty">Bu dönemde banka doğrulaması yapılmış gerçek satış yok. Sipariş bildirimleri ayrı olarak izlenebilir.</p>
+      <p class="admin-chart-empty">Son 7 günde doğrulanmış satış yok.</p>
     @endif
   </section>
 
 
-  <section class="admin-panel admin-dashboard-orders">
-    <div class="admin-panel-title">
-      <h2>Son siparişler</h2><a class="admin-text-link" href="{{ route('admin.orders.index') }}">Tüm siparişler <x-admin-icon name="arrow-right" /></a>
-    </div>
-    <div class="admin-table-scroll">
-      <table class="admin-data-table">
-        <thead><tr><th>Sipariş no</th><th>Müşteri</th><th>Tarih</th><th>Tutar</th><th>Durum</th></tr></thead>
-        <tbody>
-        @forelse($recentOrders as $order)
-          <tr>
-            <td><a href="{{ route('admin.orders.show', $order) }}" class="admin-table-link">{{ $order->order_number }}</a> @if($order->is_test)<small class="admin-test-tag">Tahsilatsız kayıt</small>@endif</td>
-            <td>{{ $order->customer_name }}</td>
-            <td>{{ $order->created_at->format('d.m.Y H:i') }}</td>
-            <td><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong></td>
-            <td><span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
-              @if($order->pending_claims_count)<a href="{{ route('admin.orders.show', $order) }}" class="admin-table-alert">Bildirim var</a>@endif
-            </td>
-          </tr>
-        @empty
-          <tr><td colspan="5" class="admin-empty">Henüz sipariş bulunmuyor.</td></tr>
-        @endforelse
-        </tbody>
-      </table>
-    </div>
-  </section>
   <section class="admin-panel admin-dashboard-payments">
     <div class="admin-panel-title"><h2>Havale / EFT</h2><span class="admin-kpi-icon is-mint"><x-admin-icon name="landmark" /></span></div>
     <div class="admin-payment-spotlight">
@@ -116,8 +101,8 @@
     <a class="admin-primary admin-block-action" href="{{ route('admin.payment-notifications.index') }}">Bildirimleri incele <x-admin-icon name="arrow-right" /></a>
   </section>
   <section class="admin-panel admin-dashboard-stock">
-    <div class="admin-panel-title"><h2>Stok uyarıları</h2><a class="admin-text-link" href="{{ route('admin.products.index') }}">Ürünler <x-admin-icon name="arrow-right" /></a></div>
-    <p class="admin-description">Stok miktarı 10 ve altında olan aktif ürünler.</p>
+    <div class="admin-panel-title"><h2>Stok uyarıları</h2><a class="admin-text-link" href="{{ route('admin.products.index',['status'=>'low_stock']) }}">Ürünler <x-admin-icon name="arrow-right" /></a></div>
+    <p class="admin-description">10 ve altında stok bulunan aktif ürünler.</p>
     @forelse($lowStockProducts as $product)
       <a href="{{ route('admin.products.edit', $product) }}" class="admin-stock-item">
         <img src="{{ asset($product->image_path ?: 'assets/products/demo-sinker.svg') }}" width="44" height="44" loading="lazy" alt="">
@@ -143,5 +128,6 @@
     @endforeach
     <small class="admin-description">Sipariş kayıtları ile doğrulanmış satışlar ayrı hesaplanır.</small>
   </section>
+</div>
 </div>
 @endsection
