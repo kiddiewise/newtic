@@ -364,6 +364,12 @@ jobs:
           curl --fail --show-error --silent --location --retry 3 "$SITE/admin/login" -o admin-login.html
           grep -Fq "NEWTIC" admin-login.html
           grep -Fq "data-newtic-admin-signin" admin-login.html
+          grep -Fq "assets/brand/newtic-logo.webp" admin-login.html
+          if grep -Fq 'newtic-signin-store' admin-login.html || grep -Fq 'TEK MERKEZDEN YÖNETİM' admin-login.html; then
+            echo "Unexpected old login branding" >&2; exit 1
+          fi
+          curl --fail --show-error --silent --location --retry 3 "$SITE/assets/brand/newtic-logo.webp" -o deployed-newtic-logo.webp
+          cmp public/assets/brand/newtic-logo.webp deployed-newtic-logo.webp
           ASSET=$(node -e "const m=require('./public/build/manifest.json'); process.stdout.write(m['resources/css/app.css'].file)")
           test -n "$ASSET"
           curl --fail --show-error --silent --location --retry 3 "$SITE/build/$ASSET" -o deployed-admin.css

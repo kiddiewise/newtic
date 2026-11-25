@@ -3,9 +3,8 @@
 @section('content')
 <div class="newtic-admin-signin" data-newtic-admin-signin>
   <section class="newtic-signin-side" aria-labelledby="newtic-signin-title">
-    <div class="newtic-signin-wordmark"><span class="newtic-signin-symbol" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M7 25V7l18 18V7" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M25 7h-5" stroke="#86b8e6" stroke-width="3.6" stroke-linecap="round"/></svg></span><span>NEWTIC<small>YÖNETİM PANELİ</small></span></div>
+    <div class="newtic-signin-wordmark"><img src="{{ asset('assets/brand/newtic-logo.webp') }}" alt="NEWTIC Commerce" width="400" height="128"></div>
     <div class="newtic-signin-content">
-      <div class="newtic-signin-store"><img src="{{ asset(\App\Models\ShopAppearance::current()->desktopLogo()) }}" alt="" width="128" height="40"><span>{{ \App\Support\StoreIdentity::name() }}</span></div>
       <h1 id="newtic-signin-title">Yönetim paneli</h1>
       <p class="newtic-signin-intro">Mağazanı yönetmek için hesabına giriş yap.</p>
       @if(session('success'))<div class="newtic-signin-notice" role="status">{{ session('success') }}</div>@endif
@@ -22,8 +21,7 @@
     </div>
     <footer class="newtic-signin-footer"><span>© {{ now()->year }} NEWTIC</span><a href="{{ route('home') }}">Mağazaya dön <x-admin-icon name="external-link"/></a></footer>
   </section>
-  <aside class="newtic-signin-visual" aria-label="NEWTIC mağaza yönetimi">
-    <div class="newtic-signin-visual-top"><span>NEWTIC / COMMERCE</span><span>YÖNETİM</span></div>
+  <aside class="newtic-signin-visual" aria-hidden="true">
     <div class="newtic-signin-visual-art" aria-hidden="true">
       <svg viewBox="0 0 500 350" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs><linearGradient id="nt-panel" x1="85" y1="45" x2="420" y2="310" gradientUnits="userSpaceOnUse"><stop stop-color="#355a7c"/><stop offset="1" stop-color="#112b44"/></linearGradient><linearGradient id="nt-line" x1="130" y1="240" x2="365" y2="122" gradientUnits="userSpaceOnUse"><stop stop-color="#79a8d7"/><stop offset="1" stop-color="#d5e8fc"/></linearGradient></defs>
@@ -39,7 +37,6 @@
         <g transform="translate(385 29)"><rect width="74" height="72" rx="15" fill="#dceaf7"/><path d="M24 26h26v30H24zM31 26v-5a6 6 0 0 1 12 0v5" stroke="#315e85" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="57" cy="55" r="10" fill="#315e85"/><path d="m53 55 3 3 5-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
       </svg>
     </div>
-    <div class="newtic-signin-visual-copy"><span>TEK MERKEZDEN YÖNETİM</span><h2>Mağazan.<br>Senin kontrolünde.</h2><p>Siparişlerden stok takibine, mağazanın tüm işleyişi bir arada.</p><div class="newtic-signin-visual-features"><span><x-admin-icon name="bag"/> Siparişler</span><span><x-admin-icon name="package"/> Ürünler</span><span><x-admin-icon name="chart"/> Analizler</span></div></div>
   </aside>
 </div>
 @endsection

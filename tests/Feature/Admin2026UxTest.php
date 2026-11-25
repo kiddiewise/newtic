@@ -220,6 +220,11 @@ class Admin2026UxTest extends TestCase
         $this->get(route('admin.login'))->assertOk()
             ->assertSee('data-newtic-admin-signin', false)
             ->assertSee('newtic-signin-visual', false)
+            ->assertSee(asset('assets/brand/newtic-logo.webp'))
+            ->assertDontSee('newtic-signin-store', false)
+            ->assertDontSee('newtic-signin-visual-copy', false)
+            ->assertDontSee('TEK MERKEZDEN YÖNETİM')
+            ->assertDontSee('Senin kontrolünde.')
             ->assertSee('NEWTIC')
             ->assertSee('Yönetim paneli')
             ->assertSee(route('admin.login.submit'))
@@ -228,6 +233,8 @@ class Admin2026UxTest extends TestCase
             ->assertSee('autocomplete="current-password"', false)
             ->assertSee('data-admin-password-toggle', false)
             ->assertDontSee('admin-mobile-nav"');
+        $this->assertFileExists(public_path('assets/brand/newtic-logo.webp'));
+        $this->assertSame('5b984c635ab222508d4eaddead4cb7986ac9dffc93ac8b522956c9d852819fc8',hash_file('sha256',public_path('assets/brand/newtic-logo.webp')));
         // Carry the browser's session cookie across the failed POST and redirect.
         $this->withCookie(config('session.cookie'), session()->getId());
         $this->from(route('admin.login'))->post(route('admin.login.submit'), [
