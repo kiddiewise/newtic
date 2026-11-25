@@ -1,0 +1,68 @@
+/* Product workspace — consistent with NEWTIC order management. */
+.admin-app-active .newtic-products{color:#092037}
+.newtic-products-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.newtic-products-heading h1{font:700 clamp(22px,3vw,32px)/1.2 'Plus Jakarta Sans',sans-serif;margin:3px 0 5px}
+.newtic-products-heading p:not(.admin-eyebrow){color:#64748b;font-size:12px;margin:0}
+.newtic-products-heading-actions{display:flex;align-items:center;gap:8px}
+.newtic-product-import-actions summary{display:flex;align-items:center;gap:5px;min-height:40px}
+.newtic-product-import-actions summary .admin-icon{width:17px;height:17px}
+.newtic-product-add{display:flex;align-items:center;justify-content:center;gap:5px;min-height:40px;background:#092037;color:white;text-decoration:none;border-radius:8px;padding:9px 12px;font-size:12px;white-space:nowrap}
+.newtic-product-add .admin-icon{width:17px;height:17px}
+.newtic-product-panel{background:#fff;border:1px solid #e2e7ed;border-radius:12px;padding:16px}
+.newtic-product-filter{display:grid;gap:10px}
+.newtic-product-search{display:flex;align-items:center;gap:8px;border:1px solid #dfe5ec;border-radius:8px;background:#f8fafc;padding:5px 6px 5px 12px}
+.newtic-product-search>.admin-icon{flex:none;width:18px;color:#64748b}
+.newtic-product-search input{flex:1;width:100%;min-width:0;min-height:36px;border:0;background:transparent;outline:none;font:400 13px Montserrat,sans-serif}
+.newtic-product-filter button{border:0;border-radius:7px;background:#092037;color:white;padding:10px 17px;font:500 12px Montserrat,sans-serif;cursor:pointer;min-height:36px}
+.newtic-product-filter-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.newtic-product-filter-fields label{display:grid;gap:5px;color:#64748b;font-size:11px;min-width:0}
+.newtic-product-filter-fields select{width:100%;min-width:0;min-height:40px;border:1px solid #dfe5ec;border-radius:7px;background:#fff;color:#253f55;padding:7px;font:400 12px Montserrat,sans-serif}
+.newtic-product-filter-actions{display:flex;justify-content:flex-end;align-items:center;gap:15px}
+.newtic-product-filter-actions a{font-size:12px;color:#64748b;text-decoration:none}
+.newtic-product-tabs{display:flex;gap:18px;overflow-x:auto;scrollbar-width:thin;border-bottom:1px solid #e2e7ed;margin-top:8px}
+.newtic-product-tabs a{white-space:nowrap;padding:12px 3px;border-bottom:2px solid transparent;color:#64748b;font-size:12px;text-decoration:none}
+.newtic-product-tabs a[aria-current]{border-color:#315e85;color:#315e85}
+.admin-app-active .newtic-product-row{display:grid;grid-template-columns:76px minmax(0,1.5fr) minmax(110px,.65fr) auto;align-items:center;gap:12px;border:0;border-bottom:1px solid #e9edf1;border-radius:0;padding:14px 4px}
+.admin-app-active .newtic-product-row:last-child{border-bottom:0}
+.newtic-product-photo-link{display:block;align-self:start;width:76px;height:76px;border-radius:8px;overflow:hidden;background:#f5f7fa}
+.admin-app-active .newtic-product-row .admin-catalog-photo{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
+.newtic-product-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.newtic-product-name{color:#092037;text-decoration:none;font:600 13px/1.45 'Plus Jakarta Sans',Montserrat,sans-serif;overflow-wrap:anywhere}
+.newtic-product-info small{color:#64748b;font-size:11px;overflow-wrap:anywhere}
+.newtic-product-price{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:3px}
+.newtic-product-price strong{font:650 15px Montserrat,sans-serif;color:#092037}
+.newtic-product-price s{color:#64748b;font-size:11px}
+.newtic-product-price .admin-sale-tag{font-size:10px}
+.newtic-product-state{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.admin-app-active .newtic-product-state .admin-status,.admin-app-active .newtic-product-state .admin-stock-badge{font-weight:400;font-size:10px;padding:4px 7px;white-space:normal}
+.newtic-product-views{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b}
+.newtic-product-views .admin-icon{width:13px;height:13px;flex:none}
+.newtic-product-row-actions{display:flex;align-items:center;gap:6px;min-width:0}
+.admin-app-active .newtic-product-row .admin-quick-edit-trigger,.newtic-product-edit,.newtic-product-overflow summary{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:38px;padding:7px 9px;border:1px solid #dfe5ec;background:#fff;color:#315e85;border-radius:7px;text-decoration:none;font:500 11px/1.3 Montserrat,sans-serif;white-space:nowrap;cursor:pointer}
+.admin-app-active .newtic-product-row .admin-quick-edit-trigger{background:#edf3f8;border-color:#d7e3ee}
+.newtic-product-edit .admin-icon,.newtic-product-overflow .admin-icon{width:15px;height:15px}
+.newtic-product-overflow{position:relative;flex:none}
+.newtic-product-overflow summary{list-style:none}
+.newtic-product-overflow summary::-webkit-details-marker{display:none}
+.newtic-product-overflow[open]{z-index:4}
+.newtic-product-overflow>div{position:absolute;right:0;top:calc(100% + 5px);background:#fff;border:1px solid #e1e6ec;box-shadow:0 5px 20px #09203715;border-radius:8px;padding:5px;min-width:110px}
+.newtic-product-overflow>div button{width:100%}
+.newtic-products :is(a,button,summary,select,input):focus-visible{outline:2px solid #315e85;outline-offset:2px}
+@media(max-width:1100px){.admin-app-active .newtic-product-row{grid-template-columns:76px minmax(0,1fr) minmax(110px,.6fr)}.newtic-product-row-actions{grid-column:2/-1;justify-content:flex-end}}
+@media(max-width:710px){
+  .admin-app-active:has(.newtic-products) .admin-topbar-inner{flex-wrap:wrap;row-gap:0}
+  .admin-app-active:has(.newtic-products) .admin-global-search{position:static;flex:0 0 100%;order:10;margin-bottom:8px;border:1px solid #e1e9ed;border-radius:8px}
+  .admin-app-active:has(.newtic-products) .admin-main{padding-top:16px}
+  .newtic-products-heading{flex-wrap:wrap;margin-bottom:12px;gap:8px}
+  .newtic-products-heading-actions{margin-left:auto}
+  .newtic-product-panel{padding:10px}
+  .newtic-product-tabs{gap:12px}
+  .newtic-product-tabs a{font-size:11px}
+  .admin-app-active .newtic-product-row{grid-template-columns:68px minmax(0,1fr);gap:8px 10px;padding:12px 3px;align-items:start}
+  .newtic-product-photo-link{width:68px;height:68px}
+  .newtic-product-state{grid-column:2}
+  .newtic-product-row-actions{grid-column:1/-1;justify-content:flex-end}
+  .newtic-product-filter-fields select{font-size:12px}
+  .newtic-product-price strong{font-size:14px}
+}
+@media(max-width:350px){.newtic-products-heading-actions{width:100%;justify-content:space-between}.newtic-product-tabs{gap:8px}}

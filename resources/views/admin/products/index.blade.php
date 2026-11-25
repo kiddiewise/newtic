@@ -1,54 +1,76 @@
 @extends('admin.layout')
 @section('title', 'Ürünler | NEWTIC')
 @section('content')
-<div class="admin-page-heading admin-heading-actions">
-  <div><p class="admin-eyebrow">KATALOG / ÜRÜNLER</p><h1>Ürün yönetimi</h1>
-    <p>Ürün fotoğraflarını, fiyatlarını, stok ve yayın durumlarını kolayca yönet.</p></div>
-  <div class="admin-heading-action-group">
-    <a class="admin-secondary" href="{{ route('admin.products.bulk.export') }}"><x-admin-icon name="package" /> Excel'e aktar (CSV)</a>
-    <a class="admin-secondary" href="{{ route('admin.products.bulk.index') }}"><x-admin-icon name="layers" /> Toplu ürün yükle</a>
-    <a class="admin-secondary" href="{{ route('admin.product-imports.index') }}"><x-admin-icon name="layers" /> WooCommerce'den aktar</a>
-    <a class="admin-primary" href="{{ route('admin.products.create') }}"><x-admin-icon name="plus" /> Yeni ürün ekle</a>
+<div class="newtic-products">
+  <div class="newtic-products-heading">
+    <div><p class="admin-eyebrow">KATALOG</p><h1>Ürün yönetimi</h1><p>{{ number_format($products->total(), 0, ',', '.') }} ürün</p></div>
+    <div class="newtic-products-heading-actions">
+      <details class="newtic-order-actions newtic-product-import-actions">
+        <summary>İşlemler <x-admin-icon name="more" /></summary>
+        <div>
+          <a href="{{ route('admin.products.bulk.export') }}"><x-admin-icon name="download" /> Excel'e aktar (CSV)</a>
+          <a href="{{ route('admin.products.bulk.index') }}"><x-admin-icon name="layers" /> Toplu ürün yükle</a>
+          <a href="{{ route('admin.product-imports.index') }}"><x-admin-icon name="layers" /> WooCommerce'den aktar</a>
+        </div>
+      </details>
+      <a class="newtic-product-add" href="{{ route('admin.products.create') }}"><x-admin-icon name="plus" /> Yeni ürün</a>
+    </div>
   </div>
-</div>
-<div class="admin-panel">
-  <div class="admin-panel-title"><h2>Ürün listesi</h2><span>{{ number_format($products->total(), 0, ',', '.') }} ürün</span></div>
-  <form class="admin-catalog-search" method="GET" action="{{ route('admin.products.index') }}" role="search">
-    <input type="hidden" name="status" value="{{ $status }}">
-    <input type="search" name="q" value="{{ $term }}" maxlength="100" placeholder="Ürün adı veya SKU ile ara" aria-label="Ürün adı veya SKU ile ara">
-    <button class="admin-secondary" type="submit"><x-admin-icon name="search" /> Ara</button>
-    @if($term)<a class="admin-secondary" href="{{ route('admin.products.index', ['status' => $status]) }}" title="Aramayı temizle">Temizle</a>@endif
-  </form>
-  <nav class="admin-catalog-filters" aria-label="Ürün filtreleri">
-    @foreach(['all' => 'Tüm ürünler', 'active' => 'Yayında', 'inactive' => 'Pasif', 'low_stock' => 'Düşük stok'] as $key => $label)
-      <a href="{{ route('admin.products.index', array_filter(['status' => $key, 'q' => $term])) }}"
-        @class(['admin-filter-pill', 'is-active' => $status === $key]) @if($status === $key) aria-current="page" @endif>
-        @if($key === 'low_stock')<x-admin-icon name="alert" />@endif{{ $label }}
-      </a>
-    @endforeach
-  </nav>
-  <div class="admin-catalog-list">
-    @forelse($products as $product)
-      <article class="admin-catalog-row" data-quick-edit-row="{{ $product->id }}">
-        <img class="admin-catalog-photo" src="{{ asset($product->image_path ?: 'assets/products/demo-sinker.svg') }}" alt="" loading="lazy" width="68" height="68">
-        <div class="admin-catalog-info">
-          <strong data-quick-row-name>{{ $product->name }}</strong>
-          <small>SKU: {{ $product->sku }} · <span data-quick-row-category>{{ $product->category?->name ?: 'Kategori yok' }}</span></small>
-          <div class="admin-catalog-stats">
-            <strong data-quick-row-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
-            <s data-quick-row-regular @if($product->discount_percent === 0) hidden @endif>{{ $product->compare_at_price ? number_format((float) $product->compare_at_price, 2, ',', '.') : '' }} ₺</s>
-            <span class="admin-sale-tag" data-quick-row-discount @if($product->discount_percent === 0) hidden @endif>-%{{ $product->discount_percent }}</span>
+  <div class="newtic-product-panel">
+    <form class="newtic-product-filter" method="GET" action="{{ route('admin.products.index') }}" role="search">
+      <input type="hidden" name="status" value="{{ $status }}">
+      <div class="newtic-product-search"><x-admin-icon name="search" />
+        <input type="search" name="q" value="{{ $term }}" maxlength="100" placeholder="Ürün adı veya SKU ile ara" aria-label="Ürün adı veya SKU ile ara">
+        <button type="submit">Ara</button>
+      </div>
+      <div class="newtic-product-filter-fields">
+        <label>Kategori<select name="category">
+          <option value="">Tüm kategoriler</option>
+          @foreach($categories as $choice)
+            <option value="{{ $choice['category']->id }}" @selected($categoryId===$choice['category']->id)>{{ $choice['label'] }}</option>
+          @endforeach
+        </select></label>
+        <label>Sıralama<select name="sort">
+          @foreach(['newest'=>'En yeni','oldest'=>'En eski','name'=>'Ürün adı (A–Z)','price_asc'=>'En düşük fiyat','price_desc'=>'En yüksek fiyat','stock_asc'=>'En az stok','views_desc'=>'En çok görüntülenen'] as $key=>$label)
+            <option value="{{ $key }}" @selected($sort===$key)>{{ $label }}</option>
+          @endforeach
+        </select></label>
+      </div>
+      <div class="newtic-product-filter-actions">
+        <a href="{{ route('admin.products.index') }}">Temizle</a><button type="submit">Filtrele</button>
+      </div>
+    </form>
+    <nav class="newtic-product-tabs" aria-label="Ürün filtreleri">
+      @foreach(['all'=>'Tümü','active'=>'Yayında','inactive'=>'Pasif','low_stock'=>'Düşük stok'] as $key=>$label)
+        <a href="{{ route('admin.products.index', array_filter(['status'=>$key,'q'=>$term,'category'=>$categoryId,'sort'=>$sort])) }}" @if($status===$key) aria-current="page" @endif>{{ $label }}</a>
+      @endforeach
+    </nav>
+    <div class="admin-catalog-list newtic-product-list">
+      @forelse($products as $product)
+        <article class="admin-catalog-row newtic-product-row" data-quick-edit-row="{{ $product->id }}">
+          <a class="newtic-product-photo-link" href="{{ route('admin.products.edit',$product) }}" aria-label="{{ $product->name }} düzenle">
+            <img class="admin-catalog-photo" src="{{ asset($product->image_path ?: 'assets/products/demo-sinker.svg') }}" alt="" loading="lazy" width="76" height="76">
+          </a>
+          <div class="admin-catalog-info newtic-product-info">
+            <a class="newtic-product-name" href="{{ route('admin.products.edit',$product) }}" data-quick-row-name>{{ $product->name }}</a>
+            <small>SKU: {{ $product->sku }}</small>
+            <small data-quick-row-category>{{ $product->category?->name ?: 'Kategori yok' }}</small>
+            <div class="newtic-product-price">
+              <strong data-quick-row-price>{{ number_format((float) $product->price, 2, ',', '.') }} ₺</strong>
+              <s data-quick-row-regular @if($product->discount_percent === 0) hidden @endif>{{ $product->compare_at_price ? number_format((float) $product->compare_at_price, 2, ',', '.') : '' }} ₺</s>
+              <span class="admin-sale-tag" data-quick-row-discount @if($product->discount_percent === 0) hidden @endif>-%{{ $product->discount_percent }}</span>
+            </div>
+          </div>
+          <div class="newtic-product-state">
             @if($product->tracks_stock)
               <span data-quick-row-stock @class(['admin-stock-badge','is-low' => $product->stock_quantity <= 10])>Stok: {{ $product->stock_quantity }}</span>
             @else
               <span class="admin-stock-badge" data-quick-row-stock>Stok takibi kapalı</span>
             @endif
             <span class="admin-status {{ $product->is_active ? 'is-active' : '' }}">{{ $product->is_active ? 'Yayında' : 'Pasif' }}</span>
-            <span><x-admin-icon name="chart" /> {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</span>
+            <small class="newtic-product-views"><x-admin-icon name="chart" /> {{ number_format($product->view_count, 0, ',', '.') }} görüntülenme</small>
           </div>
-        </div>
-        <div class="category-tree-actions">
-          <a class="admin-secondary" href="{{ route('admin.products.edit', $product) }}"><x-admin-icon name="settings" /> Düzenle</a>
+          <div class="newtic-product-row-actions">
           <button type="button" class="admin-quick-edit-trigger" data-quick-edit-open
             data-product-id="{{ $product->id }}"
             data-product-url="{{ route('admin.products.quick-update', $product) }}"
@@ -60,19 +82,24 @@
             data-stock="{{ $product->stock_quantity }}"
             data-tracks-stock="{{ $product->tracks_stock ? '1' : '0' }}"
             aria-haspopup="dialog">Hızlı düzenle</button>
+            <a class="newtic-product-edit" href="{{ route('admin.products.edit',$product) }}"><x-admin-icon name="settings" /> Düzenle</a>
+            <details class="newtic-product-overflow">
+              <summary aria-label="{{ $product->name }} için diğer işlemler"><x-admin-icon name="more" /></summary>
+              <div>
           <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Bu ürünü kalıcı olarak silmek istiyor musunuz? Sipariş geçmişi bulunan ürünler silinemez.')">
             @csrf @method('DELETE')
             <button class="admin-danger" type="submit">Sil</button>
           </form>
-        </div>
-      </article>
-    @empty
-      <div class="admin-empty"><x-admin-icon name="package" /><strong>Bu filtrede ürün bulunamadı.</strong>
-        <p>Arama veya filtreyi değiştirebilir, yeni ürün ekleyebilirsin.</p>
-      </div>
-    @endforelse
+              </div>
+            </details>
+          </div>
+        </article>
+      @empty
+        <div class="admin-empty"><x-admin-icon name="package" /><strong>Bu filtrede ürün bulunamadı.</strong><p>Aramayı veya filtreleri değiştir, ya da yeni ürün ekle.</p></div>
+      @endforelse
+    </div>
+    <div class="pagination-wrap">{{ $products->links() }}</div>
   </div>
-  <div class="pagination-wrap">{{ $products->links() }}</div>
 </div>
 <dialog class="admin-quick-edit-dialog" data-quick-editor aria-labelledby="quick-editor-title" aria-describedby="quick-editor-description">
   <div class="admin-quick-edit-sheet">

@@ -27,7 +27,13 @@ class ProductController extends Controller
         $status = (string) $request->query('status', 'all');
         abort_unless(in_array($status, ['all', 'active', 'inactive', 'low_stock'], true), 422);
 
+        $category = $request->query('category', '');
+        abort_unless(is_scalar($category) && ($category === '' || (ctype_digit((string)$category) && (int)$category > 0)), 422);
+        $categoryId = $category === '' ? null : (int)$category;
+        $sort = (string)$request->query('sort', 'newest');
+        abort_unless(in_array($sort, ['newest','oldest','name','price_asc','price_desc','stock_asc','views_desc'], true), 422);
         $products = Product::query()->with('category')->withCount('images')
+            ->when($categoryId !== null, fn ($query) => $query->where('primary_category_id',$categoryId))
             ->when($status === 'active', fn ($query) => $query->where('is_active', true))
             ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
             ->when($status === 'low_stock', fn ($query) => $query->where('is_active', true)
@@ -36,11 +42,16 @@ class ProductController extends Controller
                 $safe = addcslashes($term, '%_\\');
                 $query->where('name', 'like', '%'.$safe.'%')->orWhere('sku', 'like', '%'.$safe.'%');
             }))
-            ->latest('id')->paginate(20)->withQueryString();
+            ->when($sort === 'name', fn ($query) => $query->orderBy('name'))
+            ->when($sort === 'price_asc', fn ($query) => $query->orderBy('price'))
+            ->when($sort === 'price_desc', fn ($query) => $query->orderByDesc('price'))
+            ->when($sort === 'stock_asc', fn ($query) => $query->orderByDesc('tracks_stock')->orderBy('stock_quantity'))
+            ->when($sort === 'views_desc', fn ($query) => $query->orderByDesc('view_count'))
+            ->orderBy('id',$sort === 'oldest' ? 'asc' : 'desc')->paginate(20)->withQueryString();
 
         $categories = collect(CategoryHierarchy::choices());
 
-        return view('admin.products.index', compact('products', 'term', 'status', 'categories'));
+        return view('admin.products.index', compact('products', 'term', 'status', 'categories', 'categoryId', 'sort'));
     }
 
     public function create(): View

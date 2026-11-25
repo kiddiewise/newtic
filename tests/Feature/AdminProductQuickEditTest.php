@@ -78,6 +78,23 @@ final class AdminProductQuickEditTest extends TestCase
         $response->assertSee('Kategori seçin');
     }
 
+    public function test_product_workspace_filters_by_category_and_sorts_by_price(): void
+    {
+        $category = $this->category();
+        $other = $this->category('Other category');
+        $first = $this->product($category);
+        $second = $first->replicate();
+        $second->fill(['name'=>'Ucuz ürün','slug'=>'cheap-product','sku'=>'CHEAP-1','price'=>'50.00','compare_at_price'=>null])->save();
+        $third = $first->replicate();
+        $third->fill(['name'=>'Başka kategoride','slug'=>'other-product','sku'=>'OTHER-1','primary_category_id'=>$other->id])->save();
+        $this->actingAs($this->admin());
+        $response = $this->get(route('admin.products.index',['category'=>$category->id,'sort'=>'price_asc']))
+            ->assertOk()->assertSee('newtic-products',false)->assertSee('Filtrele');
+        $this->assertSame([$second->id,$first->id],$response->viewData('products')->getCollection()->modelKeys());
+        $this->get(route('admin.products.index',['sort'=>'invalid']))->assertStatus(422);
+        $this->get(route('admin.products.index',['category'=>'invalid']))->assertStatus(422);
+    }
+
     public function test_nonadmins_cannot_read_or_write_product_quick_edit(): void
     {
         $product = $this->product($this->category());
