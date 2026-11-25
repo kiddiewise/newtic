@@ -115,7 +115,11 @@ class Admin2026UxTest extends TestCase
 
         $page->assertDontSee('admin-help-card')
             ->assertDontSee('Hızlı erişim')
-            ->assertSee('SİSTEM YÖNETİMİ')
+            ->assertSee('Sistem Ayarları')
+            ->assertSee('Ürün &amp; Sipariş Yönetimi',false)
+            ->assertDontSee('PAZARLAMA VE RAPORLAMA')
+            ->assertSee('Anasayfa Düzenle')
+            ->assertSee('data-live-count',false)
             ->assertSee(route('admin.system-health'))
             ->assertSee('admin-sidebar-user')
             ->assertSee('Güvenli çıkış')

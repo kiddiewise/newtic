@@ -64,13 +64,14 @@ class DashboardController extends Controller
 
         $totalStatus = max(1, (int) $statusCounts->sum());
 
+        $liveOnline = \Illuminate\Support\Facades\DB::table('analytics_sessions')->where('last_seen_at','>=',now()->subMinutes(5))->count();
         $updateAvailable = $releases->hasUpdate();
         $updateRelease = $updateAvailable ? $releases->latest() : null;
 
         return view('admin.dashboard', compact(
             'metrics', 'recentOrders', 'lowStockProducts', 'trend',
             'chartMax', 'statusCounts', 'totalStatus',
-            'updateAvailable', 'updateRelease'
+            'updateAvailable', 'updateRelease', 'liveOnline'
         ));
     }
 }

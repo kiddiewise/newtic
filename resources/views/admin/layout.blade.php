@@ -29,12 +29,9 @@
     : 0;
   $newticUpdateAvailable = $adminAuthenticated
     && app(\App\Services\NewticReleaseManager::class)->hasUpdate();
+  $dashboardLink = ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'];
   $menuGroups = [
-    ['label' => 'GENEL BAKIŞ', 'items' => [
-      ['label' => 'Genel Bakış', 'name' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home'],
-      ['label' => 'Mobil Uygulama ve Bildirimler', 'name' => 'admin.pwa.index', 'active' => 'admin.pwa.*', 'icon' => 'bell'],
-    ]],
-    ['label' => 'SATIŞ VE KATALOG', 'items' => [
+    ['label' => 'Ürün & Sipariş Yönetimi', 'items' => [
       ['label' => 'Siparişler', 'name' => 'admin.orders.index', 'active' => 'admin.orders.*', 'icon' => 'bag'],
       ['label' => 'İptal ve İade Talepleri', 'name' => 'admin.returns.index', 'active' => 'admin.returns.*', 'icon' => 'bag'],
       ['label' => 'Ürünler', 'name' => 'admin.products.index', 'active' => 'admin.products.*', 'icon' => 'package'],
@@ -44,31 +41,26 @@
       ['label' => 'Ürün Rozetleri', 'name' => 'admin.product-badges.index', 'active' => 'admin.product-badges.*', 'icon' => 'star'],
       ['label' => 'Ürün Aktarımı', 'name' => 'admin.product-imports.index', 'active' => 'admin.product-imports.*', 'icon' => 'layers'],
       ['label' => 'Ödeme Bildirimleri', 'name' => 'admin.payment-notifications.index', 'active' => 'admin.payment-notifications.*', 'icon' => 'landmark', 'count' => $pendingPaymentCount],
-      ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
     ]],
-    ['label' => 'PAZARLAMA VE RAPORLAMA', 'items' => [
+    ['label' => 'Sistem Ayarları', 'items' => [
+      ['label' => 'Banka Hesapları', 'name' => 'admin.bank-accounts.index', 'active' => 'admin.bank-accounts.*', 'icon' => 'layers'],
+      ['label' => 'Anasayfa Düzenle', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
+      ['label' => 'Mobil Uygulama ve Bildirimler', 'name' => 'admin.pwa.index', 'active' => 'admin.pwa.*', 'icon' => 'bell'],
       ['label' => 'Pazarlama ve Analitik', 'name' => 'admin.analytics', 'active' => 'admin.analytics*', 'icon' => 'chart'],
       ['label' => 'Raporlar', 'name' => 'admin.reports', 'active' => 'admin.reports', 'icon' => 'chart'],
       ['label' => 'E-posta ve Bildirimler', 'name' => 'admin.email-center.index', 'active' => 'admin.email-center.*', 'icon' => 'mail'],
       ['label' => 'Kampanya E-postaları', 'name' => 'admin.marketing.index', 'active' => 'admin.marketing.*', 'icon' => 'mail'],
       ['label' => 'SEO Ayarları', 'name' => 'admin.seo.edit', 'active' => 'admin.seo.*', 'icon' => 'search'],
       ['label' => '301 Yönlendirmeler', 'name' => 'admin.redirects.index', 'active' => 'admin.redirects.*', 'icon' => 'arrow-right'],
-    ]],
-    ['label' => 'MAĞAZA GÖRÜNÜMÜ', 'items' => [
-      ['label' => 'Vitrin · Slider', 'name' => 'admin.index', 'active' => 'admin.index', 'icon' => 'layout'],
       ['label' => 'Menüler', 'name' => 'admin.menus.mega-menu.edit', 'active' => 'admin.menus.*', 'icon' => 'menu'],
       ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],
       ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
       ['label' => 'Logolar ve Görünüm', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
-    ]],
-    ['label' => 'ENTEGRASYONLAR', 'items' => [
       ['label' => 'PAYTR Ödeme Ayarları', 'name' => 'admin.paytr-settings.edit', 'active' => 'admin.paytr-settings.*', 'icon' => 'settings'],
       ['label' => 'Google Merchant', 'name' => 'admin.google-merchant.edit', 'active' => 'admin.google-merchant.*', 'icon' => 'globe'],
       ['label' => 'Kargo Entegrasyonu', 'name' => 'admin.shipping-integrations.index', 'active' => 'admin.shipping-integrations.*', 'icon' => 'truck'],
       ['label' => 'Kargo Operasyonları', 'name' => 'admin.shipping-operations.index', 'active' => 'admin.shipping-operations.*', 'icon' => 'package'],
       ['label' => 'Kargo Ayarları', 'name' => 'admin.store-settings.edit', 'active' => 'admin.store-settings.*', 'icon' => 'truck'],
-    ]],
-    ['label' => 'SİSTEM YÖNETİMİ', 'items' => [
       ['label' => 'Kullanıcılar ve Müşteriler', 'name' => 'admin.customers', 'active' => 'admin.customers', 'icon' => 'users'],
       ['label' => 'Sistem Sağlığı', 'name' => 'admin.system-health', 'active' => 'admin.system-health', 'icon' => 'chart'],
       ['label' => 'Yazılım Güncellemeleri', 'name' => 'admin.software-updates.index', 'active' => 'admin.software-updates.*', 'icon' => 'refresh-cw', 'count' => $newticUpdateAvailable ? 1 : 0],
@@ -77,12 +69,12 @@
       ['label' => 'Yasal Sayfalar & KVKK', 'name' => 'admin.legal.index', 'active' => 'admin.legal.*', 'icon' => 'shield'],
     ]],
   ];
-  $activeGroupLabel = 'Mağazanın kontrol merkezi';
+  $activeGroupLabel = request()->routeIs('admin.dashboard') ? 'Genel Bakış' : 'Mağaza yönetimi';
   foreach ($menuGroups as $group) {
     foreach ($group['items'] as $link) {
       if (request()->routeIs($link['active'])
           || ($link['name'] === 'admin.index' && request()->routeIs('admin.sections.*', 'admin.slides.*'))) {
-        $activeGroupLabel = mb_convert_case(mb_strtolower($group['label']), MB_CASE_TITLE, 'UTF-8');
+        $activeGroupLabel = $group['label'];
         break 2;
       }
     }
@@ -99,6 +91,7 @@
     </a>
     <div class="admin-sidebar-scroll">
       <nav class="admin-sidebar-nav" aria-label="Ana yönetim">
+        <a href="{{ route('admin.dashboard') }}" @class(['admin-side-link','admin-side-dashboard','is-active'=>request()->routeIs('admin.dashboard')]) @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif><x-admin-icon name="home"/><span>{{ $dashboardLink['label'] }}</span></a>
         @foreach($menuGroups as $group)
           @php
             $groupActive = collect($group['items'])->contains(fn ($link) =>

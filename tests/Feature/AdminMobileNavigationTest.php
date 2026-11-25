@@ -31,18 +31,20 @@ final class AdminMobileNavigationTest extends TestCase
         ]);
     }
 
-    public function test_dashboard_actions_are_first_and_mobile_menu_links_are_real(): void
+    public function test_dashboard_welcome_precedes_actions_and_mobile_menu_links_are_real(): void
     {
         $response=$this->actingAs($this->admin())->get(route('admin.dashboard'))->assertOk()
             ->assertSee('data-admin-mobile-nav',false)->assertSee('data-admin-more-dialog',false)
             ->assertSee('admin-dashboard-actions-first',false)
-            ->assertSee('data-admin-nav-slider',false)->assertSee('data-active-index="-1"',false);
+            ->assertSee('data-admin-nav-slider',false)->assertSee('data-active-index="3"',false)
+            ->assertDontSee('Mağazanın son durumuna tek ekrandan ulaş');
         $html=$response->getContent();
+        $this->assertLessThan(strpos($html,'<h2>Hızlı işlemler</h2>'),strpos($html,'<h1>Merhaba,'));
         $this->assertLessThan(strpos($html,'class="admin-kpi-grid"'),strpos($html,'<h2>Hızlı işlemler</h2>'));
         $this->assertSame(1,substr_count($html,'<h2>Hızlı işlemler</h2>'));
         $nav=substr($html,strpos($html,'<nav class="admin-mobile-nav"'));
         foreach(['admin.orders.index','admin.products.index','admin.analytics','admin.categories.index',
-            'admin.bank-accounts.index','admin.blog.posts.index','admin.announcements.index','admin.menus.mega-menu.edit','admin.index'] as $name) {
+            'admin.dashboard','admin.pwa.index','admin.reports','admin.bank-accounts.index','admin.blog.posts.index','admin.announcements.index','admin.menus.mega-menu.edit','admin.index'] as $name) {
             $this->assertStringContainsString('href="'.route($name).'"',$nav);
         }
     }
