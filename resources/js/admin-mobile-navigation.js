@@ -89,11 +89,68 @@ if (nav && dialog) {
   const badge = nav.querySelector('[data-admin-order-badge]');
   const link = nav.querySelector('[data-admin-order-link]');
   const live = nav.querySelector('[data-admin-order-live]');
-  let last = null;
+  const soundButton = document.querySelector('[data-admin-order-sound]');
+  const soundLabel = document.querySelector('[data-admin-sound-label]');
+  const toast = document.querySelector('[data-admin-order-toast]');
+  const toastText = document.querySelector('[data-admin-order-toast-text]');
+  const soundKey = 'newtic.admin.order-sound.' + nav.dataset.orderUser;
+  const playedKey = soundKey + '.latest';
+  const getPref = key => { try { return localStorage.getItem(key); } catch { return null; } };
+  const setPref = (key,value) => { try { localStorage.setItem(key,value); } catch {} };
+  let soundEnabled = getPref(soundKey) === '1';
+  let audioContext = null;
+  let highWater = Number(nav.dataset.orderLatestId) || 0;
+  let last = Number(badge.textContent === '99+' ? 100 : badge.textContent) || 0;
+  let toastTimer;
+  const updateSound = () => {
+    if (!soundButton) return;
+    soundButton.setAttribute('aria-pressed', String(soundEnabled));
+    soundButton.setAttribute('aria-label', soundEnabled ? 'Sipariş sesini kapat' : 'Sipariş sesini etkinleştir');
+    soundButton.title = soundEnabled ? 'Sipariş sesi açık' : 'Sipariş sesi kapalı';
+    if (soundLabel) soundLabel.textContent = soundEnabled ? 'Ses açık' : 'Ses kapalı';
+  };
+  async function unlockAudio() {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return false;
+    try {
+      audioContext ||= new Audio();
+      if (audioContext.state !== 'running') await audioContext.resume();
+      return audioContext.state === 'running';
+    } catch { return false; }
+  }
+  function playChime() {
+    if (!audioContext || audioContext.state !== 'running') return false;
+    const t = audioContext.currentTime;
+    [660,880].forEach((frequency,i) => {
+      const note = audioContext.createOscillator(), gain = audioContext.createGain();
+      const start = t + i * .15;
+      note.type = 'sine'; note.frequency.value = frequency;
+      gain.gain.setValueAtTime(.001,start);
+      gain.gain.exponentialRampToValueAtTime(.12,start+.02);
+      gain.gain.exponentialRampToValueAtTime(.001,start+.22);
+      note.connect(gain); gain.connect(audioContext.destination);
+      note.start(start); note.stop(start+.23);
+    });
+    return true;
+  }
+  soundButton?.addEventListener('click', async () => {
+    if (soundEnabled) { soundEnabled = false; }
+    else { soundEnabled = await unlockAudio(); if (soundEnabled) playChime(); }
+    setPref(soundKey,soundEnabled ? '1' : '0');
+    updateSound();
+  });
+  document.addEventListener('pointerdown', event => {
+    if (soundEnabled && !soundButton?.contains(event.target)) unlockAudio();
+  }, {passive:true});
+  document.addEventListener('keydown', () => { if (soundEnabled) unlockAudio(); });
+  window.addEventListener('storage', event => {
+    if (event.key === soundKey) { soundEnabled = event.newValue === '1'; updateSound(); }
+  });
+  updateSound();
   let polling = false;
   let stopped = false;
   async function refreshBadge() {
-    if (!mobile.matches || document.hidden || polling || stopped || !nav.dataset.orderBadgeUrl) return;
+    if (document.hidden || polling || stopped || !nav.dataset.orderBadgeUrl) return;
     polling = true;
     try {
       const response = await fetch(nav.dataset.orderBadgeUrl, {
@@ -107,19 +164,33 @@ if (nav && dialog) {
       badge.hidden = data.count === 0;
       badge.textContent = data.count > 99 ? '99+' : String(data.count);
       link.setAttribute('aria-label','Siparişler' + (data.count ? ', ' + data.count + ' yeni sipariş' : ''));
-      if (last !== null && data.count > last) {
+      const newest = Number.isSafeInteger(data.latest_id) ? data.latest_id : 0;
+      const arrived = newest > highWater;
+      if (arrived || data.count > last) {
         live.textContent = 'Yeni sipariş var. ' + data.count + ' okunmamış sipariş.';
         if (!reduced.matches && typeof badge.animate === 'function') badge.animate(
           [{transform:'scale(.8)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],
           {duration:300,easing:'ease-out'}
         );
       }
+      if (arrived) {
+        highWater = newest;
+        if (toast && toastText) {
+          toastText.textContent = 'Yeni sipariş var!';
+          toast.hidden = false;
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => { toast.hidden = true; }, 10000);
+        }
+        if (soundEnabled && newest > Number(getPref(playedKey) || 0) && playChime()) {
+          setPref(playedKey,String(newest));
+        }
+      }
       last = data.count;
     } catch { /* Keep the last confirmed badge on intermittent connectivity. */ }
     finally { polling = false; }
   }
-  // Only visible mobile admin pages poll; no storefront traffic or push permission.
-  setInterval(refreshBadge,30000);
+  // Only visible authenticated admin pages poll; no storefront traffic.
+  setInterval(refreshBadge,15000);
   document.addEventListener('visibilitychange', refreshBadge);
   window.addEventListener('pageshow', event => {
     if (event.persisted) select(dialog.open ? 3 : routeIndex, false);

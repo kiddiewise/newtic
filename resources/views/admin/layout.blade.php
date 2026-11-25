@@ -143,6 +143,7 @@
           <button type="submit" aria-label="Ara"><x-admin-icon name="arrow-right" /></button>
         </form>
         <div class="admin-top-actions">
+          <button type="button" class="admin-order-sound-toggle" data-admin-order-sound aria-pressed="false" title="Sipariş sesini etkinleştir" aria-label="Sipariş sesini etkinleştir"><x-admin-icon name="bell" /><span data-admin-sound-label>Ses kapalı</span></button>
           <a class="admin-top-icon-link" href="{{ route('admin.payment-notifications.index') }}" aria-label="Ödeme bildirimleri{{ $pendingPaymentCount ? ' ('.$pendingPaymentCount.' bekliyor)' : '' }}" title="Ödeme bildirimleri">
             <x-admin-icon name="bell" />
             @if($pendingPaymentCount)<span class="admin-top-badge">{{ $pendingPaymentCount }}</span>@endif
@@ -153,6 +154,7 @@
       </div>
     </header>
     <main class="admin-main" id="admin-content">
+      <div class="admin-order-toast" data-admin-order-toast role="status" hidden><span data-admin-order-toast-text></span><a href="{{ route('admin.orders.index', ['unread' => 1]) }}">Siparişleri gör</a></div>
       @if(session('success'))<div class="admin-alert admin-alert-success" role="status"><x-admin-icon name="check" /> {{ session('success') }}</div>@endif
       @if($errors->any())
         <div class="admin-alert admin-alert-error" role="alert">

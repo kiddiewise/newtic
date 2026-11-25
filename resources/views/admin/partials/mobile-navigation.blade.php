@@ -1,5 +1,6 @@
 @php
-  $mobileOrderCount = \App\Support\AdminOrderNotifications::count(auth()->user());
+  $mobileOrderSnapshot = \App\Support\AdminOrderNotifications::snapshot(auth()->user());
+  $mobileOrderCount = $mobileOrderSnapshot['count'];
   $mobileLinks = [
     ['title'=>'Siparişler','icon'=>'bag','route'=>'admin.orders.index','active'=>'admin.orders.*'],
     ['title'=>'Ürünler','icon'=>'package','route'=>'admin.products.index','active'=>'admin.products.*'],
@@ -20,7 +21,7 @@
   }
   if ($mobileMoreActive) $mobileActiveIndex = 3;
 @endphp
-<nav class="admin-mobile-nav" aria-label="Mobil yönetim" data-admin-mobile-nav data-active-index="{{ $mobileActiveIndex }}" style="--admin-nav-index:{{ max(0,$mobileActiveIndex) }}" data-order-badge-url="{{ route('admin.orders.badge', [], false) }}">
+<nav class="admin-mobile-nav" aria-label="Mobil yönetim" data-admin-mobile-nav data-active-index="{{ $mobileActiveIndex }}" style="--admin-nav-index:{{ max(0,$mobileActiveIndex) }}" data-order-latest-id="{{ $mobileOrderSnapshot['latest_id'] }}" data-order-user="{{ auth()->id() }}" data-order-badge-url="{{ route('admin.orders.badge', [], false) }}">
   <span class="admin-mobile-nav-slider" data-admin-nav-slider aria-hidden="true" @if($mobileActiveIndex < 0) hidden @endif></span>
   @foreach($mobileLinks as $item)
     @php($active = request()->routeIs($item['active']))

@@ -1,0 +1,61 @@
+/* Order inbox: compact, accessible and isolated from the storefront. */
+.admin-app-active .newtic-orders{color:#092037}
+.newtic-orders-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:18px}
+.newtic-orders-heading h1{font:700 clamp(24px,3vw,32px)/1.2 'Plus Jakarta Sans',sans-serif;margin:3px 0 5px}
+.newtic-orders-heading p:not(.admin-eyebrow){margin:0;color:#64748b;font-size:12px}
+.newtic-order-actions{position:relative;flex:none;z-index:3}
+.newtic-order-actions summary{list-style:none;cursor:pointer;border:1px solid #e1e6ec;background:white;border-radius:8px;padding:9px 12px;font-size:12px}
+.newtic-order-actions summary::-webkit-details-marker{display:none}
+.newtic-order-actions>div{position:absolute;right:0;top:calc(100% + 6px);min-width:230px;background:white;border:1px solid #e1e6ec;border-radius:9px;padding:5px;box-shadow:0 8px 26px #09203715}
+.newtic-order-actions a,.newtic-order-actions button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;text-decoration:none;color:#253f55;border:0;background:transparent;padding:12px;font-size:12px;cursor:pointer}
+.newtic-order-panel{border:1px solid #e2e7ed;background:#fff;border-radius:12px;padding:16px}
+.newtic-order-filter{display:grid;gap:12px}
+.newtic-order-search{display:flex;align-items:center;gap:8px;border:1px solid #dfe5ec;background:#f8fafc;border-radius:8px;padding:5px 6px 5px 12px}
+.newtic-order-search>.admin-icon{width:18px;flex:none;color:#64748b}
+.newtic-order-search input{flex:1;min-width:0;width:100%;border:0;background:transparent;outline:none;font-size:13px;min-height:36px}
+.newtic-order-filter button{border:0;border-radius:7px;background:#092037;color:white;padding:10px 17px;font:500 12px Montserrat,sans-serif;cursor:pointer}
+.newtic-order-filter-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.newtic-order-filter-fields label{display:grid;gap:5px;font-size:11px;color:#64748b}
+.newtic-order-filter-fields select{min-width:0;width:100%;min-height:40px;border:1px solid #dfe5ec;border-radius:7px;background:white;color:#253f55;padding:7px;font:400 12px Montserrat,sans-serif}
+.newtic-order-filter-actions{display:flex;justify-content:flex-end;align-items:center;gap:15px}
+.newtic-order-filter-actions a{font-size:12px;color:#64748b;text-decoration:none}
+.newtic-order-tabs{display:flex;gap:18px;border-bottom:1px solid #e2e7ed;margin-top:12px}
+.newtic-order-tabs a{display:flex;align-items:center;gap:6px;padding:12px 3px;color:#64748b;font-size:12px;text-decoration:none;border-bottom:2px solid transparent}
+.newtic-order-tabs a[aria-current]{color:#315e85;border-color:#315e85}
+.newtic-order-tabs a span{font-size:10px;background:#eef2f6;padding:2px 6px;border-radius:10px}
+.newtic-order-list{display:grid}
+.newtic-order-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(105px,.8fr) minmax(110px,.8fr) auto;align-items:center;gap:14px;border-bottom:1px solid #e9edf1;padding:14px 6px;text-decoration:none;color:#253f55;position:relative}
+.newtic-order-row:last-child{border-bottom:0}
+.newtic-order-row.is-unread{background:#f4f8fc;box-shadow:inset 2px 0 #315e85;padding-left:10px}
+.newtic-order-row:hover{background:#f6f8fb}
+.newtic-order-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.newtic-order-number{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.newtic-order-number strong{font-size:12px;overflow-wrap:anywhere}
+.newtic-order-primary>span{font-size:13px;overflow-wrap:anywhere}
+.newtic-order-row small{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+.newtic-order-new{color:#315e85;background:#e2edf8;font-size:10px;padding:2px 5px;border-radius:4px}
+.newtic-order-meta strong{font-size:15px;color:#092037}
+.newtic-order-status{align-items:flex-start}
+.newtic-order-open{display:flex;align-items:center;gap:4px;font-size:12px;color:#315e85;white-space:nowrap}
+.newtic-order-open .admin-icon{width:16px;height:16px}
+.admin-app-active .admin-order-sound-toggle{display:flex;align-items:center;gap:5px;border:1px solid #e1e6ec;background:#fff;color:#64748b;border-radius:8px;padding:8px;cursor:pointer;font-size:11px;white-space:nowrap}
+.admin-order-sound-toggle .admin-icon{width:18px;height:18px}
+.admin-app-active .admin-order-sound-toggle[aria-pressed=true]{color:#315e85;background:#eef4fa;border-color:#d1e0ef}
+.admin-order-toast{position:fixed;z-index:64;top:90px;right:18px;display:flex;align-items:center;gap:12px;background:#fff;color:#092037;border:1px solid #dbe4ed;border-radius:10px;padding:12px;box-shadow:0 5px 25px #09203720;font-size:13px}
+.admin-order-toast[hidden]{display:none!important}
+.admin-order-toast a{color:#315e85;font-size:12px}
+@media(max-width:710px){
+  .admin-app-active:has(.newtic-orders) .admin-topbar-inner{flex-wrap:wrap;row-gap:0}
+  .admin-app-active:has(.newtic-orders) .admin-global-search{position:static;flex:0 0 100%;order:10;margin-bottom:8px;border:1px solid #e1e9ed;border-radius:8px}
+  .admin-app-active:has(.newtic-orders) .admin-main{padding-top:16px}
+  .newtic-order-panel{padding:10px}
+  .newtic-orders-heading{margin-bottom:12px;align-items:center}
+  .newtic-order-filter-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .newtic-order-filter-fields label:last-child{grid-column:1/-1}
+  .newtic-order-row{grid-template-columns:minmax(0,1fr) minmax(100px,auto);gap:9px 8px;padding:12px 4px}
+  .newtic-order-meta{align-items:flex-end;text-align:right}
+  .newtic-order-status{grid-column:1;flex-direction:row!important;flex-wrap:wrap;align-items:center!important}
+  .newtic-order-open{justify-content:flex-end;align-self:center}
+  .admin-order-sound-toggle span{display:none}
+  .admin-order-toast{top:auto;bottom:calc(86px + env(safe-area-inset-bottom,0px));left:12px;right:12px;justify-content:space-between}
+}

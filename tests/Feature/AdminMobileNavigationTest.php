@@ -47,10 +47,10 @@ final class AdminMobileNavigationTest extends TestCase
         }
     }
 
-    public function test_badge_is_private_and_clears_per_admin_on_unfiltered_inbox(): void
+    public function test_badge_is_private_and_clears_only_for_opened_order(): void
     {
         $first=$this->admin();$second=$this->admin();
-        $this->order();$this->order('preparing');$this->order('completed');$this->order('cancelled');
+        $older=$this->order();$newer=$this->order('preparing');$this->order('completed');$this->order('cancelled');
         $this->getJson(route('admin.orders.badge'))->assertUnauthorized();
         $this->actingAs(User::factory()->create())->getJson(route('admin.orders.badge'))->assertForbidden();
         $this->actingAs($first);
@@ -59,6 +59,14 @@ final class AdminMobileNavigationTest extends TestCase
         $this->get(route('admin.orders.index',['status'=>'preparing']))->assertOk();
         $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',2);
         $this->get(route('admin.orders.index'))->assertOk();
+        $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',2)->assertJsonPath('latest_id',$newer->id);
+        $this->get(route('admin.orders.show',$newer))->assertOk();
+        $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',1)->assertJsonPath('latest_id',$older->id);
+        $this->get(route('admin.orders.index',['unread'=>1]))->assertOk()
+            ->assertSee($older->order_number)->assertDontSee($newer->order_number);
+        $this->get(route('admin.orders.show',$newer))->assertOk();
+        $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',1);
+        $this->get(route('admin.orders.show',$older))->assertOk();
         $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',0);
         $this->order();
         $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',1);

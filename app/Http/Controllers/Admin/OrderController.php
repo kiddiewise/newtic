@@ -74,23 +74,31 @@ class OrderController extends Controller
         abort_if($status !== '' && ! array_key_exists($status, self::TRANSITIONS), 422);
         $term = trim((string) $request->query('q', ''));
         abort_if(mb_strlen($term) > 100, 422);
-        if ($status === '' && $term === '' && !$request->has('page')) {
-            \App\Support\AdminOrderNotifications::markInboxSeen($request->user());
-        }
+        $payment = (string)$request->query('payment', '');
+        abort_if($payment !== '' && !in_array($payment, ['bank_transfer','paytr'], true), 422);
+        $unreadOnly = $request->boolean('unread');
+        $sort = (string)$request->query('sort', 'newest');
+        abort_unless(in_array($sort, ['newest','oldest','highest','lowest'], true), 422);
+        $unreadQuery = \App\Support\AdminOrderNotifications::unread($request->user());
         $orders = Order::query()->with('shippingShipment')->withCount(['paymentNotifications as pending_payment_notifications_count' => fn ($q) => $q->where('status', 'pending')])
             ->when($status !== '', fn ($q) => $q->where('status', $status))
+            ->when($payment !== '', fn ($q) => $q->where('payment_method', $payment))
+            ->when($unreadOnly, fn ($q) => $q->whereIn('orders.id', (clone $unreadQuery)->select('orders.id')))
             ->when($term !== '', fn ($q) => $q->where(function ($q) use ($term) {
                 $safe = '%'.addcslashes($term, '%_\\').'%';
                 $q->where('order_number', 'like', $safe)->orWhere('customer_name', 'like', $safe)
-                    ->orWhere('customer_email', 'like', $safe);
+                    ->orWhere('customer_email', 'like', $safe)->orWhere('phone', 'like', $safe);
             }))
-            ->latest('id')->paginate(20)->withQueryString();
-
-        return view('admin.orders.index', compact('orders', 'status', 'term'));
+            ->when(in_array($sort,['highest','lowest'],true), fn ($q) => $q->orderBy('total_cents', $sort === 'highest' ? 'desc' : 'asc'))
+            ->orderBy('id', $sort === 'oldest' ? 'asc' : 'desc')->paginate(20)->withQueryString();
+        $unreadIds = (clone $unreadQuery)->whereIn('orders.id',$orders->getCollection()->modelKeys())->pluck('orders.id')->flip();
+        $unreadCount = (clone $unreadQuery)->count();
+        return view('admin.orders.index', compact('orders', 'status', 'term','payment','unreadOnly','sort','unreadIds','unreadCount'));
     }
 
     public function show(Order $order): View
     {
+        \App\Support\AdminOrderNotifications::markOrderSeen(request()->user(), $order);
         $emailDeliveries = EmailDelivery::query()->where('order_id', $order->id)->latest('id')->limit(15)->get();
         $order->load(['items', 'paymentNotifications.reviewer', 'paytrAttempts',
             'shippingShipment.carrier', 'shippingShipment.warehouse', 'shippingShipment.provider',

@@ -11,7 +11,7 @@ final class OrderBadgeController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        return response()->json(['count'=>AdminOrderNotifications::count($request->user())])
+        return response()->json(AdminOrderNotifications::snapshot($request->user()))
             ->header('Cache-Control','private, no-store, max-age=0');
     }
 }
