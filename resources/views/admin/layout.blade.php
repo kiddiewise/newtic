@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="{{ asset('assets/pwa/newtic-admin.webmanifest') }}">
-  <link rel="apple-touch-icon" href="{{ asset('assets/pwa/assets/pwa/newtic-admin-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('assets/pwa/newtic-admin-192.png') }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" type="image/webp" href="{{ asset(\App\Models\ShopAppearance::current()->compactLogo()) }}">

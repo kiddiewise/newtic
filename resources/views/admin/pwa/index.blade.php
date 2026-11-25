@@ -4,7 +4,7 @@
 <div class="newtic-pwa" data-admin-pwa data-status="{{ route('admin.pwa.status',[],false) }}" data-subscribe="{{ route('admin.pwa.subscribe',[],false) }}" data-test="{{ route('admin.pwa.test',[],false) }}">
   <div class="admin-page-heading"><div><p class="admin-eyebrow">YÖNETİM / MOBİL</p><h1>Mobil Uygulama</h1><p>NEWTIC'i telefonuna ekle, siparişlerini kaçırma.</p></div></div>
   <section class="admin-panel newtic-pwa-card">
-    <div class="newtic-pwa-title"><img src="{{ asset('assets/pwa/assets/pwa/newtic-admin-192.png') }}" alt="" width="54" height="54"><div><h2>NEWTIC Yönetim</h2><p>Ana ekrandan doğrudan erişim</p></div></div>
+    <div class="newtic-pwa-title"><img src="{{ asset('assets/pwa/newtic-admin-192.png') }}" alt="" width="54" height="54"><div><h2>NEWTIC Yönetim</h2><p>Ana ekrandan doğrudan erişim</p></div></div>
     <button class="admin-secondary" type="button" data-pwa-install hidden>Uygulamayı yükle</button>
     <p data-pwa-install-help>Android: Chrome menüsünden Uygulamayı yükle veya Ana ekrana ekle. iPhone: Safari paylaşım menüsünden Ana Ekrana Ekle.</p>
   </section>

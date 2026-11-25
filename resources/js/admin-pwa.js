@@ -2,7 +2,7 @@ const manifest = document.querySelector('link[rel="manifest"][href*="newtic-admi
 const panel = document.querySelector('[data-admin-pwa]');
 let promptEvent;
 window.addEventListener('beforeinstallprompt', e => {
-  if (!manifest) return;
+  if (!manifest || !panel) return;
   e.preventDefault(); promptEvent=e;
   const button=panel?.querySelector('[data-pwa-install]');
   if (button) button.hidden=false;
