@@ -84,10 +84,13 @@ final class AdminWebPush
                 ->whereIn('orders.status',['pending_payment','preparing']))
             ->orderBy('updated_at')->limit($limit)->get();
         $sent = 0;
+        $deadline = microtime(true)+45;
         foreach ($rows as $row) {
+            if (microtime(true)>$deadline) break;
             $user = User::find($row->user_id);
             $query = DB::table('admin_push_subscriptions')->where('id',$row->id)->where('session_hash',$row->session_hash);
             if (!$user?->is_admin) { $query->delete(); continue; }
+            if (!$query->exists()) continue;
             $newest = (int)AdminOrderNotifications::unread($user)->where('orders.id','>',$row->last_order_id)->max('orders.id');
             if (!$newest) {
                 // Already-read orders should not trigger a delayed alert.

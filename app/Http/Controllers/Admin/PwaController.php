@@ -40,6 +40,7 @@ final class PwaController extends Controller
         $user = $request->user();
         DB::transaction(function () use ($hash,$session,$user,$data) {
             // A browser endpoint belongs to just one signed-in account/session.
+            DB::table('admin_push_subscriptions')->where('user_id',$user->id)->where('session_hash',$session)->where('endpoint_hash','!=',$hash)->delete();
             $old = DB::table('admin_push_subscriptions')->where('endpoint_hash',$hash)->first();
             $same = $old && (int)$old->user_id === (int)$user->id && $old->session_hash === $session;
             DB::table('admin_push_subscriptions')->upsert([[

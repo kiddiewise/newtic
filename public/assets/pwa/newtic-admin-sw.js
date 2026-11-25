@@ -14,7 +14,7 @@ self.addEventListener('fetch', event => {
 self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification('NEWTIC Yönetim', {
     body:'Yeni sipariş bildiriminiz var. Yönetim panelini kontrol edin.',
-    icon:'/newtic-admin-192.png',badge:'/newtic-admin-192.png',
+    icon:'/assets/pwa/newtic-admin-192.png',badge:'/assets/pwa/newtic-admin-192.png',
     tag:'newtic-order',renotify:true,data:{url:ORDERS}
   }));
 });

@@ -184,6 +184,14 @@ Route::get('/admin/kurtarma', [AdminRecoveryController::class, 'show'])
 Route::post('/admin/kurtarma', [AdminRecoveryController::class, 'reset'])
     ->middleware('throttle:5,1')
     ->name('admin.recovery.reset');
+// Public worker script only; its scope is limited to /admin/.
+Route::get('/admin/pwa-worker.js', function () {
+    return response()->file(public_path('assets/pwa/newtic-admin-sw.js'), [
+        'Content-Type'=>'application/javascript; charset=utf-8',
+        'Cache-Control'=>'no-cache, no-store, must-revalidate',
+        'Service-Worker-Allowed'=>'/admin/',
+    ]);
+})->name('admin.pwa.worker');
 Route::get('/admin/login', [AdminAuthController::class, 'loginPage'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'login'])
     ->middleware('throttle:5,1')->name('admin.login.submit');

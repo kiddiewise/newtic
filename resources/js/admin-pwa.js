@@ -8,7 +8,7 @@ window.addEventListener('beforeinstallprompt', e => {
   if (button) button.hidden=false;
 });
 if (manifest && 'serviceWorker' in navigator && window.isSecureContext) {
-  const registration=navigator.serviceWorker.register('/newtic-admin-sw.js',{scope:'/admin/'});
+  const registration=navigator.serviceWorker.register('/admin/pwa-worker.js',{scope:'/admin/'});
   registration.catch(()=>{});
   if (panel) setup(registration);
 } else if(panel) {

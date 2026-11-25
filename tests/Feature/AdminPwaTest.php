@@ -14,6 +14,7 @@ final class AdminPwaTest extends TestCase
 
     public function test_pwa_is_admin_only_and_endpoint_allowlist_is_strict(): void
     {
+        $this->get(route('admin.pwa.worker'))->assertOk()->assertHeader('Service-Worker-Allowed','/admin/');
         $this->getJson(route('admin.pwa.status'))->assertUnauthorized();
         $this->actingAs(User::factory()->create())->getJson(route('admin.pwa.status'))->assertForbidden();
         $admin=User::factory()->create();

@@ -128,6 +128,7 @@ class AccountController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        if ($request->user()?->is_admin) \App\Services\AdminWebPush::revokeSession($request);
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
