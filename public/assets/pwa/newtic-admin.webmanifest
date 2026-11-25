@@ -7,7 +7,7 @@
   "scope": "/admin/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#092037",
   "icons": [
     {
       "src": "/assets/pwa/newtic-admin-192.png",
