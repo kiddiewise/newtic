@@ -119,12 +119,57 @@ class OrderController extends Controller
         $shippingCarriers = $shippingProvider?->carriers()->orderBy('name')->get() ?? collect();
         $shippingWarehouses = $shippingProvider?->warehouses()->orderBy('name')->get() ?? collect();
         $shippingTestAllowed = ShippingTestAccess::allowed();
+        $canEditDelivery = $this->deliveryEditable($order);
+        $deliveryEdit = DB::table('order_delivery_edits')->where('order_id', $order->id)->latest('id')->first();
 
         return view('admin.orders.show', compact(
             'order','allowed','shippingProvider','shippingCarriers',
             'shippingWarehouses','shippingTestAllowed', 'paymentVerified',
-            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice','emailDeliveries','paymentBreakdown'
+            'canCorrectFulfillment','canCorrectBankPayment','verifiedBankNotice','emailDeliveries','paymentBreakdown','canEditDelivery','deliveryEdit'
         ));
+    }
+
+    private function deliveryEditable(Order $order): bool
+    {
+        return in_array($order->status, ['pending_payment','preparing'], true)
+            && !$order->tracking_number
+            && !$order->shippingShipment()->exists()
+            && !$order->returnRequests()->whereIn('status', \App\Models\OrderReturnRequest::ACTIVE)->exists();
+    }
+
+    public function updateDelivery(Request $request, Order $order): RedirectResponse
+    {
+        \App\Support\AddressValidation::normalizePhoneInput($request);
+        $city = $request->input('city');
+        $data = $request->validateWithBag('delivery', [
+            'customer_name' => ['required','string','min:3','max:160'],
+            'phone' => ['required','regex:/^05[0-9]{9}$/'],
+            'city' => ['required','string',Rule::in(\App\Support\TurkeyProvinces::ALL)],
+            'district' => ['required','string','max:100',Rule::in(\App\Support\TurkeyDistricts::forProvince(is_string($city) ? $city : null))],
+            'street_address' => ['required','string','min:10','max:1200'],
+        ], [
+            'phone.regex' => 'Geçerli bir Türkiye cep telefonu numarası girin.',
+            'district.in' => 'İlçe seçilen ile ait olmalıdır.',
+        ], ['customer_name'=>'ad soyad','phone'=>'telefon','city'=>'il','district'=>'ilçe','street_address'=>'açık adres']);
+
+        DB::transaction(function () use ($request,$order,$data) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if (!$this->deliveryEditable($locked)) {
+                throw ValidationException::withMessages(['delivery'=>'Kargo kaydı, tamamlanmış/iptal edilmiş sipariş veya açık iade talebi nedeniyle teslimat bilgileri değiştirilemez.'])->errorBag('delivery');
+            }
+            $locked->fill($data);
+            $changed = array_keys($locked->getDirty());
+            if (!$changed) return;
+            $locked->save();
+            // Record who changed which fields, without duplicating customer PII.
+            DB::table('order_delivery_edits')->insert([
+                'order_id'=>$locked->id,'user_id'=>$request->user()->id,
+                'changed_fields'=>json_encode($changed, JSON_THROW_ON_ERROR),
+                'created_at'=>now(),
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.orders.show', $order)->with('success','Müşteri ve teslimat bilgileri güncellendi.');
     }
 
     /**

@@ -306,6 +306,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     Route::patch('/orders/{order}/status-correction', [AdminOrderController::class, 'correct'])->middleware('throttle:8,1')->name('orders.correct');
     Route::post('/orders/{order}/bank-verification-correction', [AdminOrderController::class, 'revokeBankVerification'])->middleware('throttle:4,1')->name('orders.revoke-bank-verification');
+    Route::patch('/orders/{order}/delivery', [AdminOrderController::class, 'updateDelivery'])->middleware('throttle:12,1,admin-order-delivery')->name('orders.delivery');
     Route::patch('/orders/{order}/shipping', [AdminOrderController::class, 'shipping'])->name('orders.shipping');
     Route::get('/kargo-operasyonlari', [ShippingOperationsController::class, 'index'])->name('shipping-operations.index');
     Route::post('/kargo-operasyonlari/kontrol', [ShippingOperationsController::class, 'sync'])->middleware('throttle:4,1')->name('shipping-operations.sync');

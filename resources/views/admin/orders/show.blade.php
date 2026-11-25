@@ -136,17 +136,22 @@
       @endif
     </section>
     <section class="admin-panel" id="order-customer">
-      <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="users" /></span><div><h2>Müşteri ve teslimat</h2></div></div>
+      <div class="admin-editor-heading newtic-delivery-heading"><span class="admin-editor-heading-icon is-mint"><x-admin-icon name="users" /></span><div><h2>Müşteri ve teslimat</h2></div>
+        @if($canEditDelivery)<button type="button" class="newtic-delivery-edit-link" data-delivery-edit-open aria-haspopup="dialog" aria-controls="delivery-editor">Düzenle</button>@endif
+      </div>
       <div class="admin-detail-line"><span>Müşteri</span><strong>{{ $order->customer_name }}</strong></div>
       <div class="admin-detail-line"><span>E-posta</span><strong>{{ $order->customer_email }}</strong></div>
       <div class="admin-detail-line"><span>Telefon</span><strong>{{ $order->phone }}</strong></div>
-      <div class="admin-detail-line"><span>Teslimat adresi</span><strong>{{ $order->address_label }} · {{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</strong></div>
+      <div class="admin-detail-line"><span>Teslimat adresi</span><strong>{{ $order->street_address }}, {{ $order->district }}/{{ $order->city }}</strong></div>
       <div class="admin-detail-line"><span>Fatura</span><strong>{{ $order->invoice_type === 'corporate' ? 'Kurumsal' : 'Bireysel' }}</strong></div>
       @if($order->invoice_type === 'corporate')
         <div class="admin-detail-line"><span>Şirket</span><strong>{{ $order->company_title }}</strong></div>
         <div class="admin-detail-line"><span>Vergi</span><strong>{{ $order->tax_office }} · {{ $order->tax_number }}</strong></div>
       @endif
       @if($order->order_note)<div class="admin-detail-line"><span>Sipariş notu</span><strong>{{ $order->order_note }}</strong></div>@endif
+      @if($deliveryEdit)<p class="newtic-delivery-edit-note">Son düzenleme: {{ \Illuminate\Support\Carbon::parse($deliveryEdit->created_at)->format('d.m.Y H:i') }}</p>@endif
+      @if(!$canEditDelivery)<p class="newtic-delivery-edit-note">Kargo veya sipariş durumu nedeniyle teslimat bilgileri düzenlemeye kapalı.</p>@endif
+      @if($errors->delivery->has('delivery'))<p role="alert" class="newtic-delivery-error">{{ $errors->delivery->first('delivery') }}</p>@endif
     </section>
     @if($order->payment_method === 'paytr')
       <section class="admin-panel">
@@ -305,4 +310,7 @@
     </div>
   </div>
 </div>
+@if($canEditDelivery)
+  @include('admin.orders.delivery-editor')
+@endif
 @endsection

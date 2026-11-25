@@ -95,7 +95,9 @@ final class ShippingShipmentController extends Controller
         }, 3);
 
         try {
-            $order->load('items');
+            // Re-read after reserving the shipment under the order lock so a
+            // preceding delivery correction is sent to the carrier, not stale data.
+            $order->refresh()->load('items');
             $words = preg_split('/\s+/u', trim($order->customer_name)) ?: [];
             if (count($words) < 2) {
                 throw new \RuntimeException('Alıcı adı ve soyadı ayrı belirtilmelidir.');

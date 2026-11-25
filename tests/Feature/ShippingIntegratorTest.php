@@ -492,6 +492,9 @@ class ShippingIntegratorTest extends TestCase
             'iban_snapshot'=>'TR330006100519786457841326', 'status'=>'verified',
         ]);
 
+        $this->patch(route('admin.orders.delivery', $order), [
+            'customer_name'=>'Yeni Alıcı','phone'=>'05321234567','city'=>'İzmir','district'=>'Konak','street_address'=>'Yeni Mahalle 10 Sokak No 12',
+        ])->assertSessionHasErrorsIn('delivery',['delivery']);
         $this->patch(route('admin.orders.correct', $order), [
             'status'=>'completed', 'reason'=>'Operasyon kaydındaki eksik teslimat adımını düzelttim.',
         ])->assertRedirect()->assertSessionHasNoErrors();

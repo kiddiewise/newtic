@@ -109,3 +109,5 @@ installCartFeedback();
 import './admin-mobile-navigation.js';
 
 import './admin-pwa.js';
+
+import './admin-order-delivery.js';
