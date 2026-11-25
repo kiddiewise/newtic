@@ -180,17 +180,20 @@ fi
 if [[ ! -f public/build/manifest.json && -n "$ASSET_BUNDLE" ]]; then
   test -f "$ASSET_BUNDLE" || fail "Frontend bundle not found: $ASSET_BUNDLE"
   command -v tar >/dev/null 2>&1 || fail "tar is required for the verified frontend bundle."
-  tar -tzf "$ASSET_BUNDLE" >/dev/null || fail "Unreadable frontend bundle."
-  if tar -tzf "$ASSET_BUNDLE" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+  # Read complete listings before checking them. With pipefail, grep -q can
+  # close a pipe early and make tar fail with SIGPIPE on a valid large bundle.
+  ARCHIVE_PATHS="$(tar -tzf "$ASSET_BUNDLE")" || fail "Unreadable frontend bundle."
+  ARCHIVE_DETAILS="$(tar -tvzf "$ASSET_BUNDLE")" || fail "Unreadable frontend bundle metadata."
+  if grep -Eq '(^/|(^|/)\.\.(/|$))' <<< "$ARCHIVE_PATHS"; then
     fail "Unsafe frontend archive paths."
   fi
-  if tar -tzf "$ASSET_BUNDLE" | grep -Ev '^(build/|build$)' | grep -q .; then
+  if grep -Ev '^(build/|build$)' <<< "$ARCHIVE_PATHS" | grep . >/dev/null; then
     fail "Frontend archive contains unexpected files outside build/."
   fi
-  if tar -tvzf "$ASSET_BUNDLE" | grep -Eq '^[lh]'; then
+  if grep -Eq '^[lh]' <<< "$ARCHIVE_DETAILS"; then
     fail "Frontend archive must not contain links."
   fi
-  tar -tzf "$ASSET_BUNDLE" | grep -Fxq 'build/newtic-revision.txt' ||
+  grep -Fxq 'build/newtic-revision.txt' <<< "$ARCHIVE_PATHS" ||
     fail "Frontend archive lacks matching revision metadata."
   EXPECTED="$SOURCE_REVISION"
   BUNDLE_REVISION="$(tar -xOf "$ASSET_BUNDLE" build/newtic-revision.txt)"
