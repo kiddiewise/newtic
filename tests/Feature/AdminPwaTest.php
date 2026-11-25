@@ -56,6 +56,9 @@ final class AdminPwaTest extends TestCase
         $admin=User::factory()->create();
         $admin->forceFill(['is_admin'=>true])->save();
         $this->actingAs($admin)->get(route('admin.pwa.index'))->assertOk()->assertSee('newtic-admin.webmanifest');
+        // Test clients do not automatically carry browser cookies on JSON requests.
+        // Preserve the actual authenticated browser session, not just actingAs().
+        $this->withCredentials()->withCookie(config('session.cookie'), session()->getId());
         $key=$this->getJson(route('admin.pwa.status'))->assertOk()->assertJsonPath('active',false)->json('public_key');
         $this->assertSame(87,strlen($key));
         foreach (['http://fcm.googleapis.com/a','https://127.0.0.1/a','https://fcm.googleapis.com.evil.test/a','https://fcm.googleapis.com:444/a','https://a@fcm.googleapis.com/a'] as $endpoint) {
@@ -64,6 +67,7 @@ final class AdminPwaTest extends TestCase
         $endpoint='https://fcm.googleapis.com/fcm/send/example-token';
         $this->postJson(route('admin.pwa.subscribe'),compact('endpoint'))->assertOk()->assertJsonPath('active',true);
         $this->assertNotSame($endpoint,DB::table('admin_push_subscriptions')->value('endpoint'));
+        $this->getJson(route('admin.pwa.status'))->assertOk()->assertJsonPath('active',true);
         Http::fake(['fcm.googleapis.com/*'=>Http::response('',201)]);
         $this->postJson(route('admin.pwa.test'))->assertOk()->assertJsonPath('accepted',true);
         Http::assertSent(fn($request)=>$request->url()===$endpoint && str_starts_with($request->header('Authorization')[0],'vapid t=') && $request->body()==='');
