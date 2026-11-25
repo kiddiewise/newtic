@@ -36,6 +36,11 @@ final class AdminMobileNavigationTest extends TestCase
         $response=$this->actingAs($this->admin())->get(route('admin.dashboard'))->assertOk()
             ->assertSee('data-admin-mobile-nav',false)->assertSee('data-admin-more-dialog',false)
             ->assertSee('admin-dashboard-actions-first',false)
+            ->assertSee('newtic-mobile-header-brand',false)
+            ->assertSee('NEWTIC Yönetim Paneli')
+            ->assertSee('newtic-mobile-header-logout',false)
+            ->assertSee('aria-label="Güvenli çıkış"',false)
+            ->assertSee(route('admin.logout'))
             ->assertSee('data-admin-nav-slider',false)->assertSee('data-active-index="3"',false)
             ->assertDontSee('Mağazanın son durumuna tek ekrandan ulaş');
         $html=$response->getContent();
@@ -47,6 +52,18 @@ final class AdminMobileNavigationTest extends TestCase
             'admin.dashboard','admin.pwa.index','admin.reports','admin.bank-accounts.index','admin.blog.posts.index','admin.announcements.index','admin.menus.mega-menu.edit','admin.index'] as $name) {
             $this->assertStringContainsString('href="'.route($name).'"',$nav);
         }
+    }
+
+    public function test_mobile_header_preserves_sound_controls_in_notification_settings(): void
+    {
+        $this->actingAs($this->admin())->get(route('admin.pwa.index'))->assertOk()
+            ->assertSee('newtic-pwa-sound-toggle',false)->assertSee('data-admin-order-sound',false)
+            ->assertSee('Kasa sesini dinle');
+        $styles = file_get_contents(resource_path('css/admin-mobile-header.css'));
+        $this->assertStringContainsString('@media(max-width:900px)', $styles);
+        $this->assertStringContainsString('grid-template-columns:42px minmax(0,1fr) 42px', $styles);
+        $this->assertStringContainsString('>.admin-top-actions{display:none}', $styles);
+        $this->assertStringContainsString('position:static;inset:auto', $styles);
     }
 
     public function test_badge_is_private_and_clears_only_for_opened_order(): void

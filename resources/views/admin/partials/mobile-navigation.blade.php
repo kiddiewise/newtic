@@ -53,6 +53,7 @@
       <a href="{{ route('admin.dashboard') }}" @class(['admin-mobile-more-link','is-active'=>request()->routeIs('admin.dashboard')]) @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif>
         <span class="admin-mobile-more-icon"><x-admin-icon name="home"/></span><span>Genel Bakış</span>
       </a>
+      <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer" class="admin-mobile-more-link"><span class="admin-mobile-more-icon"><x-admin-icon name="external-link"/></span><span>Mağazayı görüntüle</span></a>
       @foreach($mobileMoreGroups as $group)
         @php($groupActive = $group['items']->contains(fn($item)=>request()->routeIs($item['active']) || ($item['name']==='admin.index' && request()->routeIs('admin.sections.*','admin.slides.*'))))
         <details class="newtic-mobile-more-group" @if($groupActive || $group['label']==='Ürün & Sipariş Yönetimi') open @endif>
