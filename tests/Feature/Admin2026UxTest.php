@@ -215,6 +215,26 @@ class Admin2026UxTest extends TestCase
             ->assertSee('Ürünü oluştur');
     }
 
+    public function test_admin_signin_uses_new_layout_and_preserves_secure_form(): void
+    {
+        $this->get(route('admin.login'))->assertOk()
+            ->assertSee('data-newtic-admin-signin', false)
+            ->assertSee('newtic-signin-visual', false)
+            ->assertSee('NEWTIC')
+            ->assertSee('Yönetim paneli')
+            ->assertSee(route('admin.login.submit'))
+            ->assertSee('name="_token"', false)
+            ->assertSee('autocomplete="username"', false)
+            ->assertSee('autocomplete="current-password"', false)
+            ->assertSee('data-admin-password-toggle', false)
+            ->assertDontSee('admin-mobile-nav"');
+        $this->from(route('admin.login'))->post(route('admin.login.submit'), [
+            'email'=>'missing@example.test','password'=>'incorrect-password',
+        ])->assertRedirect(route('admin.login'))->assertSessionHasErrors('email');
+        $this->get(route('admin.login'))->assertOk()->assertSee('E-posta veya şifre hatalı.')
+            ->assertSee('missing@example.test')->assertDontSee('incorrect-password');
+    }
+
     public function test_authorized_admin_login_lands_on_new_dashboard(): void
     {
         $admin = $this->admin();

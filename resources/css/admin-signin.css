@@ -1,0 +1,70 @@
+/* Brand-independent administrator sign-in. No remote hero asset or fake metrics. */
+body.admin-auth-only:has(.newtic-admin-signin){margin:0;background:#f0f3f8;color:#092037;min-height:100vh;min-height:100dvh}
+body.admin-auth-only .newtic-signin-main{display:grid;place-items:center;max-width:none;width:100%;min-height:100vh;min-height:100dvh;padding:clamp(16px,4vw,64px);margin:0;box-sizing:border-box}
+.newtic-admin-signin{width:min(1100px,100%);min-height:640px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid #dfe5ed;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 25px 75px #09203712;font-family:Montserrat,sans-serif}
+.newtic-signin-side{display:flex;flex-direction:column;min-width:0;padding:clamp(24px,3.8vw,50px);gap:26px}
+.newtic-signin-wordmark{display:flex;align-items:center;gap:10px;color:#092037;font:750 20px/1.05 'Plus Jakarta Sans',Montserrat,sans-serif;letter-spacing:.045em}
+.newtic-signin-wordmark>span:last-child{display:grid;gap:5px}
+.newtic-signin-wordmark small{font:500 9px/1.3 Montserrat,sans-serif;letter-spacing:.14em;color:#65778a}
+.newtic-signin-symbol{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:#092037;color:white;flex:none}
+.newtic-signin-symbol svg{width:25px;height:25px}
+.newtic-signin-content{width:min(100%,390px);margin:auto;min-width:0}
+.newtic-signin-store{display:flex;align-items:center;gap:12px;padding-bottom:17px;margin-bottom:19px;border-bottom:1px solid #edf0f4;color:#64748b;font-size:12px;overflow-wrap:anywhere}
+.newtic-signin-store img{width:auto;max-width:116px;height:34px;object-fit:contain;object-position:left center;flex:none}
+.newtic-signin-content h1{font:750 clamp(28px,3.4vw,39px)/1.18 'Plus Jakarta Sans',Montserrat,sans-serif;letter-spacing:-.045em;margin:0 0 9px;color:#092037}
+.newtic-signin-intro{font:400 13px/1.65 Montserrat,sans-serif;color:#64748b;margin:0 0 25px}
+.newtic-signin-form{display:grid;gap:9px}
+.newtic-signin-form label{font:500 12px/1.5 Montserrat,sans-serif;color:#334b62;margin-top:5px}
+.newtic-signin-field{display:flex;align-items:center;gap:9px;min-width:0;min-height:52px;border:1px solid #dbe3eb;border-radius:10px;background:#f8fafc;padding:0 13px;color:#728498;transition:border-color .15s,box-shadow .15s}
+.newtic-signin-field:focus-within{border-color:#537ca4;box-shadow:0 0 0 3px #315e8518;background:white}
+.newtic-signin-field input{border:0;background:transparent;color:#092037;flex:1;width:100%;min-width:0;min-height:50px;outline:none;padding:0;font:400 14px Montserrat,sans-serif}
+.newtic-signin-field input::placeholder{color:#8190a1}
+.newtic-signin-field:has([aria-invalid="true"]){border-color:#b75966}
+.newtic-signin-field>.admin-icon{width:19px;height:19px;flex:none}
+.newtic-signin-eye{display:grid;place-items:center;flex:none;width:38px;height:40px;border:0;background:none;color:#64748b;cursor:pointer;padding:7px}
+.newtic-signin-eye svg{width:20px;height:20px}
+.newtic-signin-eye[hidden],.newtic-signin-eye [hidden]{display:none!important}
+.newtic-signin-submit{display:flex;align-items:center;justify-content:center;position:relative;gap:10px;min-height:52px;margin-top:12px;border:0;border-radius:10px;background:#092037;color:white;cursor:pointer;font:600 14px Montserrat,sans-serif;box-shadow:0 6px 15px #09203716;transition:background .15s}
+.newtic-signin-submit:hover{background:#193c5e}
+.newtic-signin-submit .admin-icon{position:absolute;right:15px;width:19px;height:19px}
+.newtic-signin-private{display:flex;align-items:center;justify-content:center;gap:6px;font:400 11px/1.5 Montserrat,sans-serif;color:#65778a;margin:19px 0 0}
+.newtic-signin-private svg{width:16px;height:16px;flex:none;color:#315e85}
+.newtic-signin-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;color:#64748b;font-size:10px}
+.newtic-signin-footer a{display:flex;align-items:center;gap:5px;color:#315e85;text-decoration:none}
+.newtic-signin-footer a .admin-icon{width:13px;height:13px}
+.newtic-signin-error,.newtic-signin-notice{border:1px solid #e9cbd0;border-radius:8px;background:#fff4f5;color:#942d3e;padding:11px 12px;margin:0 0 12px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.newtic-signin-notice{border-color:#d0e5dc;background:#f2faf6;color:#20604b}
+.newtic-admin-signin :is(a,button):focus-visible{outline:2px solid #315e85;outline-offset:3px}
+.newtic-signin-visual{position:relative;isolation:isolate;min-width:0;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(24px,3.7vw,48px);background:radial-gradient(ellipse at 72% 24%,#315e85 0%,#173651 39%,#092037 76%);color:white;overflow:hidden}
+.newtic-signin-visual::before{content:'';position:absolute;inset:0;z-index:-1;background-image:linear-gradient(#b5d6f00a 1px,transparent 1px),linear-gradient(90deg,#b5d6f00a 1px,transparent 1px);background-size:36px 36px;mask-image:linear-gradient(#000,transparent 85%);pointer-events:none}
+.newtic-signin-visual-top{display:flex;justify-content:space-between;gap:8px;color:#b7cde1;font:500 9px/1.3 Montserrat,sans-serif;letter-spacing:.14em}
+.newtic-signin-visual-art{margin:auto -10px;min-width:0;max-width:520px;width:calc(100% + 20px);align-self:center}
+.newtic-signin-visual-art>svg{display:block;width:100%;height:auto}
+.newtic-signin-visual-copy>span{font:500 10px Montserrat,sans-serif;letter-spacing:.12em;color:#b2cce3}
+.newtic-signin-visual-copy h2{font:700 clamp(29px,3.5vw,43px)/1.16 'Plus Jakarta Sans',Montserrat,sans-serif;letter-spacing:-.04em;margin:10px 0 12px;color:#fff}
+.newtic-signin-visual-copy p{font:400 13px/1.7 Montserrat,sans-serif;color:#c5d7e8;margin:0 0 22px;max-width:330px}
+.newtic-signin-visual-features{display:flex;flex-wrap:wrap;gap:12px;color:#d4e3f0;font-size:10px}
+.newtic-signin-visual-features span{display:flex;align-items:center;gap:5px}
+.newtic-signin-visual-features .admin-icon{width:15px;height:15px}
+@media(max-width:800px){
+ body.admin-auth-only:has(.newtic-admin-signin){background:#fff}
+ body.admin-auth-only .newtic-signin-main{padding:0;display:block}
+ .newtic-admin-signin{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;border:0;border-radius:0;box-shadow:none;width:100%}
+ .newtic-signin-visual{order:-1;min-height:132px;padding:max(20px,env(safe-area-inset-top)) 24px 25px;flex:none;border-radius:0 0 24px 24px}
+ .newtic-signin-visual-top{display:none}
+ .newtic-signin-visual-art{position:absolute;width:210px;right:-25px;top:-8px;opacity:.65;margin:0;z-index:-1}
+ .newtic-signin-visual-copy>span{font-size:9px}
+ .newtic-signin-visual-copy h2{font-size:26px;margin:8px 0 0;max-width:240px}
+ .newtic-signin-visual-copy p,.newtic-signin-visual-features{display:none}
+ .newtic-signin-side{flex:1;gap:23px;padding:25px max(22px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
+ .newtic-signin-wordmark{width:min(100%,390px);margin:0 auto;font-size:18px}
+ .newtic-signin-symbol{width:34px;height:34px}
+ .newtic-signin-content{margin:auto}
+ .newtic-signin-store{padding-bottom:12px;margin-bottom:18px}
+ .newtic-signin-content h1{font-size:32px}
+ .newtic-signin-intro{margin-bottom:18px}
+ .newtic-signin-field input{font-size:16px}
+ .newtic-signin-footer{width:min(100%,390px);margin:0 auto}
+}
+@media(max-width:360px){.newtic-signin-side{padding-inline:17px}.newtic-signin-visual{padding-inline:17px}.newtic-signin-visual-copy h2{font-size:23px}.newtic-signin-content h1{font-size:28px}}
+@media(prefers-reduced-motion:reduce){.newtic-signin-field,.newtic-signin-submit{transition:none}}
