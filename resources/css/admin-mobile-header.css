@@ -1,16 +1,19 @@
 /* Mobile header: centered brand, safe logout and one in-flow search row. */
 .admin-app-active .newtic-mobile-header-brand,.admin-app-active .newtic-mobile-header-logout{display:none}
+.admin-app-active .newtic-desktop-header-brand{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:44px;text-decoration:none}
+.admin-app-active .newtic-desktop-header-brand img{display:block;width:148px;height:auto;max-height:48px;object-fit:contain}
+.admin-app-active .newtic-desktop-header-brand:focus-visible{outline:2px solid #315e85;outline-offset:3px;border-radius:4px}
 .newtic-pwa-sound-toggle[aria-pressed="true"]{background:#edf3f8;color:#315e85;border-color:#c5d8e9}
 @media(max-width:900px){
  .admin-app-active .admin-workspace .admin-topbar{padding:0 max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));min-height:0;background:#fff}
  .admin-app-active .admin-workspace .admin-topbar-inner{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;grid-template-rows:minmax(48px,auto) auto;align-items:center;gap:4px 6px;min-height:0;padding-top:4px}
  .admin-app-active .admin-workspace .admin-topbar-inner>.admin-menu-toggle,
+ .admin-app-active .admin-workspace .admin-topbar-inner>.newtic-desktop-header-brand,
  .admin-app-active .admin-workspace .admin-topbar-inner>.admin-topbar-brandmark,
  .admin-app-active .admin-workspace .admin-topbar-inner>.admin-topbar-heading,
  .admin-app-active .admin-workspace .admin-topbar-inner>.admin-top-actions{display:none}
  .admin-app-active .admin-workspace .newtic-mobile-header-brand{grid-column:2;grid-row:1;display:flex;justify-content:center;align-items:center;gap:8px;min-width:0;text-decoration:none;color:#092037}
- .newtic-mobile-header-brand img{width:28px;height:28px;object-fit:contain;flex:none}
- .newtic-mobile-header-brand span{font:650 clamp(11px,3.5vw,15px)/1.3 'Plus Jakarta Sans',Montserrat,sans-serif;text-align:center;overflow-wrap:normal}
+ .admin-app-active .newtic-mobile-header-brand img{display:block;width:min(144px,100%);height:auto;max-height:46px;object-fit:contain;flex:none}
  .admin-app-active .admin-workspace .newtic-mobile-header-logout{grid-column:3;grid-row:1;display:flex;justify-content:flex-end;margin:0}
  .newtic-mobile-header-logout button{display:grid;place-items:center;min-width:42px;min-height:42px;padding:0;border:0;border-radius:8px;background:transparent;color:#315e85;cursor:pointer}
  .newtic-mobile-header-logout .admin-icon{width:23px;height:23px}
