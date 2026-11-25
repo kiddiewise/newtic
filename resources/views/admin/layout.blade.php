@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="{{ asset('assets/pwa/newtic-admin-192.png') }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="icon" type="image/webp" href="{{ asset(\App\Models\ShopAppearance::current()->compactLogo()) }}">
+  <link rel="icon" type="image/webp" href="{{ asset(request()->routeIs('admin.login') ? 'assets/brand/newtic-logo.webp' : \App\Models\ShopAppearance::current()->compactLogo()) }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">

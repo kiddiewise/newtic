@@ -48,7 +48,8 @@ final class NewticDefaultBrandingTest extends TestCase
         $this->get(route('account.login'))->assertOk()
             ->assertSee('assets/branding/newtic-logo.webp');
         $this->get(route('admin.login'))->assertOk()
-            ->assertSee('assets/branding/newtic-logo.webp');
+            ->assertSee('assets/brand/newtic-logo.webp')
+            ->assertDontSee('assets/branding/newtic-logo.webp');
 
         $this->actingAs($this->admin());
         $this->get(route('admin.dashboard'))->assertOk()
@@ -74,6 +75,14 @@ final class NewticDefaultBrandingTest extends TestCase
         $this->assertStringContainsString($appearance->desktop_logo_path, $html);
         $this->assertStringContainsString($appearance->mobile_logo_path, $html);
         $this->assertStringNotContainsString('/assets/branding/newtic-logo.webp', $html);
+
+        // The administrator login must never inherit the merchant's uploaded branding.
+        $this->post(route('admin.logout'))->assertRedirect(route('admin.login'));
+        $this->get(route('admin.login'))->assertOk()
+            ->assertSee('assets/brand/newtic-logo.webp')
+            ->assertDontSee($appearance->desktop_logo_path)
+            ->assertDontSee($appearance->mobile_logo_path);
+        $this->actingAs($this->admin());
 
         $this->patch(route('admin.appearance.update'), ['remove_mobile_logo' => '1'])
             ->assertSessionHasNoErrors();
