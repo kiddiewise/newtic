@@ -90,8 +90,7 @@ if (nav && dialog) {
   const badge = nav.querySelector('[data-admin-order-badge]');
   const link = nav.querySelector('[data-admin-order-link]');
   const live = nav.querySelector('[data-admin-order-live]');
-  const soundButton = document.querySelector('[data-admin-order-sound]');
-  const soundLabel = document.querySelector('[data-admin-sound-label]');
+  const soundButtons = [...document.querySelectorAll('[data-admin-order-sound]')];
   const toast = document.querySelector('[data-admin-order-toast]');
   const toastText = document.querySelector('[data-admin-order-toast-text]');
   const soundKey = 'newtic.admin.order-sound.' + nav.dataset.orderUser;
@@ -104,11 +103,13 @@ if (nav && dialog) {
   let last = Number(badge.textContent === '99+' ? 100 : badge.textContent) || 0;
   let toastTimer;
   const updateSound = () => {
-    if (!soundButton) return;
-    soundButton.setAttribute('aria-pressed', String(soundEnabled));
-    soundButton.setAttribute('aria-label', soundEnabled ? 'Sipariş sesini kapat' : 'Sipariş sesini etkinleştir');
-    soundButton.title = soundEnabled ? 'Sipariş sesi açık' : 'Sipariş sesi kapalı';
-    if (soundLabel) soundLabel.textContent = soundEnabled ? 'Ses açık' : 'Ses kapalı';
+    soundButtons.forEach(button => {
+      button.setAttribute('aria-pressed', String(soundEnabled));
+      button.setAttribute('aria-label', soundEnabled ? 'Sipariş sesini kapat' : 'Sipariş sesini etkinleştir');
+      button.title = soundEnabled ? 'Sipariş sesi açık' : 'Sipariş sesi kapalı';
+      const label = button.querySelector('[data-admin-sound-label]');
+      if (label) label.textContent = soundEnabled ? 'Ses açık' : 'Ses kapalı';
+    });
   };
   async function unlockAudio() {
     const Audio = window.AudioContext || window.webkitAudioContext;
@@ -126,14 +127,14 @@ if (nav && dialog) {
     const played = await unlockAudio() && playChime();
     if (previewStatus) previewStatus.textContent = played ? 'Kasa sesi çalındı.' : 'Ses çalınamadı. Cihazın ses ayarlarını kontrol et.';
   });
-  soundButton?.addEventListener('click', async () => {
+  soundButtons.forEach(button => button.addEventListener('click', async () => {
     if (soundEnabled) { soundEnabled = false; }
     else { soundEnabled = await unlockAudio(); if (soundEnabled) playChime(); }
     setPref(soundKey,soundEnabled ? '1' : '0');
     updateSound();
-  });
+  }));
   document.addEventListener('pointerdown', event => {
-    if (soundEnabled && !soundButton?.contains(event.target)) unlockAudio();
+    if (soundEnabled && !soundButtons.some(button => button.contains(event.target))) unlockAudio();
   }, {passive:true});
   document.addEventListener('keydown', () => { if (soundEnabled) unlockAudio(); });
   window.addEventListener('storage', event => {

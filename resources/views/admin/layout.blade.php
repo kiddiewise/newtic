@@ -135,6 +135,11 @@
         <button class="admin-menu-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Menüyü aç" data-admin-menu-toggle><x-admin-icon name="menu" /></button>
         <img class="admin-topbar-brandmark" src="{{ asset($adminAppearance->compactLogo()) }}" alt="" width="30" height="30">
         <div class="admin-topbar-heading"><strong>@yield('topbar', 'NEWTIC Yönetim')</strong><small>{{ $activeGroupLabel }}</small></div>
+        <a class="newtic-mobile-header-brand" href="{{ route('admin.dashboard') }}" aria-label="NEWTIC Genel Bakış"><img src="{{ asset($adminAppearance->compactLogo()) }}" alt="" width="28" height="28"><span>NEWTIC Yönetim Paneli</span></a>
+        <form class="newtic-mobile-header-logout" method="POST" action="{{ route('admin.logout') }}">
+          @csrf
+          <button type="submit" aria-label="Güvenli çıkış" title="Güvenli çıkış"><x-admin-icon name="logout"/></button>
+        </form>
         <form class="admin-global-search" action="{{ route('admin.search') }}" method="GET" role="search">
           <x-admin-icon name="search" />
           <input type="search" name="q" minlength="2" maxlength="100" value="{{ request()->routeIs('admin.search') ? request('q') : '' }}" placeholder="Sipariş, ürün veya müşteri ara..." aria-label="Sipariş, ürün veya müşteri ara" required>

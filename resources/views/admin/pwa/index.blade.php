@@ -20,8 +20,8 @@
   </section>
   <section class="admin-panel newtic-pwa-card">
     <h2>NEWTIC sipariş sesi</h2>
-    <p>Yönetim paneli açıkken yeni siparişler için kısa kasa sesi çalar. Üst menüdeki ses düğmesinden etkinleştirebilirsin. Telefon kilitliyken sistem bildirim sesi geçerlidir.</p>
-    <div class="newtic-pwa-actions"><button type="button" class="admin-secondary" data-admin-sound-preview>Kasa sesini dinle</button>
+    <p>Yönetim paneli açıkken yeni siparişler için kısa kasa sesi çalar. Aşağıdaki ses düğmesinden etkinleştirebilir veya kapatabilirsin. Telefon kilitliyken sistem bildirim sesi geçerlidir.</p>
+    <div class="newtic-pwa-actions"><button type="button" class="admin-secondary newtic-pwa-sound-toggle" data-admin-order-sound aria-pressed="false" aria-label="Sipariş sesini etkinleştir"><x-admin-icon name="bell"/> <span data-admin-sound-label>Ses kapalı</span></button><button type="button" class="admin-secondary" data-admin-sound-preview>Kasa sesini dinle</button>
       <a class="admin-secondary" href="{{ asset('assets/pwa/newtic-kasa-sesi.wav') }}" download="newtic-kasa-sesi.wav">Sesi indir</a></div>
     <small data-admin-sound-preview-status role="status" aria-live="polite"></small>
     <small>Android cihazında özel bildirim sesi seçimi destekleniyorsa indirilen dosyayı telefon ayarlarından seçebilirsin.</small>
