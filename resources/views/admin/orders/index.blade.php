@@ -3,7 +3,7 @@
 @section('content')
 <div class="newtic-orders">
   <div class="newtic-orders-heading">
-    <div><p class="admin-eyebrow">OPERASYON</p><h1>Siparişler</h1><p>{{ number_format($orders->total(), 0, ',', '.') }} sipariş · {{ $unreadCount }} okunmamış</p></div>
+    <div><p class="admin-eyebrow">OPERASYON</p><h1>Siparişler</h1><p>{{ number_format($orders->total(), 0, ',', '.') }} sipariş · {{ $unreadCount }} yeni sipariş</p></div>
     <details class="newtic-order-actions">
       <summary>İşlemler <span aria-hidden="true">···</span></summary>
       <div>
@@ -43,9 +43,9 @@
       </div>
     </form>
     @php($listQuery = array_filter(['q'=>$term,'status'=>$status,'payment'=>$payment,'sort'=>$sort]))
-    <nav class="newtic-order-tabs" aria-label="Okunma durumuna göre filtrele">
+    <nav class="newtic-order-tabs" aria-label="Yeni siparişleri filtrele">
       <a href="{{ route('admin.orders.index',$listQuery) }}" @if(!$unreadOnly) aria-current="page" @endif>Tümü</a>
-      <a href="{{ route('admin.orders.index',$listQuery + ['unread'=>1]) }}" @if($unreadOnly) aria-current="page" @endif>Okunmamış <span>{{ $unreadCount }}</span></a>
+      <a href="{{ route('admin.orders.index',$listQuery + ['unread'=>1]) }}" @if($unreadOnly) aria-current="page" @endif>Yeni siparişler <span>{{ $unreadCount }}</span></a>
     </nav>
     <div class="newtic-order-list">
       @forelse($orders as $order)

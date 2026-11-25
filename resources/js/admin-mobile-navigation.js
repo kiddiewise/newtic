@@ -1,3 +1,4 @@
+import { playCashRegister } from './admin-order-sound.js';
 import { validIndex, ordinaryNavigation, rememberMotion, takeMotion } from './admin-nav-motion.js';
 
 const nav = document.querySelector('[data-admin-mobile-nav]');
@@ -118,21 +119,13 @@ if (nav && dialog) {
       return audioContext.state === 'running';
     } catch { return false; }
   }
-  function playChime() {
-    if (!audioContext || audioContext.state !== 'running') return false;
-    const t = audioContext.currentTime;
-    [660,880].forEach((frequency,i) => {
-      const note = audioContext.createOscillator(), gain = audioContext.createGain();
-      const start = t + i * .15;
-      note.type = 'sine'; note.frequency.value = frequency;
-      gain.gain.setValueAtTime(.001,start);
-      gain.gain.exponentialRampToValueAtTime(.12,start+.02);
-      gain.gain.exponentialRampToValueAtTime(.001,start+.22);
-      note.connect(gain); gain.connect(audioContext.destination);
-      note.start(start); note.stop(start+.23);
-    });
-    return true;
-  }
+  const playChime = () => playCashRegister(audioContext);
+  const preview = document.querySelector('[data-admin-sound-preview]');
+  const previewStatus = document.querySelector('[data-admin-sound-preview-status]');
+  preview?.addEventListener('click', async () => {
+    const played = await unlockAudio() && playChime();
+    if (previewStatus) previewStatus.textContent = played ? 'Kasa sesi çalındı.' : 'Ses çalınamadı. Cihazın ses ayarlarını kontrol et.';
+  });
   soundButton?.addEventListener('click', async () => {
     if (soundEnabled) { soundEnabled = false; }
     else { soundEnabled = await unlockAudio(); if (soundEnabled) playChime(); }
@@ -167,7 +160,7 @@ if (nav && dialog) {
       const newest = Number.isSafeInteger(data.latest_id) ? data.latest_id : 0;
       const arrived = newest > highWater;
       if (arrived || data.count > last) {
-        live.textContent = 'Yeni sipariş var. ' + data.count + ' okunmamış sipariş.';
+        live.textContent = 'Yeni sipariş var. ' + data.count + ' yeni sipariş.';
         if (!reduced.matches && typeof badge.animate === 'function') badge.animate(
           [{transform:'scale(.8)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],
           {duration:300,easing:'ease-out'}

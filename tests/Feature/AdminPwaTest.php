@@ -55,7 +55,7 @@ final class AdminPwaTest extends TestCase
         $this->actingAs(User::factory()->create())->getJson(route('admin.pwa.status'))->assertForbidden();
         $admin=User::factory()->create();
         $admin->forceFill(['is_admin'=>true])->save();
-        $this->actingAs($admin)->get(route('admin.pwa.index'))->assertOk()->assertSee('newtic-admin.webmanifest');
+        $this->actingAs($admin)->get(route('admin.pwa.index'))->assertOk()->assertSee('newtic-admin.webmanifest')->assertSee('Kasa sesini dinle')->assertSee('newtic-kasa-sesi.wav');
         // Test clients do not automatically carry browser cookies on JSON requests.
         // Preserve the actual authenticated browser session, not just actingAs().
         $this->withCredentials()->withCookie(config('session.cookie'), session()->getId());

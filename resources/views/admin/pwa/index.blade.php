@@ -18,6 +18,14 @@
     </div>
     <small>İzin cihaz bazındadır. Abonelik 30 gün geçerlidir; bu sayfadan yeniden etkinleştirebilirsin. Bildirimler, sunucu cron görevi çalıştığında yaklaşık bir dakika içinde gönderime alınır. Bildirimde müşteri bilgisi bulunmaz.</small>
   </section>
+  <section class="admin-panel newtic-pwa-card">
+    <h2>NEWTIC sipariş sesi</h2>
+    <p>Yönetim paneli açıkken yeni siparişler için kısa kasa sesi çalar. Üst menüdeki ses düğmesinden etkinleştirebilirsin. Telefon kilitliyken sistem bildirim sesi geçerlidir.</p>
+    <div class="newtic-pwa-actions"><button type="button" class="admin-secondary" data-admin-sound-preview>Kasa sesini dinle</button>
+      <a class="admin-secondary" href="{{ asset('assets/pwa/newtic-kasa-sesi.wav') }}" download="newtic-kasa-sesi.wav">Sesi indir</a></div>
+    <small data-admin-sound-preview-status role="status" aria-live="polite"></small>
+    <small>Android cihazında özel bildirim sesi seçimi destekleniyorsa indirilen dosyayı telefon ayarlarından seçebilirsin.</small>
+  </section>
   <section class="admin-panel newtic-pwa-card"><h2>Güvenli kullanım</h2><p>Çevrimdışı sipariş verisi tutulmaz. Yönetim panelinden çıkış yaptığında bu oturumun sunucu bildirimi kapatılır. Bildirim açıldığında ödeme ve kargo işlemleri değişmez.</p></section>
 </div>
 @endsection

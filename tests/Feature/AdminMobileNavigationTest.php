@@ -63,7 +63,7 @@ final class AdminMobileNavigationTest extends TestCase
         $this->get(route('admin.orders.show',$newer))->assertOk();
         $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',1)->assertJsonPath('latest_id',$older->id);
         $this->get(route('admin.orders.index',['unread'=>1]))->assertOk()
-            ->assertSee($older->order_number)->assertDontSee($newer->order_number);
+            ->assertSee('Yeni siparişler')->assertDontSee('Okunmamış')->assertSee($older->order_number)->assertDontSee($newer->order_number);
         $this->get(route('admin.orders.show',$newer))->assertOk();
         $this->getJson(route('admin.orders.badge'))->assertJsonPath('count',1);
         $this->get(route('admin.orders.show',$older))->assertOk();

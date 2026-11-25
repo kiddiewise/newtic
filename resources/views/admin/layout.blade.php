@@ -159,7 +159,7 @@
       </div>
     </header>
     <main class="admin-main" id="admin-content">
-      <div class="admin-order-toast" data-admin-order-toast role="status" hidden><span data-admin-order-toast-text></span><a href="{{ route('admin.orders.index', ['unread' => 1]) }}">Siparişleri gör</a></div>
+      <div class="admin-order-toast" data-admin-order-toast role="status" hidden><span data-admin-order-toast-text></span><a href="{{ route('admin.orders.index', ['unread' => 1]) }}">Yeni siparişleri gör</a></div>
       @if(session('success'))<div class="admin-alert admin-alert-success" role="status"><x-admin-icon name="check" /> {{ session('success') }}</div>@endif
       @if($errors->any())
         <div class="admin-alert admin-alert-error" role="alert">
