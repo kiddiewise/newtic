@@ -15,6 +15,30 @@
       </details>
     </div>
   </header>
+  @php
+    $processCancelled = $order->status === 'cancelled';
+    $processCurrent = match($order->status) {'pending_payment'=>1,'preparing'=>2,'shipped','out_for_delivery'=>3,'completed'=>4,default=>null};
+    $processStages = [
+      ['label'=>'Sipariş oluşturuldu','short'=>'Sipariş','done'=>true],
+      ['label'=>'Ödeme doğrulandı','short'=>'Ödeme','done'=>$paymentVerified],
+      ['label'=>'Sipariş hazırlanıyor','short'=>'Hazırlık','done'=>in_array($order->status,['shipped','out_for_delivery','completed'],true)],
+      ['label'=>'Kargoya verildi','short'=>'Kargo','done'=>$order->status === 'completed'],
+      ['label'=>'Tamamlandı','short'=>'Teslimat','done'=>$order->status === 'completed'],
+    ];
+  @endphp
+  <section class="admin-panel newtic-mobile-process" aria-label="Sipariş süreci" data-mobile-order-process>
+    <div class="newtic-mobile-process-heading"><h2>Sipariş süreci</h2><span class="newtic-mobile-process-status {{ $processCancelled ? 'is-cancelled' : '' }}">{{ $order->statusLabel() }}</span></div>
+    <ol class="newtic-mobile-process-track">
+      @foreach($processStages as $index=>$stage)
+        @php($current = !$processCancelled && !$stage['done'] && $processCurrent === $index)
+        <li @class(['newtic-process-step','is-done'=>$stage['done'],'is-current'=>$current]) data-process-stage="{{ $index }}" data-process-state="{{ $stage['done'] ? 'done' : ($current ? 'current' : 'waiting') }}" @if($current) aria-current="step" @endif>
+          <span class="newtic-process-node" aria-hidden="true">@if($stage['done'])<x-admin-icon name="check"/>@else{{ $index+1 }}@endif</span>
+          <span class="newtic-process-label">{{ $stage['short'] }}</span>
+          <span class="newtic-process-sr">{{ $stage['label'] }}: {{ $stage['done'] ? 'Tamamlandı' : ($current ? 'Devam ediyor' : ($processCancelled ? 'İptal nedeniyle ilerlemiyor' : 'Bekliyor')) }}</span>
+        </li>
+      @endforeach
+    </ol>
+  </section>
   <section class="newtic-detail-overview" aria-label="Sipariş özeti">
     <div class="newtic-detail-overview-top">
       <div><span>Sipariş tutarı</span><strong>{{ number_format($paymentBreakdown['order_total_cents']/100, 2, ',', '.') }} ₺</strong></div>
@@ -249,26 +273,24 @@
     @endif
 
       </div>
-    <section class="admin-panel">
+    <section class="admin-panel newtic-desktop-process">
       <div class="admin-editor-heading"><span class="admin-editor-heading-icon is-purple"><x-admin-icon name="clock" /></span><div><h2>Sipariş süreci</h2></div></div>
-      @php
-        $step = match($order->status){'preparing'=>2,'shipped'=>3,'out_for_delivery'=>3,'completed'=>4,default=>0};
-        $timeline = ['Sipariş oluşturuldu','Ödeme doğrulandı','Sipariş hazırlanıyor','Kargoya verildi','Tamamlandı'];
-      @endphp
       <div class="admin-detail-timeline">
-        @foreach($timeline as $index => $label)
-          <div @class(['admin-detail-stage','is-done' => $step >= $index && $order->status !== 'cancelled','is-now' => $index === $step && $order->status !== 'cancelled'])>
-            <i>@if($step >= $index && $order->status !== 'cancelled')✓@else{{ $index + 1 }}@endif</i>
-            <span>{{ $label }}<small>
+        @foreach($processStages as $index => $stage)
+          @php($current = !$processCancelled && !$stage['done'] && $processCurrent === $index)
+          <div @class(['admin-detail-stage','is-done'=>$stage['done'],'is-now'=>$current]) @if($current) aria-current="step" @endif>
+            <i>@if($stage['done'])✓@else{{ $index + 1 }}@endif</i>
+            <span>{{ $stage['label'] }}<small>
               @if($index === 0){{ $order->created_at->format('d.m.Y H:i') }}
-              @elseif($index === 1 && $step === 0){{ $order->payment_method === 'paytr' ? 'PAYTR bildirimi bekleniyor' : 'Banka kontrolü bekleniyor' }}
-              @elseif($index <= $step)Tamamlandı
+              @elseif($stage['done'])Tamamlandı
+              @elseif($current){{ $index === 1 ? ($order->payment_method === 'paytr' ? 'PAYTR bildirimi bekleniyor' : 'Banka kontrolü bekleniyor') : $order->statusLabel() }}
+              @elseif($processCancelled)İptal nedeniyle ilerlemiyor
               @else Henüz değil @endif
             </small></span>
           </div>
         @endforeach
       </div>
-      @if($order->status === 'cancelled')<span class="admin-state-pill state-cancelled">Sipariş iptal edildi</span>@endif
+      @if($processCancelled)<span class="admin-state-pill state-cancelled">Sipariş iptal edildi</span>@endif
     </section>
     @if($order->statusChanges->isNotEmpty())
       <section class="admin-panel ship-order-audit">

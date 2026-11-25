@@ -135,3 +135,27 @@
  .newtic-order-detail .admin-payment-actions{grid-template-columns:minmax(0,1fr)}
  .newtic-order-detail .checkout-price-line{font-size:12px}
 }
+
+/* Mobile-first compact order progress; retain desktop vertical timeline. */
+.admin-app-active .newtic-order-detail .newtic-mobile-process{display:none}
+.newtic-order-detail .admin-detail-stage.is-now>i{background:#eef3f8;border-color:#315e85;color:#315e85}
+.newtic-process-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:710px){
+ .admin-app-active .newtic-order-detail .newtic-desktop-process{display:none}
+ .admin-app-active .newtic-order-detail .newtic-mobile-process{display:block;margin-bottom:12px;padding:12px 9px}
+ .newtic-mobile-process-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 3px;margin-bottom:12px}
+ .admin-app-active .newtic-order-detail .newtic-mobile-process-heading h2{font-size:13px;font-weight:600}
+ .newtic-mobile-process-status{font-size:10px;color:#315e85;text-align:right;overflow-wrap:anywhere}
+ .newtic-mobile-process-status.is-cancelled{color:#b42335}
+ .newtic-mobile-process-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:0;margin:0;list-style:none;gap:0}
+ .newtic-process-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;text-align:center}
+ .newtic-process-step:not(:last-child)::after{content:'';position:absolute;z-index:0;top:13px;left:50%;width:100%;height:2px;background:#e2e7ed}
+ .newtic-process-step.is-done:not(:last-child)::after{background:#83c9b7}
+ .newtic-process-node{position:relative;z-index:1;display:grid;place-items:center;box-sizing:border-box;width:28px;height:28px;border:1.5px solid #d9e1e9;border-radius:50%;background:#fff;color:#8291a0;font:500 11px Montserrat,sans-serif}
+ .newtic-process-node .admin-icon{width:15px;height:15px}
+ .newtic-process-step.is-done .newtic-process-node{background:#18866b;border-color:#18866b;color:white}
+ .newtic-process-step.is-current .newtic-process-node{background:#eaf1f8;border-color:#315e85;color:#315e85;box-shadow:0 0 0 3px #edf3f8}
+ .newtic-process-label{font:400 10px/1.25 Montserrat,sans-serif;color:#64748b;overflow-wrap:anywhere}
+ .newtic-process-step.is-current .newtic-process-label{color:#315e85;font-weight:600}
+ .newtic-process-step.is-done .newtic-process-label{color:#187b61}
+}

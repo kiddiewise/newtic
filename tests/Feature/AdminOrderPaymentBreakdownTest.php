@@ -74,7 +74,10 @@ final class AdminOrderPaymentBreakdownTest extends TestCase
 
         $this->admin();
         $this->get(route('admin.orders.show', $order))->assertOk()
-            ->assertSeeInOrder(['newtic-detail-overview','id="order-manage"','id="order-items"','id="order-payment"'],false)
+            ->assertSeeInOrder(['data-mobile-order-process','newtic-detail-overview','id="order-manage"','id="order-items"','id="order-payment"'],false)
+            ->assertSee('data-process-stage="1" data-process-state="done"',false)
+            ->assertSee('data-process-stage="2" data-process-state="current"',false)
+            ->assertSee('data-process-stage="3" data-process-state="waiting"',false)
             ->assertSee('Ödeme toplamı')
             ->assertSee('Ürünlerin toplamı')
             ->assertSee('Vade farkı / PAYTR ödeme farkı')
@@ -97,6 +100,7 @@ final class AdminOrderPaymentBreakdownTest extends TestCase
         $this->get(route('admin.orders.show', $order))->assertOk()
             ->assertSee('Ödeme toplamı')
             ->assertSee('Ödeme bekleniyor')
+            ->assertSee('data-process-stage="1" data-process-state="current"',false)
             ->assertDontSee('Vade farkı / PAYTR ödeme farkı')
             ->assertDontSee('Ödendi (PAYTR / banka doğrulandı)');
     }
