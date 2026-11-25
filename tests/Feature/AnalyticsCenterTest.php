@@ -190,7 +190,10 @@ final class AnalyticsCenterTest extends TestCase
             ->assertSee('Pazarlama ve Analitik')
             ->assertSee('Alışveriş yolculuğu')
             ->assertSee('En çok ilgi gören ürünler')
-            ->assertSee('Şu anda sitede');
+            ->assertSee('Şu anda sitede')
+            ->assertSeeInOrder(['data-live-section','data-live-count','Temel göstergeler'],false)
+            ->assertDontSee('Gizlilik odaklı ölçüm')
+            ->assertDontSee('TRAFFIC INTELLIGENCE');
         $this->getJson(route('admin.analytics.live'))->assertOk()
             ->assertJsonPath('online', 0)->assertJsonStructure(['online', 'visitors', 'updated_at']);
     }

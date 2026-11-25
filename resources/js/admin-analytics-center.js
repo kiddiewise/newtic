@@ -44,8 +44,8 @@ if (analyticsRoot) {
         });
       }
     };
-    drawLine('views', '#f68220', '#ffe6cc');
-    drawLine('visitors', '#34444d', null);
+    drawLine('views', '#315e85', '#dce8f4');
+    drawLine('visitors', '#092037', null);
     points.forEach((row,i) => {
       if (i % Math.max(1, Math.ceil(points.length/7)) !== 0 && i !== points.length-1) return;
       add('text', {x:x(i), y:height-8, 'text-anchor':'middle', 'font-size':10, fill:'#839199'}, row.date);
@@ -58,8 +58,10 @@ if (analyticsRoot) {
     const tbody = liveSection.querySelector('[data-live-rows]');
     const count = liveSection.querySelector('[data-live-count]');
     const updated = liveSection.querySelector('[data-live-updated]');
+    let refreshing = false;
     const refresh = async () => {
-      if (document.hidden) return;
+      if (document.hidden || refreshing) return;
+      refreshing = true;
       try {
         const response = await fetch(url, { credentials:'same-origin',
           headers:{ Accept:'application/json', 'X-Requested-With':'XMLHttpRequest' },
@@ -75,15 +77,16 @@ if (analyticsRoot) {
           const cell = row.insertCell();
           cell.colSpan = 4;
           cell.className = 'analytics-empty';
-          cell.textContent = 'Şu anda izne dayalı aktif oturum bulunmuyor.';
+          cell.textContent = 'Aktif oturum yok.';
           return;
         }
         data.visitors.forEach(visitor => {
           const row = tbody.insertRow();
           [visitor.page, visitor.device, visitor.location, (visitor.seconds_ago||0)+' sn önce']
-            .forEach(item => { row.insertCell().textContent = String(item ?? ''); });
+            .forEach((item,index) => { const cell=row.insertCell(); cell.dataset.label=['Sayfa','Cihaz','Konum','Etkinlik'][index]; cell.textContent=String(item ?? ''); });
         });
       } catch { /* keep last verified snapshot on network failures */ }
+      finally { refreshing = false; }
     };
     window.setInterval(refresh, 20000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
