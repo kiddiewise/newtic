@@ -37,13 +37,18 @@ final class AdminMobileNavigationTest extends TestCase
             ->assertSee('data-admin-mobile-nav',false)->assertSee('data-admin-more-dialog',false)
             ->assertSee('admin-dashboard-actions-first',false)
             ->assertSee('newtic-mobile-header-brand',false)
-            ->assertSee('NEWTIC Yönetim Paneli')
+            ->assertSee('newtic-desktop-header-brand',false)
+            ->assertSee('assets/brand/newtic-logo.webp')
             ->assertSee('newtic-mobile-header-logout',false)
             ->assertSee('aria-label="Güvenli çıkış"',false)
             ->assertSee(route('admin.logout'))
             ->assertSee('data-admin-nav-slider',false)->assertSee('data-active-index="3"',false)
             ->assertDontSee('Mağazanın son durumuna tek ekrandan ulaş');
         $html=$response->getContent();
+        $this->assertSame(1,preg_match('~<header class="admin-topbar">.*?</header>~s',$html,$header));
+        $this->assertSame(2,substr_count($header[0], 'assets/brand/newtic-logo.webp'));
+        $this->assertStringNotContainsString('NEWTIC Yönetim Paneli',$header[0]);
+        $this->assertStringNotContainsString('admin-topbar-heading',$header[0]);
         $this->assertLessThan(strpos($html,'<h2>Hızlı işlemler</h2>'),strpos($html,'<h1>Merhaba,'));
         $this->assertLessThan(strpos($html,'class="admin-kpi-grid"'),strpos($html,'<h2>Hızlı işlemler</h2>'));
         $this->assertSame(1,substr_count($html,'<h2>Hızlı işlemler</h2>'));

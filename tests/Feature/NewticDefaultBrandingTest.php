@@ -76,6 +76,14 @@ final class NewticDefaultBrandingTest extends TestCase
         $this->assertStringContainsString($appearance->mobile_logo_path, $html);
         $this->assertStringNotContainsString('/assets/branding/newtic-logo.webp', $html);
 
+        // Both variants of the administrator header use the bundled logo, even
+        // when the merchant has configured different storefront logos.
+        $adminHtml = $this->get(route('admin.dashboard'))->assertOk()->getContent();
+        $this->assertSame(1, preg_match('~<header class="admin-topbar">.*?</header>~s', $adminHtml, $header));
+        $this->assertSame(2, substr_count($header[0], 'assets/brand/newtic-logo.webp'));
+        $this->assertStringNotContainsString($appearance->desktop_logo_path, $header[0]);
+        $this->assertStringNotContainsString($appearance->mobile_logo_path, $header[0]);
+
         // The administrator login must never inherit the merchant's uploaded branding.
         $this->post(route('admin.logout'))->assertRedirect(route('admin.login'));
         $this->get(route('admin.login'))->assertOk()
