@@ -96,6 +96,17 @@ final class UblSaleCandidateTest extends TestCase
         }
     }
 
+    public function test_inconsistent_even_rehashed_snapshot_is_rejected_before_xml(): void
+    {
+        $draft=$this->draft();
+        $amounts=$draft->amounts;
+        $amounts['groups'][0]['tax_cents']--;
+        $draft->amounts=$amounts;
+        $draft->snapshot_hash=hash('sha256',json_encode($amounts,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE));
+        $this->expectException(DomainException::class);
+        (new InvoicePreparationXml)->render($draft);
+    }
+
     public function test_anonymous_identifier_is_not_accepted_for_einvoice(): void
     {
         $this->expectException(DomainException::class);
