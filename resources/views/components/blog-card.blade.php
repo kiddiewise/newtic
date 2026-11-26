@@ -10,7 +10,7 @@
   <span class="blog-card-copy">
     <span class="blog-card-category">{{ $post->category?->name ?: 'Blog' }}</span>
     <strong>{{ $post->title }}</strong>
-    <span class="blog-card-excerpt">{{ \Illuminate\Support\Str::limit($post->excerpt ?: $post->title, 116) }}</span>
-    <span class="blog-card-foot"><span>{{ $post->published_at?->translatedFormat('d F Y') }}</span><span>Oku <span aria-hidden="true">↗</span></span></span>
+    @if(filled($post->excerpt))<span class="blog-card-excerpt">{{ \Illuminate\Support\Str::limit($post->excerpt, 116) }}</span>@endif
+    <span class="blog-card-foot"><span>{{ $post->published_at?->translatedFormat('d F Y') }}</span><span aria-hidden="true">Oku ↗</span></span>
   </span>
 </a>
