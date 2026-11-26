@@ -42,7 +42,7 @@ final class EdmInvoiceXmlEvidenceTest extends TestCase
             ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
     }
 
-    private function query(string $profile='TEMELFATURA'): array
+    private function fetchEvidence(string $profile='TEMELFATURA'): array
     {
         return (new EdmTestClient)->invoiceXmlEvidence('fixture','secret',self::UUID,$profile,self::SELLER,self::BUYER);
     }
@@ -51,7 +51,7 @@ final class EdmInvoiceXmlEvidenceTest extends TestCase
     {
         $xml=$this->xml();
         $this->fake($this->row(base64_encode($xml)));
-        $r=$this->query();
+        $r=$this->fetchEvidence();
         $this->assertSame('ok',$r['status']);
         $this->assertSame(hash('sha256',$xml),$r['data']['xml_sha256']);
         $this->assertSame(strlen($xml),$r['data']['xml_bytes']);
@@ -71,14 +71,14 @@ final class EdmInvoiceXmlEvidenceTest extends TestCase
     public function test_archive_query_uses_distinct_direction_and_profile(): void
     {
         $this->fake($this->row(base64_encode($this->xml(profile:'EARSIVFATURA')),profile:'EARSIVFATURA'));
-        $this->assertSame('ok',$this->query('EARSIVFATURA')['status']);
+        $this->assertSame('ok',$this->fetchEvidence('EARSIVFATURA')['status']);
         Http::assertSent(fn($req)=>$req->hasHeader('SOAPAction','GetInvoiceRequest') && str_contains($req->body(),'<DIRECTION>OUT-EARCHIVE</DIRECTION>'));
     }
 
     public function test_inner_uuid_mismatch_is_rejected(): void
     {
         $this->fake($this->row(base64_encode($this->xml('a268a924-0255-4da6-9b47-94383421cb49'))));
-        $this->assertSame('Lookup: GETINVOICE_UBL_IDENTITY_MISMATCH',$this->query()['diagnostic']);
+        $this->assertSame('Lookup: GETINVOICE_UBL_IDENTITY_MISMATCH',$this->fetchEvidence()['diagnostic']);
         Http::assertSentCount(3);
     }
 
@@ -86,19 +86,19 @@ final class EdmInvoiceXmlEvidenceTest extends TestCase
     {
         $row=$this->row(base64_encode($this->xml()));
         $this->fake($row.$row);
-        $this->assertSame('Lookup: GETINVOICE_FIELD_INVOICE',$this->query()['diagnostic']);
+        $this->assertSame('Lookup: GETINVOICE_FIELD_INVOICE',$this->fetchEvidence()['diagnostic']);
     }
 
     public function test_invalid_base64_is_rejected(): void
     {
         $this->fake($this->row('not!base64'));
-        $this->assertSame('Lookup: GETINVOICE_CONTENT_INVALID',$this->query()['diagnostic']);
+        $this->assertSame('Lookup: GETINVOICE_CONTENT_INVALID',$this->fetchEvidence()['diagnostic']);
     }
 
     public function test_unsafe_inner_xml_is_rejected(): void
     {
         $this->fake($this->row(base64_encode('<!DOCTYPE Invoice [<!ENTITY x SYSTEM "file:///etc/passwd">]><Invoice>&x;</Invoice>')));
-        $this->assertSame('Lookup: GETINVOICE_CONTENT_INVALID',$this->query()['diagnostic']);
+        $this->assertSame('Lookup: GETINVOICE_CONTENT_INVALID',$this->fetchEvidence()['diagnostic']);
     }
 
     public function test_bad_input_never_calls_edm(): void
