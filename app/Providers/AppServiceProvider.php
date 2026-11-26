@@ -48,6 +48,28 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Numeric route throttles can share the same authenticated-user key
+        // with unrelated admin polling. EDM operations need independent budgets.
+        foreach (['edm-lookup'=>[10,30], 'edm-probe'=>[4,12], 'edm-settings'=>[6,18]] as $name=>$budget) {
+            RateLimiter::for($name, function (Request $request) use ($name,$budget): array {
+                $blocked = function (Request $request, array $headers) {
+                    $seconds = max(1,(int)($headers['Retry-After'] ?? 60));
+                    $message = 'İşlem sınırına ulaşıldı. '.$seconds.' saniye sonra tekrar deneyin.';
+                    $headers['Cache-Control'] = 'private, no-store, max-age=0';
+                    if ($request->expectsJson()) {
+                        return response()->json(['message'=>$message],429,$headers);
+                    }
+                    // Never flash submitted credentials or recipient identifiers.
+                    return redirect()->route('admin.edm.edit',[],303,$headers)
+                        ->withErrors(['edm'=>$message]);
+                };
+                return [
+                    Limit::perMinute($budget[0])->by($name.':admin:'.$request->user()->getAuthIdentifier())->response($blocked),
+                    Limit::perMinute($budget[1])->by($name.':store')->response($blocked),
+                ];
+            });
+        }
+
         // Register against the existing authoritative state transitions.
         // Outbox inserts share the business transaction and roll back with it.
         Order::created(fn (Order $row) => app(EmailPlanner::class)->orderCreated($row));

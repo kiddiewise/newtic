@@ -106,6 +106,33 @@ final class EdmDiscoveryTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_edm_limits_are_independent_and_return_to_settings_without_sensitive_input(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake();
+        $this->actingAs($this->admin());
+        // Exercise a separate numerical throttle used by admin polling.
+        for ($i=0; $i<4; $i++) {
+            $this->get(route('admin.orders.badge'))->assertOk();
+        }
+        $payload=['kind'=>'taxpayer','edm_identifier'=>'11111111111'];
+        for ($i=0; $i<10; $i++) {
+            $this->post(route('admin.edm.lookup'),$payload)->assertRedirect(route('admin.edm.edit'))->assertSessionHasErrors('edm');
+        }
+        $blocked=$this->post(route('admin.edm.lookup'),$payload)
+            ->assertStatus(303)->assertRedirect(route('admin.edm.edit'))
+            ->assertSessionHasErrors('edm');
+        $this->assertGreaterThan(0,(int)$blocked->headers->get('Retry-After'));
+        $this->assertStringContainsString('no-store',$blocked->headers->get('Cache-Control'));
+        $this->assertNull(session()->getOldInput('edm_identifier'));
+        $this->get(route('admin.edm.edit'))->assertOk()->assertSee('İşlem sınırına ulaşıldı.');
+        $this->postJson(route('admin.edm.lookup'),$payload)->assertStatus(429)->assertJsonStructure(['message']);
+        // Exhausting lookup must not block a different EDM operation.
+        $this->post(route('admin.edm.probe'))->assertRedirect(route('admin.edm.edit'))->assertSessionHasErrors(['edm'=>'Önce test hesabınızı kaydedin.']);
+        $this->patch(route('admin.edm.update'),['edm_username'=>'fixture','edm_password'=>'secret'])->assertRedirect(route('admin.edm.edit'))->assertSessionHasNoErrors();
+        Http::assertNothingSent();
+    }
+
     public function test_successful_lookup_returns_noncacheable_page_without_persisting_result(): void
     {
         $this->actingAs($this->admin())->patch(route('admin.edm.update'),['edm_username'=>'fixture','edm_password'=>'secret']);
