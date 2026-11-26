@@ -213,8 +213,9 @@ final class EdmTestClient
             // fields, not additional XML elements. Match documented SOAP.
             $reply=$this->call('GetInvoice',$session,[
                 'INVOICE_SEARCH_KEY'=>[
-                    'LIMIT'=>'2','UUID'=>$uuid,'SENDER'=>$seller,'RECEIVER'=>$buyer,
+                    'LIMIT'=>'2','UUID'=>$uuid,
                     'READ_INCLUDED'=>'true','DIRECTION'=>$profile==='EARSIVFATURA'?'OUT-EARCHIVE':'OUT-EINVOICE',
+                    'SENDER'=>$seller,'RECEIVER'=>$buyer,
                     'ISARCHIVED'=>'true',
                 ],
                 'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>'XML',

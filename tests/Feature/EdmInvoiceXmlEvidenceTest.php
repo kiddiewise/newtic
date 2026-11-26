@@ -65,7 +65,8 @@ final class EdmInvoiceXmlEvidenceTest extends TestCase
             && str_contains($req->body(),'<UUID>'.self::UUID.'</UUID>')
             && str_contains($req->body(),'<DIRECTION>OUT-EINVOICE</DIRECTION>')
             && str_contains($req->body(),'<HEADER_ONLY>N</HEADER_ONLY>')
-            && str_contains($req->body(),'<INVOICE_CONTENT_TYPE>XML</INVOICE_CONTENT_TYPE>'));
+            && str_contains($req->body(),'<INVOICE_CONTENT_TYPE>XML</INVOICE_CONTENT_TYPE>')
+            && str_contains($req->body(),'<READ_INCLUDED>true</READ_INCLUDED><DIRECTION>OUT-EINVOICE</DIRECTION><SENDER>'.self::SELLER.'</SENDER><RECEIVER>'.self::BUYER.'</RECEIVER><ISARCHIVED>true</ISARCHIVED>'));
     }
 
     public function test_archive_query_uses_distinct_direction_and_profile(): void

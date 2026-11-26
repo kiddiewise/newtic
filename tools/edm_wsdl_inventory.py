@@ -27,14 +27,26 @@ def contract_details(root):
         candidates = named_nodes("complexType", type_name)
         return candidates[0] if len(candidates) == 1 else None
 
-    def sequence_for(element):
-        ctype = complex_type(element)
-        if ctype is None:
+    def sequence_type(ctype, visited):
+        if ctype is None or id(ctype) in visited:
             return None
+        visited = visited | {id(ctype)}
         seq = ctype.find("{%s}sequence" % XSD)
-        if seq is None:
-            seq = ctype.find("{%s}complexContent/{%s}extension/{%s}sequence" % (XSD,XSD,XSD))
-        return None if seq is None else seq.findall("{%s}element" % XSD)
+        if seq is not None:
+            return seq.findall("{%s}element" % XSD)
+        extension = ctype.find("{%s}complexContent/{%s}extension" % (XSD,XSD))
+        if extension is None:
+            return None
+        base_name = extension.get("base", "").split(":")[-1]
+        bases = named_nodes("complexType", base_name)
+        inherited = sequence_type(bases[0], visited) if len(bases) == 1 else None
+        if inherited is None:
+            return None
+        local = extension.find("{%s}sequence" % XSD)
+        return inherited + ([] if local is None else local.findall("{%s}element" % XSD))
+
+    def sequence_for(element):
+        return sequence_type(complex_type(element), set())
 
     def fields(nodes):
         if nodes is None:
@@ -101,7 +113,7 @@ def inspect(path):
                              "soapaction_matches":name+"Request" in contract["soap11_actions"] if contract["soap11_actions"] else None}
     comparisons["GetInvoice"]["search_key_relative_order_matches"] = relative_order(
         contracts["GetInvoice"]["request_nested_fields"].get("INVOICE_SEARCH_KEY"),
-        ["LIMIT","UUID","SENDER","RECEIVER","READ_INCLUDED","DIRECTION","ISARCHIVED"])
+        ["LIMIT","UUID","READ_INCLUDED","DIRECTION","SENDER","RECEIVER","ISARCHIVED"])
     print(json.dumps({"contract_details":contracts, "newtic_contract_comparison":comparisons,
                       "comparison_is_metadata_only":True}, indent=2))
     print(json.dumps({"wsdl_metadata_received":True,"unresolved_import_count":imports,
