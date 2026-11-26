@@ -342,4 +342,44 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertSentCount(15);
     }
 
+
+    public function test_sandbox_fault_preserves_only_encrypted_descriptions_without_retry(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        $this->account();
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function ($request) use ($f) {
+            $method=$request->header('SOAPAction')[0];
+            if ($method==='LoadInvoiceRequest') {
+                $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'load_status'=>'reserved_unknown']);
+                return Http::response('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>private outer message</faultstring><detail><RequestFault xmlns="http://tempuri.org/"><ERROR_CODE xmlns="">11047</ERROR_CODE><ERROR_SHORT_DES xmlns="">Invoice ID invalid</ERROR_SHORT_DES><ERROR_LONG_DES xmlns="">Serial issue; fixture-session; Password: secret</ERROR_LONG_DES><STACKTRACE xmlns="">private-stack</STACKTRACE></RequestFault></detail></s:Fault></s:Body></s:Envelope>',500);
+            }
+            $body=match($method) {
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$f::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$f::GB.'</GB><SERIALLIST><SERIAL>A01</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST></GetCompanyList>',
+                'CheckUserRequest'=>'<USER><IDENTIFIER>'.$f::IDENTIFIER.'</IDENTIFIER><UNIT>PK</UNIT><ALIAS>'.$f::PK.'</ALIAS></USER>',
+                'GetInvoiceStatusRequest','GetInvoiceRequest'=>'',
+                default=>throw new \RuntimeException('Unexpected SOAP operation'),
+            };
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $r=(new EdmTestClient)->runControlledSmoke('2026-11-26',hash('sha256',$f::xml('2026-11-26')),$f::CONFIRM);
+        $this->assertSame('Lookup: EDM_11047',$r['diagnostic']);
+        $this->assertSame(['number_or_series'],$r['fault_hints']);
+        $this->assertArrayNotHasKey('fault_detail_ciphertext',$r);
+        $stored=DB::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
+        $this->assertNotNull($stored->fault_detail_ciphertext);
+        $this->assertStringNotContainsString('Invoice ID invalid',$stored->fault_detail_ciphertext);
+        $decoded=json_decode(\Illuminate\Support\Facades\Crypt::decryptString($stored->fault_detail_ciphertext),true,512,JSON_THROW_ON_ERROR);
+        $this->assertSame('Invoice ID invalid',$decoded['ERROR_SHORT_DES']);
+        $this->assertStringContainsString('Serial issue',$decoded['ERROR_LONG_DES']);
+        $this->assertStringNotContainsString('fixture-session',json_encode($decoded));
+        $this->assertStringNotContainsString('secret',json_encode($decoded));
+        $this->assertStringNotContainsString('private-stack',json_encode($decoded));
+        $this->assertTrue((new EdmTestClient)->runControlledSmoke('2026-11-26',hash('sha256',$f::xml('2026-11-26')),$f::CONFIRM)['already_reserved']);
+        Http::assertSentCount(15);
+    }
 }

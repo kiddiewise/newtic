@@ -7,15 +7,16 @@ use DOMXPath;
 
 /**
  * Categorize documented REQUEST_ERRORType descriptions. Never return
- * or persist the provider's free text (it can contain a session ID,
- * personal details, internal paths or credentials). Hints are not causes.
+ * provider free text from ordinary lookup methods. Controlled LoadInvoice
+ * can retain a bounded encrypted private copy for operator diagnosis.
+ * Hints are not causes.
  */
 final class EdmFaultHints
 {
-    public static function inspect(DOMElement $fault): array
+    private static function descriptions(DOMElement $fault): array
     {
         $xp=new DOMXPath($fault->ownerDocument);
-        $text='';
+        $descriptions=[];
         foreach (['ERROR_SHORT_DES','ERROR_LONG_DES'] as $name) {
             $nodes=$xp->query('.//*[local-name()="'.$name.'"]',$fault);
             if ($nodes===false || $nodes->length!==1) continue;
@@ -26,8 +27,29 @@ final class EdmFaultHints
             }
             $value=trim($node->textContent);
             if (strlen($value)>16384) continue;
-            $text.=' '.$value;
+            if ($value!=='') $descriptions[$name]=$value;
         }
+        return $descriptions;
+    }
+
+    /** Keep only the two documented descriptions; never stacktrace, SOAP,
+     * transaction headers or session identifier fields. Encrypt before
+     * returning anything to the transport layer. No plaintext logs. */
+    public static function encryptedDetails(DOMElement $fault, #[\SensitiveParameter] string $session): ?string
+    {
+        $descriptions=self::descriptions($fault);
+        if (!$descriptions) return null;
+        foreach ($descriptions as &$text) {
+            if ($session!=='' && $session!=='0') $text=str_replace($session,'[REDACTED_SESSION]',$text);
+            $text=preg_replace('~(?i)(session[\s_-]*id|password|şifre|parola|authorization|bearer|user[\s_-]*name)\s*[:=]\s*[^;\r\n,]+~u','$1: [REDACTED]',$text)??'[REDACTED]';
+        }
+        unset($text);
+        return \Illuminate\Support\Facades\Crypt::encryptString(json_encode($descriptions,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE));
+    }
+
+    public static function inspect(DOMElement $fault): array
+    {
+        $text=implode(' ',self::descriptions($fault));
         if (trim($text)==='') return ['description_unavailable'];
         // Fixed vocabulary only; a match is a clue, not proof of root cause.
         $patterns=[

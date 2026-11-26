@@ -158,3 +158,34 @@ Artisan::command('edm:prepare-second-smoke {template} {--date=}',function () {
         return 1;
     }
 })->purpose('Prepare private second sandbox XML offline, never submit');
+
+
+// Only an SSH operator on the explicitly named staging site may export the
+// encrypted trial descriptions to a private, owner-readable local file.
+// Never include contents in CLI output or CI logs.
+Artisan::command('edm:private-fault-evidence {uuid}',function () {
+    try {
+        $uuid=(string)$this->argument('uuid');
+        if (rtrim((string)config('app.url'),'/')!==\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL
+            || !in_array($uuid,[\App\Services\Invoices\EdmSandboxSmokeFixture::UUID,\App\Services\Invoices\EdmSecondSandboxFixture::UUID],true)) {
+            throw new \DomainException('FAULT_SCOPE');
+        }
+        $row=\Illuminate\Support\Facades\DB::table('edm_sandbox_trials')->where('uuid',$uuid)->first();
+        if (!$row || !$row->fault_detail_ciphertext) { $this->line('FAULT_DETAILS_NOT_RECORDED'); return 1; }
+        $plain=\Illuminate\Support\Facades\Crypt::decryptString($row->fault_detail_ciphertext);
+        $dir=storage_path('app/private/edm-rehearsals');
+        if (!is_dir($dir) && !mkdir($dir,0700,true)) throw new \RuntimeException('FAULT_STORAGE');
+        $file=$dir.'/'.$uuid.'-fault-evidence.json';
+        $handle=fopen($file,'xb');
+        if (!$handle) throw new \RuntimeException('FAULT_FILE_EXISTS');
+        try {
+            chmod($file,0600);
+            if (fwrite($handle,$plain)!==strlen($plain)) throw new \RuntimeException('FAULT_WRITE');
+        } finally { fclose($handle); }
+        $this->line('FAULT_DETAILS_WRITTEN_TO_PRIVATE_STORAGE');
+        return 0;
+    } catch (\Throwable) {
+        $this->error('FAULT_EVIDENCE_UNAVAILABLE');
+        return 1;
+    }
+})->purpose('Export redacted EDM sandbox fault descriptions privately, never log plaintext');

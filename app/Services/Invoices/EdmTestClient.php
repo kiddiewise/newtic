@@ -270,7 +270,7 @@ final class EdmTestClient
         $hints=$result['fault_hints']??[];
         // Record the attempt immediately, before any further read operations.
         $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
-            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'fault_hints'=>json_encode($hints,JSON_THROW_ON_ERROR),'updated_at'=>now()]);
+            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'fault_hints'=>json_encode($hints,JSON_THROW_ON_ERROR),'fault_detail_ciphertext'=>$result['fault_detail_ciphertext']??null,'updated_at'=>now()]);
         $status='not_run'; $evidence='not_run';
         if ($currentAccount()) {
             $s=$this->invoiceStatus($account->username,$account->password,$f::UUID,$f::PROFILE);
@@ -374,6 +374,7 @@ final class EdmTestClient
         } catch (EdmLookupFailure $failure) {
             $result['diagnostic'] = $stage.': '.$failure->safeCode;
             if ($failure->hints) $result['fault_hints']=$failure->hints;
+            if ($failure->encryptedDetail!==null) $result['fault_detail_ciphertext']=$failure->encryptedDetail;
         } catch (\Illuminate\Http\Client\ConnectionException) {
             $result['diagnostic'] = $stage.': NETWORK_TIMEOUT_OR_CONNECTION';
         } catch (Throwable) {
@@ -461,7 +462,14 @@ final class EdmTestClient
         if ($fault !== false && $fault->length > 0) {
             $codes = $xpath->query('.//*[local-name()="ERROR_CODE"]',$fault->item(0));
             $code = $codes !== false && $codes->length === 1 ? trim($codes->item(0)->textContent) : '';
-            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT', EdmFaultHints::inspect($fault->item(0)));
+            $encrypted=null;
+            if ($method==='LoadInvoice') {
+                // Capture only encrypted description evidence for actual load
+                // faults, never the raw response or stack trace.
+                try { $encrypted=EdmFaultHints::encryptedDetails($fault->item(0),$session); }
+                catch (Throwable) { /* Preserve original provider fault code. */ }
+            }
+            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT', EdmFaultHints::inspect($fault->item(0)),$encrypted);
         }
         if (!$response->successful()) throw new EdmLookupFailure('HTTP_'.$response->status());
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
