@@ -143,6 +143,26 @@ class CheckoutOrdersTest extends TestCase
         \App\Support\InvoiceBuyerIdentifier::resolve($order);
     }
 
+    public function test_invoice_preview_is_private_read_only_and_shipping_rate_is_only_an_assumption(): void
+    {
+        $this->purchase($this->product())->assertRedirect()->assertSessionHasNoErrors();
+        $order = Order::firstOrFail();
+        $url=route('admin.orders.invoice-preview',$order);
+        \Illuminate\Support\Facades\Http::fake();
+        $this->get($url)->assertRedirect(route('admin.login'));
+        $this->actingAs(User::factory()->create())->get($url)->assertForbidden();
+        $this->actingAs($this->admin());
+        $this->get($url)->assertOk()->assertSee('Belge düzenlenmedi')->assertSee('Vergi hesabı eksik')->assertSee('579,90 ₺');
+        $reply=$this->get($url.'?shipping_rate=20')->assertOk()
+            ->assertSee('Seçilen kargo KDV oranı yalnızca varsayımdır.')
+            ->assertSee('483,25 ₺')->assertSee('96,65 ₺')->assertDontSee('Vergi hesabı eksik');
+        $this->assertStringContainsString('no-store',$reply->headers->get('Cache-Control'));
+        $this->get($url.'?shipping_rate[]=20')->assertStatus(422);
+        $this->assertSame(57990,$order->fresh()->total_cents);
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
     public function test_untracked_stock_can_be_ordered_without_decrement_or_cancel_restore(): void
     {
         $product = $this->product();
