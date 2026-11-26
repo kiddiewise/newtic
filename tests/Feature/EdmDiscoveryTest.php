@@ -48,7 +48,7 @@ final class EdmDiscoveryTest extends TestCase
     public function test_lookup_returns_only_active_matching_postboxes(): void
     {
         $this->sequence('CheckUser','<USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER><USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>GB</UNIT><ALIAS>urn:mail:gb@example.test</ALIAS></USER><USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:old@example.test</ALIAS><ALIAS_REMOVAL_TIME>2025-01-01</ALIAS_REMOVAL_TIME></USER>');
-        $this->assertSame(['status'=>'ok','data'=>['aliases'=>['urn:mail:pk@example.test']]],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
+        $this->assertSame(['status'=>'ok','data'=>['aliases'=>['urn:mail:pk@example.test'],'sender_aliases'=>['urn:mail:gb@example.test']]],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
         Http::assertSentCount(3);
         Http::assertSent(fn($r)=>$r->hasHeader('SOAPAction','CheckUserRequest') && str_contains($r->body(),'<USER><IDENTIFIER>1234567890</IDENTIFIER></USER>'));
     }
@@ -56,7 +56,25 @@ final class EdmDiscoveryTest extends TestCase
     public function test_mismatched_recipient_is_failure_not_empty_success(): void
     {
         $this->sequence('CheckUser','<USER><IDENTIFIER>0000000000</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER>');
-        $this->assertSame(['status'=>'failed','data'=>null],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
+        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: RESPONSE_INVALID_OR_CONNECTION'],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
+        Http::assertSentCount(3);
+    }
+
+    public function test_sender_only_and_unset_removal_date_are_distinguished(): void
+    {
+        $this->sequence('CheckUser','<USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>GB</UNIT><ALIAS>urn:mail:gb@example.test</ALIAS><ALIAS_REMOVAL_TIME>0001-01-01T00:00:00</ALIAS_REMOVAL_TIME></USER>');
+        $this->assertSame(['status'=>'ok','data'=>['aliases'=>[],'sender_aliases'=>['urn:mail:gb@example.test']]],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
+    }
+
+    public function test_http_soap_fault_returns_only_numeric_provider_code(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>Http::sequence()
+            ->push($this->reply('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+            ->push('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>private-secret</faultstring><detail><RequestFault><ERROR_CODE>2005</ERROR_CODE></RequestFault></detail></s:Fault></s:Body></s:Envelope>',500)
+            ->push($this->reply('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
+        $result=app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890');
+        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: EDM_2005'],$result);
         Http::assertSentCount(3);
     }
 

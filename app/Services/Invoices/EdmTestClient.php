@@ -64,24 +64,29 @@ final class EdmTestClient
             $this->validateIdentifier($identifier);
             $reply = $this->call('GetCompany',$session,['USER_NAME'=>$username,'PASSWORD'=>$password,'TAXNUMBER'=>$identifier]);
             $company = $reply->getElementsByTagName('GetCompanyList');
-            if ($company->length !== 1) throw new RuntimeException('Ambiguous company');
-            $row = $company->item(0);
-            if ($this->value($row,'VKN') !== $identifier) throw new RuntimeException('Company mismatch');
+            $matches = [];
+            foreach ($company as $candidate) {
+                if ($this->optionalValue($candidate,'VKN') === $identifier) $matches[] = $candidate;
+            }
+            if (count($matches) !== 1) throw new EdmLookupFailure($company->length === 0 ? 'COMPANY_EMPTY' : 'COMPANY_MISMATCH');
+            $row = $matches[0];
             $series = [];
+            $unreadableSeries = 0;
             foreach ($row->childNodes as $node) {
                 if (!$node instanceof DOMElement || !in_array($node->localName,['SERIALLİST','SERIALLIST'],true)) continue;
-                $code = $this->value($node,'SERIAL');
-                $year = $this->value($node,'YEAR');
-                $active = $this->value($node,'ACTIVEFLAG');
-                $archive = $this->value($node,'EARCHIVEFLAG');
-                $internet = $this->value($node,'INTERNETFLAG');
+                $code = $this->optionalValue($node,'SERIAL');
+                $year = $this->optionalValue($node,'YEAR');
+                $active = $this->optionalValue($node,'ACTIVEFLAG');
+                $archive = $this->optionalValue($node,'EARCHIVEFLAG');
+                $internet = $this->optionalValue($node,'INTERNETFLAG');
                 if (!preg_match('/^[A-Z0-9]{3}$/D',$code) || !preg_match('/^20[0-9]{2}$/D',$year)
                     || !in_array($active,['0','1'],true) || !in_array($archive,['0','1'],true) || !in_array($internet,['0','1'],true)) {
-                    throw new RuntimeException('Invalid series metadata');
+                    $unreadableSeries++;
+                    continue;
                 }
                 $series[] = ['code'=>$code,'year'=>(int)$year,'active'=>$active==='1','archive'=>$archive==='1','internet'=>$internet==='1'];
             }
-            return ['title'=>$this->value($row,'UNVAN'),'gb'=>$this->optionalValue($row,'GB'),'pk'=>$this->optionalValue($row,'PK'),'series'=>$series];
+            return ['title'=>$this->value($row,'UNVAN'),'gb'=>$this->optionalValue($row,'GB'),'pk'=>$this->optionalValue($row,'PK'),'series'=>$series,'unreadable_series'=>$unreadableSeries];
         });
     }
 
@@ -92,6 +97,7 @@ final class EdmTestClient
             $this->validateIdentifier($identifier);
             $reply = $this->call('CheckUser',$session,['USER'=>['IDENTIFIER'=>$identifier]]);
             $aliases = [];
+            $senderAliases = [];
             foreach ($reply->childNodes as $node) {
                 if (!$node instanceof DOMElement) continue;
                 if ($node->localName !== 'USER') throw new RuntimeException('Unexpected lookup content');
@@ -99,10 +105,12 @@ final class EdmTestClient
                 $unit = $this->value($node,'UNIT');
                 $alias = $this->value($node,'ALIAS');
                 if (!in_array($unit,['PK','GB'],true) || !preg_match('/^urn:mail:[^\s<>]{1,250}$/D',$alias)) throw new RuntimeException('Invalid alias');
-                if ($this->optionalValue($node,'ALIAS_REMOVAL_TIME') !== '') continue;
+                $removed = $this->optionalValue($node,'ALIAS_REMOVAL_TIME');
+                if ($removed !== '' && !preg_match('/^0001-01-01T00:00:00(?:\.0+)?(?:Z|[+-]00:00)?$/D',$removed)) continue;
                 if ($unit === 'PK') $aliases[$alias] = $alias;
+                if ($unit === 'GB') $senderAliases[$alias] = $alias;
             }
-            return ['aliases'=>array_values($aliases)];
+            return ['aliases'=>array_values($aliases),'sender_aliases'=>array_values($senderAliases)];
         });
     }
 
@@ -115,6 +123,7 @@ final class EdmTestClient
     {
         $session = null;
         $result = ['status'=>'failed','data'=>null];
+        $stage = 'Login';
         try {
             $reply = $this->call('Login','0',['USER_NAME'=>$username,'PASSWORD'=>$password]);
             $session = $this->value($reply,'SESSION_ID');
@@ -122,16 +131,19 @@ final class EdmTestClient
                 $session = null;
                 throw new RuntimeException('Invalid session');
             }
+            $stage = 'Lookup';
             $result = ['status'=>'ok','data'=>$operation($session)];
+        } catch (EdmLookupFailure $failure) {
+            $result['diagnostic'] = $stage.': '.$failure->safeCode;
         } catch (Throwable) {
-            // Never persist raw provider errors or personal identifiers.
+            $result['diagnostic'] = $stage.': RESPONSE_INVALID_OR_CONNECTION';
         } finally {
             if ($session !== null) {
                 try {
                     $reply = $this->call('Logout',$session);
                     if ($this->value($reply,'RETURN_CODE') !== '0') throw new RuntimeException('Logout failed');
                 } catch (Throwable) {
-                    $result = ['status'=>'logout_failed','data'=>null];
+                    if ($result['status'] === 'ok') $result = ['status'=>'logout_failed','data'=>null,'diagnostic'=>'Logout: NOT_CONFIRMED'];
                 }
             }
         }
@@ -179,7 +191,6 @@ final class EdmTestClient
             ->withHeaders(['SOAPAction'=>$method.'Request','Accept'=>'text/xml'])
             ->withBody($doc->saveXML(),'text/xml; charset=utf-8')
             ->post(self::ENDPOINT);
-        if (!$response->successful()) throw new RuntimeException('EDM HTTP failure');
         $xml = $response->body();
         if (strlen($xml)>1048576 || preg_match('/<!DOCTYPE|<!ENTITY/i',$xml)) throw new RuntimeException('Unsafe XML');
         $reply = new DOMDocument();
@@ -187,6 +198,13 @@ final class EdmTestClient
         $xpath = new DOMXPath($reply);
         $xpath->registerNamespace('s',self::SOAP);
         $xpath->registerNamespace('edm',self::SERVICE);
+        $fault = $xpath->query('/s:Envelope/s:Body/s:Fault');
+        if ($fault !== false && $fault->length > 0) {
+            $codes = $xpath->query('.//*[local-name()="ERROR_CODE"]',$fault->item(0));
+            $code = $codes !== false && $codes->length === 1 ? trim($codes->item(0)->textContent) : '';
+            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT');
+        }
+        if (!$response->successful()) throw new EdmLookupFailure('HTTP_'.$response->status());
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
         if ($nodes === false || $nodes->length !== 1 || $xpath->query('/s:Envelope/s:Body/s:Fault')->length !== 0) throw new RuntimeException('Unexpected SOAP response');
         return $nodes->item(0);
