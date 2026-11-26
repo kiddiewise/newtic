@@ -190,16 +190,24 @@ final class UblSaleCandidateTest extends TestCase
         $xml=$this->render($this->party());
         $draft=$this->draft();
         $cases=[
-            ['<cbc:ProfileID>TEMELFATURA</cbc:ProfileID>','<cbc:ProfileID>TICARIFATURA</cbc:ProfileID>'],
-            ['<cbc:LineCountNumeric>1</cbc:LineCountNumeric>','<cbc:LineCountNumeric>2</cbc:LineCountNumeric>'],
-            ['<cbc:PayableAmount currencyID="TRY">299.70</cbc:PayableAmount>','<cbc:PayableAmount currencyID="TRY">299.71</cbc:PayableAmount>'],
-            ['<cbc:TaxTypeCode>0015</cbc:TaxTypeCode>','<cbc:TaxTypeCode>0000</cbc:TaxTypeCode>'],
-            ['<cbc:PriceAmount currencyID="TRY">83.250000000</cbc:PriceAmount>','<cbc:PriceAmount currencyID="TRY">83.260000000</cbc:PriceAmount>'],
-            ['NOT_FOR_SUBMISSION','SUBMISSION_ALLOWED'],
+            ['//cbc:ProfileID','TICARIFATURA'],
+            ['//cbc:LineCountNumeric','2'],
+            ['//cac:LegalMonetaryTotal/cbc:PayableAmount','299.71'],
+            ['//cbc:TaxTypeCode','0000'],
+            ['//cac:Price/cbc:PriceAmount','83.260000000'],
+            ['//nwt:UnsignedCandidate','SUBMISSION_ALLOWED'],
         ];
-        foreach ($cases as [$from,$to]) {
-            $changed=str_replace($from,$to,$xml,$count);
-            $this->assertGreaterThan(0,$count);
+        foreach ($cases as [$path,$to]) {
+            $doc=new DOMDocument();
+            $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+            $xp=new DOMXPath($doc);
+            $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+            $xp->registerNamespace('nwt','urn:newtic:unsigned-candidate:1');
+            $nodes=$xp->query($path);
+            $this->assertGreaterThan(0,$nodes->length);
+            foreach ($nodes as $node) $node->textContent=$to;
+            $changed=$doc->saveXML();
             try {
                 (new \App\Services\Invoices\UblCandidatePreflight)->validate($changed,$draft->amounts,$draft->uuid,'TEMELFATURA');
                 $this->fail('Tampered XML accepted');
