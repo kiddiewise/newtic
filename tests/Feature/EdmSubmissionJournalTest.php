@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Services\Invoices\EdmSubmissionJournal;
 use App\Services\Invoices\EdmTestClient;
 use DomainException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -16,7 +15,12 @@ use Tests\TestCase;
 
 final class EdmSubmissionJournalTest extends TestCase
 {
-    use DatabaseMigrations;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Real commits are necessary; do not wrap tests in RefreshDatabase transactions.
+        $this->artisan('migrate:fresh')->assertExitCode(0);
+    }
 
     private function account(): EdmSetting
     {
@@ -143,4 +147,70 @@ final class EdmSubmissionJournalTest extends TestCase
         }
         Http::assertNothingSent();
     }
+
+    private function payload(InvoicePreparation $draft): string
+    {
+        // Minimal synthetic mapping fixture, NOT a valid fiscal document.
+        return '<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">'
+            .'<cbc:UUID>'.$draft->uuid.'</cbc:UUID><cbc:ProfileID>TEMELFATURA</cbc:ProfileID><cbc:InvoiceTypeCode>SATIS</cbc:InvoiceTypeCode><cbc:DocumentCurrencyCode>TRY</cbc:DocumentCurrencyCode><cbc:ID>ABC2009123456789</cbc:ID>'
+            .'<cac:AccountingSupplierParty><cac:Party><cac:PartyIdentification><cbc:ID>1234567890</cbc:ID></cac:PartyIdentification></cac:Party></cac:AccountingSupplierParty>'
+            .'<cac:AccountingCustomerParty><cac:Party><cac:PartyIdentification><cbc:ID>1234567891</cbc:ID></cac:PartyIdentification></cac:Party></cac:AccountingCustomerParty></Invoice>';
+    }
+
+    private function fixturePolicy(): \App\Services\Invoices\EdmSandboxLoadPolicy
+    {
+        return new class implements \App\Services\Invoices\EdmSandboxLoadPolicy {
+            public function authorize(InvoicePreparation $draft,EdmSetting $account,string $xml,string $profile,string $senderAlias,string $receiverAlias): void {}
+        };
+    }
+
+    public function test_load_transport_claims_before_call_and_ack_is_not_fiscal_success(): void
+    {
+        $draft=$this->draft();
+        $this->account();
+        $xml=$this->payload($draft);
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function ($request) use ($draft,$xml) {
+            $method=$request->header('SOAPAction')[0];
+            if ($method==='LoginRequest') return Http::response($this->soap('Login','<SESSION_ID>fixture-session</SESSION_ID>'));
+            if ($method==='LogoutRequest') return Http::response($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'));
+            $this->assertSame('LoadInvoiceRequest',$method);
+            $this->assertDatabaseHas('edm_submission_attempts',['uuid'=>$draft->uuid,'state'=>'outcome_unknown']);
+            $this->assertSame(0,DB::transactionLevel());
+            $this->assertStringContainsString(base64_encode($xml),$request->body());
+            $this->assertStringContainsString('<GENERATEINVOICEIDONLOAD>false</GENERATEINVOICEIDONLOAD>',$request->body());
+            return Http::response($this->soap('LoadInvoice','<INVOICE UUID="'.$draft->uuid.'"/><REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'));
+        }]);
+        $args=[$draft->id,$xml,'TEMELFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',$this->fixturePolicy(),new EdmSubmissionJournal()];
+        $result=(new EdmTestClient)->loadSandboxDraft(...$args);
+        $this->assertSame('draft_acknowledged',$result['load_status']);
+        $this->assertFalse($result['fiscal_success_confirmed']);
+        $this->assertDatabaseHas('edm_submission_attempts',['uuid'=>$draft->uuid,'last_load_result'=>'draft_acknowledged','state'=>'outcome_unknown']);
+        try {
+            (new EdmTestClient)->loadSandboxDraft(...$args);
+            $this->fail('Duplicate load accepted');
+        } catch (DomainException $e) {
+            $this->assertStringContainsString('Yeniden gönderilemez',$e->getMessage());
+        }
+        Http::assertSentCount(3);
+    }
+
+    public function test_load_policy_is_required_and_unsigned_marker_is_rejected(): void
+    {
+        Http::fake();
+        $draft=$this->draft();
+        $this->account();
+        $party=['identifier'=>'1234567890','name'=>'Test AŞ','address'=>'Örnek','district'=>'Örnek','city'=>'İzmir','tax_office'=>'Örnek'];
+        $xml=(new \App\Services\Invoices\UblSaleCandidate(new \App\Services\Invoices\InvoicePreparationXml))->render($draft,$party,$party,'TEMELFATURA','2026-11-26','TEST-1','2026-11-25');
+        try {
+            (new EdmTestClient)->loadSandboxDraft($draft->id,$xml,'TEMELFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',$this->fixturePolicy(),new EdmSubmissionJournal());
+            $this->fail('Unsigned candidate sent');
+        } catch (DomainException $e) {
+            $this->assertStringContainsString('teknik adayı',$e->getMessage());
+        }
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        Http::assertNothingSent();
+        $this->assertFalse(app()->bound(\App\Services\Invoices\EdmSandboxLoadPolicy::class));
+    }
+
 }

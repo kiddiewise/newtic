@@ -137,6 +137,20 @@ final class EdmSubmissionJournal
         },3);
     }
 
+    public function recordLoadObservation(int $attemptId,string $revision,bool $acknowledged): void
+    {
+        $this->outsideTransaction();
+        DB::transaction(function () use ($attemptId,$revision,$acknowledged) {
+            $current=EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
+            $row=EdmSubmissionAttempt::query()->lockForUpdate()->findOrFail($attemptId);
+            if (!$current || $current->revision!==$revision || $row->account_revision!==$revision) {
+                throw new DomainException('Eski EDM hesabının yükleme sonucu kaydedilmedi.');
+            }
+            if ($row->last_load_result!==null) throw new DomainException('Yükleme sonucu daha önce kaydedildi.');
+            $row->forceFill(['last_load_result'=>$acknowledged?'draft_acknowledged':'unconfirmed'])->save();
+        },3);
+    }
+
     private function allowed(mixed $value,array $allowed): string
     {
         return is_string($value)&&in_array($value,$allowed,true)?$value:'unknown';

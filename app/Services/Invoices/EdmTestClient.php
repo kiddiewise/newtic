@@ -155,6 +155,46 @@ final class EdmTestClient
         return $result;
     }
 
+
+    /**
+     * Draft loading only, on the hard-coded sandbox. No service binding for
+     * EdmSandboxLoadPolicy exists; current unsigned candidates always fail.
+     */
+    public function loadSandboxDraft(int $preparationId, #[\SensitiveParameter] string $xml, string $profile,
+        #[\SensitiveParameter] string $senderAlias, #[\SensitiveParameter] string $receiverAlias,
+        EdmSandboxLoadPolicy $policy, EdmSubmissionJournal $journal): array
+    {
+        $draft=\App\Models\InvoicePreparation::query()->findOrFail($preparationId);
+        $account=\App\Models\EdmSetting::query()->findOrFail(1);
+        if (!$account->configured() || !$account->revision || $account->probe_status!=='ok') {
+            throw new \DomainException('EDM test hesabı doğrulanmamış.');
+        }
+        $fields=EdmSandboxLoadPayload::fields($xml,$draft->uuid,$profile,$senderAlias,$receiverAlias);
+        // Required real policy is deliberately absent; no bool/env bypass.
+        $policy->authorize($draft,$account,$xml,$profile,$senderAlias,$receiverAlias);
+        $digest=hash('sha256',json_encode($fields,JSON_THROW_ON_ERROR));
+        $attempt=$journal->claim($draft->id,$profile,$digest,$account->revision);
+        $result=$this->read($account->username,$account->password,function ($session) use ($fields,$draft,$account) {
+            if (!\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->exists()) {
+                throw new EdmLookupFailure('LOAD_ACCOUNT_CHANGED');
+            }
+            $reply=$this->call('LoadInvoice',$session,$fields);
+            $returns=$reply->getElementsByTagName('REQUEST_RETURN');
+            $invoices=$reply->getElementsByTagName('INVOICE');
+            if ($returns->length!==1 || $this->value($returns->item(0),'RETURN_CODE')!=='0'
+                || $invoices->length!==1 || strtolower($invoices->item(0)->getAttribute('UUID'))!==strtolower($draft->uuid)) {
+                throw new EdmLookupFailure('LOAD_ACK_UNCONFIRMED');
+            }
+            return ['uuid'=>$draft->uuid,'draft_acknowledged'=>true];
+        });
+        $ack=$result['status']==='ok' && ($result['data']['draft_acknowledged']??false)===true;
+        $journal->recordLoadObservation($attempt->id,$account->revision,$ack);
+        // Acknowledgement is not issue, GIB delivery, or commercial acceptance.
+        return ['attempt_id'=>$attempt->id,'uuid'=>$attempt->uuid,
+            'load_status'=>$ack?'draft_acknowledged':'unconfirmed',
+            'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
+    }
+
     private function validateIdentifier(#[\SensitiveParameter] string $identifier): void
     {
         if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier === '11111111111') throw new RuntimeException('Invalid lookup identifier');
@@ -202,7 +242,7 @@ final class EdmTestClient
 
     private function call(string $method, #[\SensitiveParameter] string $session, #[\SensitiveParameter] array $fields = []): DOMElement
     {
-        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus'], true)) throw new RuntimeException('Unsupported operation');
+        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus','LoadInvoice'], true)) throw new RuntimeException('Unsupported operation');
         $doc = new DOMDocument('1.0','UTF-8');
         $envelope = $doc->appendChild($doc->createElementNS(self::SOAP,'s:Envelope'));
         $envelope->appendChild($doc->createElementNS(self::SOAP,'s:Header'));
@@ -221,7 +261,19 @@ final class EdmTestClient
             'COMPRESSED'=>'N',
         ] as $key=>$value) $this->append($doc,$header,$key,$value);
         foreach ($fields as $key=>$value) {
-            if ($method==='GetInvoiceStatus' && $key==='INVOICE') {
+            if ($method==='LoadInvoice' && $key==='INVOICE') {
+                $invoice=$operation->appendChild($doc->createElement('INVOICE'));
+                $invoice->setAttribute('TRXID','0');
+                $invoice->setAttribute('UUID',$value['UUID']);
+                $invoice->setAttribute('ID',$value['ID']);
+                $invoiceHeader=$invoice->appendChild($doc->createElement('HEADER'));
+                foreach ($value['HEADER'] as $name=>$text) $this->append($doc,$invoiceHeader,$name,$text);
+                $this->append($doc,$invoice,'CONTENT',$value['CONTENT']);
+            } elseif ($method==='LoadInvoice' && in_array($key,['SENDER','RECEIVER'],true)) {
+                $party=$operation->appendChild($doc->createElement($key));
+                $party->setAttribute('vkn',$value['vkn']);
+                $party->setAttribute('alias',$value['alias']);
+            } elseif ($method==='GetInvoiceStatus' && $key==='INVOICE') {
                 $invoice=$operation->appendChild($doc->createElement('INVOICE'));
                 $invoice->setAttribute('TRXID','0');
                 $invoice->setAttribute('UUID',$value['UUID']);

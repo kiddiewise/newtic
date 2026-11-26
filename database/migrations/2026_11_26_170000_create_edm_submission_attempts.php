@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('profile',20);
             $table->char('payload_sha256',64);
             $table->string('state',32)->default('outcome_unknown');
+            $table->string('last_load_result',32)->nullable();
             $table->unsignedBigInteger('lookup_generation')->default(0);
             $table->string('last_lookup_state',32)->nullable();
             $table->string('last_portal_state',32)->nullable();
