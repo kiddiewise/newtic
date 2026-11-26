@@ -7,7 +7,7 @@
 <div class="admin-dashboard-grid">
   <section class="admin-panel">
     <div class="admin-editor-heading"><span class="admin-editor-heading-icon"><x-admin-icon name="settings"/></span><div><h2>EDM</h2><p>Test hesabı</p></div></div>
-    <p>Bu aşamada yalnızca bağlantı ve kontör sorgusu yapılabilir. Canlı fatura gönderimi ve otomatik faturalandırma kapalıdır.</p>
+    <p>Bu aşamada bağlantı, kontör, firma ve mükellefiyet sorguları yapılabilir. Canlı fatura gönderimi ve otomatik faturalandırma kapalıdır.</p>
     <form method="POST" action="{{ route('admin.edm.update') }}" class="admin-form">
       @csrf @method('PATCH')
       <label>Test kullanıcı adı<input name="edm_username" type="text" required maxlength="255" autocomplete="off" placeholder="{{ $configured ? 'Kaydedildi — değiştirmek için yeniden girin' : 'EDM test kullanıcı adı' }}"></label>
@@ -26,4 +26,48 @@
     <details><summary>Teknik servis bilgisi</summary><p style="overflow-wrap:anywhere">{{ $endpoint }}</p><p>SOAP 1.1 · Login / CheckCounter / Logout</p></details>
   </section>
 </div>
+<section class="admin-panel" style="margin-top:16px">
+  <div class="admin-panel-title"><h2>Firma ve fatura serileri</h2></div>
+  <p>EDM test hesabınıza bağlı firmanın VKN veya TCKN bilgisini girin. Yalnızca sorgulama yapılır.</p>
+  <form method="POST" action="{{ route('admin.edm.lookup') }}" class="admin-form">
+    @csrf <input type="hidden" name="kind" value="company">
+    <label>Firma vergi / kimlik numarası<input name="edm_identifier" type="text" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <button type="submit" class="admin-secondary" @disabled($status !== 'ok')>Firma ve serileri sorgula</button>
+  </form>
+  @if($lookupKind === 'company')
+    @if($lookup['status'] === 'ok')
+      <div role="status" class="admin-detail-line"><span>Firma</span><strong>{{ $lookup['data']['title'] }}</strong></div>
+      <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>Gönderici birim (GB)</span><strong>{{ $lookup['data']['gb'] ?: 'Tanımlı değil' }}</strong></div>
+      <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>Posta kutusu (PK)</span><strong>{{ $lookup['data']['pk'] ?: 'Tanımlı değil' }}</strong></div>
+      <h3>Belge serileri</h3>
+      @forelse($lookup['data']['series'] as $series)
+        <div class="admin-detail-line"><span>{{ $series['code'] }} · {{ $series['year'] }}<small> · {{ $series['archive'] ? 'e-Arşiv' : 'e-Fatura' }}{{ $series['internet'] ? ' / İnternet satışı' : '' }}</small></span><strong>{{ $series['active'] ? 'Aktif' : 'Pasif' }}</strong></div>
+      @empty <p>Seri kaydı dönmedi. EDM panelindeki seri tanımlarını kontrol edin.</p> @endforelse
+      <p>Seriler yalnızca listelenir; numara tahsisi yapılmaz.</p>
+    @else
+      <p role="alert">Firma sorgusu doğrulanamadı. Hesap yetkisini ve firma numarasını kontrol edin.</p>
+    @endif
+  @endif
+</section>
+<section class="admin-panel" style="margin-top:16px">
+  <div class="admin-panel-title"><h2>e-Fatura mükellef sorgulama</h2></div>
+  <p>Test ortamında alıcının posta kutusu etiketlerini sorgulayın. Sonuçlar kaydedilmez.</p>
+  <form method="POST" action="{{ route('admin.edm.lookup') }}" class="admin-form">
+    @csrf <input type="hidden" name="kind" value="taxpayer">
+    <label>Alıcı vergi / kimlik numarası<input name="edm_identifier" type="text" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <button type="submit" class="admin-secondary" @disabled($status !== 'ok')>Mükellefi sorgula</button>
+  </form>
+  @if($lookupKind === 'taxpayer')
+    @if($lookup['status'] === 'ok')
+      @if(count($lookup['data']['aliases']))
+        <p role="status">e-Fatura posta kutusu bulundu (test).</p>
+        @foreach($lookup['data']['aliases'] as $alias)<div class="admin-detail-line" style="overflow-wrap:anywhere">{{ $alias }}</div>@endforeach
+      @else
+        <p role="status">Aktif posta kutusu bulunamadı (test). Bu sonuç tek başına e-Arşiv fatura kesme yetkisi vermez.</p>
+      @endif
+    @else
+      <p role="alert">Mükellef sorgusu doğrulanamadı. Belge türü belirlenmedi.</p>
+    @endif
+  @endif
+</section>
 @endsection

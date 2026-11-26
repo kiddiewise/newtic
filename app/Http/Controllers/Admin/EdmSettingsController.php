@@ -17,14 +17,45 @@ final class EdmSettingsController extends Controller
 {
     public function edit(): Response
     {
+        return $this->renderSettings();
+    }
+
+    private function renderSettings(?array $lookup = null, ?string $kind = null): Response
+    {
         $settings = EdmSetting::query()->find(1);
         return response()->view('admin.edm-settings', [
+            'lookup'=>$lookup,'lookupKind'=>$kind,
             'configured'=>$settings?->configured() ?? false,
             'status'=>$settings?->probe_status,
             'counter'=>$settings?->counter_left,
             'checkedAt'=>$settings?->checked_at,
             'endpoint'=>EdmTestClient::ENDPOINT,
         ])->header('Cache-Control','private, no-store, max-age=0');
+    }
+
+    public function lookup(Request $request, EdmTestClient $client): Response|RedirectResponse
+    {
+        $validator = Validator::make($request->only('edm_identifier','kind'), [
+            'edm_identifier'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111'],
+            'kind'=>['required','in:company,taxpayer'],
+        ]);
+        if ($validator->fails()) return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Geçerli bir 10 veya 11 haneli vergi/kimlik numarası girin.']);
+        $data = $validator->validated();
+        $settings = EdmSetting::query()->find(1);
+        if (!$settings?->configured() || !$settings->revision || $settings->probe_status !== 'ok') return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Önce test bağlantısını doğrulayın.']);
+        try {
+            $result = $data['kind'] === 'company'
+                ? $client->company($settings->username,$settings->password,$data['edm_identifier'])
+                : $client->taxpayer($settings->username,$settings->password,$data['edm_identifier']);
+        } catch (Throwable) {
+            $result = ['status'=>'failed','data'=>null];
+        }
+        if (!EdmSetting::query()->whereKey(1)->where('revision',$settings->revision)->exists()) {
+            return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Hesap değişti. Sorgulamayı yeniden yapın.']);
+        }
+        // Return a private, non-cacheable result directly. No session flash,
+        // database persistence or query-string recipient identifier.
+        return $this->renderSettings($result,$data['kind']);
     }
 
     public function update(Request $request): RedirectResponse
