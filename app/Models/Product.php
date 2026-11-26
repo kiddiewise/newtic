@@ -12,12 +12,15 @@ class Product extends Model
 {
     protected $fillable = [
         'primary_category_id', 'sku', 'name', 'slug', 'description',
-        'price', 'compare_at_price', 'stock_quantity', 'tracks_stock', 'image_path', 'is_active', 'is_demo', 'option_label',
+        'price', 'compare_at_price', 'vat_rate', 'stock_quantity', 'tracks_stock', 'image_path', 'is_active', 'is_demo', 'option_label',
         'short_description', 'weight_kg', 'dimensions_cm', 'seo_title', 'seo_description', 'seo_focus_keyword', 'seo_noindex',
         'google_brand', 'gtin', 'mpn', 'requires_customer_photos',
     ];
 
+    protected $attributes = ['vat_rate' => 20];
+
     protected $casts = [
+        'vat_rate' => 'integer',
         'price' => 'decimal:2',
         'compare_at_price' => 'decimal:2',
         'stock_quantity' => 'integer',

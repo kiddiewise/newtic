@@ -74,6 +74,15 @@
     <label><input type="radio" name="invoice_type" value="individual" @checked($currentType === 'individual')> Bireysel</label>
     <label><input type="radio" name="invoice_type" value="corporate" @checked($currentType === 'corporate')> Kurumsal</label>
   </div>
+  @if(request()->routeIs('checkout.index'))
+    <div class="checkout-field-grid checkout-individual-fields" data-individual-fields @if($currentType !== 'individual') hidden @endif>
+      <label class="checkout-field is-full"><span>T.C. kimlik numarası (isteğe bağlı)</span>
+        <input type="text" name="billing_tckn" maxlength="11" minlength="11" inputmode="numeric" pattern="[0-9]{11}" autocomplete="off" placeholder="11 haneli T.C. kimlik numaranız" aria-invalid="{{ $errors->has('billing_tckn') ? 'true' : 'false' }}" aria-describedby="billing-tckn-hint{{ $errors->has('billing_tckn') ? ' checkout-error-billing_tckn' : '' }}">
+        <small class="checkout-field-hint" id="billing-tckn-hint">Yalnızca faturalandırma amacıyla kullanılır. Boş bırakabilirsiniz.</small>
+        @error('billing_tckn')<small class="checkout-field-error" id="checkout-error-billing_tckn">{{ $message }}</small>@enderror
+      </label>
+    </div>
+  @endif
   <div class="checkout-field-grid checkout-corporate-fields" data-corporate-fields @if($currentType !== 'corporate') hidden @endif>
     <label class="checkout-field is-full"><span>Şirket ünvanı *</span>
       <input type="text" name="company_title" aria-invalid="{{ $errors->has('company_title') ? 'true' : 'false' }}" @error('company_title') aria-describedby="checkout-error-company_title" @enderror maxlength="200" placeholder="Şirketin ticari ünvanı" value="{{ old('company_title', $prefill?->company_title) }}">

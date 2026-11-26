@@ -111,6 +111,38 @@ class CheckoutOrdersTest extends TestCase
             ->assertDontSee('checkout-success-mark">✓</div>', false);
     }
 
+    public function test_optional_invoice_identity_is_encrypted_and_vat_is_snapshotted(): void
+    {
+        $product = $this->product();
+        $token = $this->ready($product);
+        $this->get(route('checkout.index'))->assertOk()->assertSee('name="billing_tckn"',false);
+        $this->post(route('checkout.place'), $this->address(['checkout_token'=>$token,'billing_tckn'=>'11111111111']))
+            ->assertSessionHasErrors('billing_tckn');
+        $this->assertNull(session()->getOldInput('billing_tckn'));
+        $this->assertDatabaseCount('orders',0);
+        $this->post(route('checkout.place'), $this->address(['checkout_token'=>$token,'billing_tckn'=>'12345678950']))
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $order = Order::firstOrFail();
+        $this->assertSame('12345678950',$order->billing_tckn);
+        $this->assertNotSame('12345678950',$order->getRawOriginal('billing_tckn'));
+        $this->assertArrayNotHasKey('billing_tckn',$order->toArray());
+        $this->assertSame(20,$order->items()->firstOrFail()->vat_rate);
+        $this->assertSame(57990,$order->total_cents);
+        $product->update(['vat_rate'=>10]);
+        $this->assertSame(20,$order->items()->firstOrFail()->vat_rate);
+        $this->assertSame('12345678950',\App\Support\InvoiceBuyerIdentifier::resolve($order));
+    }
+
+    public function test_anonymous_invoice_placeholder_requires_explicit_archive_eligibility(): void
+    {
+        $this->purchase($this->product())->assertRedirect()->assertSessionHasNoErrors();
+        $order = Order::firstOrFail();
+        $this->assertNull($order->billing_tckn);
+        $this->assertSame('11111111111',\App\Support\InvoiceBuyerIdentifier::resolve($order,true));
+        $this->expectException(\DomainException::class);
+        \App\Support\InvoiceBuyerIdentifier::resolve($order);
+    }
+
     public function test_untracked_stock_can_be_ordered_without_decrement_or_cancel_restore(): void
     {
         $product = $this->product();
