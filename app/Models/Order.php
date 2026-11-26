@@ -12,12 +12,15 @@ class Order extends Model
     protected $fillable = [
         'order_number','checkout_token','user_id','customer_name','customer_email',
         'phone','address_label','city','district','street_address','invoice_type',
-        'company_title','tax_office','tax_number','order_note','payment_method','status',
+        'company_title','tax_office','tax_number','billing_tckn','order_note','payment_method','status',
         'subtotal_cents','shipping_cents','total_cents','currency','is_test','placed_at',
         'carrier_name','tracking_number','tracking_url','legal_acknowledgement',
     ];
 
+    protected $hidden = ['billing_tckn'];
+
     protected $casts = [
+        'billing_tckn' => 'encrypted',
         'subtotal_cents' => 'integer',
         'shipping_cents' => 'integer',
         'total_cents' => 'integer',

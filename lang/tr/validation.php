@@ -57,6 +57,8 @@ return [
         'company_title' => 'Şirket ünvanı',
         'tax_office' => 'Vergi dairesi',
         'tax_number' => 'Vergi numarası',
+        'billing_tckn' => 'T.C. kimlik numarası',
+        'vat_rate' => 'KDV oranı',
         'order_note' => 'Sipariş notu',
         'account_password' => 'Hesap şifresi',
         'checkout_token' => 'Sipariş oturumu',

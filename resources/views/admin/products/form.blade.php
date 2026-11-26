@@ -76,6 +76,7 @@
       <div class="admin-form admin-editor-fields">
         <label>Normal fiyat (₺) *<input type="number" data-price-regular name="regular_price" inputmode="decimal" required min="0.01" max="9999999999.99" step="0.01" value="{{ old('regular_price', $product->compare_at_price ?? $product->price) }}" placeholder="Örn. 159.90"></label>
         <label>İndirimli fiyat (₺)<input type="number" data-price-sale name="sale_price" inputmode="decimal" min="0.01" step="0.01" value="{{ old('sale_price', $product->compare_at_price ? $product->price : '') }}" placeholder="İsteğe bağlı"></label>
+        <label>KDV oranı (fiyatlara dahil)<select name="vat_rate">@foreach([1,10,20] as $rate)<option value="{{ $rate }}" @selected((int)old('vat_rate', $product->vat_rate ?? 20)===$rate)>%{{ $rate }}</option>@endforeach</select><small>Ürünün geçerli oranını seçin. Satış fiyatı değişmez.</small></label>
         <label>Stok adedi *<input type="number" name="stock_quantity" inputmode="numeric" required min="0" max="100000000" value="{{ old('stock_quantity', $product->stock_quantity ?? 0) }}"></label>
         <label class="admin-editor-toggle admin-editor-wide"><input type="hidden" name="tracks_stock" value="0"><input type="checkbox" name="tracks_stock" value="1" @checked(old('tracks_stock', $product->exists ? $product->tracks_stock : true))>
           <span class="admin-toggle-track" aria-hidden="true"></span><span><strong>Stok adedini takip et</strong><small>Kapalıysa ürün stokta kabul edilir ve siparişlerde sayaç azalmaz.</small></span>

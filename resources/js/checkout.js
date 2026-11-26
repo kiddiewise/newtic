@@ -10,7 +10,13 @@ document.querySelectorAll('[data-checkout-invoice]').forEach((section) => {
   const refresh = () => {
     const corporate = section.querySelector('input[name="invoice_type"]:checked')?.value === 'corporate';
     fields.hidden = !corporate;
-    inputs.forEach((field) => { field.required = corporate; });
+    inputs.forEach((field) => { field.required = corporate; field.disabled = !corporate; });
+    const individual = section.querySelector('[data-individual-fields]');
+    if (individual) {
+      individual.hidden = corporate;
+      const identity = individual.querySelector('input');
+      if (identity) { identity.disabled = corporate; if (corporate) identity.value = ''; }
+    }
   };
   section.querySelectorAll('input[name="invoice_type"]').forEach((radio) => radio.addEventListener('change', refresh));
   refresh();
@@ -34,6 +40,8 @@ if (addressPicker) {
         if (name === 'phone') input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
+    const identity = form.elements.namedItem('billing_tckn');
+    if (identity) identity.value = '';
     const type = option?.dataset.invoiceType || 'individual';
     const radio = form.querySelector('input[name="invoice_type"][value="' + type + '"]');
     if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }

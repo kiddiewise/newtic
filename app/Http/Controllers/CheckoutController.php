@@ -93,6 +93,7 @@ class CheckoutController extends Controller
         $membershipTerms = $request->boolean('create_account')
             ? MerchantLegalPage::published('uyelik-sozlesmesi') : null;
         $validated = $request->validate(array_merge(AddressValidation::rules(), [
+            'billing_tckn' => ['exclude_unless:invoice_type,individual','nullable','bail','string', new \App\Rules\TurkishIdentityNumber],
             'email' => ['required', 'email', 'max:255'],
             'order_note' => ['nullable', 'string', 'max:2000'],
             'checkout_token' => ['required', 'uuid'],
@@ -285,6 +286,7 @@ class CheckoutController extends Controller
                 'company_title' => $address['company_title'] ?? null,
                 'tax_office' => $address['tax_office'] ?? null,
                 'tax_number' => $address['tax_number'] ?? null,
+                'billing_tckn' => $validated['billing_tckn'] ?? null,
                 'order_note' => $validated['order_note'] ?? null,
                 'payment_method' => $method,
                 'status' => 'pending_payment',
@@ -310,6 +312,7 @@ class CheckoutController extends Controller
                     'quantity' => $quantity,
                     'unit_price_cents' => $unitCents,
                     'line_total_cents' => $unitCents * $quantity,
+                    'vat_rate' => $product->vat_rate,
                 ]);
                 $customerPhotos = CartCustomerPhotos::copyToOrder(
                     $request, $line['key'], $order->id, $orderItem->id
