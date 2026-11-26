@@ -78,6 +78,55 @@ final class UblSaleCandidateTest extends TestCase
         $this->assertSame('1234567890',$details['gonderiBilgileri']['gonderiTasiyan']['tuzelKisi']['VKN']);
     }
 
+    private function archive(array $buyer,bool $allow=false,string $series='INT'): array
+    {
+        return (new UblSaleCandidate(new InvoicePreparationXml))->archive(
+            $this->draft(),$this->party(),$buyer,'2026-11-26','TEST-1','2026-11-25',
+            'https://shop.example.test','ODEMEARACISI','Test aracı',
+            new DateTimeImmutable('2026-11-25T10:00:00+03:00'),new DateTimeImmutable('2026-11-26T10:00:00+03:00'),
+            '1234567890','Test taşıyıcı',$series,$allow);
+    }
+
+    public function test_archive_candidate_keeps_uuid_metadata_and_submission_disabled(): void
+    {
+        $buyer=array_replace($this->party(),['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı','email'=>'buyer@example.test']);
+        $result=$this->archive($buyer,true);
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($result['xml'],LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $this->assertSame('EARSIVFATURA',$xp->evaluate('string(/i:Invoice/cbc:ProfileID)'));
+        $this->assertSame('11111111111',$xp->evaluate('string(/i:Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID)'));
+        $this->assertSame($this->draft()->uuid,$xp->evaluate('string(/i:Invoice/cbc:UUID)'));
+        $this->assertSame('299.70',$xp->evaluate('string(/i:Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount)'));
+        $this->assertSame('INT',$result['requested_series']);
+        $this->assertFalse($result['submission_allowed']);
+        $this->assertTrue($result['header']['EARCHIVE']);
+        $this->assertTrue($result['header']['INTERNETSALES']);
+        $this->assertStringContainsString('Test taşıyıcı',$result['xml']);
+        $this->assertStringContainsString('buyer@example.test',$result['xml']);
+    }
+
+    public function test_archive_fallback_requires_explicit_eligibility(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->archive(array_replace($this->party(),['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı','email'=>'buyer@example.test']));
+    }
+
+    public function test_archive_rejects_reserved_series(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->archive($this->party()+['email'=>'buyer@example.test'],false,'GIB');
+    }
+
+    public function test_archive_rejects_missing_electronic_delivery_address(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->archive($this->party());
+    }
+
     public function test_missing_intermediary_is_rejected(): void
     {
         $this->expectException(DomainException::class);
