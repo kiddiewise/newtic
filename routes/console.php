@@ -128,3 +128,33 @@ Artisan::command('edm:smoke-load {date} {sha256} {confirmation}', function () {
         return 1;
     }
 })->purpose('One isolated unsigned EDM sandbox draft; never sends or allocates a fiscal number');
+
+
+// Offline-only: read the exact supplier or official GIB design from a local
+// operator-supplied file. No credentials, HTTP, database changes or fiscal number.
+// Save only in private storage, refusing overwrite of an existing candidate.
+Artisan::command('edm:prepare-second-smoke {template} {--date=}',function () {
+    try {
+        $path=(string)$this->argument('template');
+        if (!is_file($path) || filesize($path)>512*1024) throw new \DomainException('SECOND_XSLT_INVALID');
+        $template=file_get_contents($path);
+        if (!is_string($template)) throw new \DomainException('SECOND_XSLT_INVALID');
+        $date=(string)($this->option('date')?:now('Europe/Istanbul')->toDateString());
+        $r=\App\Services\Invoices\EdmSecondSandboxFixture::prepare($date,$template);
+        $dir=storage_path('app/private/edm-rehearsals');
+        if (!is_dir($dir) && !mkdir($dir,0700,true)) throw new \RuntimeException('SECOND_STORAGE_UNAVAILABLE');
+        $file=$dir.'/'.$r['uuid'].'-'.$r['xml_sha256'].'.xml';
+        $handle=fopen($file,'xb');
+        if (!$handle) throw new \RuntimeException('SECOND_FILE_ALREADY_EXISTS');
+        try {
+            chmod($file,0600);
+            if (fwrite($handle,$r['xml'])!==strlen($r['xml'])) throw new \RuntimeException('SECOND_WRITE_FAILED');
+        } finally { fclose($handle); }
+        unset($r['xml'],$r['fields']);
+        $this->line(json_encode($r,JSON_THROW_ON_ERROR));
+        return 0;
+    } catch (\Throwable $e) {
+        $this->error('SECOND_PREPARATION_FAILED');
+        return 1;
+    }
+})->purpose('Prepare private second sandbox XML offline, never submit');

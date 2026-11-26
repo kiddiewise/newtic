@@ -90,7 +90,7 @@ final class EdmDiscoveryTest extends TestCase
             ->push('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>private-secret</faultstring><detail><RequestFault><ERROR_CODE>2005</ERROR_CODE></RequestFault></detail></s:Fault></s:Body></s:Envelope>',500)
             ->push($this->reply('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
         $result=app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890');
-        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: EDM_2005'],$result);
+        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: EDM_2005','fault_hints'=>['description_unavailable']],$result);
         Http::assertSentCount(3);
     }
 

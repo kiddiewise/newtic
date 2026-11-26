@@ -40,6 +40,9 @@ jobs:
           schema="$RUNNER_TEMP/gib/UBLTR_1.2.1_Paketi/xsdrt/maindoc/UBL-Invoice-2.1.xsd"
           test -s "$schema"
           printf 'NEWTIC_GIB_XSD=%s\n' "$schema" >> "$GITHUB_ENV"
+          template="$RUNNER_TEMP/gib/UBLTR_1.2.1_Paketi/xml/general.xslt"
+          printf '%s  %s\n' '8b3a2551e2dbf0375567de09d504d2b6741fe8881a59f0dbce47bddcfd693620' "$template" | sha256sum -c -
+          printf 'NEWTIC_EDM_SECOND_XSLT=%s\n' "$template" >> "$GITHUB_ENV"
       - name: Install locked PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Validate actual PHP-generated XML against GIB XSD
@@ -48,6 +51,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           test -s "$NEWTIC_GIB_XSD"
-          vendor/bin/phpunit --filter 'test_candidates_against_supplied_gib_xsd_when_configured|test_preflight_rejects_changed_candidate_fields|test_edm_empty_extension_rehearsal_is_not_a_final_gib_xsd_document|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception' --fail-on-skipped --fail-on-warning
+          vendor/bin/phpunit --filter 'test_candidates_against_supplied_gib_xsd_when_configured|test_preflight_rejects_changed_candidate_fields|test_edm_empty_extension_rehearsal_is_not_a_final_gib_xsd_document|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception|test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting' --fail-on-skipped --fail-on-warning
       - name: Scope of validation
         run: echo 'XSD only. No Schematron, signature, fiscal approval, or EDM transmission.'
