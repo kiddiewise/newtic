@@ -1,0 +1,47 @@
+name: GIB exact-package PHP XSD validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/Services/Invoices/**'
+      - 'tests/Unit/UblSaleCandidateTest.php'
+      - '.github/workflows/gib-xsd.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  gib-xsd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, libxml, mbstring, pdo_sqlite, bcmath, gd
+          coverage: none
+      - name: Download exact merchant-reviewed GIB package
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 90 \
+            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/UBL-TR1.2.1_Paketi.zip' \
+            -o "$RUNNER_TEMP/gib.zip"
+          printf '%s  %s\n' 'cb583941b8a8a239c59902c6bc455c0f75d48f2bb81d7d3fbe1ae827f981f7db' "$RUNNER_TEMP/gib.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/gib.zip" -d "$RUNNER_TEMP/gib"
+          schema="$RUNNER_TEMP/gib/UBLTR_1.2.1_Paketi/xsdrt/maindoc/UBL-Invoice-2.1.xsd"
+          test -s "$schema"
+          printf 'NEWTIC_GIB_XSD=%s\n' "$schema" >> "$GITHUB_ENV"
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Validate actual PHP-generated XML against GIB XSD
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          php artisan key:generate
+          test -s "$NEWTIC_GIB_XSD"
+          vendor/bin/phpunit --filter test_candidates_against_supplied_gib_xsd_when_configured --fail-on-skipped --fail-on-warning
+      - name: Scope of validation
+        run: echo 'XSD only. No Schematron, signature, fiscal approval, or EDM transmission.'

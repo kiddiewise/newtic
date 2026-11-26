@@ -51,11 +51,12 @@ final class InvoicePreparationXml
     public function render(InvoicePreparation $preparation): string
     {
         $a=$preparation->amounts;
-        if (!is_array($a) || !$a['complete'] || $a['net_cents']+$a['tax_cents']!==$a['gross_cents']
-            || $a['gross_cents']!==$preparation->gross_cents
+        if (!is_array($a) || !is_string($preparation->snapshot_hash)
+            || ($a['gross_cents']??null)!==$preparation->gross_cents
             || !hash_equals($preparation->snapshot_hash,hash('sha256',json_encode($a,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)))) {
             throw new DomainException('Taslak tutar kaydı doğrulanamadı.');
         }
+        InvoiceSnapshotRules::validate($a);
         $doc=new DOMDocument('1.0','UTF-8');
         $doc->formatOutput=true;
         $root=$doc->appendChild($doc->createElementNS(self::NWT,'nwt:InvoicePreparation'));
