@@ -61,6 +61,7 @@
   </form>
   @if($lookupKind === 'taxpayer')
     @if($lookup['status'] === 'ok')
+      @if(($lookup['data']['unverified_records'] ?? 0)>0)<p role="alert">Bazı kayıtlar doğrulanamadı ({{ $lookup['data']['unverified_records'] }}). Otomatik belge türü seçimi yapılmayacaktır.</p>@endif
       @if(count($lookup['data']['aliases']))
         <p role="status">e-Fatura posta kutusu bulundu (test).</p>
         @foreach($lookup['data']['aliases'] as $alias)<div class="admin-detail-line" style="overflow-wrap:anywhere">{{ $alias }}</div>@endforeach

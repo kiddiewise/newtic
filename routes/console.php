@@ -72,3 +72,40 @@ Schedule::command('customer-photos:prune-drafts --days=7 --limit=200')
 
 // Bounded Web Push delivery; no long-lived worker is required on shared hosting.
 Schedule::command('admin:push-orders')->everyMinute()->withoutOverlapping(3);
+
+
+// Explicit operator-only sandbox diagnostic; no scheduler, no invoice mutation.
+// Only fixed status codes and counts are printed, never secrets or raw SOAP.
+Artisan::command('edm:diagnose {identifier}', function () {
+    $identifier = (string) $this->argument('identifier');
+    if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier==='11111111111') {
+        $this->error('INVALID_IDENTIFIER');
+        return 1;
+    }
+    try {
+        $settings = \App\Models\EdmSetting::query()->find(1);
+        if (!$settings?->configured() || $settings->probe_status!=='ok') {
+            $this->line('EDM_DIAGNOSTIC_ACCOUNT_NOT_VERIFIED');
+            return 1;
+        }
+        $client = app(\App\Services\Invoices\EdmTestClient::class);
+        foreach (['company','taxpayer'] as $kind) {
+            $result = $client->{$kind}($settings->username,$settings->password,$identifier);
+            $data = $result['data'] ?? [];
+            $diagnostic = $result['diagnostic'] ?? '';
+            $safe = preg_match('/^(?:Login|Lookup|Logout): [A-Za-z0-9_]+$/D',$diagnostic) ? $diagnostic : '';
+            $this->line(json_encode([
+                'operation'=>$kind,'status'=>$result['status'],'diagnostic'=>$safe,
+                'series_count'=>count($data['series'] ?? []),
+                'unreadable_series'=>(int)($data['unreadable_series'] ?? 0),
+                'pk_count'=>count($data['aliases'] ?? []),
+                'gb_count'=>count($data['sender_aliases'] ?? []),
+                'unverified_records'=>(int)($data['unverified_records'] ?? 0),
+            ],JSON_THROW_ON_ERROR));
+        }
+        return 0;
+    } catch (\Throwable) {
+        $this->error('EDM_DIAGNOSTIC_UNAVAILABLE');
+        return 1;
+    }
+})->purpose('Read-only EDM test discovery diagnostic with redacted results');

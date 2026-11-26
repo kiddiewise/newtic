@@ -56,8 +56,23 @@ final class EdmDiscoveryTest extends TestCase
     public function test_mismatched_recipient_is_failure_not_empty_success(): void
     {
         $this->sequence('CheckUser','<USER><IDENTIFIER>0000000000</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER>');
-        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: RESPONSE_INVALID_OR_CONNECTION'],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
+        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: CHECKUSER_IDENTIFIER_MISMATCH'],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
         Http::assertSentCount(3);
+    }
+
+    public function test_valid_matching_alias_is_preserved_when_other_rows_are_unusable(): void
+    {
+        $this->sequence('CheckUser','<USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER><USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>OTHER</UNIT><ALIAS>invalid</ALIAS></USER>');
+        $result=app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890');
+        $this->assertSame('ok',$result['status']);
+        $this->assertSame(['urn:mail:pk@example.test'],$result['data']['aliases']);
+        $this->assertSame(1,$result['data']['unverified_records']);
+    }
+
+    public function test_invalid_alias_is_not_interpreted_as_unregistered(): void
+    {
+        $this->sequence('CheckUser','<USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>PK</UNIT><ALIAS>invalid</ALIAS></USER>');
+        $this->assertSame(['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: CHECKUSER_NO_VALID_ALIAS'],app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890'));
     }
 
     public function test_sender_only_and_unset_removal_date_are_distinguished(): void
