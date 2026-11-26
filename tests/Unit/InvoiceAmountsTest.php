@@ -7,7 +7,7 @@ use App\Models\OrderItem;
 use App\Services\Invoices\InvoiceAmounts;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 final class InvoiceAmountsTest extends TestCase
 {

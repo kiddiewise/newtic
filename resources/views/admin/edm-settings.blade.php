@@ -43,9 +43,11 @@
       @forelse($lookup['data']['series'] as $series)
         <div class="admin-detail-line"><span>{{ $series['code'] }} · {{ $series['year'] }}<small> · {{ $series['archive'] ? 'e-Arşiv' : 'e-Fatura' }}{{ $series['internet'] ? ' / İnternet satışı' : '' }}</small></span><strong>{{ $series['active'] ? 'Aktif' : 'Pasif' }}</strong></div>
       @empty <p>Seri kaydı dönmedi. EDM panelindeki seri tanımlarını kontrol edin.</p> @endforelse
+      @if(($lookup['data']['unreadable_series'] ?? 0)>0)<p role="alert">{{ $lookup['data']['unreadable_series'] }} seri kaydı doğrulanamadı. Bunlar kullanılmayacaktır.</p>@endif
       <p>Seriler yalnızca listelenir; numara tahsisi yapılmaz.</p>
     @else
-      <p role="alert">Firma sorgusu doğrulanamadı. Hesap yetkisini ve firma numarasını kontrol edin.</p>
+      <p role="alert">Firma sorgusu doğrulanamadı. Bu sonuç firmanın bulunmadığını kesinleştirmez.</p>
+      @if(isset($lookup['diagnostic']))<p>Teknik sonuç: <code>{{ $lookup['diagnostic'] }}</code></p>@endif
     @endif
   @endif
 </section>
@@ -62,11 +64,15 @@
       @if(count($lookup['data']['aliases']))
         <p role="status">e-Fatura posta kutusu bulundu (test).</p>
         @foreach($lookup['data']['aliases'] as $alias)<div class="admin-detail-line" style="overflow-wrap:anywhere">{{ $alias }}</div>@endforeach
+      @elseif(count($lookup['data']['sender_aliases'] ?? []))
+        <p role="status">Gönderici birim bulundu; aktif alıcı posta kutusu bulunamadı (test). Bu sonuç e-Arşiv kararı değildir.</p>
+        @foreach($lookup['data']['sender_aliases'] as $alias)<div class="admin-detail-line" style="overflow-wrap:anywhere">{{ $alias }}</div>@endforeach
       @else
         <p role="status">Aktif posta kutusu bulunamadı (test). Bu sonuç tek başına e-Arşiv fatura kesme yetkisi vermez.</p>
       @endif
     @else
       <p role="alert">Mükellef sorgusu doğrulanamadı. Belge türü belirlenmedi.</p>
+      @if(isset($lookup['diagnostic']))<p>Teknik sonuç: <code>{{ $lookup['diagnostic'] }}</code></p>@endif
     @endif
   @endif
 </section>
