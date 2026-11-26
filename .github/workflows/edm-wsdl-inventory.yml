@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/edm-wsdl-inventory.yml'
       - 'tools/edm_wsdl_inventory.py'
+      - 'tools/test_edm_wsdl_inventory.py'
 
 permissions:
   contents: read
@@ -17,6 +18,8 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
+      - name: Test local schema inspection
+        run: python3 tools/test_edm_wsdl_inventory.py
       - name: Fetch public sandbox WSDL only
         shell: bash
         run: |
