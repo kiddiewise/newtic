@@ -162,6 +162,27 @@ jobs:
         run: php artisan view:cache
       - name: Run tests
         run: php artisan test
+      - name: Validate exact one-shot EDM sandbox payload before staging
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-smoke]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-lxml libsaxonhe-java
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 120 --max-filesize 104857600 \
+            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/e-FaturaPaketi%20%2829%29.zip' -o "$RUNNER_TEMP/edm-smoke-gib.zip"
+          printf '%s  %s\n' '12901476cd424fd65c779a4fb44cee798f9921ce55b003f8a076c936ddf8b583' "$RUNNER_TEMP/edm-smoke-gib.zip" | sha256sum -c -
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 90 \
+            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/UBL-TR1.2.1_Paketi.zip' -o "$RUNNER_TEMP/edm-smoke-xsd.zip"
+          printf '%s  %s\n' 'cb583941b8a8a239c59902c6bc455c0f75d48f2bb81d7d3fbe1ae827f981f7db' "$RUNNER_TEMP/edm-smoke-xsd.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/edm-smoke-xsd.zip" -d "$RUNNER_TEMP/edm-smoke-xsd"
+          export NEWTIC_GIB_XSD="$RUNNER_TEMP/edm-smoke-xsd/UBLTR_1.2.1_Paketi/xsdrt/maindoc/UBL-Invoice-2.1.xsd"
+          export NEWTIC_EDM_SMOKE_DATE="$(TZ=Europe/Istanbul date +%F)"
+          export NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/edm-smoke-candidates"
+          mkdir -m 700 "$NEWTIC_GIB_CANDIDATES"
+          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception' --fail-on-skipped --fail-on-warning
+          sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/edm-smoke-gib.zip" "$NEWTIC_GIB_CANDIDATES" "$RUNNER_TEMP/edm-smoke-rules"
+          printf 'NEWTIC_SMOKE_DATE=%s\n' "$NEWTIC_EDM_SMOKE_DATE" >> "$GITHUB_ENV"
+          printf 'NEWTIC_SMOKE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_CONTROLLED_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
       - name: End-to-end blank MySQL first install with Hostinger PHP exec disabled
         run: |
           set -euo pipefail
@@ -283,27 +304,6 @@ jobs:
             newtic-customer-install.zip.sha256
           if-no-files-found: error
           retention-days: 90
-      - name: Validate exact one-shot EDM sandbox payload before staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-smoke]') && !contains(github.event.head_commit.message, '[package-only]')
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y python3-lxml libsaxonhe-java
-          curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 120 --max-filesize 104857600 \
-            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/e-FaturaPaketi%20%2829%29.zip' -o "$RUNNER_TEMP/edm-smoke-gib.zip"
-          printf '%s  %s\n' '12901476cd424fd65c779a4fb44cee798f9921ce55b003f8a076c936ddf8b583' "$RUNNER_TEMP/edm-smoke-gib.zip" | sha256sum -c -
-          curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 90 \
-            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/UBL-TR1.2.1_Paketi.zip' -o "$RUNNER_TEMP/edm-smoke-xsd.zip"
-          printf '%s  %s\n' 'cb583941b8a8a239c59902c6bc455c0f75d48f2bb81d7d3fbe1ae827f981f7db' "$RUNNER_TEMP/edm-smoke-xsd.zip" | sha256sum -c -
-          unzip -q "$RUNNER_TEMP/edm-smoke-xsd.zip" -d "$RUNNER_TEMP/edm-smoke-xsd"
-          export NEWTIC_GIB_XSD="$RUNNER_TEMP/edm-smoke-xsd/UBLTR_1.2.1_Paketi/xsdrt/maindoc/UBL-Invoice-2.1.xsd"
-          export NEWTIC_EDM_SMOKE_DATE="$(TZ=Europe/Istanbul date +%F)"
-          export NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/edm-smoke-candidates"
-          mkdir -m 700 "$NEWTIC_GIB_CANDIDATES"
-          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception' --fail-on-skipped --fail-on-warning
-          sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/edm-smoke-gib.zip" "$NEWTIC_GIB_CANDIDATES" "$RUNNER_TEMP/edm-smoke-rules"
-          printf 'NEWTIC_SMOKE_DATE=%s\n' "$NEWTIC_EDM_SMOKE_DATE" >> "$GITHUB_ENV"
-          printf 'NEWTIC_SMOKE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_CONTROLLED_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
       - name: Package verified frontend for staging
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |
