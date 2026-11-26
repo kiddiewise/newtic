@@ -84,6 +84,18 @@ final class UblCandidatePreflight
 
     public function validate(string $xml, array $snapshot, string $uuid, string $profile, bool $anonymousArchivePermitted = false): void
     {
+        $this->validateDocument($xml,$snapshot,$uuid,$profile,$anonymousArchivePermitted,false);
+    }
+
+    /** Narrow NEWTIC ordinary sale provider-draft check. No signature or GIB approval. */
+    public function validateProviderDraft(#[\SensitiveParameter] string $xml, #[\SensitiveParameter] array $snapshot, string $uuid, string $profile): void
+    {
+        $this->require(in_array($profile,['TEMELFATURA','TICARIFATURA'],true),'PROVIDER_PROFILE');
+        $this->validateDocument($xml,$snapshot,$uuid,$profile,false,true);
+    }
+
+    private function validateDocument(#[\SensitiveParameter] string $xml, #[\SensitiveParameter] array $snapshot, string $uuid, string $profile, bool $anonymousArchivePermitted, bool $providerDraft): void
+    {
         InvoiceSnapshotRules::validate($snapshot);
         $this->require(in_array($profile, ['TEMELFATURA','TICARIFATURA','EARSIVFATURA'], true), 'PROFILE');
         $this->require(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iD', $uuid) === 1, 'UUID');
@@ -105,13 +117,25 @@ final class UblCandidatePreflight
         $xp->registerNamespace('nwt', 'urn:newtic:unsigned-candidate:1');
         foreach (['UBLVersionID'=>'2.1','CustomizationID'=>'TR1.2','ProfileID'=>$profile,
             'InvoiceTypeCode'=>'SATIS','DocumentCurrencyCode'=>'TRY','UUID'=>$uuid,
-            'ID'=>UblSaleCandidate::EDM_SERIAL_SENTINEL,'CopyIndicator'=>'false',
+            'CopyIndicator'=>'false',
             'LineCountNumeric'=>(string)count($snapshot['lines'])] as $field => $value) {
             $this->eq($xp, 'cbc:'.$field, $value, $root);
         }
-        $this->eq($xp, 'ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/nwt:UnsignedCandidate', 'NOT_FOR_SUBMISSION', $root);
-        $this->eq($xp, 'cac:Signature/cac:DigitalSignatureAttachment/cac:ExternalReference/cbc:URI', '#NEWTIC_UNSIGNED_TEST_ONLY', $root);
-        $this->require($xp->query('//*[namespace-uri()="http://www.w3.org/2000/09/xmldsig#" and local-name()="Signature"]')->length === 0, 'UNEXPECTED_SIGNATURE');
+        if ($providerDraft) {
+            $id=$this->one($xp,'cbc:ID',$root)->textContent;
+            $this->require(preg_match('/^[A-Z0-9]{3}[0-9]{13}$/D',$id)===1,'PROVIDER_ID');
+            $this->require($xp->query('//*[namespace-uri()="urn:newtic:unsigned-candidate:1"]')->length===0
+                && !str_contains($xml,'NEWTIC_UNSIGNED_TEST_ONLY') && !str_contains($xml,'NOT_FOR_SUBMISSION')
+                && !str_contains($xml,'RESMÎ BELGE DEĞİLDİR'),'TECHNICAL_MARKER');
+            // Restrict to the existing ordinary VAT-inclusive sale model.
+            // Discounts/charges/withholding/prepayments require separate allocation logic.
+            $this->require($xp->query('//cac:AllowanceCharge|//cac:WithholdingTaxTotal|//cac:PrepaidPayment|//cbc:PrepaidAmount|//cbc:PayableRoundingAmount|//cbc:AllowanceTotalAmount|//cbc:ChargeTotalAmount')->length===0,'UNSUPPORTED_ADJUSTMENT');
+        } else {
+            $this->eq($xp,'cbc:ID',UblSaleCandidate::EDM_SERIAL_SENTINEL,$root);
+            $this->eq($xp, 'ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/nwt:UnsignedCandidate', 'NOT_FOR_SUBMISSION', $root);
+            $this->eq($xp, 'cac:Signature/cac:DigitalSignatureAttachment/cac:ExternalReference/cbc:URI', '#NEWTIC_UNSIGNED_TEST_ONLY', $root);
+            $this->require($xp->query('//*[namespace-uri()="http://www.w3.org/2000/09/xmldsig#" and local-name()="Signature"]')->length === 0, 'UNEXPECTED_SIGNATURE');
+        }
         $seller = $this->party($xp, $this->one($xp, 'cac:AccountingSupplierParty/cac:Party', $root), false);
         $this->party($xp, $this->one($xp, 'cac:AccountingCustomerParty/cac:Party', $root), $profile === 'EARSIVFATURA' && $anonymousArchivePermitted);
         $this->eq($xp, 'cac:Signature/cbc:ID', $seller, $root);

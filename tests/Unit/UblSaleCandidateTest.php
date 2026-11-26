@@ -265,4 +265,33 @@ final class UblSaleCandidateTest extends TestCase
         (new \App\Services\Invoices\EdmLoadInvoiceRehearsal)->build($archive['xml'],$draft->amounts,$draft->uuid,'EARSIVFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26'));
     }
 
+
+    public function test_provider_draft_preflight_blocks_existing_unsigned_candidate(): void
+    {
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\UblCandidatePreflight)->validateProviderDraft(
+            $this->render($this->party()),$this->draft()->amounts,$this->draft()->uuid,'TEMELFATURA');
+    }
+
+    public function test_provider_draft_preflight_checks_exact_monetary_snapshot(): void
+    {
+        // Synthetic final-shaped XML only; never a real signed invoice.
+        $xml=$this->render($this->party());
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xp->registerNamespace('nwt','urn:newtic:unsigned-candidate:1');
+        foreach ($xp->query('//nwt:UnsignedCandidate') as $node) $node->parentNode->removeChild($node);
+        foreach ($xp->query('//cbc:Note') as $node) $node->textContent='Synthetic fixture only';
+        foreach ($xp->query('//cac:Signature//cbc:URI') as $node) $node->textContent='#fixture-not-a-signature';
+        $validator=new \App\Services\Invoices\UblCandidatePreflight;
+        $draft=$this->draft();
+        $validator->validateProviderDraft($doc->saveXML(),$draft->amounts,$draft->uuid,'TEMELFATURA');
+        $xp->query('//cac:LegalMonetaryTotal/cbc:PayableAmount')->item(0)->textContent='299.71';
+        $this->expectException(DomainException::class);
+        $validator->validateProviderDraft($doc->saveXML(),$draft->amounts,$draft->uuid,'TEMELFATURA');
+    }
+
 }
