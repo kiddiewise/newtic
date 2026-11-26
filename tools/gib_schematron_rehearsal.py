@@ -48,19 +48,23 @@ def preserve_rule_namespaces(generated, *rule_trees):
     """
     old = generated.getroot()
     namespaces = dict(old.nsmap)
+    # sch:ns defines the XPath static context. XML namespace declarations
+    # on the schema document itself are a different context (e.g. ef).
+    # Import only explicit XPath declarations; never override a conflicting
+    # generated binding or silently guess an undeclared prefix.
+    declared = {}
     for tree in rule_trees:
-        declared = {p: uri for p, uri in tree.getroot().nsmap.items() if p}
         for ns in tree.xpath("//s:ns", namespaces={"s": SCH}):
             prefix, uri = ns.get("prefix"), ns.get("uri")
             if not prefix or not uri:
-                raise ValueError("Invalid official namespace declaration")
+                raise ValueError("Invalid official XPath namespace declaration")
             if prefix in declared and declared[prefix] != uri:
-                raise ValueError("Conflicting source namespace declaration")
+                raise ValueError("Conflicting official XPath namespace: " + prefix)
             declared[prefix] = uri
-        for prefix, uri in declared.items():
-            if prefix in namespaces and namespaces[prefix] != uri:
-                raise ValueError("Conflicting generated namespace: " + prefix)
-            namespaces[prefix] = uri
+    for prefix, uri in declared.items():
+        if prefix in namespaces and namespaces[prefix] != uri:
+            raise ValueError("Conflicting generated XPath namespace: " + prefix)
+        namespaces[prefix] = uri
     # The official rules use xs:date() and castable as xs:date. Check
     # against the XML Schema namespace, never guess a conflicting URI.
     if namespaces.get("xs") != "http://www.w3.org/2001/XMLSchema":
@@ -135,7 +139,7 @@ def main(zip_path, candidates, work):
     expanded = isoschematron.iso_abstract_expand(included)
     generated = isoschematron.iso_svrl_for_xslt1(expanded)
     stylesheet = work / "validator.xsl"
-    fixed_root = preserve_rule_namespaces(generated, main_rules, common)
+    fixed_root = preserve_rule_namespaces(generated, expanded)
     stylesheet.write_bytes(etree.tostring(fixed_root, encoding="UTF-8", xml_declaration=True))
     restored = parse(stylesheet).getroot()
     if restored.nsmap.get("xs") != "http://www.w3.org/2001/XMLSchema":

@@ -8,6 +8,7 @@ on:
       - 'app/Services/Invoices/**'
       - 'tests/Unit/UblSaleCandidateTest.php'
       - 'tools/gib_schematron_rehearsal.py'
+      - 'tools/test_gib_schematron_rehearsal.py'
       - '.github/workflows/gib-schematron-rehearsal.yml'
 
 permissions:
@@ -29,6 +30,8 @@ jobs:
           composer install --no-interaction --prefer-dist --no-progress
           sudo apt-get update -qq
           sudo apt-get install -y python3-lxml libsaxonhe-java
+      - name: Verify namespace regression cases
+        run: /usr/bin/python3 tools/test_gib_schematron_rehearsal.py
       - name: Download pinned official package
         run: |
           set -euo pipefail
