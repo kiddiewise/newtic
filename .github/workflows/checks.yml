@@ -354,6 +354,13 @@ jobs:
             fi
             sleep 7
           done
+      - name: EDM sandbox discovery diagnostic on staging (explicit release only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-diagnostic]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          set -euo pipefail
+          # Public EDM test-firm identifier supplied by the merchant; no secrets in the workflow.
+          # The deployed application uses its existing encrypted test account and prints only counts/codes.
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 'cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic" && timeout 90 php artisan edm:diagnose 3230512384 --no-ansi' || echo "EDM diagnostic unavailable; verify in admin"
       - name: Verify storefront, admin login and compiled admin stylesheet
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |

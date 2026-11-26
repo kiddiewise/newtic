@@ -98,19 +98,36 @@ final class EdmTestClient
             $reply = $this->call('CheckUser',$session,['USER'=>['IDENTIFIER'=>$identifier]]);
             $aliases = [];
             $senderAliases = [];
+            $warnings = 0;
+            $matched = 0;
+            $rows = [];
             foreach ($reply->childNodes as $node) {
                 if (!$node instanceof DOMElement) continue;
-                if ($node->localName !== 'USER') throw new RuntimeException('Unexpected lookup content');
-                if ($this->value($node,'IDENTIFIER') !== $identifier) throw new RuntimeException('Recipient mismatch');
-                $unit = $this->value($node,'UNIT');
-                $alias = $this->value($node,'ALIAS');
-                if (!in_array($unit,['PK','GB'],true) || !preg_match('/^urn:mail:[^\s<>]{1,250}$/D',$alias)) throw new RuntimeException('Invalid alias');
+                if ($node->localName === 'USER') {
+                    $rows[] = $node;
+                } elseif ($node->localName === 'REQUEST_RETURN') {
+                    if ($this->value($node,'RETURN_CODE') !== '0') throw new EdmLookupFailure('CHECKUSER_RETURN_FAILED');
+                } else {
+                    throw new EdmLookupFailure('CHECKUSER_UNEXPECTED_RESPONSE_ELEMENT');
+                }
+            }
+            foreach ($rows as $node) {
+                $id = $this->optionalValue($node,'IDENTIFIER');
+                if ($id !== $identifier) { $warnings++; continue; }
+                $matched++;
+                $unit = strtoupper($this->optionalValue($node,'UNIT'));
+                $alias = $this->optionalValue($node,'ALIAS');
                 $removed = $this->optionalValue($node,'ALIAS_REMOVAL_TIME');
                 if ($removed !== '' && !preg_match('/^0001-01-01T00:00:00(?:\.0+)?(?:Z|[+-]00:00)?$/D',$removed)) continue;
+                if (!in_array($unit,['PK','GB'],true) || !preg_match('/^urn:mail:[^\s<>]{1,250}$/Di',$alias)) { $warnings++; continue; }
                 if ($unit === 'PK') $aliases[$alias] = $alias;
                 if ($unit === 'GB') $senderAliases[$alias] = $alias;
             }
-            return ['aliases'=>array_values($aliases),'sender_aliases'=>array_values($senderAliases)];
+            if ($rows && !$matched) throw new EdmLookupFailure('CHECKUSER_IDENTIFIER_MISMATCH');
+            if ($warnings && !$aliases && !$senderAliases) throw new EdmLookupFailure('CHECKUSER_NO_VALID_ALIAS');
+            $data = ['aliases'=>array_values($aliases),'sender_aliases'=>array_values($senderAliases)];
+            if ($warnings) $data['unverified_records'] = $warnings;
+            return $data;
         });
     }
 
@@ -135,8 +152,10 @@ final class EdmTestClient
             $result = ['status'=>'ok','data'=>$operation($session)];
         } catch (EdmLookupFailure $failure) {
             $result['diagnostic'] = $stage.': '.$failure->safeCode;
+        } catch (\Illuminate\Http\Client\ConnectionException) {
+            $result['diagnostic'] = $stage.': NETWORK_TIMEOUT_OR_CONNECTION';
         } catch (Throwable) {
-            $result['diagnostic'] = $stage.': RESPONSE_INVALID_OR_CONNECTION';
+            $result['diagnostic'] = $stage.': RESPONSE_PROCESSING_FAILED';
         } finally {
             if ($session !== null) {
                 try {
@@ -192,9 +211,11 @@ final class EdmTestClient
             ->withBody($doc->saveXML(),'text/xml; charset=utf-8')
             ->post(self::ENDPOINT);
         $xml = $response->body();
-        if (strlen($xml)>1048576 || preg_match('/<!DOCTYPE|<!ENTITY/i',$xml)) throw new RuntimeException('Unsafe XML');
+        if (strlen($xml)>4194304) throw new EdmLookupFailure('RESPONSE_TOO_LARGE');
+        if (preg_match('/<!DOCTYPE|<!ENTITY/i',$xml)) throw new EdmLookupFailure('UNSAFE_XML');
+        if (trim($xml)==='') throw new EdmLookupFailure('EMPTY_HTTP_'.$response->status());
         $reply = new DOMDocument();
-        if (!@$reply->loadXML($xml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING) || $reply->doctype) throw new RuntimeException('Invalid XML');
+        if (!@$reply->loadXML($xml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING) || $reply->doctype) throw new EdmLookupFailure('NON_XML_HTTP_'.$response->status());
         $xpath = new DOMXPath($reply);
         $xpath->registerNamespace('s',self::SOAP);
         $xpath->registerNamespace('edm',self::SERVICE);
@@ -206,7 +227,7 @@ final class EdmTestClient
         }
         if (!$response->successful()) throw new EdmLookupFailure('HTTP_'.$response->status());
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
-        if ($nodes === false || $nodes->length !== 1 || $xpath->query('/s:Envelope/s:Body/s:Fault')->length !== 0) throw new RuntimeException('Unexpected SOAP response');
+        if ($nodes === false || $nodes->length !== 1 || $xpath->query('/s:Envelope/s:Body/s:Fault')->length !== 0) throw new EdmLookupFailure('UNEXPECTED_SOAP_'.$method.'_RESPONSE');
         return $nodes->item(0);
     }
 
@@ -219,7 +240,7 @@ final class EdmTestClient
     private function value(DOMElement $element, string $name): string
     {
         $nodes = $element->getElementsByTagName($name);
-        if ($nodes->length !== 1) throw new RuntimeException('Missing EDM field');
+        if ($nodes->length !== 1) throw new EdmLookupFailure('FIELD_'.$name.($nodes->length===0 ? '_MISSING' : '_AMBIGUOUS'));
         return trim($nodes->item(0)->textContent);
     }
 }

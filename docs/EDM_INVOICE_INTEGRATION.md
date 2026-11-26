@@ -21,3 +21,6 @@ Integer-kurus VAT-inclusive line arithmetic, half-up net rounding, gross minus n
 
 ## v1.0.36 — discovery diagnostics and preview test bootstrap
 Retain numeric SOAP fault codes even on HTTP 500; never display raw faults. Distinguish sender-only results, accept the unset minimum date convention, select a unique matching company and flag unreadable series rather than treating them as absent. No invoice routing or sending. Bootstrap Laravel for monetary preview tests using Eloquent models. Actual EDM discovery response still needs administrator verification; no claim that the provider fault has been reproduced.
+
+## v1.0.37 — sandbox discovery troubleshooting
+Official CheckUser SOAP example confirms the existing request and direct USER list. Preserve matching valid records when other rows are unverified; explicitly distinguish unknown record formats, invalid aliases, mismatched identifiers, network failure, HTTP/non-XML failures, and missing fields. Never route invoices from partial data. Add operator-only read-only diagnostic with safe counts/codes; explicit release marker permits a staging-only SSH check using the already saved encrypted test account. No recurring calls, raw response output, invoice submission, or production endpoint. Real test outcome must be read from the diagnostic run; fixture tests are not evidence of provider acceptance.
