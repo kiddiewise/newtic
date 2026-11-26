@@ -46,7 +46,8 @@ if (cartSheet) {
     cartSheet.inert = false;
     cartSheet.setAttribute('aria-hidden', 'false');
     cartSheet.setAttribute('role', 'dialog');
-    cartSheet.setAttribute('aria-modal', 'true');
+    // The persistent bottom checkout link remains available outside the sheet.
+    cartSheet.setAttribute('aria-modal', 'false');
     openers.forEach((button) => button.setAttribute('aria-expanded', 'true'));
     closeButton?.focus({ preventScroll: true });
   };
@@ -74,7 +75,10 @@ if (cartSheet) {
       close();
     }
     if (event.key === 'Tab') {
-      const tabbables = [...cartSheet.querySelectorAll('button:not(:disabled),a[href]')].filter((element) => element.getClientRects().length > 0);
+      const bottom = document.querySelector('.cart-mobile-bottom');
+      const tabbables = [...cartSheet.querySelectorAll('button:not(:disabled),a[href]'),
+        ...(bottom?.querySelectorAll('button:not(:disabled),a[href]') || [])]
+        .filter((element) => element.getClientRects().length > 0);
       if (tabbables.length === 0) return;
       if (event.shiftKey && document.activeElement === tabbables[0]) {
         event.preventDefault();

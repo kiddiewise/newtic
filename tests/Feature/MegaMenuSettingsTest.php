@@ -63,6 +63,11 @@ class MegaMenuSettingsTest extends TestCase
         $this->assertStringNotContainsString('https://youtube.com/@polariskursun', $html);
         $this->assertStringNotContainsString('https://facebook.com/polariskursun', $html);
         $this->assertStringContainsString('https://x.com/polariskursun', $html);
+        $this->assertStringContainsString('data-footer-social="instagram"', $html);
+        $this->assertStringContainsString('data-footer-social="x"', $html);
+        $this->assertStringNotContainsString('data-footer-social="youtube"', $html);
+        $this->assertStringNotContainsString('data-footer-social="facebook"', $html);
+        $this->assertStringNotContainsString('Alışveriş Bilgileri', $html);
         $this->assertStringContainsString('https://wa.me/905462629002?text=Merhaba%2C%20bilgi%20alabilir%20miyim%3F', $html);
         $this->assertStringContainsString('POLARIS • TÜRKİYE', $html);
 
@@ -70,6 +75,7 @@ class MegaMenuSettingsTest extends TestCase
             ->assertSessionHasNoErrors();
         $html = $this->get('/')->assertOk()->getContent();
         $this->assertStringNotContainsString('mega-social-grid', $html);
+        $this->assertStringNotContainsString('class="legal-footer-social"', $html);
         $this->assertStringNotContainsString('class="mega-whatsapp"', $html);
     }
 
