@@ -56,6 +56,7 @@
       ['label' => 'Blog & Rehber', 'name' => 'admin.blog.posts.index', 'active' => 'admin.blog.*', 'icon' => 'layers'],
       ['label' => 'Duyurular', 'name' => 'admin.announcements.index', 'active' => 'admin.announcements.*', 'icon' => 'mail'],
       ['label' => 'Logolar ve Görünüm', 'name' => 'admin.appearance.edit', 'active' => 'admin.appearance.*', 'icon' => 'image'],
+      ['label' => 'Fatura Yönetimi', 'name' => 'admin.invoices.index', 'active' => 'admin.invoices.*', 'icon' => 'file-text'],
       ['label' => 'Fatura Entegrasyonları', 'name' => 'admin.edm.edit', 'active' => 'admin.edm.*', 'icon' => 'settings'],
       ['label' => 'PAYTR Ödeme Ayarları', 'name' => 'admin.paytr-settings.edit', 'active' => 'admin.paytr-settings.*', 'icon' => 'settings'],
       ['label' => 'Google Merchant', 'name' => 'admin.google-merchant.edit', 'active' => 'admin.google-merchant.*', 'icon' => 'globe'],
