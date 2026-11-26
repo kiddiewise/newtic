@@ -120,12 +120,11 @@ final class EdmDiscoveryTest extends TestCase
             $this->post(route('admin.edm.lookup'),$payload)->assertRedirect(route('admin.edm.edit'))->assertSessionHasErrors('edm');
         }
         $blocked=$this->post(route('admin.edm.lookup'),$payload)
-            ->assertStatus(303)->assertRedirect(route('admin.edm.edit'))
-            ->assertSessionHasErrors('edm');
+            ->assertStatus(429)->assertSee('İşlem sınırına ulaşıldı.')->assertSee('Ayarlar sayfasına dön');
         $this->assertGreaterThan(0,(int)$blocked->headers->get('Retry-After'));
         $this->assertStringContainsString('no-store',$blocked->headers->get('Cache-Control'));
         $this->assertNull(session()->getOldInput('edm_identifier'));
-        $this->get(route('admin.edm.edit'))->assertOk()->assertSee('İşlem sınırına ulaşıldı.');
+        $this->get(route('admin.edm.edit'))->assertOk();
         $this->postJson(route('admin.edm.lookup'),$payload)->assertStatus(429)->assertJsonStructure(['message']);
         // Exhausting lookup must not block a different EDM operation.
         $this->post(route('admin.edm.probe'))->assertRedirect(route('admin.edm.edit'))->assertSessionHasErrors(['edm'=>'Önce test hesabınızı kaydedin.']);

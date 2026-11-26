@@ -303,6 +303,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/iade-talepleri', [\App\Http\Controllers\Admin\OrderReturnController::class, 'index'])->name('returns.index');
     Route::post('/iade-talepleri/{returnRequest}', [\App\Http\Controllers\Admin\OrderReturnController::class, 'update'])->middleware('throttle:8,1')->name('returns.update');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/fatura-taslak', [\App\Http\Controllers\Admin\InvoicePreparationController::class,'store'])->middleware('throttle:8,1,admin-invoice-preparation')->name('orders.invoice-preparation.store');
+    Route::get('/orders/{order}/fatura-taslak/xml', [\App\Http\Controllers\Admin\InvoicePreparationController::class,'xml'])->middleware('throttle:12,1,admin-invoice-preparation-xml')->name('orders.invoice-preparation.xml');
     Route::get('/orders/{order}/fatura-onizleme', \App\Http\Controllers\Admin\InvoicePreviewController::class)->middleware('throttle:20,1')->name('orders.invoice-preview');
     Route::post('/orders/{order}/paytr-reconcile', \App\Http\Controllers\Admin\PaytrReconcileController::class)->middleware('throttle:6,1')->name('orders.paytr-reconcile');
     Route::get('/orders/{order}/documents/{mode}', [OrderDocumentController::class, 'download'])

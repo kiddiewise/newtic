@@ -56,4 +56,24 @@
     <p>Matrah satır bazında kuruşa yuvarlanır; KDV, brüt tutardan matrah çıkarılarak hesaplanır. Bu hesap yöntemi EDM belge doğrulamasından önce yeniden test edilecektir.</p>
   </section>
 @endif
+<section class="admin-panel" style="margin-top:16px">
+  <h2>Yerel teknik fatura taslağı</h2>
+  <p>Bu taslak resmî belge değildir. EDM'e gönderilmez, mali fatura numarası almaz ve müşteriye gösterilmez. XML yalnızca vergi ve tutar bileşenlerini içerir; tam UBL-TR faturası değildir.</p>
+  @if($preparation)
+    <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>Ayrılan ETTN</span><strong>{{ $preparation->uuid }}</strong></div>
+    <div class="admin-detail-line"><span>Taslak toplamı</span><strong>{{ $money($preparation->gross_cents) }}</strong></div>
+    <div class="admin-detail-line"><span>Durum</span><strong>Yerel taslak — gönderilmedi</strong></div>
+    @if($preparation->shipping_rate !== null)<p>Kargo oranı %{{ $preparation->shipping_rate }}; yalnızca teknik varsayım.</p>@endif
+    <a class="admin-secondary" href="{{ route('admin.orders.invoice-preparation.xml',$order) }}">Teknik XML indir</a>
+    <p>İlk hesap kaydı sabit tutulur; yeni sorgular ikinci ETTN oluşturmaz. Sipariş değişiklikleri gönderim aşamasından önce yeniden doğrulanacaktır.</p>
+  @elseif($preview && $preview['complete'] && $order->status !== 'cancelled')
+    <form method="POST" action="{{ route('admin.orders.invoice-preparation.store',$order) }}" class="admin-form">
+      @csrf
+      @if($shippingRate !== null)<input type="hidden" name="shipping_rate" value="{{ $shippingRate }}">@endif
+      <button class="admin-primary" type="submit">Yerel teknik taslak oluştur</button>
+    </form>
+  @else
+    <p>Geçerli KDV hesabı ve iptal edilmemiş sipariş gereklidir.</p>
+  @endif
+</section>
 @endsection

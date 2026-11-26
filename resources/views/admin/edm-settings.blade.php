@@ -4,6 +4,9 @@
 <div class="admin-page-heading">
   <div><p class="admin-eyebrow">SİSTEM AYARLARI</p><h1>Fatura Entegrasyonları</h1><p>EDM e-Fatura ve e-Arşiv bağlantısı</p></div>
 </div>
+@if(isset($rateLimitMessage))
+  <div class="admin-alert admin-alert-error" role="alert">{{ $rateLimitMessage }} <a href="{{ route('admin.edm.edit') }}">Ayarlar sayfasına dön</a></div>
+@endif
 <div class="admin-dashboard-grid">
   <section class="admin-panel">
     <div class="admin-editor-heading"><span class="admin-editor-heading-icon"><x-admin-icon name="settings"/></span><div><h2>EDM</h2><p>Test hesabı</p></div></div>

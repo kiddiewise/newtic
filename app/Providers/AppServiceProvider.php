@@ -60,8 +60,10 @@ class AppServiceProvider extends ServiceProvider
                         return response()->json(['message'=>$message],429,$headers);
                     }
                     // Never flash submitted credentials or recipient identifiers.
-                    return redirect()->route('admin.edm.edit',[],303,$headers)
-                        ->withErrors(['edm'=>$message]);
+                    $page = app(\App\Http\Controllers\Admin\EdmSettingsController::class)->edit();
+                    $view = $page->getOriginalContent();
+                    $view->with('rateLimitMessage',$message);
+                    return response()->view('admin.edm-settings',$view->getData(),429,$headers);
                 };
                 return [
                     Limit::perMinute($budget[0])->by($name.':admin:'.$request->user()->getAuthIdentifier())->response($blocked),
