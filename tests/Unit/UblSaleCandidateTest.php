@@ -55,6 +55,47 @@ final class UblSaleCandidateTest extends TestCase
         $this->assertStringNotContainsString('InvoicePreparation',$xml);
     }
 
+    public function test_candidate_contains_required_turkish_xsd_structure_without_claiming_signature(): void
+    {
+        foreach (['TEMELFATURA','TICARIFATURA','EARSIVFATURA'] as $profile) {
+            $xml=$profile==='EARSIVFATURA'
+                ? $this->archive($this->party()+['email'=>'buyer@example.test'])['xml']
+                : $this->render($this->party(),$profile);
+            $doc=new DOMDocument();
+            $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+            $xp=new DOMXPath($doc);
+            $xp->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+            $xp->registerNamespace('ext','urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+            $xp->registerNamespace('nwt','urn:newtic:unsigned-candidate:1');
+            $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+            $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $this->assertSame('UBLExtensions',$doc->documentElement->firstElementChild->localName);
+            $this->assertSame('NOT_FOR_SUBMISSION',$xp->evaluate('string(/i:Invoice/ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/nwt:UnsignedCandidate)'));
+            $this->assertSame('#NEWTIC_UNSIGNED_TEST_ONLY',$xp->evaluate('string(/i:Invoice/cac:Signature/cac:DigitalSignatureAttachment/cac:ExternalReference/cbc:URI)'));
+            $this->assertSame('1234567890',$xp->evaluate('string(/i:Invoice/cac:Signature/cac:SignatoryParty/cac:PartyIdentification/cbc:ID)'));
+            $this->assertSame(1.0,$xp->evaluate('count(/i:Invoice/cac:Signature/following-sibling::cac:AccountingSupplierParty)'));
+            $this->assertSame(0.0,$xp->evaluate('count(//*[namespace-uri()="http://www.w3.org/2000/09/xmldsig#" and local-name()="Signature"])'));
+        }
+    }
+
+    /**
+     * Optional integration test against the operator-supplied exact GIB package.
+     * Set NEWTIC_GIB_XSD to its absolute Invoice schema path in a trusted local environment.
+     * The regular CI suite cannot claim GIB schema validation without the package.
+     */
+    public function test_candidates_against_supplied_gib_xsd_when_configured(): void
+    {
+        $schema=getenv('NEWTIC_GIB_XSD');
+        if (!$schema) $this->markTestSkipped('Operator-supplied GIB XSD package not configured.');
+        $this->assertFileExists($schema);
+        $buyer=array_replace($this->party(),['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı','email'=>'buyer@example.test']);
+        foreach ([$this->render($this->party()),$this->render($this->party(),'TICARIFATURA'),$this->archive($buyer,true)['xml']] as $xml) {
+            $doc=new DOMDocument();
+            $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+            $this->assertTrue($doc->schemaValidate($schema),'GIB XSD rejected synthetic unsigned candidate.');
+        }
+    }
+
     public function test_anonymous_identifier_is_not_accepted_for_einvoice(): void
     {
         $this->expectException(DomainException::class);
