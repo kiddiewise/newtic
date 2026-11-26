@@ -294,4 +294,16 @@ final class UblSaleCandidateTest extends TestCase
         $validator->validateProviderDraft($doc->saveXML(),$draft->amounts,$draft->uuid,'TEMELFATURA');
     }
 
+
+    public function test_export_synthetic_candidates_for_official_rules_when_configured(): void
+    {
+        $dir=getenv('NEWTIC_GIB_CANDIDATES');
+        if (!$dir) $this->markTestSkipped('Official rule rehearsal export not configured.');
+        $this->assertDirectoryExists($dir);
+        foreach (['TEMELFATURA','TICARIFATURA'] as $profile) {
+            $xml=$this->render($this->party(),$profile);
+            $this->assertNotFalse(file_put_contents($dir.'/'.$profile.'.xml',$xml));
+        }
+    }
+
 }
