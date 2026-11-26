@@ -14,7 +14,7 @@ use DomainException;
  */
 final class EdmVerifiedDraftPolicy implements EdmSandboxLoadPolicy
 {
-    public function __construct(private EdmDraftVerification $verification) {}
+    public function __construct(private EdmDraftVerification $verification, private EdmDraftRoutingCheck $routing) {}
 
     public function authorize(InvoicePreparation $draft, EdmSetting $account,
         #[\SensitiveParameter] string $xml, string $profile,
@@ -35,7 +35,18 @@ final class EdmVerifiedDraftPolicy implements EdmSandboxLoadPolicy
         (new UblCandidatePreflight)->validateProviderDraft($xml,$snapshot,$draft->uuid,$profile);
         // Validate the exact SOAP mapping separately; no transformation or
         // removal of unsigned markers is permitted by this policy.
-        EdmSandboxLoadPayload::fields($xml,$draft->uuid,$profile,$senderAlias,$receiverAlias);
+        $fields=EdmSandboxLoadPayload::fields($xml,$draft->uuid,$profile,$senderAlias,$receiverAlias);
+        $document=new \DOMDocument();
+        if (!@$document->loadXML($xml,LIBXML_NONET|LIBXML_NOERROR|LIBXML_NOWARNING) || $document->doctype) {
+            throw new DomainException('Belge tarihi doğrulanamadı.');
+        }
+        $xpath=new \DOMXPath($document);
+        $xpath->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+        $xpath->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $dates=$xpath->query('/i:Invoice/cbc:IssueDate');
+        if ($dates->length!==1) throw new DomainException('Belge tarihi belirsiz.');
+        $this->routing->verify($account,$fields['SENDER']['vkn'],$fields['RECEIVER']['vkn'],
+            $senderAlias,$receiverAlias,$profile,$dates->item(0)->textContent,$fields['INVOICE']['ID']);
         $this->verification->verify($draft,$account,$xml,$profile,$senderAlias,$receiverAlias);
     }
 }
