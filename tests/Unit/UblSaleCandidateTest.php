@@ -217,4 +217,52 @@ final class UblSaleCandidateTest extends TestCase
         }
     }
 
+
+    public function test_edm_load_invoice_offline_contract_preserves_uuid_and_content(): void
+    {
+        $xml=$this->render($this->party());
+        $draft=$this->draft();
+        $rehearsal=new \App\Services\Invoices\EdmLoadInvoiceRehearsal;
+        $args=[$xml,$draft->amounts,$draft->uuid,'TEMELFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26T10:00:00+03:00')];
+        $result=$rehearsal->build(...$args);
+        $this->assertSame($result,$rehearsal->build(...$args));
+        $this->assertFalse($result['submission_allowed']);
+        $this->assertSame(hash('sha256',$xml),$result['content_sha256']);
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($result['soap_xml'],LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('s','http://schemas.xmlsoap.org/soap/envelope/');
+        $xp->registerNamespace('edm','http://tempuri.org/');
+        $root='/s:Envelope/s:Body/edm:LoadInvoiceRequest';
+        foreach ([
+            '/REQUEST_HEADER/SESSION_ID'=>'NEWTIC-OFFLINE-NOT-A-SESSION',
+            '/REQUEST_HEADER/CLIENT_TXN_ID'=>$draft->uuid,
+            '/INVOICE/@UUID'=>$draft->uuid,
+            '/INVOICE/HEADER/SENDER'=>'1234567890',
+            '/INVOICE/HEADER/RECEIVER'=>'1234567890',
+            '/INVOICE/HEADER/FROM'=>'urn:mail:sender@example.test',
+            '/SENDER/@alias'=>'urn:mail:sender@example.test',
+            '/RECEIVER/@alias'=>'urn:mail:buyer@example.test',
+            '/INVOICE/HEADER/EARCHIVE'=>'false',
+            '/GENERATEINVOICEIDONLOAD'=>'false',
+        ] as $path=>$expected) $this->assertSame($expected,$xp->evaluate('string('.$root.$path.')'));
+        $this->assertSame($xml,base64_decode($xp->evaluate('string('.$root.'/INVOICE/CONTENT)'),true));
+        $this->assertSame(0.0,$xp->evaluate('count(//*[local-name()="SendInvoiceRequest"])'));
+    }
+
+    public function test_edm_load_invoice_offline_rejects_invalid_alias(): void
+    {
+        $draft=$this->draft();
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\EdmLoadInvoiceRehearsal)->build($this->render($this->party()),$draft->amounts,$draft->uuid,'TEMELFATURA','invalid','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26'));
+    }
+
+    public function test_edm_load_invoice_offline_rejects_archive(): void
+    {
+        $draft=$this->draft();
+        $archive=$this->archive($this->party()+['email'=>'buyer@example.test']);
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\EdmLoadInvoiceRehearsal)->build($archive['xml'],$draft->amounts,$draft->uuid,'EARSIVFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26'));
+    }
+
 }
