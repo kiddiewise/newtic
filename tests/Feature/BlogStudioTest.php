@@ -54,6 +54,38 @@ class BlogStudioTest extends TestCase
             ->assertRedirect(route('admin.login'));
     }
 
+    public function test_home_carousel_has_only_four_latest_public_posts_and_archive_keeps_all(): void
+    {
+        $category=$this->category();
+        foreach (range(1,6) as $i) {
+            BlogPost::create(['title'=>'Carousel yazısı '.$i,'slug'=>'carousel-yazi-'.$i,
+                'blog_category_id'=>$category->id,'is_published'=>true,'published_at'=>now()->subMinutes(10-$i)]);
+        }
+        BlogPost::create(['title'=>'Gelecek yazı','slug'=>'gelecek-yazi','is_published'=>true,'published_at'=>now()->addDay()]);
+        BlogPost::create(['title'=>'Gizli taslak','slug'=>'gizli-taslak','is_published'=>false]);
+        $home=$this->get(route('home'))->assertOk()->assertSee('data-home-blog-track',false)
+            ->assertDontSee('REHBER & İLHAM')->assertDontSee('Gelecek yazı')->assertDontSee('Gizli taslak')->getContent();
+        $this->assertSame(4,substr_count($home,'class="blog-card"'));
+        $this->assertStringNotContainsString('Carousel yazısı 1',$home);
+        $this->assertStringNotContainsString('Carousel yazısı 2',$home);
+        $this->assertTrue(strpos($home,'Carousel yazısı 6')<strpos($home,'Carousel yazısı 3'));
+        $archive=$this->get(route('blog.index'))->assertOk()->assertDontSee('Keşfet. Öğren. İlham al.')
+            ->assertDontSee('blog-featured-story',false)->getContent();
+        $this->assertSame(6,substr_count($archive,'class="blog-card"'));
+        $this->get(route('blog.category',$category->slug))->assertOk()->assertSee('aria-current="page"',false);
+    }
+
+    public function test_reader_layout_preserves_paragraphs_and_escapes_content(): void
+    {
+        $post=$this->makePost($this->category(),true);
+        $post->blocks()->create(['type'=>'text','content'=>"Birinci paragraf.\n\nİkinci paragraf.\n<script>alert(1)</script>",'sort_order'=>1]);
+        $this->get(route('blog.show',$post->slug))->assertOk()
+            ->assertSee('newtic-blog-reading',false)->assertSee('1 dk okuma')
+            ->assertSee('<p>Birinci paragraf.</p>',false)
+            ->assertSee('<p>İkinci paragraf.',false)
+            ->assertSee('&lt;script&gt;',false)->assertDontSee('<script>alert(1)</script>',false);
+    }
+
     public function test_non_admin_cannot_manage_blog(): void
     {
         $category = $this->category();

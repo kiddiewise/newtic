@@ -88,9 +88,22 @@
   @endforelse
 
   @if($latestPosts->isNotEmpty())
-    <section class="container blog-home-section" aria-labelledby="home-blog-heading">
-      <div class="blog-section-heading"><div><span class="blog-public-kicker">REHBER & İLHAM</span><h2 id="home-blog-heading">Blogdan son yazılar</h2></div><a href="{{ route('blog.index') }}">Tüm yazılar ↗</a></div>
-      <div class="blog-cards-grid">@foreach($latestPosts->take(3) as $post)<x-blog-card :post="$post" />@endforeach</div>
+    <section class="container blog-home-section newtic-home-blog" aria-labelledby="home-blog-heading" data-home-blog>
+      <div class="blog-section-heading">
+        <h2 id="home-blog-heading">Blogdan son yazılar</h2>
+        <div class="newtic-home-blog-actions">
+          <a href="{{ route('blog.index') }}">Tüm yazılar <span aria-hidden="true">↗</span></a>
+          @if($latestPosts->count()>1)
+            <div class="newtic-home-blog-controls" data-home-blog-controls hidden>
+              <button type="button" data-home-blog-prev aria-label="Önceki yazılar" aria-controls="home-blog-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button type="button" data-home-blog-next aria-label="Sonraki yazılar" aria-controls="home-blog-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          @endif
+        </div>
+      </div>
+      <div id="home-blog-track" class="newtic-home-blog-track" data-home-blog-track tabindex="0" role="region" aria-label="Son blog yazıları">
+        @foreach($latestPosts->take(4) as $post)<x-blog-card :post="$post" />@endforeach
+      </div>
     </section>
   @endif
 

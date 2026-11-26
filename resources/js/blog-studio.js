@@ -62,3 +62,31 @@ document.querySelectorAll('[data-blog-gallery]').forEach(gallery => {
   else window.addEventListener('resize', update, {passive: true});
   update();
 });
+
+// Native swipe/scroll carousel with optional arrow controls. No autoplay.
+document.querySelectorAll('[data-home-blog]').forEach(section => {
+  const track = section.querySelector('[data-home-blog-track]');
+  const controls = section.querySelector('[data-home-blog-controls]');
+  const prev = section.querySelector('[data-home-blog-prev]');
+  const next = section.querySelector('[data-home-blog-next]');
+  if (!track || !controls || !prev || !next) return;
+  const update = () => {
+    const max = Math.max(0, track.scrollWidth - track.clientWidth);
+    controls.hidden = max < 2;
+    prev.disabled = track.scrollLeft <= 2;
+    next.disabled = track.scrollLeft >= max - 2;
+  };
+  const move = direction => {
+    const first = track.firstElementChild;
+    if (!first) return;
+    const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+    track.scrollBy({left: direction * (first.getBoundingClientRect().width + gap),
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+  };
+  prev.addEventListener('click', () => move(-1));
+  next.addEventListener('click', () => move(1));
+  track.addEventListener('scroll', update, {passive:true});
+  if ('ResizeObserver' in window) new ResizeObserver(update).observe(track);
+  else window.addEventListener('resize', update, {passive:true});
+  update();
+});
