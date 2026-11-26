@@ -9,6 +9,7 @@
       <details class="newtic-order-actions newtic-detail-documents">
         <summary>Belgeler <x-admin-icon name="more"/></summary>
         <div>
+          <a href="{{ route('admin.orders.invoice-preview', $order) }}"><x-admin-icon name="external-link"/> Fatura hesaplama ön izlemesi</a>
           <a href="{{ route('admin.orders.document', [$order, 'proforma']) }}"><x-admin-icon name="download"/> Promofatura PDF</a>
           <a href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link"/> Önizle / Yazdır</a>
         </div>
