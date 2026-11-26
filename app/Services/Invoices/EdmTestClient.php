@@ -72,6 +72,7 @@ final class EdmTestClient
             $row = $matches[0];
             $series = [];
             $unreadableSeries = 0;
+            $seriesReasons = [];
             foreach ($row->childNodes as $node) {
                 if (!$node instanceof DOMElement || !in_array($node->localName,['SERIALLİST','SERIALLIST'],true)) continue;
                 $code = $this->optionalValue($node,'SERIAL');
@@ -79,14 +80,25 @@ final class EdmTestClient
                 $active = $this->optionalValue($node,'ACTIVEFLAG');
                 $archive = $this->optionalValue($node,'EARCHIVEFLAG');
                 $internet = $this->optionalValue($node,'INTERNETFLAG');
-                if (!preg_match('/^[A-Z0-9]{3}$/D',$code) || !preg_match('/^20[0-9]{2}$/D',$year)
-                    || !in_array($active,['0','1'],true) || !in_array($archive,['0','1'],true) || !in_array($internet,['0','1'],true)) {
+                $invalid = [
+                    'series_code'=>!preg_match('/^[A-Z0-9]{3}$/D',$code),
+                    'series_year'=>!preg_match('/^20[0-9]{2}$/D',$year),
+                    'series_active_flag'=>!in_array($active,['0','1'],true),
+                    'series_archive_flag'=>!in_array($archive,['0','1'],true),
+                    'series_internet_flag'=>!in_array($internet,['0','1'],true),
+                ];
+                if (in_array(true,$invalid,true)) {
                     $unreadableSeries++;
+                    foreach ($invalid as $reason=>$bad) {
+                        if ($bad) $seriesReasons[$reason]=($seriesReasons[$reason]??0)+1;
+                    }
                     continue;
                 }
                 $series[] = ['code'=>$code,'year'=>(int)$year,'active'=>$active==='1','archive'=>$archive==='1','internet'=>$internet==='1'];
             }
-            return ['title'=>$this->value($row,'UNVAN'),'gb'=>$this->optionalValue($row,'GB'),'pk'=>$this->optionalValue($row,'PK'),'series'=>$series,'unreadable_series'=>$unreadableSeries];
+            $data=['title'=>$this->value($row,'UNVAN'),'gb'=>$this->optionalValue($row,'GB'),'pk'=>$this->optionalValue($row,'PK'),'series'=>$series,'unreadable_series'=>$unreadableSeries];
+            if ($seriesReasons) $data['series_warning_reasons']=$seriesReasons;
+            return $data;
         });
     }
 
@@ -99,6 +111,7 @@ final class EdmTestClient
             $aliases = [];
             $senderAliases = [];
             $warnings = 0;
+            $recipientReasons = [];
             $matched = 0;
             $rows = [];
             foreach ($reply->childNodes as $node) {
@@ -113,20 +126,36 @@ final class EdmTestClient
             }
             foreach ($rows as $node) {
                 $id = $this->optionalValue($node,'IDENTIFIER');
-                if ($id !== $identifier) { $warnings++; continue; }
+                if ($id !== $identifier) {
+                    $warnings++;
+                    $reason=$id===''?'recipient_identifier_missing':'recipient_identifier_mismatch';
+                    $recipientReasons[$reason]=($recipientReasons[$reason]??0)+1;
+                    continue;
+                }
                 $matched++;
                 $unit = strtoupper($this->optionalValue($node,'UNIT'));
                 $alias = $this->optionalValue($node,'ALIAS');
                 $removed = $this->optionalValue($node,'ALIAS_REMOVAL_TIME');
                 if ($removed !== '' && !preg_match('/^0001-01-01T00:00:00(?:\.0+)?(?:Z|[+-]00:00)?$/D',$removed)) continue;
-                if (!in_array($unit,['PK','GB'],true) || !preg_match('/^urn:mail:[^\s<>]{1,250}$/Di',$alias)) { $warnings++; continue; }
+                $invalid=['recipient_unit'=>!in_array($unit,['PK','GB'],true),
+                    'recipient_alias'=>!preg_match('/^urn:mail:[^\s<>]{1,250}$/Di',$alias)];
+                if (in_array(true,$invalid,true)) {
+                    $warnings++;
+                    foreach ($invalid as $reason=>$bad) {
+                        if ($bad) $recipientReasons[$reason]=($recipientReasons[$reason]??0)+1;
+                    }
+                    continue;
+                }
                 if ($unit === 'PK') $aliases[$alias] = $alias;
                 if ($unit === 'GB') $senderAliases[$alias] = $alias;
             }
             if ($rows && !$matched) throw new EdmLookupFailure('CHECKUSER_IDENTIFIER_MISMATCH');
             if ($warnings && !$aliases && !$senderAliases) throw new EdmLookupFailure('CHECKUSER_NO_VALID_ALIAS');
             $data = ['aliases'=>array_values($aliases),'sender_aliases'=>array_values($senderAliases)];
-            if ($warnings) $data['unverified_records'] = $warnings;
+            if ($warnings) {
+                $data['unverified_records'] = $warnings;
+                $data['recipient_warning_reasons']=$recipientReasons;
+            }
             return $data;
         });
     }

@@ -53,6 +53,8 @@ final class EdmRoutingPreview
         ];
         return ['checks'=>$checks,'unreadable_series'=>$unreadable,'unverified_records'=>$unverified,
             'all_checks_passed'=>!in_array(false,$checks,true)&&!in_array(null,$checks,true),
+            'series_warning_reasons'=>$companyData['series_warning_reasons']??[],
+            'recipient_warning_reasons'=>$recipientData['recipient_warning_reasons']??[],
             'submission_allowed'=>false];
     }
 

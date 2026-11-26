@@ -67,6 +67,7 @@ final class EdmDiscoveryTest extends TestCase
         $this->assertSame('ok',$result['status']);
         $this->assertSame(['urn:mail:pk@example.test'],$result['data']['aliases']);
         $this->assertSame(1,$result['data']['unverified_records']);
+        $this->assertSame(['recipient_unit'=>1,'recipient_alias'=>1],$result['data']['recipient_warning_reasons']);
     }
 
     public function test_invalid_alias_is_not_interpreted_as_unregistered(): void
@@ -199,6 +200,7 @@ final class EdmDiscoveryTest extends TestCase
         $r=$this->post(route('admin.edm.lookup'),$this->previewPayload())->assertOk()
             ->assertSee('GB eşleşmesi')->assertSee('PK eşleşmesi')->assertSee('Doğrulanamayan seri: 1')
             ->assertSee('Doğrulanamayan alıcı kaydı: 1')->assertSee('Gönderim yetkisi verilmedi')
+            ->assertSee('Seri kodu biçimi')->assertSee('Seri yılı biçimi')->assertSee('Birim türü')->assertSee('Etiket biçimi')
             ->assertDontSee('fixture-session')->assertDontSee('1234567891');
         $this->assertStringContainsString('no-store',$r->headers->get('Cache-Control'));
         $this->assertNull(session()->getOldInput('buyer_id'));
@@ -241,4 +243,14 @@ final class EdmDiscoveryTest extends TestCase
         Http::assertSentCount(3);
     }
 
+
+    public function test_warning_diagnostics_never_return_invalid_provider_values(): void
+    {
+        $this->sequence('CheckUser','<USER><IDENTIFIER>1234567890</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER><USER><IDENTIFIER>9999999999</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:private@example.test</ALIAS></USER><USER><UNIT>GB</UNIT><ALIAS>private-value</ALIAS></USER>');
+        $data=app(EdmTestClient::class)->taxpayer('fixture','secret','1234567890')['data'];
+        $this->assertSame(2,$data['unverified_records']);
+        $this->assertSame(['recipient_identifier_mismatch'=>1,'recipient_identifier_missing'=>1],$data['recipient_warning_reasons']);
+        $this->assertStringNotContainsString('9999999999',json_encode($data));
+        $this->assertStringNotContainsString('private',json_encode($data));
+    }
 }

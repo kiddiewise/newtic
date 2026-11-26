@@ -101,6 +101,8 @@ Artisan::command('edm:diagnose {identifier}', function () {
                 'pk_count'=>count($data['aliases'] ?? []),
                 'gb_count'=>count($data['sender_aliases'] ?? []),
                 'unverified_records'=>(int)($data['unverified_records'] ?? 0),
+                'series_warning_reasons'=>$data['series_warning_reasons']??[],
+                'recipient_warning_reasons'=>$data['recipient_warning_reasons']??[],
             ],JSON_THROW_ON_ERROR));
         }
         return 0;
