@@ -28,7 +28,7 @@ jobs:
         run: |
           composer install --no-interaction --prefer-dist --no-progress
           sudo apt-get update -qq
-          sudo apt-get install -y python3-lxml
+          sudo apt-get install -y python3-lxml libsaxonhe-java
       - name: Download pinned official package
         run: |
           set -euo pipefail
@@ -44,6 +44,6 @@ jobs:
           NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/gib-candidates" vendor/bin/phpunit --filter test_export_synthetic_candidates_for_official_rules_when_configured --fail-on-skipped --fail-on-warning
       - name: Execute pinned official rules and negative controls
         run: |
-          /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/gib-current.zip" "$RUNNER_TEMP/gib-candidates" "$RUNNER_TEMP/gib-rules"
+          sudo unshare --net -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/gib-current.zip" "$RUNNER_TEMP/gib-candidates" "$RUNNER_TEMP/gib-rules"
       - name: Scope
         run: echo 'Synthetic unsigned ordinary e-Invoice only. No fiscal approval, e-Arsiv report validation, or EDM transmission.'
