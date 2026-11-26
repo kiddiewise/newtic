@@ -208,6 +208,7 @@ final class EdmTestClient
         $existing=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
         if ($existing) return ['uuid'=>$f::UUID,'load_status'=>$existing->load_status,'diagnostic'=>$existing->diagnostic,
             'status_query'=>$existing->status_query,'xml_query'=>$existing->xml_query,'already_reserved'=>true,
+            'fault_hints'=>json_decode($existing->fault_hints??'[]',true,512,JSON_THROW_ON_ERROR),
             'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
         $xml=$f::xml($date);
         if (!hash_equals($checkedSha256,hash('sha256',$xml))) throw new \DomainException('SMOKE_XML_DIGEST_MISMATCH');
@@ -266,9 +267,10 @@ final class EdmTestClient
         $diagnostic=$result['diagnostic']??null;
         if (!is_string($diagnostic) || !preg_match('/^(?:Login|Lookup|Logout): [A-Z0-9_]+$/D',$diagnostic)) $diagnostic=null;
         $loadStatus=$ack?'draft_acknowledged':'unconfirmed';
+        $hints=$result['fault_hints']??[];
         // Record the attempt immediately, before any further read operations.
         $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
-            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'updated_at'=>now()]);
+            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'fault_hints'=>json_encode($hints,JSON_THROW_ON_ERROR),'updated_at'=>now()]);
         $status='not_run'; $evidence='not_run';
         if ($currentAccount()) {
             $s=$this->invoiceStatus($account->username,$account->password,$f::UUID,$f::PROFILE);
@@ -281,7 +283,7 @@ final class EdmTestClient
         $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
             ->update(['status_query'=>$status,'xml_query'=>$evidence,'updated_at'=>now()]);
         return ['uuid'=>$f::UUID,'load_status'=>$loadStatus,'diagnostic'=>$diagnostic,
-            'status_query'=>$status,'xml_query'=>$evidence,'already_reserved'=>false,
+            'status_query'=>$status,'xml_query'=>$evidence,'already_reserved'=>false,'fault_hints'=>$hints,
             'series_warnings'=>$preview['unreadable_series'],'recipient_warnings'=>$preview['unverified_records'],
             'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
     }
@@ -371,6 +373,7 @@ final class EdmTestClient
             $result = ['status'=>'ok','data'=>$operation($session)];
         } catch (EdmLookupFailure $failure) {
             $result['diagnostic'] = $stage.': '.$failure->safeCode;
+            if ($failure->hints) $result['fault_hints']=$failure->hints;
         } catch (\Illuminate\Http\Client\ConnectionException) {
             $result['diagnostic'] = $stage.': NETWORK_TIMEOUT_OR_CONNECTION';
         } catch (Throwable) {
@@ -458,7 +461,7 @@ final class EdmTestClient
         if ($fault !== false && $fault->length > 0) {
             $codes = $xpath->query('.//*[local-name()="ERROR_CODE"]',$fault->item(0));
             $code = $codes !== false && $codes->length === 1 ? trim($codes->item(0)->textContent) : '';
-            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT');
+            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT', EdmFaultHints::inspect($fault->item(0)));
         }
         if (!$response->successful()) throw new EdmLookupFailure('HTTP_'.$response->status());
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
