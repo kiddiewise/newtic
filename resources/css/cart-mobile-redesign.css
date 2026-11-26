@@ -60,8 +60,6 @@ body.cart-summary-open .cart-mobile-summary-trigger svg{transform:rotate(180deg)
 .cart-sheet-scroll .cart-shipping-notice{margin:0 0 13px}
 .cart-sheet-scroll .cart-totals>div{font-size:.89rem;padding:14px 0}
 .cart-sheet-scroll .cart-totals>div.cart-grand-total{font-size:1.02rem}
-.cart-sheet-footer{flex:none;padding:11px 17px;border-top:1px solid #e9eef0}
-.cart-sheet-continue{display:block;border-radius:10px;background:#eaf4f4;color:#0c7c7f;text-align:center;font-weight:740;padding:12px;font-size:.85rem}
 .cart-page .cart-empty{margin:24px auto}
 .wishlist-page{width:min(100% - 24px,1260px);padding-top:16px}
 .wishlist-heading h1{font-size:1.28rem}

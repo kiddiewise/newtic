@@ -107,10 +107,5 @@
     </section>
   @endif
 
-  <section class="container reassurance-strip" aria-label="{{ $storeName }} alışveriş avantajları">
-    <div><span class="benefit-icon" aria-hidden="true">◇</span><div><strong>Özenli ürün seçkisi</strong><small>Özenle sunulan ürünler</small></div></div>
-    <div><span class="benefit-icon" aria-hidden="true">◎</span><div><strong>Kolay ürün keşfi</strong><small>Mobil odaklı alışveriş</small></div></div>
-    <div><span class="benefit-icon" aria-hidden="true">↗</span><div><strong>Hızlı gezinme</strong><small>Yalın ve akıcı tasarım</small></div></div>
-  </section>
 </main>
 @endsection

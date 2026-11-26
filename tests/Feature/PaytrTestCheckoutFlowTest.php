@@ -69,7 +69,9 @@ class PaytrTestCheckoutFlowTest extends TestCase
         $this->post(route('cart.add'), ['items' => [$product->id => 2]])->assertRedirect();
         $this->get(route('checkout.index'))->assertOk()
             ->assertSee('Kredi / Banka Kartı')
-            ->assertSee('PAYTR Ödeme Ekranına Geç');
+            ->assertSee('Ödeme Yap')
+            ->assertSee('data-checkout-paytr-label="Ödeme Yap"', false)
+            ->assertDontSee('PAYTR Ödeme Ekranına Geç');
         return (string) session('checkout_token');
     }
 

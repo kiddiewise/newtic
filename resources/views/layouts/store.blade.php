@@ -324,13 +324,6 @@
       @endif
     </div>
     <div class="legal-footer-trust">
-      <strong>Alışveriş Bilgileri</strong>
-      <p>Sepet, ödeme ve teslimat ayrıntılarını siparişi onaylamadan önce kontrol edebilirsiniz.</p>
-      @if(config('newtic.checkout_test_mode',true))
-        <p class="legal-footer-test">Gerçek kart tahsilatı henüz etkinleştirilmedi.</p>
-      @endif
-    </div>
-    <div class="legal-footer-trust">
       @if($merchantTrustMarks->isNotEmpty())
         <strong>Doğrulanabilir işaretler</strong>
         <div class="legal-footer-brand-badges legal-footer-trust-marks">
@@ -340,15 +333,17 @@
             </a>
           @endforeach
         </div>
-      @else
+      @elseif($megaMenuSettings->instagram_url || $megaMenuSettings->youtube_url || $megaMenuSettings->facebook_url || $megaMenuSettings->x_url)
         <strong>Bizi Takip Edin</strong>
       @endif
-      <div class="legal-footer-social">
-        @if($megaMenuSettings->instagram_url)<a href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>@endif
-        @if($megaMenuSettings->youtube_url)<a href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer">YouTube</a>@endif
-        @if($megaMenuSettings->facebook_url)<a href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook</a>@endif
-        @if($megaMenuSettings->x_url)<a href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer">X</a>@endif
+      @if($megaMenuSettings->instagram_url || $megaMenuSettings->youtube_url || $megaMenuSettings->facebook_url || $megaMenuSettings->x_url)
+      <div class="legal-footer-social" aria-label="Sosyal medya">
+        @if($megaMenuSettings->instagram_url)<a class="footer-social-icon" data-footer-social="instagram" href="{{ $megaMenuSettings->instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>@endif
+        @if($megaMenuSettings->youtube_url)<a class="footer-social-icon" data-footer-social="youtube" href="{{ $megaMenuSettings->youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23 7a3 3 0 0 0-2.1-2.2C19 4.3 12 4.3 12 4.3s-7 0-8.9.5A3 3 0 0 0 1 7a31 31 0 0 0 0 10 3 3 0 0 0 2.1 2.2c1.9.5 8.9.5 8.9.5s7 0 8.9-.5A3 3 0 0 0 23 17a31 31 0 0 0 0-10Z"/><path fill="#fff" d="m9.7 8.5 6 3.5-6 3.5Z"/></svg></a>@endif
+        @if($megaMenuSettings->facebook_url)<a class="footer-social-icon" data-footer-social="facebook" href="{{ $megaMenuSettings->facebook_url }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M24 12a12 12 0 1 0-13.875 11.854v-8.387H7.078V12h3.047V9.356c0-3.007 1.792-4.67 4.533-4.67 1.313 0 2.686.235 2.686.235v2.953h-1.513c-1.49 0-1.956.925-1.956 1.874V12h3.328l-.532 3.467h-2.796v8.387A12 12 0 0 0 24 12Z"/></svg></a>@endif
+        @if($megaMenuSettings->x_url)<a class="footer-social-icon" data-footer-social="x" href="{{ $megaMenuSettings->x_url }}" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" title="X (Twitter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932 6.064-6.933Zm-1.29 19.49h2.039L6.488 3.24H4.3l13.31 17.403Z"/></svg></a>@endif
       </div>
+      @endif
       @if($merchantAppMarks->isNotEmpty())
         <div class="legal-footer-app-links" aria-label="Resmi mobil uygulamalar">
           @foreach($merchantAppMarks as $mark)

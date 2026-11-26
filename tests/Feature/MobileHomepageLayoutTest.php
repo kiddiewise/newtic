@@ -26,7 +26,9 @@ class MobileHomepageLayoutTest extends TestCase
             ->assertSee('Kategorileri keşfet')
             ->assertSee('assets/categories/renkli-kursun.svg')
             ->assertSee('promo-surf.svg')
-            ->assertSee('Popüler Ürünler');
+            ->assertSee('Popüler Ürünler')
+            ->assertDontSee('Özenli ürün seçkisi')
+            ->assertDontSee('class="container reassurance-strip"', false);
     }
 
     public function test_section_order_matches_mobile_reference(): void

@@ -166,9 +166,6 @@
       @include('store.partials.cart-summary-details', ['cart' => $cart])
       <p class="cart-checkout-note">Teslimat adresini ve ödeme yöntemini kontrol ederek siparişini tamamlayabilirsin.</p>
     </div>
-    <div class="cart-sheet-footer">
-      <a class="cart-sheet-continue" href="{{ route('checkout.index') }}">Siparişi Tamamla</a>
-    </div>
   </section>
   <div class="cart-mobile-bottom" aria-label="Sepet toplamı ve özeti">
     <button class="cart-mobile-total" type="button" data-cart-summary-open aria-controls="mobile-cart-summary" aria-expanded="false">

@@ -64,7 +64,7 @@
       @endguest
 
       <form id="checkout-form" method="POST" action="{{ route('checkout.place') }}" class="checkout-form checkout-card"
-        data-checkout-paytr-label="PAYTR Ödeme Ekranına Geç"
+        data-checkout-paytr-label="Ödeme Yap"
         data-checkout-bank-label="Siparişi Oluştur" data-payment-available="{{ $paytrAvailable || $bankAccountsAvailable ? '1' : '0' }}">
         @csrf
         <input type="hidden" name="checkout_token" value="{{ $checkoutToken }}">
@@ -174,8 +174,8 @@
           @endif
         </section>
         <p class="checkout-privacy">Sipariş bilgileri yalnızca teslimat, faturalama ve sipariş yönetimi amacıyla alınır. Pazarlama izni otomatik verilmez.</p>
-<button class="checkout-action checkout-desktop-submit checkout-guarded-submit" type="submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'PAYTR Ödeme Ekranına Geç' : 'Siparişi Oluştur' }}</span></button>
-        <noscript><button class="checkout-action checkout-nojs-submit" type="submit" @disabled(!$paytrAvailable && !$bankAccountsAvailable)>{{ $paytrAvailable ? 'PAYTR Ödeme Ekranına Geç' : 'Siparişi Oluştur' }}</button></noscript>
+<button class="checkout-action checkout-desktop-submit checkout-guarded-submit" type="submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'Ödeme Yap' : 'Siparişi Oluştur' }}</span></button>
+        <noscript><button class="checkout-action checkout-nojs-submit" type="submit" @disabled(!$paytrAvailable && !$bankAccountsAvailable)>{{ $paytrAvailable ? 'Ödeme Yap' : 'Siparişi Oluştur' }}</button></noscript>
       </form>
     </div>
 
@@ -195,7 +195,7 @@
 </main>
 <div class="checkout-bottom-bar" aria-label="Siparişi tamamla">
   <div><strong>{{ number_format($cart['total_cents'] / 100, 2, ',', '.') }} ₺</strong><span>{{ $cart['shipping_cents'] === 0 ? 'Kargo ücretsiz' : 'Kargo dahil' }}</span></div>
-<button type="submit" form="checkout-form" class="checkout-guarded-submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'PAYTR Ödeme Ekranına Geç' : 'Siparişi Oluştur' }}</span></button>
-<noscript><button class="checkout-nojs-submit" type="submit" form="checkout-form" @disabled(!$paytrAvailable && !$bankAccountsAvailable)>{{ $paytrAvailable ? 'PAYTR Ödeme Ekranına Geç' : 'Siparişi Oluştur' }}</button></noscript>
+<button type="submit" form="checkout-form" class="checkout-guarded-submit" data-checkout-submit data-checkout-state="locked" disabled><span class="checkout-order-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path class="checkout-lock-shackle" d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/><circle cx="12" cy="15.5" r="1"/></svg></span><span data-checkout-button-label>{{ $paytrAvailable ? 'Ödeme Yap' : 'Siparişi Oluştur' }}</span></button>
+<noscript><button class="checkout-nojs-submit" type="submit" form="checkout-form" @disabled(!$paytrAvailable && !$bankAccountsAvailable)>{{ $paytrAvailable ? 'Ödeme Yap' : 'Siparişi Oluştur' }}</button></noscript>
 </div>
 @endsection
