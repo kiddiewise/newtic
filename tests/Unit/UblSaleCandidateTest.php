@@ -304,6 +304,12 @@ final class UblSaleCandidateTest extends TestCase
             $xml=$this->render($this->party(),$profile);
             $this->assertNotFalse(file_put_contents($dir.'/'.$profile.'.xml',$xml));
         }
+        $corporate=$this->party()+['email'=>'buyer@example.test'];
+        $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
+        foreach (['EARSIVFATURA_CORPORATE'=>$this->archive($corporate),'EARSIVFATURA_CONSUMER'=>$this->archive($consumer,true)] as $name=>$archive) {
+            $this->assertFalse($archive['submission_allowed']);
+            $this->assertNotFalse(file_put_contents($dir.'/'.$name.'.xml',$archive['xml']));
+        }
     }
 
 }

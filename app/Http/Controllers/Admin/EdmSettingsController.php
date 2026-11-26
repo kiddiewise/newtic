@@ -35,6 +35,7 @@ final class EdmSettingsController extends Controller
 
     public function lookup(Request $request, EdmTestClient $client): Response|RedirectResponse
     {
+        if ($request->input('kind') === 'invoice_status') return $this->invoiceStatus($request,$client);
         $validator = Validator::make($request->only('edm_identifier','kind'), [
             'edm_identifier'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111'],
             'kind'=>['required','in:company,taxpayer'],
@@ -56,6 +57,29 @@ final class EdmSettingsController extends Controller
         // Return a private, non-cacheable result directly. No session flash,
         // database persistence or query-string recipient identifier.
         return $this->renderSettings($result,$data['kind']);
+    }
+
+    private function invoiceStatus(Request $request, EdmTestClient $client): Response|RedirectResponse
+    {
+        $validator=Validator::make($request->only('edm_uuid','edm_profile'),[
+            'edm_uuid'=>['required','string','regex:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD'],
+            'edm_profile'=>['required','in:TEMELFATURA,TICARIFATURA,EARSIVFATURA'],
+        ]);
+        if ($validator->fails()) return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Geçerli ETTN ve belge senaryosu girin.']);
+        $settings=EdmSetting::query()->find(1);
+        if (!$settings?->configured() || !$settings->revision || $settings->probe_status!=='ok') {
+            return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Önce test bağlantısını doğrulayın.']);
+        }
+        $data=$validator->validated();
+        try {
+            $result=$client->invoiceStatus($settings->username,$settings->password,strtolower($data['edm_uuid']),$data['edm_profile']);
+        } catch (Throwable) {
+            $result=['status'=>'failed','data'=>null];
+        }
+        if (!EdmSetting::query()->whereKey(1)->where('revision',$settings->revision)->exists()) {
+            return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'Hesap değişti. Sorgulamayı yeniden yapın.']);
+        }
+        return $this->renderSettings($result,'invoice_status');
     }
 
     public function update(Request $request): RedirectResponse

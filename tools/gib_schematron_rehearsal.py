@@ -186,24 +186,38 @@ def main(zip_path, candidates, work):
         return parse(output_path)
 
     results = {}
-    for profile in ("TEMELFATURA", "TICARIFATURA"):
-        document = parse(candidates / (profile + ".xml"))
-        report = transform(document, profile)
-        results[profile] = summarize(report)
-        if not results[profile]["active-pattern"] or not results[profile]["fired-rule"]:
+    ns = {"i":"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2","cbc":CBC}
+    for label in ("TEMELFATURA", "TICARIFATURA", "EARSIVFATURA_CORPORATE", "EARSIVFATURA_CONSUMER"):
+        document = parse(candidates / (label + ".xml"))
+        report = transform(document, label)
+        results[label] = summarize(report)
+        if not results[label]["active-pattern"] or not results[label]["fired-rule"]:
             raise ValueError("Candidate did not exercise official rules")
-        results[profile]["rule_hints"] = public_rule_hints(report)
-        nodes = document.xpath("/i:Invoice/cbc:ProfileID", namespaces={
-            "i":"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2","cbc":CBC})
-        if len(nodes) != 1:
-            raise ValueError("Fixture profile missing")
-        nodes[0].text = "NEWTIC_INVALID_PROFILE_CONTROL"
-        bad_report = transform(document, profile + "_invalid_control")
-        bad = summarize(bad_report)
-        results[profile + "_invalid_control"] = bad
-        print(json.dumps({"profile": profile, "candidate": results[profile], "negative_control": bad}), flush=True)
-        if not (finding_keys(bad_report) - finding_keys(report)):
-            raise ValueError("Negative control did not demonstrate rule coverage")
+        results[label]["rule_hints"] = public_rule_hints(report)
+        print(json.dumps({"candidate_label":label, "candidate":results[label]}), flush=True)
+        # The ordinary samples previously passed: any new finding fails CI.
+        # Archive candidates are exploratory; the archive report schema is
+        # NOT equivalent to UBL invoice rules. Record findings separately.
+        ordinary = label in ("TEMELFATURA", "TICARIFATURA")
+        if ordinary and not results[label]["no_findings"]:
+            raise ValueError("Ordinary invoice candidate regression")
+        controls = [("profile", "/i:Invoice/cbc:ProfileID", "NEWTIC_INVALID_PROFILE_CONTROL")]
+        if ordinary:
+            controls.append(("currency", "/i:Invoice/cbc:DocumentCurrencyCode", "NEWTIC_INVALID_CURRENCY"))
+        for name, path, invalid in controls:
+            changed = parse(candidates / (label + ".xml"))
+            nodes = changed.xpath(path, namespaces=ns)
+            if len(nodes) != 1:
+                raise ValueError("Negative control target missing")
+            nodes[0].text = invalid
+            bad_label = label + "_invalid_" + name
+            bad_report = transform(changed, bad_label)
+            bad = summarize(bad_report)
+            results[bad_label] = bad
+            extra = bool(finding_keys(bad_report) - finding_keys(report))
+            print(json.dumps({"negative_control":bad_label,"result":bad,"new_assertion":extra}), flush=True)
+            if ordinary and not extra:
+                raise ValueError("Negative control did not demonstrate rule coverage")
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,
