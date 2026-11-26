@@ -40,10 +40,11 @@ def summarize(report):
     return counts
 
 
-def preserve_rule_namespaces(generated, *rule_trees):
+def preserve_rule_namespaces(generated, *rule_trees, pinned_xs_compat=False):
     """Carry source-declared XPath prefixes into the generated stylesheet.
 
-    The ISO XSLT1 skeleton drops xs, which only appears in XPath expressions.
+    The pinned GIB package has XPath 2.0 xs: expressions without a usable
+    XPath namespace binding. Only the exact verified package gets the shim.
     Do not edit rule text, XPath tests, template bodies or stylesheet version.
     """
     old = generated.getroot()
@@ -65,10 +66,25 @@ def preserve_rule_namespaces(generated, *rule_trees):
         if prefix in namespaces and namespaces[prefix] != uri:
             raise ValueError("Conflicting generated XPath namespace: " + prefix)
         namespaces[prefix] = uri
-    # The official rules use xs:date() and castable as xs:date. Check
-    # against the XML Schema namespace, never guess a conflicting URI.
-    if namespaces.get("xs") != "http://www.w3.org/2001/XMLSchema":
-        raise ValueError("Official XML Schema namespace missing")
+    # The exact pinned GIB source uses XML Schema type constructors in
+    # XPath, even though no usable sch:ns declaration survives expansion.
+    # Bind only the standard W3C xs prefix, and only for this reviewed
+    # digest. Do not repair any other undeclared or conflicting prefix.
+    xs_uri = "http://www.w3.org/2001/XMLSchema"
+    for tree in rule_trees:
+        source_xs = tree.getroot().nsmap.get("xs")
+        if source_xs is not None and source_xs != xs_uri:
+            raise ValueError("Conflicting source XML Schema namespace")
+    if "xs" not in namespaces:
+        if not pinned_xs_compat:
+            raise ValueError("Official XML Schema namespace missing")
+        expressions = old.xpath("//@test|//@select|//@match")
+        if not any(re.search(r"\bxs:[A-Za-z_]", expr) for expr in expressions):
+            raise ValueError("XML Schema namespace shim has no expression to resolve")
+        namespaces["xs"] = xs_uri
+        print(json.dumps({"compatibility_shim": "xs", "uri": xs_uri, "rule_expressions_changed": False}), flush=True)
+    if namespaces["xs"] != xs_uri:
+        raise ValueError("Conflicting XML Schema namespace")
     new = etree.Element(old.tag, nsmap=namespaces)
     for key, value in old.attrib.items():
         new.set(key, value)
@@ -139,7 +155,7 @@ def main(zip_path, candidates, work):
     expanded = isoschematron.iso_abstract_expand(included)
     generated = isoschematron.iso_svrl_for_xslt1(expanded)
     stylesheet = work / "validator.xsl"
-    fixed_root = preserve_rule_namespaces(generated, expanded)
+    fixed_root = preserve_rule_namespaces(generated, expanded, pinned_xs_compat=True)
     stylesheet.write_bytes(etree.tostring(fixed_root, encoding="UTF-8", xml_declaration=True))
     restored = parse(stylesheet).getroot()
     if restored.nsmap.get("xs") != "http://www.w3.org/2001/XMLSchema":

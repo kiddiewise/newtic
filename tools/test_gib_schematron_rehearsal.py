@@ -38,5 +38,24 @@ class NamespaceContextTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Official XML Schema namespace missing"):
             preserve_rule_namespaces(self.stylesheet(), tree(f'<sch:schema xmlns:sch="{SCH}"/>'))
 
+
+    def test_pinned_package_shim_binds_only_standard_xs(self):
+        schema = tree(f'<sch:schema xmlns:sch="{SCH}"/>')
+        root = preserve_rule_namespaces(self.stylesheet(), schema, pinned_xs_compat=True)
+        restored = etree.fromstring(etree.tostring(root))
+        self.assertEqual(restored.nsmap["xs"], XS)
+        self.assertEqual(restored.xpath("//xsl:if/@test", namespaces={"xsl": XSL}), ["xs:date(.)"])
+
+    def test_pinned_shim_does_not_override_wrong_xs(self):
+        schema = tree(f'<sch:schema xmlns:sch="{SCH}"><sch:ns prefix="xs" uri="urn:wrong"/></sch:schema>')
+        with self.assertRaisesRegex(ValueError, "Conflicting XML Schema namespace"):
+            preserve_rule_namespaces(self.stylesheet(), schema, pinned_xs_compat=True)
+
+    def test_pinned_shim_is_not_applied_to_unrelated_stylesheet(self):
+        schema = tree(f'<sch:schema xmlns:sch="{SCH}"/>')
+        stylesheet = tree(f'<xsl:stylesheet xmlns:xsl="{XSL}" version="1.0"/>')
+        with self.assertRaisesRegex(ValueError, "shim has no expression"):
+            preserve_rule_namespaces(stylesheet, schema, pinned_xs_compat=True)
+
 if __name__ == "__main__":
     unittest.main()
