@@ -126,4 +126,50 @@ final class EdmInvoiceStatusTest extends TestCase
         $this->assertFalse($result['outcome']['automatic_retry']);
         $this->assertStringNotContainsString('private connection details',json_encode($result));
     }
+
+    public function test_documented_outgoing_states_are_distinct_and_never_authorize_send(): void
+    {
+        foreach ([
+            ['PACKAGE - PROCESSING','TEMELFATURA','packaging'],
+            ['PACKAGE - FAIL','TEMELFATURA','package_failed'],
+            ['SEND - PROCESSING','TEMELFATURA','sending'],
+            ['SEND - WAIT_GIB_RESPONSE','TEMELFATURA','waiting_gib'],
+            ['SEND - WAIT_SYSTEM_RESPONSE','TEMELFATURA','waiting_system'],
+            ['SEND - FAILED','TEMELFATURA','send_failed'],
+            ['SEND - WAIT_APPLICATION_RESPONSE','TICARIFATURA','waiting_application'],
+            ['ACCEPTED - SUCCEED','TICARIFATURA','accepted_succeeded'],
+            ['REJECTED - SUCCEED','TICARIFATURA','rejected_succeeded'],
+            ['CANCELLED - SUCCEED','EARSIVFATURA','cancelled_succeeded'],
+            ['ACCEPT - SUCCEED','TICARIFATURA','unknown'],
+            ['REJECTED - SUCCEED','TEMELFATURA','unknown'],
+        ] as [$raw,$profile,$expected]) {
+            $xml=str_replace('SEND - SUCCEED',$raw,$this->row(direction:'OUT',archive:$profile==='EARSIVFATURA'?'true':'false'));
+            $doc=new \DOMDocument();
+            $this->assertTrue($doc->loadXML('<response>'.$xml.'</response>',LIBXML_NONET));
+            $result=(new \App\Services\Invoices\EdmInvoiceStatusParser)->parse($doc->documentElement,self::UUID,$profile);
+            $this->assertSame($expected,$result['portal_state']);
+            $this->assertFalse($result['automatic_retry']);
+            $this->assertFalse($result['fiscal_success_confirmed']);
+        }
+    }
+
+    public function test_conflicting_commercial_response_and_unspecified_gib_code_remain_unconfirmed(): void
+    {
+        $this->setupReply(str_replace('SEND - SUCCEED','ACCEPTED - SUCCEED',$this->row(extra:'<GIB_STATUS_CODE>1300</GIB_STATUS_CODE><GIB_STATUS_CODESpecified>false</GIB_STATUS_CODESpecified><RESPONSE_CODE>REJECT</RESPONSE_CODE>')));
+        $result=(new EdmTestClient)->invoiceStatus('fixture','secret',self::UUID,'TICARIFATURA');
+        $this->assertSame('ok',$result['status']);
+        $this->assertSame('accepted_succeeded',$result['data']['portal_state']);
+        $this->assertSame('conflict',$result['data']['commercial_response']);
+        $this->assertNull($result['data']['gib']['code']);
+        $this->assertFalse($result['data']['fiscal_success_confirmed']);
+    }
+
+    public function test_reported_header_profile_mismatch_is_rejected(): void
+    {
+        $this->setupReply(str_replace('</HEADER>','<PROFILEID>TEMELFATURA</PROFILEID></HEADER>',$this->row()));
+        $result=(new EdmTestClient)->invoiceStatus('fixture','secret',self::UUID,'TICARIFATURA');
+        $this->assertSame('Lookup: STATUS_PROFILE_MISMATCH',$result['diagnostic']);
+        $this->assertNull($result['data']);
+    }
+
 }

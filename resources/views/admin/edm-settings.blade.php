@@ -96,10 +96,10 @@
         <p>EDM test ortamında eşleşen kayıt bulundu. Bu sonuç tek başına mali belge onayı değildir.</p>
         <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>ETTN</span><strong>{{ $result['uuid'] }}</strong></div>
         <div class="admin-detail-line"><span>Gözlemlenen fatura numarası</span><strong>{{ $result['invoice_number'] ?? 'Doğrulanmadı' }}</strong></div>
-        <div class="admin-detail-line"><span>EDM portal durumu</span><strong>{{ ['send_succeeded'=>'Gönderim işlemi başarılı','accept_succeeded'=>'Kabul işlemi başarılı'][$result['portal_state']] ?? 'Bilinmiyor' }}</strong></div>
+        <div class="admin-detail-line"><span>EDM portal durumu</span><strong>{{ ['packaging'=>'Zarflanıyor','package_failed'=>'Zarflama başarısız','sending'=>'Gönderiliyor','waiting_gib'=>'GİB yanıtı bekleniyor','waiting_system'=>'Sistem yanıtı bekleniyor','send_failed'=>'Gönderim başarısız','send_succeeded'=>'Gönderim işlemi başarılı','waiting_application'=>'Alıcı yanıtı bekleniyor','accepted_succeeded'=>'Alıcı kabul durumu','rejected_succeeded'=>'Alıcı ret durumu','cancelled_succeeded'=>'İptal durumu'][$result['portal_state']] ?? 'Bilinmiyor' }}</strong></div>
         <div class="admin-detail-line"><span>GİB zarf kodu</span><strong>{{ $result['gib']['code'] ?? 'Bildirilmedi' }}</strong></div>
         <p>{{ $result['gib']['message'] }} {{ $result['gib']['action'] }}</p>
-        <div class="admin-detail-line"><span>Ticari fatura yanıtı</span><strong>{{ ['accepted'=>'Kabul','rejected'=>'Ret','not_reported'=>'Bildirilmedi','not_applicable'=>'Uygulanmaz'][$result['commercial_response']] ?? 'Bilinmiyor' }}</strong></div>
+        <div class="admin-detail-line"><span>Ticari fatura yanıtı</span><strong>{{ ['accepted'=>'Kabul','rejected'=>'Ret','not_reported'=>'Bildirilmedi','not_applicable'=>'Uygulanmaz','conflict'=>'Çelişkili yanıt — doğrulama gerekli'][$result['commercial_response']] ?? 'Bilinmiyor' }}</strong></div>
         <div class="admin-detail-line"><span>e-Arşiv raporu</span><strong>{{ ['not_reported'=>'Bildirilmedi','uninterpreted'=>'Sonuç doğrulanmadı','not_applicable'=>'Uygulanmaz'][$result['archive_report']] ?? 'Bilinmiyor' }}</strong></div>
         <div class="admin-detail-line"><span>e-Arşiv iptal raporu</span><strong>{{ ['not_reported'=>'Bildirilmedi','uninterpreted'=>'Sonuç doğrulanmadı','not_applicable'=>'Uygulanmaz'][$result['archive_cancel_report']] ?? 'Bilinmiyor' }}</strong></div>
       </div>

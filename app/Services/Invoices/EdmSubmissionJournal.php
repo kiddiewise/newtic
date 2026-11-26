@@ -121,9 +121,9 @@ final class EdmSubmissionJournal
                     $code=$data['gib']['code']??null;
                     $values+=[
                         'state'=>'provider_record_found',
-                        'last_portal_state'=>$this->allowed($data['portal_state']??null,['send_succeeded','accept_succeeded','unknown']),
+                        'last_portal_state'=>$this->allowed($data['portal_state']??null,EdmInvoiceStatusParser::PORTAL_STATES),
                         'last_gib_code'=>is_string($code)&&preg_match('/^[0-9]{4}$/D',$code)?$code:null,
-                        'last_commercial_response'=>$this->allowed($data['commercial_response']??null,['accepted','rejected','not_reported','unknown','not_applicable']),
+                        'last_commercial_response'=>$this->allowed($data['commercial_response']??null,['accepted','rejected','not_reported','unknown','not_applicable','conflict']),
                         'last_archive_report'=>$this->allowed($data['archive_report']??null,['not_reported','uninterpreted','not_applicable']),
                         'last_archive_cancel_report'=>$this->allowed($data['archive_cancel_report']??null,['not_reported','uninterpreted','not_applicable']),
                         'observed_invoice_number'=>is_string($number)&&preg_match('/^[A-Z0-9]{3}[0-9]{13}$/D',$number)
