@@ -304,12 +304,70 @@ final class UblSaleCandidateTest extends TestCase
             $xml=$this->render($this->party(),$profile);
             $this->assertNotFalse(file_put_contents($dir.'/'.$profile.'.xml',$xml));
         }
+        foreach (['TEMELFATURA','TICARIFATURA'] as $profile) {
+            $r=$this->edmDraftRehearsal($profile);
+            $this->assertFalse($r['submission_allowed']);
+            $this->assertNotFalse(file_put_contents($dir.'/EDM_DRAFT_'.$profile.'.xml',$r['xml']));
+        }
         $corporate=$this->party()+['email'=>'buyer@example.test'];
         $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
         foreach (['EARSIVFATURA_CORPORATE'=>$this->archive($corporate),'EARSIVFATURA_CONSUMER'=>$this->archive($consumer,true)] as $name=>$archive) {
             $this->assertFalse($archive['submission_allowed']);
             $this->assertNotFalse(file_put_contents($dir.'/'.$name.'.xml',$archive['xml']));
         }
+    }
+
+
+    private function edmDraftRehearsal(string $profile='TEMELFATURA'): array
+    {
+        return (new UblSaleCandidate(new InvoicePreparationXml))->rehearseEdmDraft($this->draft(),$this->party(),$this->party(),$profile,'2026-11-26','TEST-1','2026-11-25');
+    }
+
+    public function test_edm_presigning_rehearsal_uses_documented_empty_extension_and_reference(): void
+    {
+        foreach (['TEMELFATURA','TICARIFATURA'] as $profile) {
+            $r=$this->edmDraftRehearsal($profile);
+            $this->assertFalse($r['submission_allowed']);
+            $this->assertFalse($r['signature_verified']);
+            $this->assertFalse($r['official_validation_confirmed']);
+            $this->assertSame(hash('sha256',$r['xml']),$r['sha256']);
+            $doc=new DOMDocument();
+            $this->assertTrue($doc->loadXML($r['xml'],LIBXML_NONET));
+            $xp=new DOMXPath($doc);
+            $xp->registerNamespace('ext','urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+            $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+            $this->assertSame(1.0,$xp->evaluate('count(//ext:ExtensionContent)'));
+            $this->assertSame(0.0,$xp->evaluate('count(//ext:ExtensionContent/*)'));
+            $this->assertSame('#Signature_'.UblSaleCandidate::EDM_SERIAL_SENTINEL,$xp->evaluate('string(//cac:Signature//cbc:URI)'));
+            $this->assertSame(0.0,$xp->evaluate('count(//*[namespace-uri()="http://www.w3.org/2000/09/xmldsig#" and local-name()="Signature"])'));
+            $this->assertSame($this->draft()->uuid,$xp->evaluate('string(//cbc:UUID)'));
+            $this->assertStringNotContainsString('NOT_FOR_SUBMISSION',$r['xml']);
+        }
+    }
+
+    public function test_edm_empty_extension_rehearsal_is_not_a_final_gib_xsd_document(): void
+    {
+        $schema=getenv('NEWTIC_GIB_XSD');
+        if (!$schema) $this->markTestSkipped('Operator-supplied GIB XSD package not configured.');
+        $this->assertFileExists($schema);
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($this->edmDraftRehearsal()['xml'],LIBXML_NONET));
+        $previous=libxml_use_internal_errors(true);
+        try {
+            $this->assertFalse($doc->schemaValidate($schema),'Recheck the pinned XSD assumption before changing submission policy.');
+            $errors=libxml_get_errors();
+            $this->assertTrue((bool)array_filter($errors,static fn($e)=>str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child')));
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+    }
+
+    public function test_edm_draft_rehearsal_does_not_support_archive_yet(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->edmDraftRehearsal('EARSIVFATURA');
     }
 
 }

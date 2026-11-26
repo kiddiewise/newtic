@@ -225,6 +225,16 @@ def main(zip_path, candidates, work):
             print(json.dumps({"negative_control":bad_label,"mode":mode,"result":bad,"new_assertion":extra}), flush=True)
             if not extra:
                 raise ValueError("Negative control did not demonstrate rule coverage")
+    # EDM sample shape is a pre-signing document, not a fiscal candidate.
+    # Observe rules without granting approval or masking any findings.
+    for profile in ("TEMELFATURA", "TICARIFATURA"):
+        label = "EDM_DRAFT_" + profile
+        report = transform(parse(candidates / (label + ".xml")), label, "efatura")
+        results[label] = summarize(report)
+        if not results[label]["active-pattern"] or not results[label]["fired-rule"]:
+            raise ValueError("EDM draft did not exercise official rules")
+        results[label]["rule_hints"] = public_rule_hints(report)
+        print(json.dumps({"edm_draft_rehearsal":label,"result":results[label],"submission_allowed":False}), flush=True)
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,
