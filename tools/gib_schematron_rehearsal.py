@@ -167,7 +167,16 @@ def main(zip_path, candidates, work):
     print(json.dumps({"processor": "Saxon-HE", "stylesheet_version": generated.getroot().get("version"),
                       "compiled_sha256": hashlib.sha256(stylesheet.read_bytes()).hexdigest()}), flush=True)
 
-    def transform(document, label):
+    # GIB schematron/Açıklamalar.txt (28.04.2017): type=efatura for
+    # e-Invoice, type=earchive for EARSIVFATURA. The pinned ISO skeleton
+    # exposes the original sch:let as an XSLT global parameter.
+    params = restored.xpath('/*/xsl:param[@name="type"]', namespaces={"xsl":"http://www.w3.org/1999/XSL/Transform"})
+    if len(params) != 1:
+        raise ValueError("Official document-type parameter not available")
+
+    def transform(document, label, mode):
+        if mode not in ("efatura", "earchive"):
+            raise ValueError("Unsupported GIB validation mode")
         # No customer data: all inputs are synthetic. Network namespace is
         # disabled by the CI shell for the transform stage. The local pinned
         # codelist resolves relative to the generated stylesheet.
@@ -177,7 +186,7 @@ def main(zip_path, candidates, work):
         process = subprocess.run(
             ["java", "-Djavax.xml.accessExternalDTD=", "-Djavax.xml.accessExternalSchema=",
              "-cp", str(jar), "net.sf.saxon.Transform", "-ext:off", "-dtd:off",
-             "-s:" + str(input_path), "-xsl:" + str(stylesheet), "-o:" + str(output_path)],
+             "-s:" + str(input_path), "-xsl:" + str(stylesheet), "-o:" + str(output_path), "type=" + mode],
             capture_output=True, text=True, timeout=90, cwd=work, check=False)
         if process.returncode:
             # Synthetic-only diagnostic; do not dump input XML or SVRL.
@@ -188,22 +197,20 @@ def main(zip_path, candidates, work):
     results = {}
     ns = {"i":"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2","cbc":CBC}
     for label in ("TEMELFATURA", "TICARIFATURA", "EARSIVFATURA_CORPORATE", "EARSIVFATURA_CONSUMER"):
+        ordinary = label in ("TEMELFATURA", "TICARIFATURA")
+        mode = "efatura" if ordinary else "earchive"
         document = parse(candidates / (label + ".xml"))
-        report = transform(document, label)
+        report = transform(document, label, mode)
         results[label] = summarize(report)
         if not results[label]["active-pattern"] or not results[label]["fired-rule"]:
             raise ValueError("Candidate did not exercise official rules")
         results[label]["rule_hints"] = public_rule_hints(report)
-        print(json.dumps({"candidate_label":label, "candidate":results[label]}), flush=True)
-        # The ordinary samples previously passed: any new finding fails CI.
-        # Archive candidates are exploratory; the archive report schema is
-        # NOT equivalent to UBL invoice rules. Record findings separately.
-        ordinary = label in ("TEMELFATURA", "TICARIFATURA")
-        if ordinary and not results[label]["no_findings"]:
-            raise ValueError("Ordinary invoice candidate regression")
-        controls = [("profile", "/i:Invoice/cbc:ProfileID", "NEWTIC_INVALID_PROFILE_CONTROL")]
-        if ordinary:
-            controls.append(("currency", "/i:Invoice/cbc:DocumentCurrencyCode", "NEWTIC_INVALID_CURRENCY"))
+        print(json.dumps({"candidate_label":label, "mode":mode, "candidate":results[label]}), flush=True)
+        if not results[label]["no_findings"]:
+            raise ValueError("Candidate failed its documented official validation mode")
+        controls = [("profile", "/i:Invoice/cbc:ProfileID", "NEWTIC_INVALID_PROFILE_CONTROL"),
+                    ("currency", "/i:Invoice/cbc:DocumentCurrencyCode", "NEWTIC_INVALID_CURRENCY"),
+                    ("other_profile", "/i:Invoice/cbc:ProfileID", "EARSIVFATURA" if ordinary else "TEMELFATURA")]
         for name, path, invalid in controls:
             changed = parse(candidates / (label + ".xml"))
             nodes = changed.xpath(path, namespaces=ns)
@@ -211,13 +218,23 @@ def main(zip_path, candidates, work):
                 raise ValueError("Negative control target missing")
             nodes[0].text = invalid
             bad_label = label + "_invalid_" + name
-            bad_report = transform(changed, bad_label)
+            bad_report = transform(changed, bad_label, mode)
             bad = summarize(bad_report)
             results[bad_label] = bad
             extra = bool(finding_keys(bad_report) - finding_keys(report))
-            print(json.dumps({"negative_control":bad_label,"result":bad,"new_assertion":extra}), flush=True)
-            if ordinary and not extra:
+            print(json.dumps({"negative_control":bad_label,"mode":mode,"result":bad,"new_assertion":extra}), flush=True)
+            if not extra:
                 raise ValueError("Negative control did not demonstrate rule coverage")
+    # EDM sample shape is a pre-signing document, not a fiscal candidate.
+    # Observe rules without granting approval or masking any findings.
+    for profile in ("TEMELFATURA", "TICARIFATURA"):
+        label = "EDM_DRAFT_" + profile
+        report = transform(parse(candidates / (label + ".xml")), label, "efatura")
+        results[label] = summarize(report)
+        if not results[label]["active-pattern"] or not results[label]["fired-rule"]:
+            raise ValueError("EDM draft did not exercise official rules")
+        results[label]["rule_hints"] = public_rule_hints(report)
+        print(json.dumps({"edm_draft_rehearsal":label,"result":results[label],"submission_allowed":False}), flush=True)
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,

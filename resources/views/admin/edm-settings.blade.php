@@ -110,4 +110,56 @@
     <p>Kontrolsüz tekrar gönderim yapmayın. Sonuçlar kaydedilmez.</p>
   @endif
 </section>
+<section class="admin-panel" style="margin-top:16px">
+  <div class="admin-panel-title"><h2>e-Fatura yönlendirme ön kontrolü</h2></div>
+  <p>Firma ve mükellef sorgularından seçtiğiniz test etiketleri ile aktif e-Fatura serisini kontrol edin. Numara ayrılmaz, taslak yüklenmez.</p>
+  <form method="POST" action="{{ route('admin.edm.lookup') }}" class="admin-form">
+    @csrf <input type="hidden" name="kind" value="routing_preview">
+    <label>Gönderici VKN/TCKN<input name="seller_id" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <label>Gönderici etiketi (GB)<input name="sender_alias" maxlength="259" autocomplete="off" placeholder="urn:mail:..." required></label>
+    <label>Alıcı VKN/TCKN<input name="buyer_id" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <label>Alıcı etiketi (PK)<input name="receiver_alias" maxlength="259" autocomplete="off" placeholder="urn:mail:..." required></label>
+    <label>Aktif e-Fatura serisi<input name="series" maxlength="3" pattern="[A-Z0-9]{3}" autocomplete="off" required></label>
+    <label>Seri yılı<input name="year" type="number" min="2000" max="2099" value="{{ now()->timezone('Europe/Istanbul')->year }}" required></label>
+    <button type="submit" class="admin-secondary" @disabled($status !== 'ok')>Yönlendirmeyi doğrula</button>
+  </form>
+  @if($lookupKind === 'routing_preview')
+    @if(($lookup['status'] ?? null) === 'ok')
+      @php($preview = $lookup['data'])
+      <div role="status">
+        @foreach(['company'=>'Gönderici firma','sender_alias'=>'GB eşleşmesi','series'=>'Aktif e-Fatura serisi','series_integrity'=>'Seri kayıt bütünlüğü','recipient'=>'Alıcı sorgusu','recipient_alias'=>'PK eşleşmesi','recipient_integrity'=>'Alıcı kayıt bütünlüğü'] as $key=>$label)
+          <div class="admin-detail-line"><span>{{ $label }}</span><strong>{{ $preview['checks'][$key] === true ? 'Doğrulandı' : ($preview['checks'][$key] === false ? 'Doğrulanamadı' : 'Bilinmiyor') }}</strong></div>
+        @endforeach
+        <p>Doğrulanamayan seri: {{ $preview['unreadable_series'] ?? 'Bilinmiyor' }} · Doğrulanamayan alıcı kaydı: {{ $preview['unverified_records'] ?? 'Bilinmiyor' }}</p>
+        <p>{{ $preview['all_checks_passed'] ? 'Yönlendirme ön kontrolleri tamamlandı.' : 'Yönlendirmede çözülmesi gereken kontroller var.' }} Gönderim yetkisi verilmedi.</p>
+      </div>
+    @else <p role="alert">Yönlendirme ön kontrolü tamamlanamadı.</p> @endif
+    <p>Sonuçlar saklanmaz. Bu ekran belge yükleme veya gönderme yetkisini doğrulamaz.</p>
+  @endif
+</section>
+<section class="admin-panel" style="margin-top:16px">
+  <div class="admin-panel-title"><h2>EDM XML belge doğrulama</h2></div>
+  <p>Mevcut giden test belgesini ETTN, senaryo ve taraf kimlikleri ile karşılaştırır. Ham XML gösterilmez veya saklanmaz.</p>
+  <form method="POST" action="{{ route('admin.edm.lookup') }}" class="admin-form">
+    @csrf <input type="hidden" name="kind" value="invoice_evidence">
+    <label>ETTN<input name="edm_uuid" maxlength="36" autocomplete="off" required></label>
+    <label>Belge senaryosu<select name="edm_profile" required><option value="TEMELFATURA">Temel fatura</option><option value="TICARIFATURA">Ticari fatura</option><option value="EARSIVFATURA">e-Arşiv fatura</option></select></label>
+    <label>Gönderici VKN/TCKN<input name="seller_id" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <label>Alıcı VKN/TCKN<input name="buyer_id" inputmode="numeric" maxlength="11" pattern="[0-9]{10,11}" autocomplete="off" required></label>
+    <button type="submit" class="admin-secondary" @disabled($status !== 'ok')>XML kimliğini doğrula</button>
+  </form>
+  @if($lookupKind === 'invoice_evidence')
+    @if(($lookup['status'] ?? null) === 'ok')
+      @php($evidence = $lookup['data'])
+      <div role="status">
+        <p>Belge kimliği eşleşti. Mali geçerlilik veya imza doğrulaması değildir.</p>
+        <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>ETTN</span><strong>{{ $evidence['uuid'] }}</strong></div>
+        <div class="admin-detail-line"><span>Fatura numarası</span><strong>{{ $evidence['invoice_number'] ?? 'Henüz tahsis edilmedi' }}</strong></div>
+        <div class="admin-detail-line"><span>XML boyutu</span><strong>{{ $evidence['xml_bytes'] }} bayt</strong></div>
+        <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>SHA-256</span><code>{{ $evidence['xml_sha256'] }}</code></div>
+        <div class="admin-detail-line"><span>İmza elemanı</span><strong>{{ $evidence['signature_element_present'] ? 'Mevcut — doğrulanmadı' : 'Bulunmadı' }}</strong></div>
+      </div>
+    @else <p role="alert">XML belge kimliği doğrulanamadı. Bu sonuç belgenin bulunmadığını kesinleştirmez.</p>@endif
+  @endif
+</section>
 @endsection

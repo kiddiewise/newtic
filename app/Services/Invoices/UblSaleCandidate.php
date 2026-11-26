@@ -134,7 +134,20 @@ final class UblSaleCandidate
         return ['xml'=>$xml,'header'=>$header,'requested_series'=>$series,'submission_allowed'=>false];
     }
 
-    private function document(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate,array $notes,bool $anonymousArchivePermitted): string
+    /**
+     * EDM C# pre-signing shape, offline only. Empty extension content is
+     * explicitly distinct from the GIB XSD candidate and is NOT approved
+     * for submission. No allocation, network, route, or signing.
+     */
+    public function rehearseEdmDraft(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate): array
+    {
+        if (!in_array($profile,['TEMELFATURA','TICARIFATURA'],true)) throw new DomainException('EDM ön imzalama provası yalnızca e-Fatura içindir.');
+        $xml=$this->document($draft,$seller,$buyer,$profile,$issueDate,$orderNumber,$orderDate,[],false,true);
+        return ['xml'=>$xml,'sha256'=>hash('sha256',$xml),'submission_allowed'=>false,
+            'signature_verified'=>false,'official_validation_confirmed'=>false];
+    }
+
+    private function document(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate,array $notes,bool $anonymousArchivePermitted,bool $edmRehearsal=false): string
     {
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iD',$draft->uuid ?? '')) throw new DomainException('Taslak ETTN geçersiz.');
         if ($this->date($orderDate)>$this->date($issueDate)) throw new DomainException('Sipariş tarihi belge tarihinden sonra olamaz.');
@@ -149,8 +162,10 @@ final class UblSaleCandidate
         $extensions=$root->appendChild($doc->createElementNS(self::EXT,'ext:UBLExtensions'));
         $extension=$extensions->appendChild($doc->createElementNS(self::EXT,'ext:UBLExtension'));
         $content=$extension->appendChild($doc->createElementNS(self::EXT,'ext:ExtensionContent'));
-        $marker=$content->appendChild($doc->createElementNS(self::UNSIGNED,'nwt:UnsignedCandidate'));
-        $marker->appendChild($doc->createTextNode('NOT_FOR_SUBMISSION'));
+        if (!$edmRehearsal) {
+            $marker=$content->appendChild($doc->createElementNS(self::UNSIGNED,'nwt:UnsignedCandidate'));
+            $marker->appendChild($doc->createTextNode('NOT_FOR_SUBMISSION'));
+        }
         $this->node($root,'cbc','UBLVersionID','2.1');
         $this->node($root,'cbc','CustomizationID','TR1.2');
         $this->node($root,'cbc','ProfileID',$profile);
@@ -159,7 +174,7 @@ final class UblSaleCandidate
         $this->node($root,'cbc','UUID',$draft->uuid);
         $this->node($root,'cbc','IssueDate',$issueDate);
         $this->node($root,'cbc','InvoiceTypeCode','SATIS');
-        $this->node($root,'cbc','Note','NEWTIC TEKNİK TEST ADAYI — RESMÎ BELGE DEĞİLDİR, GÖNDERİLMEZ.');
+        if (!$edmRehearsal) $this->node($root,'cbc','Note','NEWTIC TEKNİK TEST ADAYI — RESMÎ BELGE DEĞİLDİR, GÖNDERİLMEZ.');
         foreach ($notes as $note) $this->node($root,'cbc','Note',$note);
         $this->node($root,'cbc','DocumentCurrencyCode','TRY');
         $this->node($root,'cbc','LineCountNumeric',(string)count($draft->amounts['lines']));
@@ -179,7 +194,7 @@ final class UblSaleCandidate
         }
         $attachment=$this->node($signature,'cac','DigitalSignatureAttachment');
         $reference=$this->node($attachment,'cac','ExternalReference');
-        $this->node($reference,'cbc','URI','#NEWTIC_UNSIGNED_TEST_ONLY');
+        $this->node($reference,'cbc','URI',$edmRehearsal?'#Signature_'.self::EDM_SERIAL_SENTINEL:'#NEWTIC_UNSIGNED_TEST_ONLY');
         $root->insertBefore($signature,$supplier);
         $this->party($root,'AccountingCustomerParty',$buyer,$profile==='EARSIVFATURA' && $anonymousArchivePermitted);
         $index=0;
@@ -196,7 +211,8 @@ final class UblSaleCandidate
         if ($index!==count($draft->amounts['lines'])) throw new DomainException('Belge satırları uyuşmuyor.');
         $xml=$doc->saveXML();
         if ($xml===false) throw new DomainException('Fatura XML oluşturulamadı.');
-        (new UblCandidatePreflight)->validate($xml,$draft->amounts,$draft->uuid,$profile,$anonymousArchivePermitted);
+        if ($edmRehearsal) (new UblCandidatePreflight)->validateProviderDraft($xml,$draft->amounts,$draft->uuid,$profile);
+        else (new UblCandidatePreflight)->validate($xml,$draft->amounts,$draft->uuid,$profile,$anonymousArchivePermitted);
         return $xml;
     }
 }

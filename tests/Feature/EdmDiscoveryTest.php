@@ -172,4 +172,73 @@ final class EdmDiscoveryTest extends TestCase
         Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest') || $r->hasHeader('SOAPAction','SendInvoiceRequest'));
     }
 
+
+    private function previewPayload(): array
+    {
+        return ['kind'=>'routing_preview','seller_id'=>'1234567890','buyer_id'=>'1234567891','sender_alias'=>'urn:mail:gb@example.test',
+            'receiver_alias'=>'urn:mail:pk@example.test','series'=>'INV','year'=>'2026'];
+    }
+
+    public function test_routing_preview_reports_known_matches_and_unverified_rows_separately(): void
+    {
+        $this->actingAs($this->admin())->patch(route('admin.edm.update'),['edm_username'=>'fixture','edm_password'=>'secret']);
+        EdmSetting::whereKey(1)->update(['probe_status'=>'ok']);
+        Http::preventStrayRequests();
+        $company='<GetCompanyList><VKN>1234567890</VKN><UNVAN>Fixture</UNVAN><GB>urn:mail:gb@example.test</GB>'
+            .'<SERIALLIST><SERIAL>INV</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST>'
+            .'<SERIALLIST><SERIAL>INVALID</SERIAL></SERIALLIST></GetCompanyList>';
+        $recipient='<USER><IDENTIFIER>1234567891</IDENTIFIER><UNIT>PK</UNIT><ALIAS>urn:mail:pk@example.test</ALIAS></USER>'
+            .'<USER><IDENTIFIER>1234567891</IDENTIFIER><UNIT>OTHER</UNIT><ALIAS>invalid</ALIAS></USER>';
+        Http::fake([EdmTestClient::ENDPOINT=>Http::sequence()
+            ->push($this->reply('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+            ->push($this->reply('GetCompany',$company))
+            ->push($this->reply('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))
+            ->push($this->reply('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+            ->push($this->reply('CheckUser',$recipient))
+            ->push($this->reply('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
+        $r=$this->post(route('admin.edm.lookup'),$this->previewPayload())->assertOk()
+            ->assertSee('GB eşleşmesi')->assertSee('PK eşleşmesi')->assertSee('Doğrulanamayan seri: 1')
+            ->assertSee('Doğrulanamayan alıcı kaydı: 1')->assertSee('Gönderim yetkisi verilmedi')
+            ->assertDontSee('fixture-session')->assertDontSee('1234567891');
+        $this->assertStringContainsString('no-store',$r->headers->get('Cache-Control'));
+        $this->assertNull(session()->getOldInput('buyer_id'));
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        Http::assertSentCount(6);
+        Http::assertNotSent(fn($r)=>in_array($r->header('SOAPAction')[0],['LoadInvoiceRequest','SendInvoiceRequest','GetInvoiceSerialRequest'],true));
+    }
+
+    public function test_new_read_only_forms_require_admin_and_verified_connection(): void
+    {
+        Http::fake();
+        $evidence=['kind'=>'invoice_evidence','edm_uuid'=>'a268a924-0255-4da6-9b47-94383421cb48','edm_profile'=>'TEMELFATURA','seller_id'=>'1234567890','buyer_id'=>'1234567891'];
+        foreach ([$this->previewPayload(),$evidence] as $payload) {
+            auth()->logout();
+            $this->post(route('admin.edm.lookup'),$payload)->assertRedirect(route('admin.login'));
+            $this->actingAs(User::factory()->create())->post(route('admin.edm.lookup'),$payload)->assertForbidden();
+            $this->actingAs($this->admin())->post(route('admin.edm.lookup'),$payload)->assertSessionHasErrors('edm');
+        }
+        $this->assertNull(session()->getOldInput('buyer_id'));
+        Http::assertNothingSent();
+    }
+
+    public function test_invoice_evidence_form_displays_bounded_xml_evidence(): void
+    {
+        $this->actingAs($this->admin())->patch(route('admin.edm.update'),['edm_username'=>'fixture','edm_password'=>'secret']);
+        EdmSetting::whereKey(1)->update(['probe_status'=>'ok']);
+        $uuid='a268a924-0255-4da6-9b47-94383421cb48';
+        $id='INV2026000000001';
+        $xml='<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">'
+            .'<cbc:UUID>'.$uuid.'</cbc:UUID><cbc:ID>'.$id.'</cbc:ID><cbc:ProfileID>TEMELFATURA</cbc:ProfileID>'
+            .'<cac:AccountingSupplierParty><cac:Party><cac:PartyIdentification><cbc:ID>1234567890</cbc:ID></cac:PartyIdentification></cac:Party></cac:AccountingSupplierParty>'
+            .'<cac:AccountingCustomerParty><cac:Party><cac:PartyIdentification><cbc:ID>1234567891</cbc:ID></cac:PartyIdentification></cac:Party></cac:AccountingCustomerParty><cbc:Note>private-note</cbc:Note></Invoice>';
+        $this->sequence('GetInvoice','<INVOICE UUID="'.$uuid.'" ID="'.$id.'"><HEADER><SENDER>1234567890</SENDER><RECEIVER>1234567891</RECEIVER><PROFILEID>TEMELFATURA</PROFILEID></HEADER><CONTENT>'.base64_encode($xml).'</CONTENT></INVOICE>');
+        $r=$this->post(route('admin.edm.lookup'),['kind'=>'invoice_evidence','edm_uuid'=>$uuid,'edm_profile'=>'TEMELFATURA','seller_id'=>'1234567890','buyer_id'=>'1234567891'])
+            ->assertOk()->assertSee('Belge kimliği eşleşti')->assertSee(hash('sha256',$xml))->assertSee($uuid)
+            ->assertDontSee('private-note')->assertDontSee(base64_encode($xml))->assertDontSee('fixture-session');
+        $this->assertStringContainsString('no-store',$r->headers->get('Cache-Control'));
+        $this->get(route('admin.edm.edit'))->assertOk()->assertDontSee($uuid);
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        Http::assertSentCount(3);
+    }
+
 }

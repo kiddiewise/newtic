@@ -213,4 +213,50 @@ final class EdmSubmissionJournalTest extends TestCase
         $this->assertFalse(app()->bound(\App\Services\Invoices\EdmSandboxLoadPolicy::class));
     }
 
+
+    public function test_invoice_center_admin_filters_and_does_not_expose_customer_or_snapshot(): void
+    {
+        Http::fake();
+        $draft=$this->draft();
+        $local=$this->draft(false);
+        $attempt=$this->claim($draft,$this->account());
+        $this->get(route('admin.invoices.index'))->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->get(route('admin.invoices.index'))->assertForbidden();
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $response=$this->actingAs($admin)->get(route('admin.invoices.index',['state'=>'uncertain']))
+            ->assertOk()->assertSee($draft->uuid)->assertDontSee($local->uuid)
+            ->assertSee('Sonuç belirsiz')->assertDontSee('buyer@example.test')->assertDontSee($draft->snapshot_hash);
+        $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        $this->get(route('admin.invoices.index',['state'=>'local']))->assertOk()->assertSee($local->uuid)->assertDontSee($draft->uuid);
+        Http::assertNothingSent();
+    }
+
+    public function test_admin_center_reconciles_existing_test_attempt_only(): void
+    {
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $this->statusSequence('<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="EE12018000000013"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>SEND - SUCCEED</STATUS><GIB_STATUS_CODE>1300</GIB_STATUS_CODE><DIRECTION>Giden</DIRECTION></INVOICE_STATUS>');
+        $this->actingAs($admin)->post(route('admin.invoices.reconcile',['attempt'=>$attempt->id]))->assertRedirect(route('admin.invoices.index'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('edm_submission_attempts',['id'=>$attempt->id,'state'=>'provider_record_found','last_gib_code'=>'1300']);
+        $this->get(route('admin.invoices.index',['state'=>'observed']))->assertOk()->assertSee('EE12018000000013');
+        $this->assertSame('preparing',Order::findOrFail($draft->order_id)->status);
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest')||$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+    }
+
+    public function test_center_does_not_reconcile_attempt_after_order_becomes_non_test(): void
+    {
+        Http::fake();
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        Order::whereKey($draft->order_id)->update(['is_test'=>false]);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->post(route('admin.invoices.reconcile',['attempt'=>$attempt->id]))->assertNotFound();
+        Http::assertNothingSent();
+    }
+
 }

@@ -280,6 +280,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
         ->middleware('throttle:30,1')->name('analytics.live');
     Route::post('/fatura-ayarlari/edm/sorgula', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'lookup'])->middleware('throttle:edm-lookup')->name('edm.lookup');
     Route::get('/fatura-ayarlari/edm/sorgula', fn () => redirect()->route('admin.edm.edit'));
+    Route::get('/faturalar', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'index'])->name('invoices.index');
+    Route::post('/faturalar/{attempt}/durum', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'reconcile'])->middleware('throttle:edm-lookup')->name('invoices.reconcile');
     Route::get('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'edit'])->name('edm.edit');
     Route::patch('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'update'])->middleware('throttle:edm-settings')->name('edm.update');
     Route::post('/fatura-ayarlari/edm/baglanti', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'probe'])->middleware('throttle:edm-probe')->name('edm.probe');
