@@ -309,6 +309,8 @@ final class UblSaleCandidateTest extends TestCase
             $this->assertFalse($r['submission_allowed']);
             $this->assertNotFalse(file_put_contents($dir.'/EDM_DRAFT_'.$profile.'.xml',$r['xml']));
         }
+        $smokeDate=getenv('NEWTIC_EDM_SMOKE_DATE')?:'2026-11-26';
+        $this->assertNotFalse(file_put_contents($dir.'/EDM_CONTROLLED_SMOKE.xml',\App\Services\Invoices\EdmSandboxSmokeFixture::xml($smokeDate)));
         $corporate=$this->party()+['email'=>'buyer@example.test'];
         $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
         foreach (['EARSIVFATURA_CORPORATE'=>$this->archive($corporate),'EARSIVFATURA_CONSUMER'=>$this->archive($consumer,true)] as $name=>$archive) {
@@ -370,4 +372,23 @@ final class UblSaleCandidateTest extends TestCase
         $this->edmDraftRehearsal('EARSIVFATURA');
     }
 
+
+    public function test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception(): void
+    {
+        $schema=getenv('NEWTIC_GIB_XSD');
+        if (!$schema) $this->markTestSkipped('Operator-supplied GIB XSD package not configured.');
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML(\App\Services\Invoices\EdmSandboxSmokeFixture::xml(getenv('NEWTIC_EDM_SMOKE_DATE')?:'2026-11-26'),LIBXML_NONET));
+        $old=libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        try {
+            $this->assertFalse($doc->schemaValidate($schema));
+            $errors=libxml_get_errors();
+            $this->assertNotEmpty($errors);
+            foreach ($errors as $e) $this->assertTrue(str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child'),'Unexpected XSD failure outside EDM pre-signing extension');
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($old);
+        }
+    }
 }

@@ -259,4 +259,87 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertNothingSent();
     }
 
+
+    private function smokeFake(bool $accept=true): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function ($request) use ($f,$accept) {
+            $method=$request->header('SOAPAction')[0];
+            $body=match($method) {
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$f::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$f::GB.'</GB><SERIALLIST><SERIAL>A01</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST><SERIALLIST><SERIAL>BAD-ROW</SERIAL></SERIALLIST></GetCompanyList>',
+                'CheckUserRequest'=>'<USER><IDENTIFIER>'.$f::IDENTIFIER.'</IDENTIFIER><UNIT>PK</UNIT><ALIAS>'.$f::PK.'</ALIAS></USER><USER><UNIT>OTHER</UNIT><ALIAS>invalid</ALIAS></USER>',
+                'LoadInvoiceRequest'=>$accept?'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$f::UUID.'"/>':'<REQUEST_RETURN><RETURN_CODE>9</RETURN_CODE></REQUEST_RETURN>',
+                'GetInvoiceStatusRequest'=>'',
+                'GetInvoiceRequest'=>'',
+                default=>throw new \RuntimeException('Unexpected SOAP operation'),
+            };
+            if ($method==='LoadInvoiceRequest') {
+                $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'load_status'=>'reserved_unknown']);
+                $this->assertSame(0,DB::transactionLevel());
+                $this->assertStringContainsString('<INVOICESERIAL_REQUESTED>A01</INVOICESERIAL_REQUESTED>',$request->body());
+                $this->assertStringContainsString('<GENERATEINVOICEIDONLOAD>false</GENERATEINVOICEIDONLOAD>',$request->body());
+                $this->assertStringContainsString(base64_encode($f::xml('2026-11-26')),$request->body());
+            }
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+    }
+
+    public function test_controlled_smoke_loads_once_with_explicit_warning_exception_and_never_sends(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        $this->account();
+        $this->smokeFake();
+        $hash=hash('sha256',$f::xml('2026-11-26'));
+        $r=(new EdmTestClient)->runControlledSmoke('2026-11-26',$hash,$f::CONFIRM);
+        $this->assertSame('draft_acknowledged',$r['load_status']);
+        $this->assertSame('unconfirmed',$r['status_query']);
+        $this->assertFalse($r['fiscal_success_confirmed']);
+        $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'series_warnings'=>1,'recipient_warnings'=>1]);
+        $this->assertDatabaseCount('orders',0);
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        $again=(new EdmTestClient)->runControlledSmoke('2026-11-26',$hash,$f::CONFIRM);
+        $this->assertTrue($again['already_reserved']);
+        Http::assertSentCount(15);
+        Http::assertNotSent(fn($r)=>in_array($r->header('SOAPAction')[0],['SendInvoiceRequest','GetInvoiceSerialRequest'],true));
+    }
+
+    public function test_controlled_smoke_refuses_wrong_site_or_digest_before_any_http(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        Http::fake();
+        foreach (['https://customer.example.test',$f::STAGING_URL] as $site) {
+            config(['app.url'=>$site]);
+            try {
+                (new EdmTestClient)->runControlledSmoke('2026-11-26',str_repeat('a',64),$f::CONFIRM);
+                $this->fail('Unverified trial accepted');
+            } catch (DomainException $e) {
+                $this->assertStringStartsWith('SMOKE_',$e->getMessage());
+            }
+        }
+        $this->assertDatabaseCount('edm_sandbox_trials',0);
+        Http::assertNothingSent();
+    }
+
+    public function test_controlled_smoke_uncertain_load_cannot_be_repeated(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        $this->account();
+        $this->smokeFake(false);
+        $hash=hash('sha256',$f::xml('2026-11-26'));
+        $r=(new EdmTestClient)->runControlledSmoke('2026-11-26',$hash,$f::CONFIRM);
+        $this->assertSame('unconfirmed',$r['load_status']);
+        $this->assertSame('Lookup: SMOKE_ACK_UNCONFIRMED',$r['diagnostic']);
+        $this->assertTrue((new EdmTestClient)->runControlledSmoke('2026-11-26',$hash,$f::CONFIRM)['already_reserved']);
+        $this->assertDatabaseCount('edm_sandbox_trials',1);
+        Http::assertSentCount(15);
+    }
+
 }

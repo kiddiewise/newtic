@@ -101,6 +101,8 @@ Artisan::command('edm:diagnose {identifier}', function () {
                 'pk_count'=>count($data['aliases'] ?? []),
                 'gb_count'=>count($data['sender_aliases'] ?? []),
                 'unverified_records'=>(int)($data['unverified_records'] ?? 0),
+                'series_warning_reasons'=>$data['series_warning_reasons']??[],
+                'recipient_warning_reasons'=>$data['recipient_warning_reasons']??[],
             ],JSON_THROW_ON_ERROR));
         }
         return 0;
@@ -109,3 +111,20 @@ Artisan::command('edm:diagnose {identifier}', function () {
         return 1;
     }
 })->purpose('Read-only EDM test discovery diagnostic with redacted results');
+
+
+// Restricted one-shot staging experiment. The deployment workflow supplies
+// the digest of the exact synthetic XML checked with pinned GIB rules.
+// No credentials, customer information, raw SOAP or XML in CLI output.
+Artisan::command('edm:smoke-load {date} {sha256} {confirmation}', function () {
+    try {
+        $result=app(\App\Services\Invoices\EdmTestClient::class)->runControlledSmoke(
+            (string)$this->argument('date'),(string)$this->argument('sha256'),(string)$this->argument('confirmation'));
+        $this->line(json_encode($result,JSON_THROW_ON_ERROR));
+        return 0;
+    } catch (\Throwable $e) {
+        $safe=$e instanceof \DomainException && preg_match('/^SMOKE_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'SMOKE_EXECUTION_UNCONFIRMED';
+        $this->error($safe);
+        return 1;
+    }
+})->purpose('One isolated unsigned EDM sandbox draft; never sends or allocates a fiscal number');

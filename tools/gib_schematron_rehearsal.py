@@ -235,6 +235,14 @@ def main(zip_path, candidates, work):
             raise ValueError("EDM draft did not exercise official rules")
         results[label]["rule_hints"] = public_rule_hints(report)
         print(json.dumps({"edm_draft_rehearsal":label,"result":results[label],"submission_allowed":False}), flush=True)
+    # Exact one-shot synthetic sandbox payload, no real order/customer.
+    smoke = candidates / "EDM_CONTROLLED_SMOKE.xml"
+    report = transform(parse(smoke), "EDM_CONTROLLED_SMOKE", "efatura")
+    results["EDM_CONTROLLED_SMOKE"] = summarize(report)
+    print(json.dumps({"controlled_smoke_sha256":hashlib.sha256(smoke.read_bytes()).hexdigest(),
+                      "result":results["EDM_CONTROLLED_SMOKE"],"fiscal_approval":False}), flush=True)
+    if not results["EDM_CONTROLLED_SMOKE"]["no_findings"]:
+        raise ValueError("Controlled sandbox payload failed official rules")
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,

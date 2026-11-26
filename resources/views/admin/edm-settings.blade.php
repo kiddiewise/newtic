@@ -131,6 +131,11 @@
           <div class="admin-detail-line"><span>{{ $label }}</span><strong>{{ $preview['checks'][$key] === true ? 'Doğrulandı' : ($preview['checks'][$key] === false ? 'Doğrulanamadı' : 'Bilinmiyor') }}</strong></div>
         @endforeach
         <p>Doğrulanamayan seri: {{ $preview['unreadable_series'] ?? 'Bilinmiyor' }} · Doğrulanamayan alıcı kaydı: {{ $preview['unverified_records'] ?? 'Bilinmiyor' }}</p>
+        @php($reasonLabels=['series_code'=>'Seri kodu biçimi','series_year'=>'Seri yılı biçimi','series_active_flag'=>'Aktiflik alanı','series_archive_flag'=>'e-Arşiv alanı','series_internet_flag'=>'İnternet satış alanı','recipient_identifier_missing'=>'Alıcı kimliği eksik','recipient_identifier_mismatch'=>'Alıcı kimliği eşleşmedi','recipient_unit'=>'Birim türü','recipient_alias'=>'Etiket biçimi'])
+        @foreach(array_merge($preview['series_warning_reasons']??[],$preview['recipient_warning_reasons']??[]) as $reason=>$count)
+          @if(isset($reasonLabels[$reason]))<div class="admin-detail-line"><span>{{ $reasonLabels[$reason] }}</span><strong>{{ $count }} alan</strong></div>@endif
+        @endforeach
+        <p>Bir kayıtta birden fazla alan sorunu olabilir. Alan sayıları kayıt toplamından farklı olabilir.</p>
         <p>{{ $preview['all_checks_passed'] ? 'Yönlendirme ön kontrolleri tamamlandı.' : 'Yönlendirmede çözülmesi gereken kontroller var.' }} Gönderim yetkisi verilmedi.</p>
       </div>
     @else <p role="alert">Yönlendirme ön kontrolü tamamlanamadı.</p> @endif
