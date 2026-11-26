@@ -195,6 +195,34 @@ final class EdmTestClient
             'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
     }
 
+    /**
+     * Read one outgoing document by ETTN using EDM GetInvoice.
+     * Return bounded evidence only; exact XML bytes are not exported here.
+     */
+    public function invoiceXmlEvidence(#[\SensitiveParameter] string $username, #[\SensitiveParameter] string $password,
+        string $uuid,string $profile,#[\SensitiveParameter] string $seller,#[\SensitiveParameter] string $buyer): array
+    {
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD',$uuid)
+            || !in_array($profile,['TEMELFATURA','TICARIFATURA','EARSIVFATURA'],true)
+            || !preg_match('/^[0-9]{10,11}$/D',$seller) || $seller==='11111111111'
+            || !preg_match('/^[0-9]{10,11}$/D',$buyer) || ($buyer==='11111111111' && $profile!=='EARSIVFATURA')) {
+            return ['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: INVALID_XML_QUERY'];
+        }
+        return $this->read($username,$password,function ($session) use ($uuid,$profile,$seller,$buyer) {
+            // C# *Specified properties determine serialization of their value
+            // fields, not additional XML elements. Match documented SOAP.
+            $reply=$this->call('GetInvoice',$session,[
+                'INVOICE_SEARCH_KEY'=>[
+                    'LIMIT'=>'2','UUID'=>$uuid,'SENDER'=>$seller,'RECEIVER'=>$buyer,
+                    'READ_INCLUDED'=>'true','DIRECTION'=>$profile==='EARSIVFATURA'?'OUT-EARCHIVE':'OUT-EINVOICE',
+                    'ISARCHIVED'=>'true',
+                ],
+                'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>'XML',
+            ]);
+            return (new EdmInvoiceXmlEvidence)->parse($reply,$uuid,$profile,$seller,$buyer);
+        });
+    }
+
     private function validateIdentifier(#[\SensitiveParameter] string $identifier): void
     {
         if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier === '11111111111') throw new RuntimeException('Invalid lookup identifier');
@@ -242,7 +270,7 @@ final class EdmTestClient
 
     private function call(string $method, #[\SensitiveParameter] string $session, #[\SensitiveParameter] array $fields = []): DOMElement
     {
-        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus','LoadInvoice'], true)) throw new RuntimeException('Unsupported operation');
+        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus','GetInvoice','LoadInvoice'], true)) throw new RuntimeException('Unsupported operation');
         $doc = new DOMDocument('1.0','UTF-8');
         $envelope = $doc->appendChild($doc->createElementNS(self::SOAP,'s:Envelope'));
         $envelope->appendChild($doc->createElementNS(self::SOAP,'s:Header'));
@@ -254,7 +282,7 @@ final class EdmTestClient
             'SESSION_ID'=>$session,
             'CLIENT_TXN_ID'=>(string)Str::uuid(),
             'ACTION_DATE'=>now()->toIso8601String(),
-            'REASON'=>'NEWTIC read-only connection check',
+            'REASON'=>$method==='LoadInvoice'?'NEWTIC controlled sandbox draft load':'NEWTIC read-only connection check',
             'APPLICATION_NAME'=>'NEWTIC Commerce',
             'HOSTNAME'=>'NEWTIC',
             'CHANNEL_NAME'=>'TEST',
