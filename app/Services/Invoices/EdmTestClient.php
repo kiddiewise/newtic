@@ -189,6 +189,103 @@ final class EdmTestClient
      * Draft loading only, on the hard-coded sandbox. No service binding for
      * EdmSandboxLoadPolicy exists; current unsigned candidates always fail.
      */
+    /**
+     * Explicit, single-use CLI experiment for the merchant's authorized EDM
+     * sandbox. No real order or generic submission gate is relaxed. The
+     * exact synthetic XML digest must match the independently checked CI bytes.
+     * This only loads an unsigned draft; no number allocation or SendInvoice.
+     */
+    public function runControlledSmoke(string $date,string $checkedSha256,string $confirmation): array
+    {
+        $f=EdmSandboxSmokeFixture::class;
+        if (PHP_SAPI!=='cli' || rtrim((string)config('app.url'),'/')!==$f::STAGING_URL
+            || $confirmation!==$f::CONFIRM || $date!==now('Europe/Istanbul')->toDateString()
+            || !preg_match('/^[0-9a-f]{64}$/D',$checkedSha256)
+            || \Illuminate\Support\Facades\DB::transactionLevel()!==0) {
+            throw new \DomainException('SMOKE_SCOPE_OR_CONFIRMATION_INVALID');
+        }
+        $db=\Illuminate\Support\Facades\DB::class;
+        $existing=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
+        if ($existing) return ['uuid'=>$f::UUID,'load_status'=>$existing->load_status,'diagnostic'=>$existing->diagnostic,
+            'status_query'=>$existing->status_query,'xml_query'=>$existing->xml_query,'already_reserved'=>true,
+            'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
+        $xml=$f::xml($date);
+        if (!hash_equals($checkedSha256,hash('sha256',$xml))) throw new \DomainException('SMOKE_XML_DIGEST_MISMATCH');
+        $fields=$f::fields($date);
+        if (!hash_equals($checkedSha256,hash('sha256',base64_decode($fields['INVOICE']['CONTENT'],true)))) {
+            throw new \DomainException('SMOKE_REQUEST_DIGEST_MISMATCH');
+        }
+        $account=\App\Models\EdmSetting::query()->findOrFail(1);
+        if (!$account->configured() || !$account->revision || $account->probe_status!=='ok') {
+            throw new \DomainException('SMOKE_ACCOUNT_NOT_VERIFIED');
+        }
+        $preview=(new EdmRoutingPreview($this))->inspect($account,$f::IDENTIFIER,$f::IDENTIFIER,$f::GB,$f::PK,$f::SERIES,(int)substr($date,0,4));
+        foreach (['company','sender_alias','series','recipient','recipient_alias'] as $check) {
+            if (($preview['checks'][$check]??null)!==true) throw new \DomainException('SMOKE_SELECTED_ROUTE_UNVERIFIED');
+        }
+        // Merchant explicitly authorized a single isolated sandbox attempt
+        // despite one unrelated/unclassified series and recipient warning.
+        // Do not generalize this exception to other routes, accounts or orders.
+        if (!is_int($preview['unreadable_series']) || !is_int($preview['unverified_records'])
+            || $preview['unreadable_series']>1 || $preview['unverified_records']>1) {
+            throw new \DomainException('SMOKE_ROUTING_WARNINGS_CHANGED');
+        }
+        $db::transaction(function () use ($db,$account,$f,$date,$checkedSha256,$fields,$preview) {
+            $current=\App\Models\EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
+            if (!$current?->configured() || $current->probe_status!=='ok' || $current->revision!==$account->revision) {
+                throw new \DomainException('SMOKE_ACCOUNT_CHANGED');
+            }
+            if ($db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->exists()) throw new \DomainException('SMOKE_ALREADY_RESERVED');
+            $db::table('edm_sandbox_trials')->insert([
+                'uuid'=>$f::UUID,'account_revision'=>$account->revision,'issue_date'=>$date,
+                'xml_sha256'=>$checkedSha256,'request_sha256'=>hash('sha256',json_encode($fields,JSON_THROW_ON_ERROR)),
+                'series_warnings'=>$preview['unreadable_series'],'recipient_warnings'=>$preview['unverified_records'],
+                'load_status'=>'reserved_unknown','created_at'=>now(),'updated_at'=>now(),
+            ]);
+        },3);
+        $currentAccount=static fn()=>\App\Models\EdmSetting::query()->whereKey(1)
+            ->where('revision',$account->revision)->where('probe_status','ok')->exists();
+        $result=$this->read($account->username,$account->password,function ($session) use ($fields,$f,$currentAccount) {
+            if (!$currentAccount()) throw new EdmLookupFailure('SMOKE_ACCOUNT_CHANGED');
+            $reply=$this->call('LoadInvoice',$session,$fields);
+            $returns=[]; $invoices=[];
+            foreach ($reply->childNodes as $node) {
+                if (!$node instanceof DOMElement) continue;
+                if ($node->namespaceURI!==null && $node->namespaceURI!=='') throw new EdmLookupFailure('SMOKE_ACK_NAMESPACE');
+                if ($node->localName==='REQUEST_RETURN') $returns[]=$node;
+                elseif ($node->localName==='INVOICE') $invoices[]=$node;
+                else throw new EdmLookupFailure('SMOKE_ACK_UNEXPECTED_FIELD');
+            }
+            if (count($returns)!==1 || $this->value($returns[0],'RETURN_CODE')!=='0'
+                || count($invoices)!==1 || strtolower($invoices[0]->getAttribute('UUID'))!==$f::UUID) {
+                throw new EdmLookupFailure('SMOKE_ACK_UNCONFIRMED');
+            }
+            return ['draft_acknowledged'=>true];
+        });
+        $ack=$result['status']==='ok' && ($result['data']['draft_acknowledged']??false)===true;
+        $diagnostic=$result['diagnostic']??null;
+        if (!is_string($diagnostic) || !preg_match('/^(?:Login|Lookup|Logout): [A-Z0-9_]+$/D',$diagnostic)) $diagnostic=null;
+        $loadStatus=$ack?'draft_acknowledged':'unconfirmed';
+        // Record the attempt immediately, before any further read operations.
+        $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
+            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'updated_at'=>now()]);
+        $status='not_run'; $evidence='not_run';
+        if ($currentAccount()) {
+            $s=$this->invoiceStatus($account->username,$account->password,$f::UUID,$f::PROFILE);
+            $status=($s['status']??null)==='ok'?'matched':'unconfirmed';
+        }
+        if ($currentAccount()) {
+            $e=$this->invoiceXmlEvidence($account->username,$account->password,$f::UUID,$f::PROFILE,$f::IDENTIFIER,$f::IDENTIFIER);
+            $evidence=($e['status']??null)==='ok'?'matched':'unconfirmed';
+        }
+        $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
+            ->update(['status_query'=>$status,'xml_query'=>$evidence,'updated_at'=>now()]);
+        return ['uuid'=>$f::UUID,'load_status'=>$loadStatus,'diagnostic'=>$diagnostic,
+            'status_query'=>$status,'xml_query'=>$evidence,'already_reserved'=>false,
+            'series_warnings'=>$preview['unreadable_series'],'recipient_warnings'=>$preview['unverified_records'],
+            'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
+    }
+
     public function loadSandboxDraft(int $preparationId, #[\SensitiveParameter] string $xml, string $profile,
         #[\SensitiveParameter] string $senderAlias, #[\SensitiveParameter] string $receiverAlias,
         EdmSandboxLoadPolicy $policy, EdmSubmissionJournal $journal): array

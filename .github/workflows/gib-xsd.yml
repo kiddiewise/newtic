@@ -48,6 +48,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           test -s "$NEWTIC_GIB_XSD"
-          vendor/bin/phpunit --filter 'test_candidates_against_supplied_gib_xsd_when_configured|test_preflight_rejects_changed_candidate_fields|test_edm_empty_extension_rehearsal_is_not_a_final_gib_xsd_document' --fail-on-skipped --fail-on-warning
+          vendor/bin/phpunit --filter 'test_candidates_against_supplied_gib_xsd_when_configured|test_preflight_rejects_changed_candidate_fields|test_edm_empty_extension_rehearsal_is_not_a_final_gib_xsd_document|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception' --fail-on-skipped --fail-on-warning
       - name: Scope of validation
         run: echo 'XSD only. No Schematron, signature, fiscal approval, or EDM transmission.'
