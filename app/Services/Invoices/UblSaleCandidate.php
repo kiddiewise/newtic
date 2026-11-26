@@ -18,6 +18,8 @@ final class UblSaleCandidate
     private const INV='urn:oasis:names:specification:ubl:schema:xsd:Invoice-2';
     private const CAC='urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2';
     private const CBC='urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2';
+    private const EXT='urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2';
+    private const UNSIGNED='urn:newtic:unsigned-candidate:1';
     public const EDM_SERIAL_SENTINEL='ABC2009123456789';
 
     public function __construct(private InvoicePreparationXml $components) {}
@@ -141,6 +143,13 @@ final class UblSaleCandidate
         $doc=new DOMDocument('1.0','UTF-8');
         $doc->formatOutput=true;
         $root=$doc->appendChild($doc->createElementNS(self::INV,'Invoice'));
+        // The Turkish invoice XSD requires UBLExtensions and Signature.
+        // This explicit non-fiscal marker is NOT a cryptographic signature.
+        $extensions=$root->appendChild($doc->createElementNS(self::EXT,'ext:UBLExtensions'));
+        $extension=$extensions->appendChild($doc->createElementNS(self::EXT,'ext:UBLExtension'));
+        $content=$extension->appendChild($doc->createElementNS(self::EXT,'ext:ExtensionContent'));
+        $marker=$content->appendChild($doc->createElementNS(self::UNSIGNED,'nwt:UnsignedCandidate'));
+        $marker->appendChild($doc->createTextNode('NOT_FOR_SUBMISSION'));
         $this->node($root,'cbc','UBLVersionID','2.1');
         $this->node($root,'cbc','CustomizationID','TR1.2');
         $this->node($root,'cbc','ProfileID',$profile);
@@ -157,6 +166,20 @@ final class UblSaleCandidate
         $this->node($reference,'cbc','ID',$orderNumber);
         $this->node($reference,'cbc','IssueDate',$orderDate);
         $this->party($root,'AccountingSupplierParty',$seller);
+        // Build the required structural signature reference using validated
+        // seller fields, with an intentionally unresolved unsigned-only URI.
+        // EDM signing is not implemented; never send this test candidate.
+        $supplier=$root->lastChild;
+        $signature=$this->node($root,'cac','Signature');
+        $this->node($signature,'cbc','ID',$this->field($seller,'identifier',11))->setAttribute('schemeID','VKN_TCKN');
+        $signatory=$this->node($signature,'cac','SignatoryParty');
+        foreach ($supplier->firstChild->childNodes as $field) {
+            if ($field instanceof DOMElement) $signatory->appendChild($field->cloneNode(true));
+        }
+        $attachment=$this->node($signature,'cac','DigitalSignatureAttachment');
+        $reference=$this->node($attachment,'cac','ExternalReference');
+        $this->node($reference,'cbc','URI','#NEWTIC_UNSIGNED_TEST_ONLY');
+        $root->insertBefore($signature,$supplier);
         $this->party($root,'AccountingCustomerParty',$buyer,$profile==='EARSIVFATURA' && $anonymousArchivePermitted);
         $index=0;
         foreach ($parts->documentElement->childNodes as $node) {
