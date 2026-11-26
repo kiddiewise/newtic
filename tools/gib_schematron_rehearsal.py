@@ -39,6 +39,66 @@ def summarize(report):
     ][:100]
     return counts
 
+
+def preserve_rule_namespaces(generated, *rule_trees):
+    """Carry source-declared XPath prefixes into the generated stylesheet.
+
+    The ISO XSLT1 skeleton drops xs, which only appears in XPath expressions.
+    Do not edit rule text, XPath tests, template bodies or stylesheet version.
+    """
+    old = generated.getroot()
+    namespaces = dict(old.nsmap)
+    for tree in rule_trees:
+        declared = {p: uri for p, uri in tree.getroot().nsmap.items() if p}
+        for ns in tree.xpath("//s:ns", namespaces={"s": SCH}):
+            prefix, uri = ns.get("prefix"), ns.get("uri")
+            if not prefix or not uri:
+                raise ValueError("Invalid official namespace declaration")
+            if prefix in declared and declared[prefix] != uri:
+                raise ValueError("Conflicting source namespace declaration")
+            declared[prefix] = uri
+        for prefix, uri in declared.items():
+            if prefix in namespaces and namespaces[prefix] != uri:
+                raise ValueError("Conflicting generated namespace: " + prefix)
+            namespaces[prefix] = uri
+    # The official rules use xs:date() and castable as xs:date. Check
+    # against the XML Schema namespace, never guess a conflicting URI.
+    if namespaces.get("xs") != "http://www.w3.org/2001/XMLSchema":
+        raise ValueError("Official XML Schema namespace missing")
+    new = etree.Element(old.tag, nsmap=namespaces)
+    for key, value in old.attrib.items():
+        new.set(key, value)
+    new.text, new.tail = old.text, old.tail
+    for child in list(old):
+        new.append(child)
+    return new
+
+def finding_keys(report):
+    return {(node.get("test", ""), node.get("id", ""))
+            for node in report.xpath("//s:failed-assert", namespaces={"s": SVRL})}
+
+def public_rule_hints(report):
+    """Fixed categories from official assertion expressions; no values/messages."""
+    categories = {
+        "signature": ("signature", "xades", "digestvalue"),
+        "identity": ("partyidentification", "schemeid", "vkn", "tckn"),
+        "profile": ("profileid", "invoicetypecode"),
+        "currency": ("currency",),
+        "tax": ("tax", "percent"),
+        "date": ("issuedate", "issuetime"),
+        "unit": ("unitcode", "invoicedquantity"),
+        "address": ("postaladdress", "country", "cityname"),
+        "number": ("cbc:id", "uuid"),
+    }
+    hints = []
+    for test, rule_id in sorted(finding_keys(report)):
+        lower = test.lower()
+        category = next((name for name, terms in categories.items()
+                         if any(term in lower for term in terms)), "other")
+        hints.append({"fingerprint": hashlib.sha256((test + "|" + rule_id).encode()).hexdigest()[:16],
+                      "category": category})
+    return hints[:100]
+
 def main(zip_path, candidates, work):
     with open(zip_path, "rb") as stream:
         if hashlib.file_digest(stream, "sha256").hexdigest() != PIN:
@@ -75,7 +135,12 @@ def main(zip_path, candidates, work):
     expanded = isoschematron.iso_abstract_expand(included)
     generated = isoschematron.iso_svrl_for_xslt1(expanded)
     stylesheet = work / "validator.xsl"
-    stylesheet.write_bytes(etree.tostring(generated, encoding="UTF-8", xml_declaration=True))
+    fixed_root = preserve_rule_namespaces(generated, main_rules, common)
+    stylesheet.write_bytes(etree.tostring(fixed_root, encoding="UTF-8", xml_declaration=True))
+    restored = parse(stylesheet).getroot()
+    if restored.nsmap.get("xs") != "http://www.w3.org/2001/XMLSchema":
+        raise ValueError("Generated XPath namespace was not serialized")
+    print(json.dumps({"namespace_check": "ok", "xs": restored.nsmap["xs"]}), flush=True)
     jar = pathlib.Path("/usr/share/java/Saxon-HE.jar")
     if not jar.is_file():
         raise ValueError("Saxon-HE distribution JAR missing")
@@ -105,15 +170,19 @@ def main(zip_path, candidates, work):
         document = parse(candidates / (profile + ".xml"))
         report = transform(document, profile)
         results[profile] = summarize(report)
+        if not results[profile]["active-pattern"] or not results[profile]["fired-rule"]:
+            raise ValueError("Candidate did not exercise official rules")
+        results[profile]["rule_hints"] = public_rule_hints(report)
         nodes = document.xpath("/i:Invoice/cbc:ProfileID", namespaces={
             "i":"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2","cbc":CBC})
         if len(nodes) != 1:
             raise ValueError("Fixture profile missing")
         nodes[0].text = "NEWTIC_INVALID_PROFILE_CONTROL"
-        bad = summarize(transform(document, profile + "_invalid_control"))
+        bad_report = transform(document, profile + "_invalid_control")
+        bad = summarize(bad_report)
         results[profile + "_invalid_control"] = bad
         print(json.dumps({"profile": profile, "candidate": results[profile], "negative_control": bad}), flush=True)
-        if bad["failed-assert"] <= results[profile]["failed-assert"]:
+        if not (finding_keys(bad_report) - finding_keys(report)):
             raise ValueError("Negative control did not demonstrate rule coverage")
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
