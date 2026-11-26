@@ -278,6 +278,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
         ->middleware('throttle:10,1')->name('analytics.export');
     Route::get('/analitik-merkezi/canli', [AnalyticsCenterController::class, 'live'])
         ->middleware('throttle:30,1')->name('analytics.live');
+    Route::get('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'edit'])->name('edm.edit');
+    Route::patch('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'update'])->middleware('throttle:6,1')->name('edm.update');
+    Route::post('/fatura-ayarlari/edm/baglanti', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'probe'])->middleware('throttle:3,1')->name('edm.probe');
     Route::get('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'edit'])->name('paytr-settings.edit');
     Route::patch('/odeme-ayarlari/paytr', [PaytrSettingsController::class, 'update'])->middleware('throttle:10,1')->name('paytr-settings.update');
     Route::post('/odeme-ayarlari/paytr/test-modu', [PaytrSettingsController::class, 'testMode'])->middleware('throttle:6,1')->name('paytr-settings.test-mode');
