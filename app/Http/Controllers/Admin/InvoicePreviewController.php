@@ -25,6 +25,7 @@ final class InvoicePreviewController extends Controller
         }
         return response()->view('admin.orders.invoice-preview', [
             'order'=>$order,'preview'=>$preview,'calculationError'=>$error,'shippingRate'=>$rate,
+            'preparation'=>\App\Models\InvoicePreparation::query()->where('order_id',$order->getKey())->first(),
             'payment'=>OrderPaymentBreakdown::fromOrder($order),
         ])->header('Cache-Control','private, no-store, max-age=0');
     }

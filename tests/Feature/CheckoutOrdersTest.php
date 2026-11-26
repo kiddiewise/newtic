@@ -163,6 +163,41 @@ class CheckoutOrdersTest extends TestCase
         \Illuminate\Support\Facades\Http::assertNothingSent();
     }
 
+    public function test_invoice_preparation_preserves_one_uuid_and_exports_only_local_xml(): void
+    {
+        $this->purchase($this->product())->assertRedirect()->assertSessionHasNoErrors();
+        $order=Order::firstOrFail();
+        $store=route('admin.orders.invoice-preparation.store',$order);
+        $download=route('admin.orders.invoice-preparation.xml',$order);
+        \Illuminate\Support\Facades\Http::fake();
+        $this->post($store,['shipping_rate'=>20])->assertRedirect(route('admin.login'));
+        $this->actingAs(User::factory()->create())->post($store,['shipping_rate'=>20])->assertForbidden();
+        $this->get($download)->assertForbidden();
+        $this->actingAs($this->admin());
+        $this->post($store)->assertSessionHasErrors('invoice');
+        $this->assertDatabaseCount('invoice_preparations',0);
+        $this->post($store,['shipping_rate'=>20])->assertRedirect()->assertSessionHasNoErrors();
+        $draft=\App\Models\InvoicePreparation::firstOrFail();
+        $uuid=$draft->uuid;
+        $this->assertTrue(Str::isUuid($uuid));
+        $this->assertSame(57990,$draft->gross_cents);
+        $this->assertStringNotContainsString('gross_cents',$draft->getRawOriginal('amounts'));
+        $this->post($store,['shipping_rate'=>20])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('invoice_preparations',1);
+        $this->assertSame($uuid,$draft->fresh()->uuid);
+        $this->post($store,['shipping_rate'=>10])->assertSessionHasErrors('invoice');
+        $this->assertDatabaseCount('invoice_preparations',1);
+        $response=$this->get($download)->assertOk()->assertSee('LOCAL_ONLY_NOT_FOR_SUBMISSION',false)->assertSee($uuid)->assertSee('579.90')->assertDontSee('ayse@example.com');
+        $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        $doc=new \DOMDocument();
+        $this->assertTrue($doc->loadXML($response->getContent()));
+        $this->assertSame('InvoicePreparation',$doc->documentElement->localName);
+        $this->assertSame('false',$doc->documentElement->getAttribute('fiscalDocument'));
+        $this->get(route('admin.orders.invoice-preview',$order))->assertOk()->assertSee($uuid)->assertSee('Yerel taslak');
+        $this->assertSame('pending_payment',$order->fresh()->status);
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
     public function test_untracked_stock_can_be_ordered_without_decrement_or_cancel_restore(): void
     {
         $product = $this->product();
