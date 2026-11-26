@@ -131,6 +131,30 @@ final class EdmTestClient
         });
     }
 
+
+    /**
+     * Read-only sandbox lookup of one outgoing invoice by exact UUID.
+     * EDM portal, GIB envelope and commercial response are independent.
+     * No result permits a retry or marks a local invoice as issued.
+     */
+    public function invoiceStatus(#[\SensitiveParameter] string $username, #[\SensitiveParameter] string $password, string $uuid, string $profile): array
+    {
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD',$uuid)
+            || !in_array($profile,['TEMELFATURA','TICARIFATURA','EARSIVFATURA'],true)) {
+            return ['status'=>'failed','data'=>null,'diagnostic'=>'Lookup: INVALID_STATUS_QUERY'];
+        }
+        $result=$this->read($username,$password,function ($session) use ($uuid,$profile) {
+            $reply=$this->call('GetInvoiceStatus',$session,['INVOICE'=>['UUID'=>$uuid]]);
+            return (new EdmInvoiceStatusParser)->parse($reply,$uuid,$profile);
+        });
+        if ($result['status']!=='ok') {
+            $diagnostic=$result['diagnostic']??'';
+            $code=preg_match('/^Lookup: EDM_([0-9]{4,6})$/D',$diagnostic,$m) ? $m[1] : '';
+            $result['outcome']=EdmInvoiceOutcome::classify($code!==''?'edm':'transport',$code);
+        }
+        return $result;
+    }
+
     private function validateIdentifier(#[\SensitiveParameter] string $identifier): void
     {
         if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier === '11111111111') throw new RuntimeException('Invalid lookup identifier');
@@ -178,7 +202,7 @@ final class EdmTestClient
 
     private function call(string $method, #[\SensitiveParameter] string $session, #[\SensitiveParameter] array $fields = []): DOMElement
     {
-        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser'], true)) throw new RuntimeException('Unsupported operation');
+        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus'], true)) throw new RuntimeException('Unsupported operation');
         $doc = new DOMDocument('1.0','UTF-8');
         $envelope = $doc->appendChild($doc->createElementNS(self::SOAP,'s:Envelope'));
         $envelope->appendChild($doc->createElementNS(self::SOAP,'s:Header'));
@@ -197,7 +221,11 @@ final class EdmTestClient
             'COMPRESSED'=>'N',
         ] as $key=>$value) $this->append($doc,$header,$key,$value);
         foreach ($fields as $key=>$value) {
-            if (is_array($value)) {
+            if ($method==='GetInvoiceStatus' && $key==='INVOICE') {
+                $invoice=$operation->appendChild($doc->createElement('INVOICE'));
+                $invoice->setAttribute('TRXID','0');
+                $invoice->setAttribute('UUID',$value['UUID']);
+            } elseif (is_array($value)) {
                 $parent = $operation->appendChild($doc->createElement($key));
                 foreach ($value as $child=>$text) $this->append($doc,$parent,$child,$text);
             } else {
