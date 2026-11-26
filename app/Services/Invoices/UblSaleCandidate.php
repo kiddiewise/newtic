@@ -47,14 +47,14 @@ final class UblSaleCandidate
         return $date;
     }
 
-    private function party(DOMElement $root,string $type,array $data): void
+    private function party(DOMElement $root,string $type,array $data,bool $allowAnonymous=false): void
     {
         $identifier=$this->field($data,'identifier',11);
-        if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier==='11111111111') {
+        if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || ($identifier==='11111111111' && !$allowAnonymous)) {
             throw new DomainException('e-Fatura için geçerli taraf kimlik bilgisi gerekiyor.');
         }
         $personal=strlen($identifier)===11;
-        if ($personal) {
+        if ($personal && $identifier!=='11111111111') {
             $invalid=false;
             (new \App\Rules\TurkishIdentityNumber)->validate('identifier',$identifier,function () use (&$invalid) { $invalid=true; });
             if ($invalid) throw new DomainException('Geçersiz taraf T.C. kimlik numarası.');
@@ -72,6 +72,11 @@ final class UblSaleCandidate
         if (!$personal || isset($data['tax_office'])) {
             $scheme=$this->node($this->node($party,'cac','PartyTaxScheme'),'cac','TaxScheme');
             $this->node($scheme,'cbc','Name',$this->field($data,'tax_office'));
+        }
+        if (isset($data['email'])) {
+            $email=$this->field($data,'email',254);
+            if (!filter_var($email,FILTER_VALIDATE_EMAIL)) throw new DomainException('Alıcı e-posta adresi geçersiz.');
+            $this->node($this->node($party,'cac','Contact'),'cbc','ElectronicMail',$email);
         }
         if ($personal) {
             $person=$this->node($party,'cac','Person');
@@ -93,7 +98,41 @@ final class UblSaleCandidate
 
     public function render(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate): string
     {
-        if (!in_array($profile,['TEMELFATURA','TICARIFATURA'],true)) throw new DomainException('Bu test motoru yalnızca temel/ticari satış faturası adayını destekler.');
+        if (!in_array($profile,['TEMELFATURA','TICARIFATURA'],true)) throw new DomainException('Bu yöntem yalnızca temel/ticari satış faturası adayını destekler.');
+        return $this->document($draft,$seller,$buyer,$profile,$issueDate,$orderNumber,$orderDate,[],false);
+    }
+
+    /**
+     * Internet-sale archive candidate only. The caller must explicitly attest
+     * to a synthetic test or transaction-specific anonymous consumer eligibility.
+     * This is not a fiscal policy decision, and there is no submission route.
+     */
+    public function archive(InvoicePreparation $draft,array $seller,array $buyer,string $issueDate,string $orderNumber,string $orderDate,string $website,string $paymentMethod,?string $intermediary,\DateTimeInterface $paidAt,\DateTimeInterface $dispatchedAt,string $carrierVkn,string $carrierTitle,string $series,bool $anonymousArchivePermitted=false): array
+    {
+        if (!preg_match('/^[A-Z0-9]{3}$/D',$series) || in_array($series,['GIB','ABC'],true)) throw new DomainException('İnternet satışına özel belge serisi seçilmeli.');
+        $this->field($buyer,'email',254);
+        $header=(new EdmInternetSaleDetails)->build($website,$paymentMethod,$intermediary,$paidAt,$dispatchedAt,$carrierVkn,$carrierTitle);
+        $tz=new \DateTimeZone('Europe/Istanbul');
+        $paidLocal=\DateTimeImmutable::createFromInterface($paidAt)->setTimezone($tz);
+        $dispatchLocal=\DateTimeImmutable::createFromInterface($dispatchedAt)->setTimezone($tz);
+        if ($paidLocal->format('Y-m-d')<$this->date($orderDate) || $paidLocal->format('Y-m-d')>$this->date($issueDate)) throw new DomainException('Ödeme tarihi sipariş ve belge tarihleriyle uyuşmuyor.');
+        // Physical shipment data must be actual, not an invented future date.
+        // This preliminary flow does not support invoicing before dispatch.
+        if ($dispatchLocal->format('Y-m-d')>$issueDate) throw new DomainException('Bu teknik akışta sevk tarihi belge tarihinden sonra olamaz.');
+        $notes=['İnternet satışı teknik adayı.', 'Web adresi: '.$website,
+            'Ödeme şekli: '.str_replace('/ ','/',$paymentMethod),
+            'Ödeme tarihi: '.$paidLocal->format('Y-m-d'),
+            'Sevk tarihi: '.$dispatchLocal->format('Y-m-d'),
+            'Taşıyıcı: '.$this->field(['carrier'=>$carrierTitle],'carrier').' (VKN '.$carrierVkn.')'];
+        if ($intermediary!==null) $notes[]='Ödeme aracısı: '.$this->field(['intermediary'=>$intermediary],'intermediary');
+        $xml=$this->document($draft,$seller,$buyer,'EARSIVFATURA',$issueDate,$orderNumber,$orderDate,$notes,$anonymousArchivePermitted);
+        // Series choice remains local metadata, not an allocated invoice ID.
+        // EDM SOAP serialization and actual series membership checks are later gates.
+        return ['xml'=>$xml,'header'=>$header,'requested_series'=>$series,'submission_allowed'=>false];
+    }
+
+    private function document(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate,array $notes,bool $anonymousArchivePermitted): string
+    {
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iD',$draft->uuid ?? '')) throw new DomainException('Taslak ETTN geçersiz.');
         if ($this->date($orderDate)>$this->date($issueDate)) throw new DomainException('Sipariş tarihi belge tarihinden sonra olamaz.');
         $orderNumber=$this->field(['order'=>$orderNumber],'order',100);
@@ -111,13 +150,14 @@ final class UblSaleCandidate
         $this->node($root,'cbc','IssueDate',$issueDate);
         $this->node($root,'cbc','InvoiceTypeCode','SATIS');
         $this->node($root,'cbc','Note','NEWTIC TEKNİK TEST ADAYI — RESMÎ BELGE DEĞİLDİR, GÖNDERİLMEZ.');
+        foreach ($notes as $note) $this->node($root,'cbc','Note',$note);
         $this->node($root,'cbc','DocumentCurrencyCode','TRY');
         $this->node($root,'cbc','LineCountNumeric',(string)count($draft->amounts['lines']));
         $reference=$this->node($root,'cac','OrderReference');
         $this->node($reference,'cbc','ID',$orderNumber);
         $this->node($reference,'cbc','IssueDate',$orderDate);
         $this->party($root,'AccountingSupplierParty',$seller);
-        $this->party($root,'AccountingCustomerParty',$buyer);
+        $this->party($root,'AccountingCustomerParty',$buyer,$profile==='EARSIVFATURA' && $anonymousArchivePermitted);
         $index=0;
         foreach ($parts->documentElement->childNodes as $node) {
             if (!$node instanceof DOMElement || $node->namespaceURI!==self::CAC) continue;
