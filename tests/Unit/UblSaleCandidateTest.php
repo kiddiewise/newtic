@@ -184,4 +184,29 @@ final class UblSaleCandidateTest extends TestCase
         $this->expectException(DomainException::class);
         (new EdmInternetSaleDetails)->build('https://shop.example.test','ODEMEARACISI',null,new DateTimeImmutable('2026-11-25'),new DateTimeImmutable('2026-11-26'),'1234567890','Test taşıyıcı');
     }
+
+    public function test_preflight_rejects_changed_candidate_fields(): void
+    {
+        $xml=$this->render($this->party());
+        $draft=$this->draft();
+        $cases=[
+            ['<cbc:ProfileID>TEMELFATURA</cbc:ProfileID>','<cbc:ProfileID>TICARIFATURA</cbc:ProfileID>'],
+            ['<cbc:LineCountNumeric>1</cbc:LineCountNumeric>','<cbc:LineCountNumeric>2</cbc:LineCountNumeric>'],
+            ['<cbc:PayableAmount currencyID="TRY">299.70</cbc:PayableAmount>','<cbc:PayableAmount currencyID="TRY">299.71</cbc:PayableAmount>'],
+            ['<cbc:TaxTypeCode>0015</cbc:TaxTypeCode>','<cbc:TaxTypeCode>0000</cbc:TaxTypeCode>'],
+            ['<cbc:PriceAmount currencyID="TRY">83.250000000</cbc:PriceAmount>','<cbc:PriceAmount currencyID="TRY">83.260000000</cbc:PriceAmount>'],
+            ['NOT_FOR_SUBMISSION','SUBMISSION_ALLOWED'],
+        ];
+        foreach ($cases as [$from,$to]) {
+            $changed=str_replace($from,$to,$xml,$count);
+            $this->assertGreaterThan(0,$count);
+            try {
+                (new \App\Services\Invoices\UblCandidatePreflight)->validate($changed,$draft->amounts,$draft->uuid,'TEMELFATURA');
+                $this->fail('Tampered XML accepted');
+            } catch (DomainException $error) {
+                $this->assertStringContainsString('XML ön kontrolü',$error->getMessage());
+            }
+        }
+    }
+
 }

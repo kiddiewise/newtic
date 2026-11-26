@@ -193,6 +193,9 @@ final class UblSaleCandidate
             }
         }
         if ($index!==count($draft->amounts['lines'])) throw new DomainException('Belge satırları uyuşmuyor.');
-        return $doc->saveXML();
+        $xml=$doc->saveXML();
+        if ($xml===false) throw new DomainException('Fatura XML oluşturulamadı.');
+        (new UblCandidatePreflight)->validate($xml,$draft->amounts,$draft->uuid,$profile,$anonymousArchivePermitted);
+        return $xml;
     }
 }
