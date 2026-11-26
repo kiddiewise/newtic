@@ -1,0 +1,52 @@
+name: GIB pinned official Schematron rehearsal
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/Services/Invoices/**'
+      - 'tests/Unit/UblSaleCandidateTest.php'
+      - 'tools/gib_schematron_rehearsal.py'
+      - 'tools/test_gib_schematron_rehearsal.py'
+      - '.github/workflows/gib-schematron-rehearsal.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  official-rule-rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, libxml, mbstring, pdo_sqlite, bcmath, gd
+          coverage: none
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          sudo apt-get update -qq
+          sudo apt-get install -y python3-lxml libsaxonhe-java
+      - name: Verify namespace regression cases
+        run: /usr/bin/python3 tools/test_gib_schematron_rehearsal.py
+      - name: Download pinned official package
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 120 --max-filesize 104857600 \
+            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/e-FaturaPaketi%20%2829%29.zip' -o "$RUNNER_TEMP/gib-current.zip"
+          printf '%s  %s\n' '12901476cd424fd65c779a4fb44cee798f9921ce55b003f8a076c936ddf8b583' "$RUNNER_TEMP/gib-current.zip" | sha256sum -c -
+      - name: Export actual PHP-generated synthetic candidates
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          php artisan key:generate
+          mkdir -m 700 "$RUNNER_TEMP/gib-candidates"
+          NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/gib-candidates" vendor/bin/phpunit --filter test_export_synthetic_candidates_for_official_rules_when_configured --fail-on-skipped --fail-on-warning
+      - name: Execute pinned official rules and negative controls
+        run: |
+          sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/gib-current.zip" "$RUNNER_TEMP/gib-candidates" "$RUNNER_TEMP/gib-rules"
+      - name: Scope
+        run: echo 'Synthetic unsigned ordinary e-Invoice only. No fiscal approval, e-Arsiv report validation, or EDM transmission.'

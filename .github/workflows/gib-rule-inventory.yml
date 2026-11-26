@@ -1,0 +1,36 @@
+name: GIB current rule package inventory (read only)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/gib-rule-inventory.yml'
+      - 'tools/gib_rule_inventory.py'
+      - 'tools/gib_archive_scope.py'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download official GIB packages and inspect without extracting or executing
+        shell: bash
+        run: |
+          set -euo pipefail
+          for spec in invoice archive; do
+            case "$spec" in
+              invoice) url='https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/e-FaturaPaketi%20%2829%29.zip' ;;
+              archive) url='https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/earsiv_paket_v1.20.zip' ;;
+            esac
+            curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 120 --max-filesize 104857600 "$url" -o "$RUNNER_TEMP/$spec.zip"
+            python3 tools/gib_rule_inventory.py "$RUNNER_TEMP/$spec.zip" "$spec"
+          done
+      - name: Verify pinned archive report scope without executing stylesheet
+        run: python3 tools/gib_archive_scope.py "$RUNNER_TEMP/archive.zip"
+      - name: Scope
+        run: echo 'Inventory only; no rule execution, no official validation, no provider request.'

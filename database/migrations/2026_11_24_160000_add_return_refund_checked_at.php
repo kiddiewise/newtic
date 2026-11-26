@@ -14,6 +14,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('order_return_requests', function (Blueprint $table) {
+            $table->dropIndex(['refund_checked_at']);
             $table->dropColumn('refund_checked_at');
         });
     }

@@ -142,4 +142,34 @@ final class EdmDiscoveryTest extends TestCase
         $this->assertNull(session()->getOldInput('edm_identifier'));
         $this->get(route('admin.edm.edit'))->assertOk()->assertDontSee('urn:mail:pk@example.test');
     }
+
+    public function test_invoice_status_form_is_admin_only_and_validates_without_flashing_uuid(): void
+    {
+        Http::fake();
+        $payload=['kind'=>'invoice_status','edm_uuid'=>'a268a924-0255-4da6-9b47-94383421cb48','edm_profile'=>'TEMELFATURA'];
+        $this->post(route('admin.edm.lookup'),$payload)->assertRedirect(route('admin.login'));
+        $this->actingAs(User::factory()->create())->post(route('admin.edm.lookup'),$payload)->assertForbidden();
+        $this->actingAs($this->admin())->post(route('admin.edm.lookup'),$payload)->assertSessionHasErrors('edm');
+        $this->post(route('admin.edm.lookup'),array_replace($payload,['edm_uuid'=>'bad']))->assertSessionHasErrors('edm');
+        $this->assertNull(session()->getOldInput('edm_uuid'));
+        Http::assertNothingSent();
+    }
+
+    public function test_invoice_status_form_displays_separate_read_only_states_without_persistence(): void
+    {
+        $this->actingAs($this->admin())->patch(route('admin.edm.update'),['edm_username'=>'fixture','edm_password'=>'secret']);
+        EdmSetting::whereKey(1)->update(['probe_status'=>'ok']);
+        $uuid='a268a924-0255-4da6-9b47-94383421cb48';
+        $this->sequence('GetInvoiceStatus','<INVOICE_STATUS UUID="'.$uuid.'" ID="EE12018000000013"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>SEND - SUCCEED</STATUS><STATUS_DESCRIPTION>private provider message</STATUS_DESCRIPTION><GIB_STATUS_CODE>1300</GIB_STATUS_CODE><RESPONSE_CODE>ACCEPT</RESPONSE_CODE><DIRECTION>Giden</DIRECTION></INVOICE_STATUS>');
+        $response=$this->post(route('admin.edm.lookup'),['kind'=>'invoice_status','edm_uuid'=>$uuid,'edm_profile'=>'TICARIFATURA'])
+            ->assertOk()->assertSee($uuid)->assertSee('1300')->assertSee('Ticari fatura yanıtı')->assertSee('mali belge onayı değildir')
+            ->assertDontSee('private provider message')->assertDontSee('fixture-session');
+        $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        $this->assertNull(session()->getOldInput('edm_uuid'));
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        $this->get(route('admin.edm.edit'))->assertOk()->assertDontSee($uuid);
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest') || $r->hasHeader('SOAPAction','SendInvoiceRequest'));
+    }
+
 }

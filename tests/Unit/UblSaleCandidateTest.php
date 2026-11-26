@@ -184,4 +184,132 @@ final class UblSaleCandidateTest extends TestCase
         $this->expectException(DomainException::class);
         (new EdmInternetSaleDetails)->build('https://shop.example.test','ODEMEARACISI',null,new DateTimeImmutable('2026-11-25'),new DateTimeImmutable('2026-11-26'),'1234567890','Test taşıyıcı');
     }
+
+    public function test_preflight_rejects_changed_candidate_fields(): void
+    {
+        $xml=$this->render($this->party());
+        $draft=$this->draft();
+        $cases=[
+            ['//cbc:ProfileID','TICARIFATURA'],
+            ['//cbc:LineCountNumeric','2'],
+            ['//cac:LegalMonetaryTotal/cbc:PayableAmount','299.71'],
+            ['//cbc:TaxTypeCode','0000'],
+            ['//cac:Price/cbc:PriceAmount','83.260000000'],
+            ['//nwt:UnsignedCandidate','SUBMISSION_ALLOWED'],
+        ];
+        foreach ($cases as [$path,$to]) {
+            $doc=new DOMDocument();
+            $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+            $xp=new DOMXPath($doc);
+            $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+            $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+            $xp->registerNamespace('nwt','urn:newtic:unsigned-candidate:1');
+            $nodes=$xp->query($path);
+            $this->assertGreaterThan(0,$nodes->length);
+            foreach ($nodes as $node) $node->textContent=$to;
+            $changed=$doc->saveXML();
+            try {
+                (new \App\Services\Invoices\UblCandidatePreflight)->validate($changed,$draft->amounts,$draft->uuid,'TEMELFATURA');
+                $this->fail('Tampered XML accepted');
+            } catch (DomainException $error) {
+                $this->assertStringContainsString('XML ön kontrolü',$error->getMessage());
+            }
+        }
+    }
+
+
+    public function test_edm_load_invoice_offline_contract_preserves_uuid_and_content(): void
+    {
+        $xml=$this->render($this->party());
+        $draft=$this->draft();
+        $rehearsal=new \App\Services\Invoices\EdmLoadInvoiceRehearsal;
+        $args=[$xml,$draft->amounts,$draft->uuid,'TEMELFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26T10:00:00+03:00')];
+        $result=$rehearsal->build(...$args);
+        $this->assertSame($result,$rehearsal->build(...$args));
+        $this->assertFalse($result['submission_allowed']);
+        $this->assertSame(hash('sha256',$xml),$result['content_sha256']);
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($result['soap_xml'],LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('s','http://schemas.xmlsoap.org/soap/envelope/');
+        $xp->registerNamespace('edm','http://tempuri.org/');
+        $root='/s:Envelope/s:Body/edm:LoadInvoiceRequest';
+        foreach ([
+            '/REQUEST_HEADER/SESSION_ID'=>'NEWTIC-OFFLINE-NOT-A-SESSION',
+            '/REQUEST_HEADER/CLIENT_TXN_ID'=>$draft->uuid,
+            '/INVOICE/@UUID'=>$draft->uuid,
+            '/INVOICE/HEADER/SENDER'=>'1234567890',
+            '/INVOICE/HEADER/RECEIVER'=>'1234567890',
+            '/INVOICE/HEADER/FROM'=>'urn:mail:sender@example.test',
+            '/SENDER/@alias'=>'urn:mail:sender@example.test',
+            '/RECEIVER/@alias'=>'urn:mail:buyer@example.test',
+            '/INVOICE/HEADER/EARCHIVE'=>'false',
+            '/GENERATEINVOICEIDONLOAD'=>'false',
+        ] as $path=>$expected) $this->assertSame($expected,$xp->evaluate('string('.$root.$path.')'));
+        $this->assertSame($xml,base64_decode($xp->evaluate('string('.$root.'/INVOICE/CONTENT)'),true));
+        $this->assertSame(0.0,$xp->evaluate('count(//*[local-name()="SendInvoiceRequest"])'));
+    }
+
+    public function test_edm_load_invoice_offline_rejects_invalid_alias(): void
+    {
+        $draft=$this->draft();
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\EdmLoadInvoiceRehearsal)->build($this->render($this->party()),$draft->amounts,$draft->uuid,'TEMELFATURA','invalid','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26'));
+    }
+
+    public function test_edm_load_invoice_offline_rejects_archive(): void
+    {
+        $draft=$this->draft();
+        $archive=$this->archive($this->party()+['email'=>'buyer@example.test']);
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\EdmLoadInvoiceRehearsal)->build($archive['xml'],$draft->amounts,$draft->uuid,'EARSIVFATURA','urn:mail:sender@example.test','urn:mail:buyer@example.test',new DateTimeImmutable('2026-11-26'));
+    }
+
+
+    public function test_provider_draft_preflight_blocks_existing_unsigned_candidate(): void
+    {
+        $this->expectException(DomainException::class);
+        (new \App\Services\Invoices\UblCandidatePreflight)->validateProviderDraft(
+            $this->render($this->party()),$this->draft()->amounts,$this->draft()->uuid,'TEMELFATURA');
+    }
+
+    public function test_provider_draft_preflight_checks_exact_monetary_snapshot(): void
+    {
+        // Synthetic final-shaped XML only; never a real signed invoice.
+        $xml=$this->render($this->party());
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($xml,LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xp->registerNamespace('nwt','urn:newtic:unsigned-candidate:1');
+        foreach ($xp->query('//nwt:UnsignedCandidate') as $node) $node->parentNode->removeChild($node);
+        foreach ($xp->query('//cbc:Note') as $node) $node->textContent='Synthetic fixture only';
+        foreach ($xp->query('//cac:Signature//cbc:URI') as $node) $node->textContent='#fixture-not-a-signature';
+        $validator=new \App\Services\Invoices\UblCandidatePreflight;
+        $draft=$this->draft();
+        $validator->validateProviderDraft($doc->saveXML(),$draft->amounts,$draft->uuid,'TEMELFATURA');
+        $xp->query('//cac:LegalMonetaryTotal/cbc:PayableAmount')->item(0)->textContent='299.71';
+        $this->expectException(DomainException::class);
+        $validator->validateProviderDraft($doc->saveXML(),$draft->amounts,$draft->uuid,'TEMELFATURA');
+    }
+
+
+    public function test_export_synthetic_candidates_for_official_rules_when_configured(): void
+    {
+        $dir=getenv('NEWTIC_GIB_CANDIDATES');
+        if (!$dir) $this->markTestSkipped('Official rule rehearsal export not configured.');
+        $this->assertDirectoryExists($dir);
+        foreach (['TEMELFATURA','TICARIFATURA'] as $profile) {
+            $xml=$this->render($this->party(),$profile);
+            $this->assertNotFalse(file_put_contents($dir.'/'.$profile.'.xml',$xml));
+        }
+        $corporate=$this->party()+['email'=>'buyer@example.test'];
+        $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
+        foreach (['EARSIVFATURA_CORPORATE'=>$this->archive($corporate),'EARSIVFATURA_CONSUMER'=>$this->archive($consumer,true)] as $name=>$archive) {
+            $this->assertFalse($archive['submission_allowed']);
+            $this->assertNotFalse(file_put_contents($dir.'/'.$name.'.xml',$archive['xml']));
+        }
+    }
+
 }

@@ -10,7 +10,7 @@
 <div class="admin-dashboard-grid">
   <section class="admin-panel">
     <div class="admin-editor-heading"><span class="admin-editor-heading-icon"><x-admin-icon name="settings"/></span><div><h2>EDM</h2><p>Test hesabı</p></div></div>
-    <p>Bu aşamada bağlantı, kontör, firma ve mükellefiyet sorguları yapılabilir. Canlı fatura gönderimi ve otomatik faturalandırma kapalıdır.</p>
+    <p>Bu aşamada bağlantı, kontör, firma, mükellefiyet ve fatura durum sorguları yapılabilir. Canlı fatura gönderimi ve otomatik faturalandırma kapalıdır.</p>
     <form method="POST" action="{{ route('admin.edm.update') }}" class="admin-form">
       @csrf @method('PATCH')
       <label>Test kullanıcı adı<input name="edm_username" type="text" required maxlength="255" autocomplete="off" placeholder="{{ $configured ? 'Kaydedildi — değiştirmek için yeniden girin' : 'EDM test kullanıcı adı' }}"></label>
@@ -26,7 +26,7 @@
     <div class="admin-detail-line"><span>Sonuç</span><strong>{{ ['ok'=>'Bağlantı doğrulandı','failed'=>'Oturum açılamadı','counter_failed'=>'Oturum açıldı, kontör sorgusu başarısız','logout_failed'=>'Kontör alındı, oturum kapatma doğrulanamadı'][$status ?? ''] ?? 'Bekliyor' }}</strong></div>
     <div class="admin-detail-line"><span>Kalan test kontörü</span><strong>{{ $counter !== null ? number_format($counter,0,',','.') : '—' }}</strong></div>
     <form method="POST" action="{{ route('admin.edm.probe') }}" class="admin-form">@csrf<button type="submit" class="admin-secondary" @disabled(!$configured)>Bağlantıyı test et</button></form>
-    <details><summary>Teknik servis bilgisi</summary><p style="overflow-wrap:anywhere">{{ $endpoint }}</p><p>SOAP 1.1 · Login / CheckCounter / Logout</p></details>
+    <details><summary>Teknik servis bilgisi</summary><p style="overflow-wrap:anywhere">{{ $endpoint }}</p><p>SOAP 1.1 · Login / CheckCounter / GetInvoiceStatus / Logout</p></details>
   </section>
 </div>
 <section class="admin-panel" style="margin-top:16px">
@@ -78,6 +78,36 @@
       <p role="alert">Mükellef sorgusu doğrulanamadı. Belge türü belirlenmedi.</p>
       @if(isset($lookup['diagnostic']))<p>Teknik sonuç: <code>{{ $lookup['diagnostic'] }}</code></p>@endif
     @endif
+  @endif
+</section>
+<section class="admin-panel" style="margin-top:16px">
+  <div class="admin-panel-title"><h2>Fatura durum sorgulama</h2></div>
+  <p>EDM test hesabındaki giden belgeyi ETTN ile sorgulayın. Bu işlem fatura oluşturmaz, göndermez veya sipariş durumunu değiştirmez.</p>
+  <form method="POST" action="{{ route('admin.edm.lookup') }}" class="admin-form">
+    @csrf <input type="hidden" name="kind" value="invoice_status">
+    <label>ETTN<input name="edm_uuid" type="text" maxlength="36" pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" autocomplete="off" required></label>
+    <label>Belge senaryosu<select name="edm_profile" required><option value="TEMELFATURA">Temel fatura</option><option value="TICARIFATURA">Ticari fatura</option><option value="EARSIVFATURA">e-Arşiv fatura</option></select></label>
+    <button type="submit" class="admin-secondary" @disabled($status !== 'ok')>Fatura durumunu sorgula</button>
+  </form>
+  @if($lookupKind === 'invoice_status')
+    @if(($lookup['status'] ?? null) === 'ok')
+      @php($result = $lookup['data'])
+      <div role="status">
+        <p>EDM test ortamında eşleşen kayıt bulundu. Bu sonuç tek başına mali belge onayı değildir.</p>
+        <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>ETTN</span><strong>{{ $result['uuid'] }}</strong></div>
+        <div class="admin-detail-line"><span>Gözlemlenen fatura numarası</span><strong>{{ $result['invoice_number'] ?? 'Doğrulanmadı' }}</strong></div>
+        <div class="admin-detail-line"><span>EDM portal durumu</span><strong>{{ ['packaging'=>'Zarflanıyor','package_failed'=>'Zarflama başarısız','sending'=>'Gönderiliyor','waiting_gib'=>'GİB yanıtı bekleniyor','waiting_system'=>'Sistem yanıtı bekleniyor','send_failed'=>'Gönderim başarısız','send_succeeded'=>'Gönderim işlemi başarılı','waiting_application'=>'Alıcı yanıtı bekleniyor','accepted_succeeded'=>'Alıcı kabul durumu','rejected_succeeded'=>'Alıcı ret durumu','cancelled_succeeded'=>'İptal durumu'][$result['portal_state']] ?? 'Bilinmiyor' }}</strong></div>
+        <div class="admin-detail-line"><span>GİB zarf kodu</span><strong>{{ $result['gib']['code'] ?? 'Bildirilmedi' }}</strong></div>
+        <p>{{ $result['gib']['message'] }} {{ $result['gib']['action'] }}</p>
+        <div class="admin-detail-line"><span>Ticari fatura yanıtı</span><strong>{{ ['accepted'=>'Kabul','rejected'=>'Ret','not_reported'=>'Bildirilmedi','not_applicable'=>'Uygulanmaz','conflict'=>'Çelişkili yanıt — doğrulama gerekli'][$result['commercial_response']] ?? 'Bilinmiyor' }}</strong></div>
+        <div class="admin-detail-line"><span>e-Arşiv raporu</span><strong>{{ ['not_reported'=>'Bildirilmedi','uninterpreted'=>'Sonuç doğrulanmadı','not_applicable'=>'Uygulanmaz'][$result['archive_report']] ?? 'Bilinmiyor' }}</strong></div>
+        <div class="admin-detail-line"><span>e-Arşiv iptal raporu</span><strong>{{ ['not_reported'=>'Bildirilmedi','uninterpreted'=>'Sonuç doğrulanmadı','not_applicable'=>'Uygulanmaz'][$result['archive_cancel_report']] ?? 'Bilinmiyor' }}</strong></div>
+      </div>
+    @else
+      <p role="alert">Fatura durumu doğrulanamadı. Bu sonuç belgenin bulunmadığını kesinleştirmez.</p>
+      @if(isset($lookup['diagnostic']))<p>Teknik sonuç: <code>{{ $lookup['diagnostic'] }}</code></p>@endif
+    @endif
+    <p>Kontrolsüz tekrar gönderim yapmayın. Sonuçlar kaydedilmez.</p>
   @endif
 </section>
 @endsection

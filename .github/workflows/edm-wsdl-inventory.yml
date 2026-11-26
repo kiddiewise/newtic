@@ -1,0 +1,31 @@
+name: EDM sandbox WSDL contract inventory (read only)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/edm-wsdl-inventory.yml'
+      - 'tools/edm_wsdl_inventory.py'
+      - 'tools/test_edm_wsdl_inventory.py'
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test local schema inspection
+        run: python3 tools/test_edm_wsdl_inventory.py
+      - name: Fetch public sandbox WSDL only
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 45 --max-filesize 16777216 \
+            'https://test.edmbilisim.com.tr/EFaturaEDM21ea/EFaturaEDM.svc?singleWsdl' -o "$RUNNER_TEMP/edm-test.wsdl"
+          python3 tools/edm_wsdl_inventory.py "$RUNNER_TEMP/edm-test.wsdl"
+      - name: Scope
+        run: echo 'GET metadata only; no login, credentials, SOAP operations, invoice creation or sending.'
