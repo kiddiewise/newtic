@@ -605,6 +605,28 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_portable_store_can_queue_only_test_orders_and_requires_account_proof(): void
+    {
+        config(['app.url'=>'https://independent-shop.example.test','newtic.checkout_test_mode'=>true]);
+        Http::preventStrayRequests();
+        Http::fake();
+        $this->account();
+        $test=$this->dispatchOrder();
+        $live=$this->dispatchOrder('completed',true,false);
+        $service=app(\App\Services\Invoices\InvoiceDispatch::class);
+        $service->enqueue($test->id,null,null);
+        $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$test->id,'state'=>'queued']);
+        $this->assertTrue($service->process()['connection_pending']);
+        config(['newtic.checkout_test_mode'=>false]);
+        try {
+            $service->enqueue($live->id,null,null);
+            $this->fail('Live order accepted by sandbox worker');
+        } catch (DomainException $e) {}
+        $this->assertDatabaseCount('invoice_dispatch_requests',1);
+        $this->assertTrue($service->process()['connection_pending']);
+        Http::assertNothingSent();
+    }
+
     public function test_completion_automation_is_opt_in_and_does_not_capture_historical_orders(): void
     {
         config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
