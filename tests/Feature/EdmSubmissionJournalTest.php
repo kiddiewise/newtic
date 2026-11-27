@@ -122,8 +122,16 @@ final class EdmSubmissionJournalTest extends TestCase
         (new EdmSubmissionJournal)->recordLoadObservation($attempt->id,$attempt->account_revision,true,$number);
         $admin=\App\Models\User::factory()->create();
         $admin->forceFill(['is_admin'=>true])->save();
-        foreach (['<STATUS>LOAD - FAIL</STATUS>','<STATUS>LOAD - SUCCEED</STATUS><GIB_STATUS_CODE>1300</GIB_STATUS_CODE>'] as $state) {
-            $this->statusSequence('<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER>'.$state.'<DIRECTION>OUT</DIRECTION></INVOICE_STATUS>');
+        $states=['<STATUS>LOAD - FAIL</STATUS>','<STATUS>LOAD - SUCCEED</STATUS><GIB_STATUS_CODE>1300</GIB_STATUS_CODE>'];
+        Http::preventStrayRequests();
+        $sequence=Http::sequence();
+        foreach ($states as $state) {
+            $sequence->push($this->soap('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+                ->push($this->soap('GetInvoiceStatus','<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER>'.$state.'<DIRECTION>OUT</DIRECTION></INVOICE_STATUS>'))
+                ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'));
+        }
+        Http::fake([EdmTestClient::ENDPOINT=>$sequence]);
+        foreach ($states as $state) {
             (new EdmSubmissionJournal)->reconcile($attempt->id,new EdmTestClient());
             $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()
                 ->assertSee('Nihai gönderim şu anda kapalı')->assertDontSee('EDM gönderimini başlat');
