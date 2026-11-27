@@ -386,6 +386,11 @@ jobs:
           # Public EDM test-firm identifier supplied by the merchant; no secrets in the workflow.
           # The deployed application uses its existing encrypted test account and prints only counts/codes.
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 'cd "$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic" && timeout 90 php artisan edm:diagnose 3230512384 --no-ansi' || echo "EDM diagnostic unavailable; verify in admin"
+      - name: Classify stored EDM fault without exposing provider descriptions
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-fault-read]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && php artisan edm:classify-stored-load-fault --no-ansi"
       - name: Run explicitly authorized single EDM sandbox draft
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-smoke]') && !contains(github.event.head_commit.message, '[package-only]')
         run: |

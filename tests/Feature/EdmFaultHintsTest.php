@@ -48,4 +48,13 @@ final class EdmFaultHintsTest extends TestCase
         $this->assertSame(['description_unclassified'],$r['fault_hints']);
         $this->assertStringNotContainsString('private-value-1234',json_encode($r));
     }
+
+    public function test_stored_fault_classifier_never_returns_provider_text(): void
+    {
+        $c=\App\Services\Invoices\EdmStoredFault::class;
+        $this->assertSame(['dotnet_null_reference','provider_generic_load_failure'], $c::classify(['ERROR_LONG_DES'=>'Fatura yüklenemedi (Object reference not set to an instance of an object.) private@example.test']));
+        $this->assertSame(['description_unclassified'],$c::classify(['ERROR_SHORT_DES'=>'arbitrary-secret-value']));
+        $this->assertSame(['description_unavailable'],$c::classify([]));
+        $this->assertContains('nested_EDM_11029',$c::classify(['ERROR_LONG_DES'=>'11029']));
+    }
 }
