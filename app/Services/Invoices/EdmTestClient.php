@@ -439,7 +439,7 @@ final class EdmTestClient
         $date=now('Europe/Istanbul')->toDateString();
         $template=file_get_contents(InvoiceDispatch::templatePath());
         if (!is_string($template)) throw new \DomainException('ORDER_TEMPLATE_MISSING');
-        $fields=EdmOrderDraftPayload::fields($draft,$date,$template);
+        $fields=EdmOrderDraftPayload::fields($draft,$date,$template,$order);
         $f=EdmSandboxSmokeFixture::class;
         $preview=(new EdmRoutingPreview($this))->inspect($account,$f::IDENTIFIER,$f::IDENTIFIER,$f::GB,$f::PK,$f::SERIES,(int)substr($date,0,4));
         foreach (['company','sender_alias','series','recipient','recipient_alias'] as $key) if (($preview['checks'][$key]??null)!==true) throw new \DomainException('ORDER_ROUTE_UNVERIFIED');
@@ -530,6 +530,66 @@ final class EdmTestClient
         });
     }
 
+    /** Exact order readback, not a broad mailbox scan. C# sample defaults
+     * archived=false (omitted), and accepts OUT. Retry only read-only empty results. */
+    public function readOrderDocument(\App\Models\EdmSubmissionAttempt $attempt,\App\Models\EdmSetting $account,string $format): array
+    {
+        [$current,$row]=EdmOrderDocuments::context($attempt->id);
+        if ($current->revision!==$account->revision||$row->observed_invoice_number!==$attempt->observed_invoice_number||
+            !in_array($format,['xml','pdf'],true)) throw new \DomainException('ORDER_DOCUMENT_SCOPE');
+        $f=EdmSandboxSmokeFixture::class;
+        return $this->read($account->username,$account->password,function($session)use($attempt,$account,$format,$f){
+            foreach (['OUT','OUT-EINVOICE'] as $direction) {
+                if (!\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists()) throw new EdmLookupFailure('ORDER_ACCOUNT_CHANGED');
+                try {
+                    $reply=$this->call('GetInvoice',$session,['INVOICE_SEARCH_KEY'=>[
+                        'LIMIT'=>'2','ID'=>$attempt->observed_invoice_number,'UUID'=>$attempt->uuid,
+                        'READ_INCLUDED'=>'true','DIRECTION'=>$direction],
+                        'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>strtoupper($format)]);
+                } catch(EdmLookupFailure $e) {
+                    if ($e->safeCode==='EDM_11017') continue;
+                    throw $e;
+                }
+                $children=[];
+                foreach($reply->childNodes as $node) if($node instanceof DOMElement) $children[]=$node;
+                if (!$children||(count($children)===1&&$children[0]->localName==='REQUEST_RETURN'&&$this->value($children[0],'RETURN_CODE')==='0')) continue;
+                if ($format==='xml') {
+                    $e=(new EdmInvoiceXmlEvidence)->parse($reply,$attempt->uuid,$attempt->profile,$f::IDENTIFIER,$f::IDENTIFIER,true);
+                    if ($e['invoice_number']!==$attempt->observed_invoice_number) throw new EdmLookupFailure('ORDER_DOCUMENT_NUMBER_MISMATCH');
+                    return ['bytes'=>$e['private_xml_bytes'],'signature_present'=>$e['signature_element_present']];
+                }
+                return ['bytes'=>EdmSandboxDocuments::pdf($reply,$attempt->uuid,$attempt->observed_invoice_number)];
+            }
+            throw new EdmLookupFailure('GETINVOICE_EMPTY_RESULT');
+        });
+    }
+
+    public function sendReservedOrderDraft(\App\Models\EdmSubmissionAttempt $attempt,\App\Models\EdmSetting $account): array
+    {
+        [$current,$row]=EdmOrderDocuments::context($attempt->id);
+        if ($current->revision!==$account->revision||$row->observed_invoice_number!==$attempt->observed_invoice_number||
+            !\Illuminate\Support\Facades\DB::table('edm_order_send_requests')->where('attempt_id',$attempt->id)
+                ->where('account_revision',$account->revision)->where('invoice_id',$attempt->observed_invoice_number)->where('state','outcome_unknown')->exists()) throw new \DomainException('SEND_NOT_RESERVED');
+        $f=EdmSandboxSmokeFixture::class;
+        // Consumes the one-time transport reservation before login. Never repeat
+        // even if the process dies or the provider response is unavailable.
+        $claimed=\Illuminate\Support\Facades\DB::table('edm_order_send_requests')->where('attempt_id',$attempt->id)
+            ->where('state','outcome_unknown')->update(['state'=>'transport_started','updated_at'=>now()]);
+        if ($claimed!==1) throw new \DomainException('SEND_ALREADY_STARTED');
+        return $this->read($account->username,$account->password,function($session)use($attempt,$account,$f){
+            if (!\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists()) throw new EdmLookupFailure('ORDER_ACCOUNT_CHANGED');
+            $reply=$this->call('SendInvoice',$session,[
+                'SENDER'=>['vkn'=>$f::IDENTIFIER,'alias'=>$f::GB],'RECEIVER'=>['vkn'=>$f::IDENTIFIER,'alias'=>$f::PK],
+                'INVOICE'=>['UUID'=>$attempt->uuid,'ID'=>$attempt->observed_invoice_number]]);
+            if ($this->value($reply,'RETURN_CODE')!=='0') throw new EdmLookupFailure('SEND_RETURN_FAILED');
+            $matches=[];
+            foreach ($reply->childNodes as $node) if ($node instanceof DOMElement&&$node->localName==='INVOICE') $matches[]=$node;
+            if (count($matches)!==1||strtolower($matches[0]->getAttribute('UUID'))!==strtolower($attempt->uuid)||
+                $matches[0]->getAttribute('ID')!==$attempt->observed_invoice_number) throw new EdmLookupFailure('SEND_ACK_IDENTITY');
+            return ['accepted_for_processing'=>true];
+        });
+    }
+
     private function validateIdentifier(#[\SensitiveParameter] string $identifier): void
     {
         if (!preg_match('/^[0-9]{10,11}$/D',$identifier) || $identifier === '11111111111') throw new RuntimeException('Invalid lookup identifier');
@@ -579,7 +639,7 @@ final class EdmTestClient
 
     private function call(string $method, #[\SensitiveParameter] string $session, #[\SensitiveParameter] array $fields = []): DOMElement
     {
-        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus','GetInvoice','LoadInvoice'], true)) throw new RuntimeException('Unsupported operation');
+        if (!in_array($method, ['Login','CheckCounter','Logout','GetCompany','CheckUser','GetInvoiceStatus','GetInvoice','LoadInvoice','SendInvoice'], true)) throw new RuntimeException('Unsupported operation');
         $doc = new DOMDocument('1.0','UTF-8');
         $envelope = $doc->appendChild($doc->createElementNS(self::SOAP,'s:Envelope'));
         $envelope->appendChild($doc->createElementNS(self::SOAP,'s:Header'));
@@ -591,7 +651,7 @@ final class EdmTestClient
             'SESSION_ID'=>$session,
             'CLIENT_TXN_ID'=>(string)Str::uuid(),
             'ACTION_DATE'=>now()->toIso8601String(),
-            'REASON'=>$method==='LoadInvoice'?'NEWTIC controlled sandbox draft load':'NEWTIC read-only connection check',
+            'REASON'=>match($method){'LoadInvoice'=>'NEWTIC controlled sandbox draft load','SendInvoice'=>'NEWTIC administrator approved sandbox draft send',default=>'NEWTIC read-only connection check'},
             'APPLICATION_NAME'=>'NEWTIC Commerce',
             'HOSTNAME'=>'NEWTIC',
             'CHANNEL_NAME'=>'TEST',
@@ -606,10 +666,15 @@ final class EdmTestClient
                 $invoiceHeader=$invoice->appendChild($doc->createElement('HEADER'));
                 foreach ($value['HEADER'] as $name=>$text) $this->append($doc,$invoiceHeader,$name,$text);
                 $this->append($doc,$invoice,'CONTENT',$value['CONTENT']);
-            } elseif ($method==='LoadInvoice' && in_array($key,['SENDER','RECEIVER'],true)) {
+            } elseif (in_array($method,['LoadInvoice','SendInvoice'],true) && in_array($key,['SENDER','RECEIVER'],true)) {
                 $party=$operation->appendChild($doc->createElement($key));
                 $party->setAttribute('vkn',$value['vkn']);
                 $party->setAttribute('alias',$value['alias']);
+            } elseif ($method==='SendInvoice' && $key==='INVOICE') {
+                $invoice=$operation->appendChild($doc->createElement('INVOICE'));
+                $invoice->setAttribute('TRXID','0');
+                $invoice->setAttribute('UUID',$value['UUID']);
+                $invoice->setAttribute('ID',$value['ID']);
             } elseif ($method==='GetInvoiceStatus' && $key==='INVOICE') {
                 $invoice=$operation->appendChild($doc->createElement('INVOICE'));
                 $invoice->setAttribute('TRXID','0');

@@ -656,4 +656,39 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertNothingSent();
     }
 
+
+    public function test_provider_order_document_access_requires_admin_and_same_account(): void
+    {
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        $a=$this->account();$draft=$this->draft();$attempt=$this->claim($draft,$a);
+        $attempt->forceFill(['state'=>'provider_record_found','last_load_result'=>'draft_acknowledged','observed_invoice_number'=>'A012026000000304'])->save();
+        $url=route('admin.invoices.documents.download',['attempt'=>$attempt->id,'format'=>'pdf']);
+        $this->get($url)->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->get($url)->assertForbidden();
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get($url)->assertNotFound();
+        $pdf="%PDF-1.4\nfixture\n%%EOF\n";
+        DB::table('edm_order_documents')->insert(['attempt_id'=>$attempt->id,'format'=>'pdf','account_revision'=>$a->revision,
+            'invoice_id'=>$attempt->observed_invoice_number,'sha256'=>hash('sha256',$pdf),'byte_count'=>strlen($pdf),
+            'signature_present'=>false,'ciphertext'=>\Illuminate\Support\Facades\Crypt::encryptString(base64_encode($pdf)),'created_at'=>now()]);
+        $this->get($url)->assertOk()->assertHeader('Content-Type','application/pdf')->assertHeader('Cache-Control','max-age=0, no-store, private');
+        $this->account();$this->get($url)->assertNotFound();
+    }
+
+    public function test_new_order_payload_preserves_order_reference_and_catalog_labels(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-27 12:00:00','Europe/Istanbul'));
+        $o=$this->dispatchOrder();
+        $draft=app(\App\Services\Invoices\InvoicePreparationService::class)->prepare($o,null);
+        $r=\App\Services\Invoices\EdmOrderDraftPayload::fields($draft,'2026-11-27',file_get_contents($path),$o);
+        $xml=base64_decode($r['INVOICE']['CONTENT'],true);
+        $this->assertStringContainsString($o->order_number,$xml);
+        $this->assertStringContainsString('Private personalized label',$xml);
+        $this->assertStringContainsString('Sipariş alıcısı: Private Buyer',$xml);
+        $this->assertStringNotContainsString('private@example.test',$xml);
+        \App\Services\Invoices\EdmOrderDocuments::assertAmounts($xml,$draft);
+    }
 }

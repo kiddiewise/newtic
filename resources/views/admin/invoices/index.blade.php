@@ -7,6 +7,10 @@
 </div>
 <section class="admin-panel">
   <h2>Faturalandırma ayarları</h2>
+  <form method="POST" action="{{ route('admin.invoices.buyer-check') }}" class="admin-form">@csrf
+    <label>Alıcı mükellefiyet kontrolü<input name="identifier" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" required autocomplete="off"></label>
+    <button type="submit" class="admin-secondary">Belge türünü belirle</button>
+  </form>
   <form method="POST" action="{{ route('admin.invoices.settings') }}" class="admin-form">@csrf
     <input type="hidden" name="auto_invoice" value="0">
     <label class="admin-check"><input type="checkbox" name="auto_invoice" value="1" @checked($auto)> Sipariş tamamlandığında otomatik fatura oluştur</label>
@@ -81,6 +85,24 @@
         <div class="admin-detail-line"><span>Son sorgu zamanı</span><strong>{{ $row->last_lookup_at ?? '—' }}</strong></div>
         @if($row->can_reconcile)
           <form method="POST" action="{{ route('admin.invoices.reconcile',['attempt'=>$row->attempt_id]) }}">@csrf<button type="submit" class="admin-secondary">EDM durumunu güncelle</button></form>
+          @if($row->last_load_result==='draft_acknowledged' && $row->state==='provider_record_found' && $row->observed_invoice_number)
+            <form method="POST" action="{{ route('admin.invoices.documents.refresh',['attempt'=>$row->attempt_id]) }}">@csrf<button type="submit" class="admin-secondary">PDF / XML belgelerini getir</button></form>
+            @foreach($documentChecks[$row->attempt_id] ?? [] as $check)
+              <div class="admin-detail-line"><span>{{ strtoupper($check->format) }}</span><strong>{{ $check->state==='matched'?'Alındı':($check->diagnostic??'Doğrulanamadı') }}</strong></div>
+            @endforeach
+            @foreach($documents[$row->attempt_id] ?? [] as $doc)
+              <a class="admin-secondary" href="{{ route('admin.invoices.documents.download',['attempt'=>$row->attempt_id,'format'=>$doc->format]) }}">{{ strtoupper($doc->format) }} indir</a>
+            @endforeach
+            @if(isset($sendRequests[$row->attempt_id]))
+              <p>Gönderim: {{ ['accepted_for_processing'=>'EDM işleme aldı','unconfirmed'=>'Sonuç belirsiz','outcome_unknown'=>'İşlem ayrıldı','transport_started'=>'Gönderim başladı'][$sendRequests[$row->attempt_id]->state] ?? 'Bilinmiyor' }}. Nihai durum için sorgulayın.</p>
+            @elseif($row->last_portal_state==='draft' && !$row->last_gib_code)
+              <form method="POST" action="{{ route('admin.invoices.send',['attempt'=>$row->attempt_id]) }}" class="admin-form">@csrf
+                <label class="admin-check"><input type="checkbox" name="confirm_send" value="1" required> Bu taslağın EDM deneme ortamında nihai gönderimini onaylıyorum.</label>
+                <button type="submit" class="admin-primary">EDM gönderimini başlat</button>
+                <small>Tek seferlik işlem. XML ve taslak durumunun doğrulanması gerekir.</small>
+              </form>
+            @endif
+          @endif
         @else <p>Bu kayıt için mevcut EDM hesabıyla sorgulama yapılamıyor.</p> @endif
       @endif
     </article>

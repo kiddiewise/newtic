@@ -253,3 +253,11 @@ Artisan::command('edm:smoke-load-namespace {date} {sha256} {confirmation}',funct
         $this->error($e instanceof \DomainException&&preg_match('/^SECOND_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'SECOND_EXECUTION_UNCONFIRMED');return 1;
     }
 })->purpose('One namespace-corrected synthetic sandbox draft; no previous UUID retry');
+
+
+Artisan::command('edm:refresh-order-documents {attempt}',function(){
+    try {
+        $r=app(\App\Services\Invoices\EdmOrderDocuments::class)->refresh((int)$this->argument('attempt'),app(\App\Services\Invoices\EdmTestClient::class));
+        $this->line(json_encode($r,JSON_THROW_ON_ERROR));return 0;
+    } catch(\Throwable) {$this->error('ORDER_DOCUMENT_REFRESH_FAILED');return 1;}
+})->purpose('Read exact existing sandbox order documents; no new invoice or send');

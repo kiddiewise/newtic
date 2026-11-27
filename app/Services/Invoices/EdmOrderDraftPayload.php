@@ -10,19 +10,35 @@ use DOMXPath;
  * names and identifiers with the provider's own example identities. */
 final class EdmOrderDraftPayload
 {
-    public static function fields(InvoicePreparation $draft,string $date,string $template): array {
+    public static function fields(InvoicePreparation $draft,string $date,string $template,?\App\Models\Order $order=null): array {
         EdmSecondSandboxFixture::templateKind($template);
         $snapshot=$draft->amounts;
         InvoiceSnapshotRules::validate($snapshot);
         if (!hash_equals($draft->snapshot_hash,hash('sha256',json_encode($snapshot,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)))) throw new DomainException('ORDER_SNAPSHOT_CHANGED');
-        foreach ($snapshot['lines'] as $i=>&$line) $line['label']=$line['kind']==='shipping'?'Kargo':'Ürün '.($i+1);
-        unset($line);
+        // Caller passes the staging order only; operator confirmed all current
+        // staging orders are synthetic. Use its actual product labels and order
+        // reference. Historical offline fixtures retain the anonymized variant.
+        if ($order!==null && (!InvoiceDispatch::staging()||!$order->is_test||$order->id!==$draft->order_id))
+            throw new DomainException('ORDER_DATA_SCOPE');
+        if ($order===null) {
+            foreach ($snapshot['lines'] as $i=>&$line) $line['label']=$line['kind']==='shipping'?'Kargo':'Ürün '.($i+1);
+            unset($line);
+        }
         $copy=new InvoicePreparation(['uuid'=>$draft->uuid,'gross_cents'=>$draft->gross_cents,'amounts'=>$snapshot,
             'snapshot_hash'=>hash('sha256',json_encode($snapshot,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE))]);
         $f=EdmSandboxSmokeFixture::class;
         $party=['identifier'=>$f::IDENTIFIER,'name'=>'EDM Bilişim Sistemleri ve Danışmanlık Hizmetleri A.Ş.',
             'address'=>'Cansızoğlu işhanı No:7/35 Mecidiyeköy','district'=>'Şişli','city'=>'İstanbul','tax_office'=>'Esenler'];
-        $xml=(new UblSaleCandidate(new InvoicePreparationXml))->rehearseEdmDraft($copy,$party,$party,$f::PROFILE,$date,$draft->uuid,$date)['xml'];
+                $buyer=$party;
+        if ($order!==null) {
+            // Keep the verified EDM sandbox VKN/aliases. Site-entered test
+            // recipient names and addresses are included in UBL note, not
+            // assigned a false tax identity. Actual recipient routing is separate.
+            $buyer['address']=$order->street_address;
+            $buyer['district']=$order->district;
+            $buyer['city']=$order->city;
+        }
+        $xml=(new UblSaleCandidate(new InvoicePreparationXml))->rehearseEdmDraft($copy,$party,$buyer,$f::PROFILE,$date,$order?->order_number??$draft->uuid,$order?->placed_at?->timezone('Europe/Istanbul')->toDateString()??$date)['xml'];
         $doc=new DOMDocument();
         if (!$doc->loadXML($xml,LIBXML_NONET)||$doc->doctype) throw new DomainException('ORDER_XML_INVALID');
         $xp=new DOMXPath($doc);
@@ -35,6 +51,11 @@ final class EdmOrderDraftPayload
             if ($value!==null) $el->appendChild($doc->createTextNode($value));
             return $el;
         };
+        if ($order!==null) {
+            $note=$add($root,$cbc,'cbc:Note','Sipariş alıcısı: '.($order->company_title?:$order->customer_name));
+            $currency=$doc->getElementsByTagNameNS($cbc,'DocumentCurrencyCode')->item(0);
+            $root->insertBefore($note,$currency);
+        }
         $ref=$add($root,$cac,'cac:AdditionalDocumentReference');
         $root->insertBefore($ref,$xp->query('cac:Signature',$root)->item(0));
         $add($ref,$cbc,'cbc:ID',$draft->uuid);
