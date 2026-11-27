@@ -82,7 +82,7 @@
       <span class="payment-status-pill {{ in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true) ? 'is-verified' : '' }} {{ $order->status === 'cancelled' ? 'is-cancelled' : '' }}">{{ $tracking['payment'] }}</span>
     </div>
     @if($order->is_test)
-      <p class="checkout-testing-note"><strong>Ödeme bildirimi</strong> — banka hesabına para göndermeyin. Bildiriminizi ileterek sipariş işlemlerini sürdürebilirsiniz.</p>
+      <p class="checkout-testing-note"><strong>Ödeme bildirimi</strong> — Banka hesabına para göndermeyin. Bildiriminizi ileterek sipariş işlemlerini sürdürebilirsiniz.</p>
     @endif
     @if($order->status === 'pending_payment')
       @if(!$order->is_test && $latestPaymentNotification?->status !== 'pending')

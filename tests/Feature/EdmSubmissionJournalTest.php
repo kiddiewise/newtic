@@ -561,4 +561,58 @@ final class EdmSubmissionJournalTest extends TestCase
         $this->assertSame('A01',$fields['INVOICE']['HEADER']['INVOICESERIAL_REQUESTED']);
     }
 
+
+    public function test_order_dispatch_worker_with_pinned_template_calls_edm_once_after_numbered_trial(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        $template=file_get_contents($path);
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        $second=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        $service=\App\Services\Invoices\InvoiceDispatch::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-27 12:00:00','Europe/Istanbul'));
+        $account=$this->account();$order=$this->dispatchOrder();
+        $dispatcher=app($service);
+        $dispatcher->enqueue($order->id,null,null);
+        $draft=InvoicePreparation::where('order_id',$order->id)->firstOrFail();
+        DB::table('edm_sandbox_trials')->insert(['uuid'=>$second::UUID,'account_revision'=>$account->revision,
+            'issue_date'=>'2026-11-27','xml_sha256'=>str_repeat('a',64),'request_sha256'=>str_repeat('b',64),
+            'series_warnings'=>0,'recipient_warnings'=>0,'load_status'=>'draft_acknowledged',
+            'allocated_invoice_id'=>'A012026000000001','created_at'=>now(),'updated_at'=>now()]);
+        $file=$service::templatePath();
+        $this->assertFileDoesNotExist($file);
+        if (!is_dir(dirname($file))) mkdir(dirname($file),0700,true);
+        file_put_contents($file,$template);
+        try {
+            Http::preventStrayRequests();
+            Http::fake([EdmTestClient::ENDPOINT=>function($request)use($f,$draft,$order){
+                $m=$request->header('SOAPAction')[0];
+                if ($m==='LoadInvoiceRequest') {
+                    $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$order->id,'state'=>'processing']);
+                    $this->assertDatabaseHas('edm_submission_attempts',['uuid'=>$draft->uuid,'state'=>'outcome_unknown']);
+                    $this->assertSame(0,DB::transactionLevel());
+                    $this->assertStringContainsString('<GENERATEINVOICEIDONLOAD>true</GENERATEINVOICEIDONLOAD>',$request->body());
+                }
+                $body=match($m){
+                    'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                    'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                    'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$f::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$f::GB.'</GB><SERIALLIST><SERIAL>A01</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST></GetCompanyList>',
+                    'CheckUserRequest'=>'<USER><IDENTIFIER>'.$f::IDENTIFIER.'</IDENTIFIER><UNIT>PK</UNIT><ALIAS>'.$f::PK.'</ALIAS></USER>',
+                    'LoadInvoiceRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$draft->uuid.'" ID="A012026000000002"/>',
+                    'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="A012026000000002"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>DRAFT</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                    default=>throw new \RuntimeException('Unexpected SOAP method'),
+                };
+                return Http::response($this->soap(substr($m,0,-7),$body));
+            }]);
+            $this->assertSame(1,$dispatcher->process()['processed']);
+            $this->assertSame(0,$dispatcher->process()['processed']);
+            $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$order->id,'state'=>'acknowledged']);
+            $this->assertDatabaseHas('edm_submission_attempts',['uuid'=>$draft->uuid,'last_load_result'=>'draft_acknowledged','observed_invoice_number'=>'A012026000000002']);
+            $this->assertSame(1,Http::recorded(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest'))->count());
+            Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+            $this->assertSame('completed',$order->fresh()->status);
+        } finally {unlink($file);}
+    }
+
 }

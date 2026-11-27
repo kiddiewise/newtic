@@ -4,7 +4,6 @@ namespace App\Services\Invoices;
 use App\Models\EdmSetting;
 use App\Models\InvoicePreparation;
 use App\Models\Order;
-use App\Support\OrderPaymentBreakdown;
 use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +56,10 @@ final class InvoiceDispatch
         },3);
     }
     public function process(int $limit=5): array {
+        // A crash after the durable processing reservation is ambiguous.
+        // Never return it to the queue or automatically resend.
+        if (self::staging()) DB::table('invoice_dispatch_requests')->where('state','processing')
+            ->where('started_at','<',now()->subMinutes(15))->update(['state'=>'uncertain','diagnostic'=>'WORKER_INTERRUPTED','updated_at'=>now()]);
         $account=EdmSetting::query()->find(1);
         if (!self::ready($account)) return ['processed'=>0,'connection_pending'=>true];
         if ($account->auto_invoice&&$account->auto_invoice_since) {
