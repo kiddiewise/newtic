@@ -21,7 +21,11 @@ final class InvoicePreparationService
             if ($locked->status === 'cancelled') throw new DomainException('İptal edilen sipariş için taslak oluşturulamaz.');
             if ($locked->shipping_cents === 0) $shippingRate = null;
             $amounts = $this->amounts->preview($locked,$shippingRate);
-            if (!$amounts['complete']) throw new DomainException('KDV bilgileri eksik; taslak hazırlanamadı.');
+            if (!$amounts['complete']) {
+                $missingProduct=collect($amounts['lines'])->contains(fn($line)=>$line['kind']==='product'&&$line['rate']===null);
+                if ($missingProduct) throw new DomainException('Ürün KDV oranı eksik. Fatura yönetiminde eksik ürün KDV oranını onaylayın.');
+                throw new DomainException('Kargo KDV oranı eksik. Kargo KDV oranını seçin.');
+            }
             $hash = hash('sha256',json_encode($amounts,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
             $existing = InvoicePreparation::query()->where('order_id',$locked->getKey())->first();
             if ($existing) {

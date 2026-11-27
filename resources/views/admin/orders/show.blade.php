@@ -18,6 +18,7 @@
     </div>
   </header>
   @php
+    $missingInvoiceVat = $order->items->filter(fn($item)=>$item->vat_rate===null);
     $invoiceRequest = \Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('order_id',$order->id)->first();
     $processCancelled = $order->status === 'cancelled';
     $processCurrent = match($order->status) {'pending_payment'=>1,'preparing'=>2,'shipped','out_for_delivery'=>3,'completed'=>4,default=>null};
@@ -37,6 +38,10 @@
         <form method="POST" action="{{ route('admin.invoices.create') }}" class="admin-form">@csrf
           <input type="hidden" name="orders[]" value="{{ $order->id }}">
           @if($order->shipping_cents>0)<label>Kargo KDV<select name="shipping_rate"><option value="">Kayıtlı oran</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>@endif
+          @if($missingInvoiceVat->isNotEmpty())
+            <p>{{ $missingInvoiceVat->count() }} ürün satırında KDV eksik: {{ $missingInvoiceVat->pluck('product_name')->join(', ') }}</p>
+            <label>Eksik ürün KDV oranını onayla<select name="missing_product_rate" required><option value="">Oran seçin</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+          @endif
           <button type="submit" class="admin-primary">Fatura oluştur</button>
         </form>
       @else

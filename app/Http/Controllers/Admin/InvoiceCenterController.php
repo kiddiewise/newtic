@@ -42,7 +42,10 @@ final class InvoiceCenterController extends Controller
             'a.last_gib_code','a.observed_invoice_number','a.last_lookup_at')
             ->selectRaw('CASE WHEN a.account_revision = ? AND o.is_test = ? THEN 1 ELSE 0 END AS can_reconcile',[$revision,true])
             ->orderByDesc('p.id')->paginate(20)->appends(['state'=>$filter]);
-        $pending=\App\Services\Invoices\InvoiceDispatch::pending()->select('id','order_number','status','total_cents','shipping_cents','currency')->latest('id')->paginate(20,['*'],'waiting_page');
+        $pending=\App\Services\Invoices\InvoiceDispatch::pending()->select('id','order_number','status','total_cents','shipping_cents','currency')
+            ->withCount(['items as missing_vat_count'=>fn($q)=>$q->whereNull('vat_rate')])
+            ->with(['items'=>fn($q)=>$q->whereNull('vat_rate')->select('id','order_id','product_id','product_name','vat_rate'),'items.product:id,vat_rate'])
+            ->latest('id')->paginate(20,['*'],'waiting_page');
         $dispatches=DB::table('invoice_dispatch_requests as q')->join('orders as o','o.id','=','q.order_id')
             ->select('q.id','q.order_id','q.state','q.diagnostic','o.order_number')->latest('q.id')->limit(30)->get();
         $auto=(bool)$account?->auto_invoice; $shippingVat=$account?->shipping_vat_rate;
@@ -55,13 +58,14 @@ final class InvoiceCenterController extends Controller
     public function createInvoices(Request $request,\App\Services\Invoices\InvoiceDispatch $dispatch): RedirectResponse
     {
         $data=$request->validate(['orders'=>['required','array','min:1','max:20'],'orders.*'=>['required','integer','distinct','exists:orders,id'],
-            'shipping_rate'=>['nullable','integer','in:1,10,20']]);
+            'shipping_rate'=>['nullable','integer','in:1,10,20'], 'missing_product_rate'=>['nullable','integer','in:1,10,20']]);
         $count=0; $failed=[];
         foreach ($data['orders'] as $id) {
-            try {$dispatch->enqueue((int)$id,$request->user()->id,isset($data['shipping_rate'])?(int)$data['shipping_rate']:null);$count++;}
+            try {$dispatch->enqueue((int)$id,$request->user()->id,isset($data['shipping_rate'])?(int)$data['shipping_rate']:null,'manual',isset($data['missing_product_rate'])?(int)$data['missing_product_rate']:null);$count++;}
             catch (\DomainException $e) {$failed[]='#'.$id.': '.$e->getMessage();}
         }
-        $back=redirect()->route('admin.invoices.index')->with('success',$count.' fatura oluşturma isteği kaydedildi. EDM sonucu işlem merkezinde gösterilecek.');
+        $back=redirect()->route('admin.invoices.index');
+        if ($count>0) $back->with('success',$count.' fatura oluşturma isteği kaydedildi. EDM sonucu işlem merkezinde gösterilecek.');
         if ($failed) $back->withErrors(['invoice'=>implode(' | ',$failed)]);
         return $back;
     }
