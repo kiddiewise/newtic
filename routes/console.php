@@ -189,3 +189,21 @@ Artisan::command('edm:private-fault-evidence {uuid}',function () {
         return 1;
     }
 })->purpose('Export redacted EDM sandbox fault descriptions privately, never log plaintext');
+
+
+// Explicit release-only numbered sandbox trial. Template bytes on stdin,
+// pinned by the fixture; no customer payload, no SendInvoice, no retries.
+Artisan::command('edm:smoke-load-second {date} {sha256} {confirmation}', function () {
+    try {
+        $template=stream_get_contents(STDIN,512*1024+1);
+        if (!is_string($template)||strlen($template)>512*1024) throw new \DomainException('SECOND_TEMPLATE_INVALID');
+        $result=app(\App\Services\Invoices\EdmTestClient::class)->runSecondControlledSmoke(
+            (string)$this->argument('date'),$template,(string)$this->argument('sha256'),(string)$this->argument('confirmation'));
+        $this->line(json_encode($result,JSON_THROW_ON_ERROR));
+        return 0;
+    } catch (\Throwable $e) {
+        $safe=$e instanceof \DomainException&&preg_match('/^SECOND_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'SECOND_EXECUTION_UNCONFIRMED';
+        $this->error($safe);
+        return 1;
+    }
+})->purpose('One explicitly authorized numbered EDM sandbox draft and private readbacks');

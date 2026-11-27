@@ -31,7 +31,7 @@ final class EdmInvoiceXmlEvidence
         return trim($node->textContent);
     }
 
-    public function parse(DOMElement $reply,string $uuid,string $profile,#[\SensitiveParameter] string $seller,#[\SensitiveParameter] string $buyer): array
+    public function parse(DOMElement $reply,string $uuid,string $profile,#[\SensitiveParameter] string $seller,#[\SensitiveParameter] string $buyer,bool $includeBytes=false): array
     {
         $invoice=$this->one($reply,'INVOICE');
         if (strtolower($invoice->getAttribute('UUID'))!==strtolower($uuid)) throw new EdmLookupFailure('GETINVOICE_UUID_MISMATCH');
@@ -69,9 +69,11 @@ final class EdmInvoiceXmlEvidence
             throw new EdmLookupFailure('GETINVOICE_UBL_IDENTITY_MISMATCH');
         }
         $signatureCount=$xp->query('//ds:Signature')->length;
-        return ['uuid'=>strtolower($uuid),'invoice_number'=>$number===UblSaleCandidate::EDM_SERIAL_SENTINEL?null:$number,
+        $result=['uuid'=>strtolower($uuid),'invoice_number'=>$number===UblSaleCandidate::EDM_SERIAL_SENTINEL?null:$number,
             'profile'=>$profile,'xml_sha256'=>hash('sha256',$xml),'xml_bytes'=>strlen($xml),
             'signature_element_present'=>$signatureCount>0,'signature_verified'=>false,
             'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
+        if ($includeBytes) $result['private_xml_bytes']=$xml;
+        return $result;
     }
 }
