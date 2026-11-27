@@ -364,7 +364,7 @@ final class EdmTestClient
         // Every later action is a read, never another LoadInvoice.
         if ($currentAccount()) {
             $status=$this->invoiceStatus($account->username,$account->password,$second::UUID,$f::PROFILE);
-            $db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->update(['status_query'=>($status['status']??null)==='ok'?'matched':'unconfirmed','updated_at'=>now()]);
+            $db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->update(['status_query'=>($status['status']??null)==='ok'&&(!$ack||($status['data']['invoice_number']??null)===$number)?'matched':'unconfirmed','updated_at'=>now()]);
         }
         if ($ack&&$currentAccount()) {
             foreach (['xml','pdf'] as $format) {
