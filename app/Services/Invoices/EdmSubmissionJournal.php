@@ -123,6 +123,7 @@ final class EdmSubmissionJournal
                     $values+=[
                         'state'=>'provider_record_found',
                         'last_portal_state'=>$this->allowed($data['portal_state']??null,EdmInvoiceStatusParser::PORTAL_STATES),
+                        'last_portal_token'=>is_string($data['portal_token']??null)&&strlen($data['portal_token'])<=64&&preg_match('/^[A-Z][A-Z0-9_]*(?: - [A-Z0-9_]+)*$/D',$data['portal_token'])?$data['portal_token']:null,
                         'last_gib_code'=>is_string($code)&&preg_match('/^[0-9]{4}$/D',$code)?$code:null,
                         'last_commercial_response'=>$this->allowed($data['commercial_response']??null,['accepted','rejected','not_reported','unknown','not_applicable','conflict']),
                         'last_archive_report'=>$this->allowed($data['archive_report']??null,['not_reported','uninterpreted','not_applicable']),
