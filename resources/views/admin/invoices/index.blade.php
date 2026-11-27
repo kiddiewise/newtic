@@ -18,7 +18,11 @@
     <label>Kargo KDV oranı<select name="shipping_vat_rate"><option value="">Belirlenmedi</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}" @selected((int)$shippingVat===$rate)>%{{ $rate }}</option>@endforeach</select></label>
     <button type="submit" class="admin-secondary">Ayarları kaydet</button>
   </form>
-  @if(!$dispatchReady)<p role="status">EDM belge yükleme doğrulaması bekleniyor. Oluşturma istekleri saklanır; bağlantı doğrulanmadan gönderilmez.</p>@endif
+  @if(!\App\Services\Invoices\EdmStoreScope::sandboxOrders())
+    <p role="status">Test siparişleri için EDM gönderimi kapalı. Canlı e-Fatura/e-Arşiv gönderimi henüz desteklenmiyor.</p>
+  @elseif(!$dispatchReady)
+    <p role="status">EDM belge yükleme doğrulaması ve onaylı şablon bekleniyor. Oluşturma istekleri saklanır; doğrulama tamamlanmadan gönderilmez.</p>
+  @endif
 </section>
 <section class="admin-panel" style="margin-top:16px">
   <div class="admin-panel-title"><h2>Fatura kesilmesi bekleyen siparişler ({{ $pending->total() }})</h2></div>
