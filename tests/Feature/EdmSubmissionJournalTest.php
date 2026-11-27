@@ -656,4 +656,102 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertNothingSent();
     }
 
+
+    public function test_provider_order_document_access_requires_admin_and_same_account(): void
+    {
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        $a=$this->account();$draft=$this->draft();$attempt=$this->claim($draft,$a);
+        $attempt->forceFill(['state'=>'provider_record_found','last_load_result'=>'draft_acknowledged','observed_invoice_number'=>'A012026000000304'])->save();
+        $url=route('admin.invoices.documents.download',['attempt'=>$attempt->id,'format'=>'pdf']);
+        $this->get($url)->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->get($url)->assertForbidden();
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get($url)->assertNotFound();
+        $pdf="%PDF-1.4\nfixture\n%%EOF\n";
+        DB::table('edm_order_documents')->insert(['attempt_id'=>$attempt->id,'format'=>'pdf','account_revision'=>$a->revision,
+            'invoice_id'=>$attempt->observed_invoice_number,'sha256'=>hash('sha256',$pdf),'byte_count'=>strlen($pdf),
+            'signature_present'=>false,'ciphertext'=>\Illuminate\Support\Facades\Crypt::encryptString(base64_encode($pdf)),'created_at'=>now()]);
+        $this->get($url)->assertOk()->assertHeader('Content-Type','application/pdf')->assertHeader('Cache-Control','max-age=0, no-store, private');
+        $this->account();$this->get($url)->assertNotFound();
+    }
+
+    public function test_new_order_payload_preserves_order_reference_and_catalog_labels(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-27 12:00:00','Europe/Istanbul'));
+        $o=$this->dispatchOrder();
+        $draft=app(\App\Services\Invoices\InvoicePreparationService::class)->prepare($o,null);
+        $r=\App\Services\Invoices\EdmOrderDraftPayload::fields($draft,'2026-11-27',file_get_contents($path),$o);
+        $xml=base64_decode($r['INVOICE']['CONTENT'],true);
+        $this->assertStringContainsString($o->order_number,$xml);
+        $this->assertStringContainsString('Private personalized label',$xml);
+        $this->assertStringContainsString('Sipariş alıcısı: Private Buyer',$xml);
+        $this->assertStringNotContainsString('private@example.test',$xml);
+        \App\Services\Invoices\EdmOrderDocuments::assertAmounts($xml,$draft);
+    }
+
+    public function test_order_documents_and_explicit_send_with_pinned_template(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-27 12:00:00','Europe/Istanbul'));
+        $a=$this->account();$o=$this->dispatchOrder();
+        $draft=app(\App\Services\Invoices\InvoicePreparationService::class)->prepare($o,null);
+        $attempt=$this->claim($draft,$a);
+        $number='A012026000000304';
+        $attempt->forceFill(['state'=>'provider_record_found','last_load_result'=>'draft_acknowledged','observed_invoice_number'=>$number])->save();
+        $r=\App\Services\Invoices\EdmOrderDraftPayload::fields($draft,'2026-11-27',file_get_contents($path),$o);
+        $xml=base64_decode($r['INVOICE']['CONTENT'],true);
+        $doc=new \DOMDocument();$doc->loadXML($xml,LIBXML_NONET);
+        $xp=new \DOMXPath($doc);$xp->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->query('/i:Invoice/cbc:ID')->item(0)->textContent=$number;
+        $xml=$doc->saveXML();$pdf="%PDF-1.4\nmock only\n%%EOF\n";$sent=false;
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function($request)use($f,$attempt,$number,$xml,$pdf,&$sent){
+            $method=$request->header('SOAPAction')[0];
+            if ($method==='GetInvoiceRequest') {
+                $this->assertStringNotContainsString('<ISARCHIVED>true</ISARCHIVED>',$request->body());
+                $this->assertStringContainsString('<UUID>'.$attempt->uuid.'</UUID>',$request->body());
+                if (str_contains($request->body(),'<DIRECTION>OUT</DIRECTION>')) return Http::response($this->soap('GetInvoice',''));
+                $content=str_contains($request->body(),'<INVOICE_CONTENT_TYPE>PDF</INVOICE_CONTENT_TYPE>')?$pdf:$xml;
+                return Http::response($this->soap('GetInvoice','<INVOICE UUID="'.$attempt->uuid.'" ID="'.$number.'"><HEADER><SENDER>'.$f::IDENTIFIER.'</SENDER><RECEIVER>'.$f::IDENTIFIER.'</RECEIVER><PROFILEID>TEMELFATURA</PROFILEID></HEADER><CONTENT>'.base64_encode($content).'</CONTENT></INVOICE>'));
+            }
+            if ($method==='SendInvoiceRequest') {
+                $this->assertDatabaseHas('edm_order_send_requests',['attempt_id'=>$attempt->id,'state'=>'transport_started']);
+                $this->assertSame(0,DB::transactionLevel());
+                $this->assertStringContainsString('UUID="'.$attempt->uuid.'"',$request->body());
+                $this->assertStringNotContainsString('<CONTENT>',$request->body());
+                $sent=true;
+            }
+            $body=match($method){
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$attempt->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>'.($sent?'PACKAGE - PROCESSING':'DRAFT').'</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                'SendInvoiceRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$attempt->uuid.'" ID="'.$number.'"/>',
+                default=>throw new \RuntimeException('Unexpected method'),
+            };
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->post(route('admin.invoices.documents.refresh',['attempt'=>$attempt->id]))->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('edm_order_documents',2);
+        $this->get(route('admin.invoices.documents.download',['attempt'=>$attempt->id,'format'=>'xml']))->assertOk()->assertSee($number);
+        $this->assertSame($pdf,$this->get(route('admin.invoices.documents.download',['attempt'=>$attempt->id,'format'=>'pdf']))->assertOk()->getContent());
+        $url=route('admin.invoices.send',['attempt'=>$attempt->id]);
+        $this->post($url,[])->assertSessionHasErrors('confirm_send');
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+        $this->post($url,['confirm_send'=>1])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('edm_order_send_requests',['attempt_id'=>$attempt->id,'state'=>'accepted_for_processing']);
+        $this->assertSame('packaging',$attempt->fresh()->last_portal_state);
+        $this->assertNull($attempt->fresh()->last_gib_code);
+        $this->post($url,['confirm_send'=>1])->assertSessionHasErrors('invoice');
+        $this->assertSame(1,Http::recorded(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'))->count());
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest'));
+    }
+
 }

@@ -51,7 +51,11 @@ final class InvoiceCenterController extends Controller
         $auto=(bool)$account?->auto_invoice; $shippingVat=$account?->shipping_vat_rate;
         $dispatchReady=\App\Services\Invoices\InvoiceDispatch::ready($account);
         $canQueue=\App\Services\Invoices\InvoiceDispatch::staging()&&$revision!==null;
-        return response()->view('admin.invoices.index',compact('rows','counts','filter','pending','dispatches','auto','shippingVat','dispatchReady','canQueue'))
+        $attemptIds=$rows->getCollection()->pluck('attempt_id')->filter()->all();
+        $documents=DB::table('edm_order_documents')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->select('attempt_id','format','byte_count','signature_present')->get()->groupBy('attempt_id');
+        $documentChecks=DB::table('edm_order_document_checks')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->get()->groupBy('attempt_id');
+        $sendRequests=DB::table('edm_order_send_requests')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->select('attempt_id','state','diagnostic')->get()->keyBy('attempt_id');
+        return response()->view('admin.invoices.index',compact('documents','documentChecks','sendRequests','rows','counts','filter','pending','dispatches','auto','shippingVat','dispatchReady','canQueue'))
             ->header('Cache-Control','private, no-store, max-age=0');
     }
 
@@ -81,6 +85,44 @@ final class InvoiceCenterController extends Controller
                 'shipping_vat_rate'=>$d['shipping_vat_rate']??null])->save();
         },3);
         return redirect()->route('admin.invoices.index')->with('success','Faturalandırma tercihleri kaydedildi.');
+    }
+
+    public function refreshDocuments(EdmSubmissionAttempt $attempt,\App\Services\Invoices\EdmOrderDocuments $documents,EdmTestClient $client): RedirectResponse
+    {
+        try {$r=$documents->refresh($attempt->id,$client);}catch(Throwable) {
+            return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Belge sorgusu doğrulanamadı.']);
+        }
+        return redirect()->route('admin.invoices.index')->with('success','EDM belge sorgusu tamamlandı. XML/PDF durumları listede gösteriliyor.');
+    }
+    public function downloadDocument(EdmSubmissionAttempt $attempt,string $format): Response
+    {
+        $d=\App\Services\Invoices\EdmOrderDocuments::download($attempt->id,$format);
+        return response($d['bytes'],200,[
+            'Content-Type'=>$format==='pdf'?'application/pdf':'application/xml',
+            'Content-Disposition'=>'attachment; filename="'.$d['number'].'.'.$format.'"',
+            'Cache-Control'=>'private, no-store, max-age=0','X-Content-Type-Options'=>'nosniff',
+            'Content-Security-Policy'=>"sandbox; default-src 'none'",
+        ]);
+    }
+    public function sendDraft(Request $request,EdmSubmissionAttempt $attempt,\App\Services\Invoices\EdmOrderSend $service,EdmTestClient $client): RedirectResponse
+    {
+        $request->validate(['confirm_send'=>['required','accepted']]);
+        try {$state=$service->submit($attempt->id,$request->user()->id,$client);}
+        catch(Throwable) {return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Gönderim koşulları doğrulanamadı veya önceki gönderim kaydı var. Yeniden yükleme yapmayın.']);}
+        return redirect()->route('admin.invoices.index')->with('success',$state==='accepted_for_processing'?'EDM gönderim isteğini kabul etti; nihai durum ayrıca sorgulanmalıdır.':'Gönderim sonucu belirsiz. Tekrar gönderilmez; durumu sorgulayın.');
+    }
+    public function classifyBuyer(Request $request,EdmTestClient $client): Response
+    {
+        abort_unless(\App\Services\Invoices\InvoiceDispatch::staging(),404);
+        $d=$request->validate(['identifier'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111']]);
+        $a=EdmSetting::query()->find(1);
+        abort_unless($a?->configured()&&$a->probe_status==='ok',409);
+        $r=$client->taxpayer($a->username,$a->password,$d['identifier']);
+        $valid=EdmSetting::query()->whereKey(1)->where('revision',$a->revision)->exists()&&$r['status']==='ok'&&($r['data']['unverified_records']??0)===0;
+        $type='Belge türü doğrulanamadı';
+        if ($valid && count($r['data']['aliases']??[])) $type='e-Fatura';
+        elseif ($valid && !count($r['data']['sender_aliases']??[])) $type='e-Arşiv adayı — satış ve sevk bilgileri doğrulanmalı';
+        return response()->view('admin.invoices.buyer-check',compact('type'))->header('Cache-Control','private, no-store');
     }
 
     public function reconcile(EdmSubmissionAttempt $attempt,EdmSubmissionJournal $journal,EdmTestClient $client): RedirectResponse

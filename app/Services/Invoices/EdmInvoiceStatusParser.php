@@ -38,7 +38,7 @@ final class EdmInvoiceStatusParser
      * Inbound ACCEPT/REJECT are intentionally not mapped as outgoing acceptance.
      */
     public const PORTAL_STATES=[
-        'packaging','package_failed','sending','waiting_gib','waiting_system',
+        'draft','packaging','package_failed','sending','waiting_gib','waiting_system',
         'send_failed','send_succeeded','waiting_application','accepted_succeeded',
         'rejected_succeeded','cancelled_succeeded','unknown',
     ];
@@ -48,6 +48,7 @@ final class EdmInvoiceStatusParser
         // Documented examples vary in whitespace around the hyphen.
         $status=preg_replace('/\s*-\s*/',' - ',trim($status));
         return match ($status) {
+            'DRAFT'=>'draft',
             'PACKAGE - PROCESSING'=>'packaging',
             'PACKAGE - FAIL'=>'package_failed',
             'SEND - PROCESSING'=>'sending',

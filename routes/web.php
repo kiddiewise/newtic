@@ -283,6 +283,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/faturalar/olustur',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'createInvoices'])->middleware('throttle:8,1')->name('invoices.create');
     Route::post('/faturalar/ayarlar',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'settings'])->middleware('throttle:8,1')->name('invoices.settings');
     Route::get('/faturalar', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'index'])->name('invoices.index');
+    Route::post('/faturalar/alici-kontrol',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'classifyBuyer'])->middleware('throttle:edm-lookup')->name('invoices.buyer-check');
+    Route::post('/faturalar/{attempt}/belgeler',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'refreshDocuments'])->middleware('throttle:edm-lookup')->name('invoices.documents.refresh');
+    Route::get('/faturalar/{attempt}/belge/{format}',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'downloadDocument'])->where('format','xml|pdf')->name('invoices.documents.download');
+    Route::post('/faturalar/{attempt}/gonder',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'sendDraft'])->middleware('throttle:4,1')->name('invoices.send');
     Route::post('/faturalar/{attempt}/durum', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'reconcile'])->middleware('throttle:edm-lookup')->name('invoices.reconcile');
     Route::get('/fatura-ayarlari/edm/test-belge/{uuid}/{format}', [\App\Http\Controllers\Admin\EdmSettingsController::class,'downloadSandboxDocument'])->where('format','xml|pdf')->name('edm.sandbox.download');
     Route::get('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'edit'])->name('edm.edit');

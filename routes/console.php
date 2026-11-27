@@ -253,3 +253,28 @@ Artisan::command('edm:smoke-load-namespace {date} {sha256} {confirmation}',funct
         $this->error($e instanceof \DomainException&&preg_match('/^SECOND_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'SECOND_EXECUTION_UNCONFIRMED');return 1;
     }
 })->purpose('One namespace-corrected synthetic sandbox draft; no previous UUID retry');
+
+
+Artisan::command('edm:refresh-order-documents {attempt}',function(){
+    try {
+        $r=app(\App\Services\Invoices\EdmOrderDocuments::class)->refresh((int)$this->argument('attempt'),app(\App\Services\Invoices\EdmTestClient::class));
+        $this->line(json_encode($r,JSON_THROW_ON_ERROR));return 0;
+    } catch(\Throwable) {$this->error('ORDER_DOCUMENT_REFRESH_FAILED');return 1;}
+})->purpose('Read exact existing sandbox order documents; no new invoice or send');
+
+
+// Target the one already observed order identified by the administrator.
+// No raw invoice, personal information, or account data in public CI output.
+Artisan::command('edm:check-observed-order-documents',function(){
+    if (!\App\Services\Invoices\InvoiceDispatch::staging()) return 1;
+    try {
+        $attempt=\App\Models\EdmSubmissionAttempt::query()->where('observed_invoice_number','A012026000000304')
+            ->where('uuid','3065b19f-8b39-4e7f-92c3-2996fd011ef6')->firstOrFail();
+        $client=app(\App\Services\Invoices\EdmTestClient::class);
+        $row=(new \App\Services\Invoices\EdmSubmissionJournal)->reconcile($attempt->id,$client);
+        $result=app(\App\Services\Invoices\EdmOrderDocuments::class)->refresh($attempt->id,$client);
+        $checks=\Illuminate\Support\Facades\DB::table('edm_order_document_checks')->where('attempt_id',$attempt->id)
+            ->select('format','state','diagnostic')->get()->map(fn($r)=>['format'=>$r->format,'state'=>$r->state,'diagnostic'=>$r->diagnostic]);
+        $this->line(json_encode(['status'=>$row->last_lookup_state,'portal_state'=>$row->last_portal_state,'documents'=>$result,'checks'=>$checks],JSON_THROW_ON_ERROR));return 0;
+    } catch(\Throwable) {$this->error('ORDER_DOCUMENT_READBACK_UNCONFIRMED');return 0;}
+})->purpose('Read previously acknowledged sandbox order only; never sends');
