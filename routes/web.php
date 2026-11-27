@@ -282,6 +282,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/fatura-ayarlari/edm/sorgula', fn () => redirect()->route('admin.edm.edit'));
     Route::get('/faturalar', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'index'])->name('invoices.index');
     Route::post('/faturalar/{attempt}/durum', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'reconcile'])->middleware('throttle:edm-lookup')->name('invoices.reconcile');
+    Route::get('/fatura-ayarlari/edm/test-belge/{uuid}/{format}', [\App\Http\Controllers\Admin\EdmSettingsController::class,'downloadSandboxDocument'])->where('format','xml|pdf')->name('edm.sandbox.download');
     Route::get('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'edit'])->name('edm.edit');
     Route::patch('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'update'])->middleware('throttle:edm-settings')->name('edm.update');
     Route::post('/fatura-ayarlari/edm/baglanti', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'probe'])->middleware('throttle:edm-probe')->name('edm.probe');

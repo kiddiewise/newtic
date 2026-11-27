@@ -38,6 +38,15 @@ jobs:
           curl --fail --silent --show-error --proto '=https' --connect-timeout 15 --max-time 120 --max-filesize 104857600 \
             'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/e-FaturaPaketi%20%2829%29.zip' -o "$RUNNER_TEMP/gib-current.zip"
           printf '%s  %s\n' '12901476cd424fd65c779a4fb44cee798f9921ce55b003f8a076c936ddf8b583' "$RUNNER_TEMP/gib-current.zip" | sha256sum -c -
+      - name: Extract pinned GIB reference invoice design
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 90 \
+            'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/UBL-TR1.2.1_Paketi.zip' -o "$RUNNER_TEMP/gib-ubl.zip"
+          printf '%s  %s\n' 'cb583941b8a8a239c59902c6bc455c0f75d48f2bb81d7d3fbe1ae827f981f7db' "$RUNNER_TEMP/gib-ubl.zip" | sha256sum -c -
+          unzip -p "$RUNNER_TEMP/gib-ubl.zip" 'UBLTR_1.2.1_Paketi/xml/general.xslt' > "$RUNNER_TEMP/gib-general.xslt"
+          printf '%s  %s\n' '8b3a2551e2dbf0375567de09d504d2b6741fe8881a59f0dbce47bddcfd693620' "$RUNNER_TEMP/gib-general.xslt" | sha256sum -c -
+          printf 'NEWTIC_EDM_SECOND_XSLT=%s\n' "$RUNNER_TEMP/gib-general.xslt" >> "$GITHUB_ENV"
       - name: Export actual PHP-generated synthetic candidates
         run: |
           set -euo pipefail

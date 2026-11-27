@@ -311,6 +311,13 @@ final class UblSaleCandidateTest extends TestCase
         }
         $smokeDate=getenv('NEWTIC_EDM_SMOKE_DATE')?:'2026-11-26';
         $this->assertNotFalse(file_put_contents($dir.'/EDM_CONTROLLED_SMOKE.xml',\App\Services\Invoices\EdmSandboxSmokeFixture::xml($smokeDate)));
+        $templatePath=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if ($templatePath) {
+            $template=file_get_contents($templatePath);
+            $this->assertIsString($template);
+            $second=\App\Services\Invoices\EdmSecondSandboxFixture::prepare($smokeDate,$template);
+            $this->assertNotFalse(file_put_contents($dir.'/EDM_SECOND_SMOKE.xml',$second['xml']));
+        }
         $corporate=$this->party()+['email'=>'buyer@example.test'];
         $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
         foreach (['EARSIVFATURA_CORPORATE'=>$this->archive($corporate),'EARSIVFATURA_CONSUMER'=>$this->archive($consumer,true)] as $name=>$archive) {
@@ -386,6 +393,58 @@ final class UblSaleCandidateTest extends TestCase
             $errors=libxml_get_errors();
             $this->assertNotEmpty($errors);
             foreach ($errors as $e) $this->assertTrue(str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child'),'Unexpected XSD failure outside EDM pre-signing extension');
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($old);
+        }
+    }
+
+    public function test_second_fixture_rejects_unpinned_template_and_keeps_first_uuid_distinct(): void
+    {
+        $f=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        $this->assertNotSame(\App\Services\Invoices\EdmSandboxSmokeFixture::UUID,$f::UUID);
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('SECOND_XSLT_NOT_PINNED');
+        $f::prepare('2026-11-26','<xsl:stylesheet/>');
+    }
+
+    public function test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        $schema=getenv('NEWTIC_GIB_XSD');
+        if (!$path || !$schema) $this->markTestSkipped('Pinned template and official XSD required.');
+        $f=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        $template=file_get_contents($path);
+        $r=$f::prepare('2026-11-26',$template);
+        $this->assertSame($f::UUID,$r['uuid']);
+        $this->assertSame(\App\Services\Invoices\EdmSandboxSmokeFixture::UUID,$r['first_uuid']);
+        $this->assertSame(hash('sha256',$template),$r['xslt_sha256']);
+        $this->assertFalse($r['submission_allowed']);
+        $this->assertFalse($r['number_allocated']);
+        $this->assertSame('true',$r['fields']['GENERATEINVOICEIDONLOAD']);
+        $this->assertSame('A01',$r['fields']['INVOICE']['HEADER']['INVOICESERIAL_REQUESTED']);
+        $this->assertSame($r['xml'],base64_decode($r['fields']['INVOICE']['CONTENT'],true));
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($r['xml'],LIBXML_NONET));
+        $xp=new DOMXPath($doc);
+        $xp->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->registerNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $node=$xp->query('/i:Invoice/cac:AdditionalDocumentReference/cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
+        $this->assertSame(1,$node->length);
+        $this->assertSame($template,base64_decode($node->item(0)->textContent,true));
+        $this->assertSame('Base64',$node->item(0)->getAttribute('encodingCode'));
+        $this->assertSame('application/xml',$node->item(0)->getAttribute('mimeCode'));
+        $this->assertSame('ABC2009123456789.xslt',$node->item(0)->getAttribute('filename'));
+        $this->assertSame('Şişli',$xp->evaluate('string(/i:Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cbc:CitySubdivisionName)'));
+        $this->assertSame('Esenler',$xp->evaluate('string(/i:Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cac:TaxScheme/cbc:Name)'));
+        $old=libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        try {
+            $this->assertFalse($doc->schemaValidate($schema));
+            $errors=libxml_get_errors();
+            $this->assertNotEmpty($errors);
+            foreach ($errors as $e) $this->assertTrue(str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child'),'Unexpected XSD failure outside empty pre-signing extension');
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($old);

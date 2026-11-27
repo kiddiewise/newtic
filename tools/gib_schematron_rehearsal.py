@@ -243,6 +243,14 @@ def main(zip_path, candidates, work):
                       "result":results["EDM_CONTROLLED_SMOKE"],"fiscal_approval":False}), flush=True)
     if not results["EDM_CONTROLLED_SMOKE"]["no_findings"]:
         raise ValueError("Controlled sandbox payload failed official rules")
+    second=candidates / "EDM_SECOND_SMOKE.xml"
+    if second.is_file():
+        report=transform(parse(second),"EDM_SECOND_SMOKE","efatura")
+        results["EDM_SECOND_SMOKE"]=summarize(report)
+        print(json.dumps({"second_smoke_sha256":hashlib.sha256(second.read_bytes()).hexdigest(),
+                          "result":results["EDM_SECOND_SMOKE"],"submission_allowed":False}),flush=True)
+        if not results["EDM_SECOND_SMOKE"]["no_findings"] or not results["EDM_SECOND_SMOKE"]["fired-rule"]:
+            raise ValueError("Second sandbox fixture failed official rules")
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,

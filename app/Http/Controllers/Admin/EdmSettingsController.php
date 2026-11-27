@@ -23,7 +23,16 @@ final class EdmSettingsController extends Controller
     private function renderSettings(?array $lookup = null, ?string $kind = null): Response
     {
         $settings = EdmSetting::query()->find(1);
+        $trials=[]; $documents=[];
+        if (rtrim((string)config('app.url'),'/')===\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL && $settings?->revision) {
+            $trials=DB::table('edm_sandbox_trials')->where('account_revision',$settings->revision)
+                ->select('uuid','issue_date','load_status','diagnostic','fault_hints','allocated_invoice_id','status_query','xml_query','pdf_query')
+                ->orderBy('created_at')->get();
+            $documents=DB::table('edm_sandbox_documents')->where('account_revision',$settings->revision)
+                ->select('uuid','format','byte_count')->get()->groupBy('uuid');
+        }
         return response()->view('admin.edm-settings', [
+            'sandboxTrials'=>$trials,'sandboxDocuments'=>$documents,
             'lookup'=>$lookup,'lookupKind'=>$kind,
             'configured'=>$settings?->configured() ?? false,
             'status'=>$settings?->probe_status,
@@ -31,6 +40,17 @@ final class EdmSettingsController extends Controller
             'checkedAt'=>$settings?->checked_at,
             'endpoint'=>EdmTestClient::ENDPOINT,
         ])->header('Cache-Control','private, no-store, max-age=0');
+    }
+
+    public function downloadSandboxDocument(string $uuid,string $format): Response
+    {
+        $document=\App\Services\Invoices\EdmSandboxDocuments::download($uuid,$format);
+        return response($document['bytes'],200,[
+            'Content-Type'=>$format==='pdf'?'application/pdf':'application/xml',
+            'Content-Disposition'=>'attachment; filename="'.$document['number'].'.'.$format.'"',
+            'Cache-Control'=>'private, no-store, max-age=0','X-Content-Type-Options'=>'nosniff',
+            'Content-Security-Policy'=>"sandbox; default-src 'none'",
+        ]);
     }
 
     public function lookup(Request $request, EdmTestClient $client): Response|RedirectResponse

@@ -167,4 +167,23 @@
     @else <p role="alert">XML belge kimliği doğrulanamadı. Bu sonuç belgenin bulunmadığını kesinleştirmez.</p>@endif
   @endif
 </section>
+@if(!empty($sandboxTrials) && count($sandboxTrials))
+<section class="admin-panel">
+  <div class="admin-panel-title"><h2>EDM kontrollü test kayıtları</h2></div>
+  <p>Yalnızca test hesabı. Taslak onayı, imza veya GİB gönderim başarısı değildir. Tekrar yükleme yapılamaz.</p>
+  @foreach($sandboxTrials as $trial)
+    <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>ETTN</span><strong>{{ $trial->uuid }}</strong></div>
+    <div class="admin-detail-line"><span>Yükleme</span><strong>{{ ['reserved_unknown'=>'Sonuç belirsiz','unconfirmed'=>'Doğrulanamadı','draft_acknowledged'=>'Taslak onaylandı'][$trial->load_status] ?? 'Bilinmiyor' }}</strong></div>
+    <div class="admin-detail-line"><span>Fatura numarası</span><strong>{{ $trial->allocated_invoice_id ?? 'Doğrulanmadı' }}</strong></div>
+    @if($trial->diagnostic)<div class="admin-detail-line"><span>Teknik sonuç</span><strong>{{ $trial->diagnostic }}</strong></div>@endif
+    @foreach(['status_query'=>'Durum','xml_query'=>'XML','pdf_query'=>'PDF'] as $key=>$label)
+      <div class="admin-detail-line"><span>{{ $label }}</span><strong>{{ $trial->$key === 'matched' ? 'Eşleşti' : ($trial->$key ? 'Doğrulanamadı' : 'Henüz alınmadı') }}</strong></div>
+    @endforeach
+    @foreach($sandboxDocuments[$trial->uuid] ?? [] as $file)
+      <a class="admin-secondary" href="{{ route('admin.edm.sandbox.download',['uuid'=>$trial->uuid,'format'=>$file->format]) }}">{{ strtoupper($file->format) }} indir ({{ $file->byte_count }} bayt)</a>
+    @endforeach
+    <hr>
+  @endforeach
+</section>
+@endif
 @endsection

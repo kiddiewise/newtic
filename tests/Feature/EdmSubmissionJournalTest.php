@@ -342,4 +342,152 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertSentCount(15);
     }
 
+
+    public function test_sandbox_fault_preserves_only_encrypted_descriptions_without_retry(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        $this->account();
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function ($request) use ($f) {
+            $method=$request->header('SOAPAction')[0];
+            if ($method==='LoadInvoiceRequest') {
+                $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'load_status'=>'reserved_unknown']);
+                return Http::response('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>private outer message</faultstring><detail><RequestFault xmlns="http://tempuri.org/"><ERROR_CODE xmlns="">11047</ERROR_CODE><ERROR_SHORT_DES xmlns="">Invoice ID invalid</ERROR_SHORT_DES><ERROR_LONG_DES xmlns="">Serial issue; fixture-session; Password: secret</ERROR_LONG_DES><STACKTRACE xmlns="">private-stack</STACKTRACE></RequestFault></detail></s:Fault></s:Body></s:Envelope>',500);
+            }
+            $body=match($method) {
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$f::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$f::GB.'</GB><SERIALLIST><SERIAL>A01</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST></GetCompanyList>',
+                'CheckUserRequest'=>'<USER><IDENTIFIER>'.$f::IDENTIFIER.'</IDENTIFIER><UNIT>PK</UNIT><ALIAS>'.$f::PK.'</ALIAS></USER>',
+                'GetInvoiceStatusRequest','GetInvoiceRequest'=>'',
+                default=>throw new \RuntimeException('Unexpected SOAP operation'),
+            };
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $r=(new EdmTestClient)->runControlledSmoke('2026-11-26',hash('sha256',$f::xml('2026-11-26')),$f::CONFIRM);
+        $this->assertSame('Lookup: EDM_11047',$r['diagnostic']);
+        $this->assertSame(['number_or_series'],$r['fault_hints']);
+        $this->assertArrayNotHasKey('fault_detail_ciphertext',$r);
+        $stored=DB::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
+        $this->assertNotNull($stored->fault_detail_ciphertext);
+        $this->assertStringNotContainsString('Invoice ID invalid',$stored->fault_detail_ciphertext);
+        $decoded=json_decode(\Illuminate\Support\Facades\Crypt::decryptString($stored->fault_detail_ciphertext),true,512,JSON_THROW_ON_ERROR);
+        $this->assertSame('Invoice ID invalid',$decoded['ERROR_SHORT_DES']);
+        $this->assertStringContainsString('Serial issue',$decoded['ERROR_LONG_DES']);
+        $this->assertStringNotContainsString('fixture-session',json_encode($decoded));
+        $this->assertStringNotContainsString('secret',json_encode($decoded));
+        $this->assertStringNotContainsString('private-stack',json_encode($decoded));
+        $this->assertTrue((new EdmTestClient)->runControlledSmoke('2026-11-26',hash('sha256',$f::xml('2026-11-26')),$f::CONFIRM)['already_reserved']);
+        Http::assertSentCount(15);
+    }
+
+    public function test_second_numbered_smoke_with_pinned_template(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        $template=file_get_contents($path);
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        $s=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        config(['app.url'=>$f::STAGING_URL]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-26 12:00:00','Europe/Istanbul'));
+        $account=$this->account();
+        DB::table('edm_sandbox_trials')->insert(['uuid'=>$f::UUID,'account_revision'=>$account->revision,
+            'issue_date'=>'2026-11-26','xml_sha256'=>str_repeat('a',64),'request_sha256'=>str_repeat('b',64),
+            'series_warnings'=>1,'recipient_warnings'=>1,'load_status'=>'unconfirmed','diagnostic'=>'Lookup: EDM_11047',
+            'created_at'=>now(),'updated_at'=>now()]);
+        $candidate=$s::prepare('2026-11-26',$template);
+        $number='A012026000000001';
+        $doc=new \DOMDocument();
+        $this->assertTrue($doc->loadXML($candidate['xml'],LIBXML_NONET));
+        $xp=new \DOMXPath($doc);
+        $xp->registerNamespace('i','urn:oasis:names:specification:ubl:schema:xsd:Invoice-2');
+        $xp->registerNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xp->query('/i:Invoice/cbc:ID')->item(0)->textContent=$number;
+        $xml=$doc->saveXML();
+        $pdf="%PDF-1.4\n% mock transport fixture\n%%EOF\n";
+        $oldVisible=true;
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function($request) use($s,$f,$number,$xml,$pdf,$candidate,&$oldVisible) {
+            $method=$request->header('SOAPAction')[0];
+            $old=str_contains($request->body(),$f::UUID);
+            if ($old&&in_array($method,['GetInvoiceStatusRequest','GetInvoiceRequest'],true)) {
+                if ($oldVisible&&$method==='GetInvoiceStatusRequest') {
+                    return Http::response($this->soap('GetInvoiceStatus','<INVOICE_STATUS UUID="'.$f::UUID.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>DRAFT</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>'));
+                }
+                return Http::response('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>not found</faultstring><detail><RequestFault><ERROR_CODE>11017</ERROR_CODE></RequestFault></detail></s:Fault></s:Body></s:Envelope>',500);
+            }
+            $body=match($method) {
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$f::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$f::GB.'</GB><SERIALLIST><SERIAL>A01</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>0</EARCHIVEFLAG><INTERNETFLAG>0</INTERNETFLAG></SERIALLIST></GetCompanyList>',
+                'CheckUserRequest'=>'<USER><IDENTIFIER>'.$f::IDENTIFIER.'</IDENTIFIER><UNIT>PK</UNIT><ALIAS>'.$f::PK.'</ALIAS></USER>',
+                'LoadInvoiceRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$s::UUID.'" ID="'.$number.'"/>',
+                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$s::UUID.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>DRAFT</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                'GetInvoiceRequest'=>'<INVOICE UUID="'.$s::UUID.'" ID="'.$number.'"><HEADER><SENDER>'.$f::IDENTIFIER.'</SENDER><RECEIVER>'.$f::IDENTIFIER.'</RECEIVER><PROFILEID>TEMELFATURA</PROFILEID></HEADER><CONTENT>'.base64_encode(str_contains($request->body(),'<INVOICE_CONTENT_TYPE>PDF</INVOICE_CONTENT_TYPE>')?$pdf:$xml).'</CONTENT></INVOICE>',
+                default=>throw new \RuntimeException('Unexpected SOAP method'),
+            };
+            if ($method==='LoadInvoiceRequest') {
+                $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$s::UUID,'load_status'=>'reserved_unknown']);
+                $this->assertSame(0,DB::transactionLevel());
+                $this->assertStringContainsString('<GENERATEINVOICEIDONLOAD>true</GENERATEINVOICEIDONLOAD>',$request->body());
+                $this->assertStringContainsString('<INVOICESERIAL_REQUESTED>A01</INVOICESERIAL_REQUESTED>',$request->body());
+                $this->assertStringContainsString(base64_encode($candidate['xml']),$request->body());
+            }
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $client=new EdmTestClient;
+        $args=['2026-11-26',$template,$candidate['xml_sha256'],'LOAD-ONE-NUMBERED-TEST-DRAFT'];
+        $blocked=$client->runSecondControlledSmoke(...$args);
+        $this->assertSame('blocked_first_readback',$blocked['load_status']);
+        $this->assertDatabaseCount('edm_sandbox_trials',1);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest'));
+        $oldVisible=false;
+        $result=$client->runSecondControlledSmoke(...$args);
+        $this->assertSame('draft_acknowledged',$result['load_status']);
+        $this->assertSame($number,$result['allocated_invoice_id']);
+        foreach (['status_query','xml_query','pdf_query'] as $field) $this->assertSame('matched',$result[$field]);
+        $this->assertFalse($result['fiscal_success_confirmed']);
+        $this->assertDatabaseCount('edm_sandbox_trials',2);
+        $this->assertDatabaseCount('edm_sandbox_documents',2);
+        $this->assertDatabaseCount('orders',0);
+        $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'diagnostic'=>'Lookup: EDM_11047']);
+        $this->assertTrue($client->runSecondControlledSmoke(...$args)['already_reserved']);
+        $this->assertSame(1,Http::recorded(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest'))->count());
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+        $row=DB::table('edm_sandbox_documents')->where('format','pdf')->first();
+        $this->assertStringNotContainsString('%PDF-1.4',$row->ciphertext);
+        $download=route('admin.edm.sandbox.download',['uuid'=>$s::UUID,'format'=>'pdf']);
+        $this->get($download)->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->get($download)->assertForbidden();
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $response=$this->actingAs($admin)->get($download)->assertOk()->assertHeader('Content-Type','application/pdf');
+        $this->assertSame($pdf,$response->getContent());
+        $this->assertStringContainsString('attachment',$response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        $this->get(route('admin.edm.sandbox.download',['uuid'=>$s::UUID,'format'=>'xml']))->assertOk()->assertSee($number);
+        $this->get(route('admin.edm.edit'))->assertOk()->assertSee($s::UUID)->assertSee($number)->assertSee('PDF indir');
+        $this->account();
+        $this->get($download)->assertNotFound();
+    }
+
+    public function test_second_pdf_transport_rejects_wrong_number_and_non_pdf(): void
+    {
+        $f=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        $s=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        $number='A012026000000001';
+        foreach ([['A012026000000002',"%PDF-1.4\n%%EOF"],[$number,'not pdf']] as [$id,$content]) {
+            $doc=new \DOMDocument();
+            $doc->loadXML('<GetInvoiceResponse><INVOICE UUID="'.$s::UUID.'" ID="'.$id.'"><HEADER><SENDER>'.$f::IDENTIFIER.'</SENDER><RECEIVER>'.$f::IDENTIFIER.'</RECEIVER><PROFILEID>TEMELFATURA</PROFILEID></HEADER><CONTENT>'.base64_encode($content).'</CONTENT></INVOICE></GetInvoiceResponse>',LIBXML_NONET);
+            try {
+                \App\Services\Invoices\EdmSandboxDocuments::pdf($doc->documentElement,$s::UUID,$number);
+                $this->fail('Invalid PDF evidence accepted');
+            } catch (\App\Services\Invoices\EdmLookupFailure $e) {
+                $this->assertContains($e->safeCode,['PDF_IDENTITY_MISMATCH','PDF_CONTENT_INVALID']);
+            }
+        }
+    }
+
 }

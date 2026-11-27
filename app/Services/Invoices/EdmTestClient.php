@@ -208,6 +208,7 @@ final class EdmTestClient
         $existing=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
         if ($existing) return ['uuid'=>$f::UUID,'load_status'=>$existing->load_status,'diagnostic'=>$existing->diagnostic,
             'status_query'=>$existing->status_query,'xml_query'=>$existing->xml_query,'already_reserved'=>true,
+            'fault_hints'=>json_decode($existing->fault_hints??'[]',true,512,JSON_THROW_ON_ERROR),
             'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
         $xml=$f::xml($date);
         if (!hash_equals($checkedSha256,hash('sha256',$xml))) throw new \DomainException('SMOKE_XML_DIGEST_MISMATCH');
@@ -266,9 +267,10 @@ final class EdmTestClient
         $diagnostic=$result['diagnostic']??null;
         if (!is_string($diagnostic) || !preg_match('/^(?:Login|Lookup|Logout): [A-Z0-9_]+$/D',$diagnostic)) $diagnostic=null;
         $loadStatus=$ack?'draft_acknowledged':'unconfirmed';
+        $hints=$result['fault_hints']??[];
         // Record the attempt immediately, before any further read operations.
         $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
-            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'updated_at'=>now()]);
+            ->update(['load_status'=>$loadStatus,'diagnostic'=>$diagnostic,'fault_hints'=>json_encode($hints,JSON_THROW_ON_ERROR),'fault_detail_ciphertext'=>$result['fault_detail_ciphertext']??null,'updated_at'=>now()]);
         $status='not_run'; $evidence='not_run';
         if ($currentAccount()) {
             $s=$this->invoiceStatus($account->username,$account->password,$f::UUID,$f::PROFILE);
@@ -281,9 +283,130 @@ final class EdmTestClient
         $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)
             ->update(['status_query'=>$status,'xml_query'=>$evidence,'updated_at'=>now()]);
         return ['uuid'=>$f::UUID,'load_status'=>$loadStatus,'diagnostic'=>$diagnostic,
-            'status_query'=>$status,'xml_query'=>$evidence,'already_reserved'=>false,
+            'status_query'=>$status,'xml_query'=>$evidence,'already_reserved'=>false,'fault_hints'=>$hints,
             'series_warnings'=>$preview['unreadable_series'],'recipient_warnings'=>$preview['unverified_records'],
             'fiscal_success_confirmed'=>false,'automatic_retry'=>false];
+    }
+
+    /**
+     * Separate numbered synthetic trial. Only fixed staging CLI, validated
+     * exact payload hash, prior failed experiment, same account revision,
+     * fresh route checks, durable unique reservation. Never SendInvoice.
+     */
+    public function runSecondControlledSmoke(string $date,#[\SensitiveParameter] string $template,string $checkedSha256,string $confirmation): array
+    {
+        $f=EdmSandboxSmokeFixture::class;
+        $second=EdmSecondSandboxFixture::class;
+        $db=\Illuminate\Support\Facades\DB::class;
+        if (PHP_SAPI!=='cli'||rtrim((string)config('app.url'),'/')!==$f::STAGING_URL
+            ||$confirmation!=='LOAD-ONE-NUMBERED-TEST-DRAFT'||$date!==now('Europe/Istanbul')->toDateString()
+            ||!preg_match('/^[a-f0-9]{64}$/D',$checkedSha256)||$db::transactionLevel()!==0) {
+            throw new \DomainException('SECOND_SCOPE_OR_CONFIRMATION_INVALID');
+        }
+        $account=\App\Models\EdmSetting::query()->findOrFail(1);
+        if (!$account->configured()||!$account->revision||$account->probe_status!=='ok') throw new \DomainException('SECOND_ACCOUNT_NOT_VERIFIED');
+        $currentAccount=static fn()=>\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists();
+        $existing=$db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->first();
+        if ($existing) {
+            if ($existing->account_revision!==$account->revision) throw new \DomainException('SECOND_ACCOUNT_CHANGED');
+            return $this->secondTrialSummary($existing,true);
+        }
+        $first=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
+        if (!$first||$first->account_revision!==$account->revision||$first->load_status!=='unconfirmed'
+            ||$first->diagnostic!=='Lookup: EDM_11047') throw new \DomainException('SECOND_FIRST_TRIAL_NOT_ELIGIBLE');
+        $candidate=$second::prepare($date,$template);
+        if (!hash_equals($checkedSha256,$candidate['xml_sha256'])
+            ||!hash_equals($checkedSha256,hash('sha256',base64_decode($candidate['fields']['INVOICE']['CONTENT'],true)))) throw new \DomainException('SECOND_XML_DIGEST_MISMATCH');
+        // This is a distinct authorized synthetic experiment, not a retry.
+        // Only explicit provider not-found code on both readbacks permits it;
+        // this does not prove the old document is absent in every system.
+        $oldStatus=$this->invoiceStatus($account->username,$account->password,$f::UUID,$f::PROFILE);
+        if (!$currentAccount()) throw new \DomainException('SECOND_ACCOUNT_CHANGED');
+        $oldXml=$this->invoiceXmlEvidence($account->username,$account->password,$f::UUID,$f::PROFILE,$f::IDENTIFIER,$f::IDENTIFIER);
+        if (!$currentAccount()) throw new \DomainException('SECOND_ACCOUNT_CHANGED');
+        $statusCode=$oldStatus['diagnostic']??null;
+        $xmlCode=$oldXml['diagnostic']??null;
+        if ($statusCode!=='Lookup: EDM_11017'||$xmlCode!=='Lookup: EDM_11017') {
+            return ['uuid'=>$second::UUID,'load_status'=>'blocked_first_readback','first_status_diagnostic'=>$this->safeDiagnostic($statusCode),
+                'first_xml_diagnostic'=>$this->safeDiagnostic($xmlCode),'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
+        }
+        $preview=(new EdmRoutingPreview($this))->inspect($account,$f::IDENTIFIER,$f::IDENTIFIER,$f::GB,$f::PK,$f::SERIES,(int)substr($date,0,4));
+        foreach (['company','sender_alias','series','recipient','recipient_alias'] as $check) {
+            if (($preview['checks'][$check]??null)!==true) throw new \DomainException('SECOND_SELECTED_ROUTE_UNVERIFIED');
+        }
+        if (!is_int($preview['unreadable_series'])||!is_int($preview['unverified_records'])
+            ||$preview['unreadable_series']>1||$preview['unverified_records']>1) throw new \DomainException('SECOND_ROUTING_WARNINGS_CHANGED');
+        $db::transaction(function() use($db,$account,$f,$second,$date,$candidate,$preview,$statusCode,$xmlCode) {
+            $current=\App\Models\EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
+            if (!$current?->configured()||$current->revision!==$account->revision||$current->probe_status!=='ok') throw new \DomainException('SECOND_ACCOUNT_CHANGED');
+            $first=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->lockForUpdate()->first();
+            if (!$first||$first->account_revision!==$account->revision||$first->load_status!=='unconfirmed'||$first->diagnostic!=='Lookup: EDM_11047') throw new \DomainException('SECOND_FIRST_TRIAL_CHANGED');
+            if ($db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->exists()) throw new \DomainException('SECOND_ALREADY_RESERVED');
+            $db::table('edm_sandbox_trials')->insert(['uuid'=>$second::UUID,'account_revision'=>$account->revision,
+                'issue_date'=>$date,'xml_sha256'=>$candidate['xml_sha256'],'request_sha256'=>$candidate['request_sha256'],
+                'xslt_sha256'=>$candidate['xslt_sha256'],'series_warnings'=>$preview['unreadable_series'],
+                'recipient_warnings'=>$preview['unverified_records'],'first_status_diagnostic'=>$statusCode,
+                'first_xml_diagnostic'=>$xmlCode,'load_status'=>'reserved_unknown','created_at'=>now(),'updated_at'=>now()]);
+        },3);
+        $result=$this->read($account->username,$account->password,function($session) use($candidate,$second,$f,$date,$currentAccount) {
+            if (!$currentAccount()) throw new EdmLookupFailure('SECOND_ACCOUNT_CHANGED');
+            $reply=$this->call('LoadInvoice',$session,$candidate['fields']);
+            try { return EdmNumberedDraftAck::parse($reply,$second::UUID,$f::SERIES,(int)substr($date,0,4)); }
+            catch (\DomainException $e) { throw new EdmLookupFailure($e->getMessage()); }
+        });
+        $ack=$result['status']==='ok'&&($result['data']['draft_acknowledged']??false)===true;
+        $number=$ack?$result['data']['allocated_invoice_id']:null;
+        $db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->where('account_revision',$account->revision)->update([
+            'load_status'=>$ack?'draft_acknowledged':'unconfirmed','allocated_invoice_id'=>$number,
+            'diagnostic'=>$this->safeDiagnostic($result['diagnostic']??null),
+            'fault_hints'=>json_encode($result['fault_hints']??[],JSON_THROW_ON_ERROR),
+            'fault_detail_ciphertext'=>$result['fault_detail_ciphertext']??null,'updated_at'=>now()]);
+        // Every later action is a read, never another LoadInvoice.
+        if ($currentAccount()) {
+            $status=$this->invoiceStatus($account->username,$account->password,$second::UUID,$f::PROFILE);
+            $db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->update(['status_query'=>($status['status']??null)==='ok'&&(!$ack||($status['data']['invoice_number']??null)===$number)?'matched':'unconfirmed','updated_at'=>now()]);
+        }
+        if ($ack&&$currentAccount()) {
+            foreach (['xml','pdf'] as $format) {
+                $state='unconfirmed';
+                if (!$currentAccount()) break;
+                try {
+                    $artifact=$this->read($account->username,$account->password,function($session) use($second,$f,$format,$number,$account,$currentAccount) {
+                        if (!$currentAccount()) throw new EdmLookupFailure('SECOND_ACCOUNT_CHANGED');
+                        $reply=$this->call('GetInvoice',$session,['INVOICE_SEARCH_KEY'=>[
+                            'LIMIT'=>'2','ID'=>$number,'UUID'=>$second::UUID,'READ_INCLUDED'=>'true',
+                            'DIRECTION'=>'OUT-EINVOICE','SENDER'=>$f::IDENTIFIER,'RECEIVER'=>$f::IDENTIFIER,'ISARCHIVED'=>'true'],
+                            'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>strtoupper($format)]);
+                        if ($format==='xml') {
+                            $e=(new EdmInvoiceXmlEvidence)->parse($reply,$second::UUID,$f::PROFILE,$f::IDENTIFIER,$f::IDENTIFIER,true);
+                            if ($e['invoice_number']!==$number) throw new EdmLookupFailure('SECOND_XML_NUMBER_MISMATCH');
+                            return ['bytes'=>$e['private_xml_bytes']];
+                        }
+                        return ['bytes'=>EdmSandboxDocuments::pdf($reply,$second::UUID,$number)];
+                    });
+                    if ($artifact['status']==='ok'&&$currentAccount()) {
+                        EdmSandboxDocuments::store($second::UUID,$account->revision,$number,$format,$artifact['data']['bytes']);
+                        $state='matched';
+                    }
+                } catch (Throwable) { /* Keep artifact unconfirmed; no new mutation. */ }
+                $db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->update([$format.'_query'=>$state,'updated_at'=>now()]);
+            }
+        }
+        return $this->secondTrialSummary($db::table('edm_sandbox_trials')->where('uuid',$second::UUID)->first(),false);
+    }
+
+    private function safeDiagnostic(?string $value): ?string
+    {
+        return is_string($value)&&preg_match('/^(?:Login|Lookup|Logout): [A-Z0-9_]+$/D',$value)?$value:null;
+    }
+
+    private function secondTrialSummary(object $row,bool $existing): array
+    {
+        return ['uuid'=>$row->uuid,'load_status'=>$row->load_status,'allocated_invoice_id'=>$row->allocated_invoice_id,
+            'diagnostic'=>$row->diagnostic,'fault_hints'=>json_decode($row->fault_hints??'[]',true,512,JSON_THROW_ON_ERROR),
+            'status_query'=>$row->status_query,'xml_query'=>$row->xml_query,'pdf_query'=>$row->pdf_query,
+            'first_status_diagnostic'=>$row->first_status_diagnostic,'first_xml_diagnostic'=>$row->first_xml_diagnostic,
+            'already_reserved'=>$existing,'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
     }
 
     public function loadSandboxDraft(int $preparationId, #[\SensitiveParameter] string $xml, string $profile,
@@ -371,6 +494,8 @@ final class EdmTestClient
             $result = ['status'=>'ok','data'=>$operation($session)];
         } catch (EdmLookupFailure $failure) {
             $result['diagnostic'] = $stage.': '.$failure->safeCode;
+            if ($failure->hints) $result['fault_hints']=$failure->hints;
+            if ($failure->encryptedDetail!==null) $result['fault_detail_ciphertext']=$failure->encryptedDetail;
         } catch (\Illuminate\Http\Client\ConnectionException) {
             $result['diagnostic'] = $stage.': NETWORK_TIMEOUT_OR_CONNECTION';
         } catch (Throwable) {
@@ -458,7 +583,14 @@ final class EdmTestClient
         if ($fault !== false && $fault->length > 0) {
             $codes = $xpath->query('.//*[local-name()="ERROR_CODE"]',$fault->item(0));
             $code = $codes !== false && $codes->length === 1 ? trim($codes->item(0)->textContent) : '';
-            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT');
+            $encrypted=null;
+            if ($method==='LoadInvoice') {
+                // Capture only encrypted description evidence for actual load
+                // faults, never the raw response or stack trace.
+                try { $encrypted=EdmFaultHints::encryptedDetails($fault->item(0),$session); }
+                catch (Throwable) { /* Preserve original provider fault code. */ }
+            }
+            throw new EdmLookupFailure(preg_match('/^[0-9]{1,6}$/D',$code) ? 'EDM_'.$code : 'SOAP_FAULT', EdmFaultHints::inspect($fault->item(0)),$encrypted);
         }
         if (!$response->successful()) throw new EdmLookupFailure('HTTP_'.$response->status());
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
