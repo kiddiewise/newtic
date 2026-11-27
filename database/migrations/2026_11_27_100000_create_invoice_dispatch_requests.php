@@ -19,6 +19,8 @@ return new class extends Migration {
             $t->string('source',12);
             $t->string('state',24)->default('queued')->index();
             $t->string('diagnostic',100)->nullable();
+            $t->text('fault_hints')->nullable();
+            $t->longText('fault_detail_ciphertext')->nullable();
             $t->timestamp('started_at')->nullable();
             $t->timestamps();
         });

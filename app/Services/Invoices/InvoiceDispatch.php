@@ -34,7 +34,7 @@ final class InvoiceDispatch
             });
     }
     public static function pending(): Builder {
-        return self::eligible()->whereNotExists(fn($q)=>$q->selectRaw('1')->from('invoice_dispatch_requests as q')->whereColumn('q.order_id','orders.id'))
+        return self::eligible()->when(self::staging(),fn(Builder $q)=>$q->where('is_test',true))->whereNotExists(fn($q)=>$q->selectRaw('1')->from('invoice_dispatch_requests as q')->whereColumn('q.order_id','orders.id'))
             ->whereNotExists(fn($q)=>$q->selectRaw('1')->from('invoice_preparations as p')->join('edm_submission_attempts as a','a.invoice_preparation_id','=','p.id')->whereColumn('p.order_id','orders.id'));
     }
     public function enqueue(int $orderId,?int $actor,?int $shippingRate,string $source='manual'): void {

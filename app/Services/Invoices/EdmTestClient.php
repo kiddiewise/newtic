@@ -437,6 +437,8 @@ final class EdmTestClient
         });
         $ack=$r['status']==='ok'&&($r['data']['draft_acknowledged']??false)===true;
         $journal->recordLoadObservation($attempt->id,$account->revision,$ack,$ack?$r['data']['allocated_invoice_id']:null);
+        if (!$ack) \Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('id',$request->id)->update([
+            'fault_hints'=>json_encode($r['fault_hints']??[],JSON_THROW_ON_ERROR),'fault_detail_ciphertext'=>$r['fault_detail_ciphertext']??null]);
         if ($ack) { try {$journal->reconcile($attempt->id,$this);}catch(Throwable){} }
         return ['load_status'=>$ack?'draft_acknowledged':'unconfirmed','diagnostic'=>$this->safeDiagnostic($r['diagnostic']??null),'fiscal_success_confirmed'=>false];
     }

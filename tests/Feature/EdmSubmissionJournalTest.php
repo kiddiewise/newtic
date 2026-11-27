@@ -490,4 +490,75 @@ final class EdmSubmissionJournalTest extends TestCase
         }
     }
 
+
+    private function dispatchOrder(string $status='completed',bool $paid=true,bool $isolated=true): Order
+    {
+        $o=Order::create(['order_number'=>'PK-'.Str::random(12),'checkout_token'=>(string)Str::uuid(),
+            'customer_name'=>'Private Buyer','customer_email'=>'private@example.test','phone'=>'05321234567',
+            'address_label'=>'Ev','city'=>'İzmir','district'=>'Karşıyaka','street_address'=>'Private address',
+            'payment_method'=>'paytr','status'=>$status,'subtotal_cents'=>12000,'shipping_cents'=>0,
+            'total_cents'=>12000,'currency'=>'TRY','is_test'=>$isolated,'placed_at'=>now()]);
+        $o->items()->create(['product_name'=>'Private personalized label','sku'=>'SKU-X','quantity'=>2,
+            'unit_price_cents'=>6000,'line_total_cents'=>12000,'vat_rate'=>20]);
+        if ($paid) $o->paytrAttempts()->create(['merchant_oid'=>'NT'.Str::random(16),'amount_cents'=>12000,
+            'paid_total_cents'=>12000,'currency'=>'TRY','status'=>'success','is_test'=>$isolated]);
+        return $o;
+    }
+
+    public function test_manual_invoice_center_lists_verified_orders_and_accepts_single_and_bulk_requests(): void
+    {
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        Http::fake();
+        $this->account();
+        $a=$this->dispatchOrder('completed'); $b=$this->dispatchOrder('preparing');
+        $unpaid=$this->dispatchOrder('completed',false); $cancelled=$this->dispatchOrder('cancelled'); $live=$this->dispatchOrder('completed',true,false);
+        $this->get(route('admin.invoices.index'))->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->post(route('admin.invoices.create'),['orders'=>[$a->id]])->assertForbidden();
+        $admin=\App\Models\User::factory()->create(); $admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()->assertSee('Fatura kesilmesi bekleyen siparişler')
+            ->assertSee($a->order_number)->assertSee($b->order_number)->assertDontSee($unpaid->order_number)->assertDontSee($cancelled->order_number)->assertDontSee($live->order_number);
+        $this->post(route('admin.invoices.create'),['orders'=>[$a->id,$b->id]])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('invoice_dispatch_requests',2);
+        $this->assertDatabaseCount('invoice_preparations',2);
+        $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$a->id,'state'=>'queued','source'=>'manual','requested_by'=>$admin->id]);
+        foreach ([$a,$unpaid,$cancelled,$live] as $o) $this->post(route('admin.invoices.create'),['orders'=>[$o->id]])->assertSessionHasErrors('invoice');
+        $this->assertDatabaseCount('invoice_dispatch_requests',2);
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        $this->assertTrue(app(\App\Services\Invoices\InvoiceDispatch::class)->process()['connection_pending']);
+        Http::assertNothingSent();
+    }
+
+    public function test_completion_automation_is_opt_in_and_does_not_capture_historical_orders(): void
+    {
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        $account=$this->account(); $o=$this->dispatchOrder();
+        $admin=\App\Models\User::factory()->create(); $admin->forceFill(['is_admin'=>true])->save();
+        $this->assertFalse((bool)$account->fresh()->auto_invoice);
+        $this->actingAs($admin)->post(route('admin.invoices.settings'),['auto_invoice'=>1,'shipping_vat_rate'=>20])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertTrue((bool)$account->fresh()->auto_invoice);
+        $dispatch=app(\App\Services\Invoices\InvoiceDispatch::class);
+        try {$dispatch->enqueue($o->id,null,null,'auto');$this->fail('Historical order auto-selected');}catch(DomainException){}
+        DB::table('order_status_changes')->insert(['order_id'=>$o->id,'from_status'=>'shipped','to_status'=>'completed','source'=>'admin','created_at'=>now()->addSecond()]);
+        $dispatch->enqueue($o->id,null,null,'auto');
+        $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$o->id,'source'=>'auto']);
+        $this->post(route('admin.invoices.settings'),['auto_invoice'=>0])->assertRedirect();
+        $this->assertFalse((bool)$account->fresh()->auto_invoice);
+    }
+
+    public function test_queued_order_draft_payload_with_pinned_template_preserves_money_not_customer_data(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        if (!$path) $this->markTestSkipped('Pinned official template required.');
+        $o=$this->dispatchOrder();
+        $draft=app(\App\Services\Invoices\InvoicePreparationService::class)->prepare($o,null);
+        $fields=\App\Services\Invoices\EdmOrderDraftPayload::fields($draft,'2026-11-27',file_get_contents($path));
+        $xml=base64_decode($fields['INVOICE']['CONTENT'],true);
+        $this->assertStringNotContainsString('Private',$xml);
+        $this->assertStringNotContainsString('private@example.test',$xml);
+        $this->assertStringContainsString('120.00',$xml);
+        $this->assertStringContainsString($draft->uuid,$xml);
+        $this->assertSame('true',$fields['GENERATEINVOICEIDONLOAD']);
+        $this->assertSame('A01',$fields['INVOICE']['HEADER']['INVOICESERIAL_REQUESTED']);
+    }
+
 }
