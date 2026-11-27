@@ -62,6 +62,39 @@ final class EdmSubmissionJournalTest extends TestCase
             ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
     }
 
+    public function test_unknown_portal_token_visible_to_admin_does_not_unlock_send(): void
+    {
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        $number='A012026000000305';
+        (new EdmSubmissionJournal)->recordLoadObservation($attempt->id,$attempt->account_revision,true,$number);
+        $this->statusSequence('<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>DRAFT - EXAMPLE_UNKNOWN</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>');
+        $updated=(new EdmSubmissionJournal)->reconcile($attempt->id,new EdmTestClient());
+        $this->assertSame('unknown',$updated->last_portal_state);
+        $this->assertSame('DRAFT - EXAMPLE_UNKNOWN',$updated->last_portal_token);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()
+            ->assertSee('DRAFT - EXAMPLE_UNKNOWN')->assertSee('Nihai gönderim şu anda kapalı')
+            ->assertDontSee('EDM gönderimini başlat');
+        Http::assertSentCount(3);
+    }
+
+    public function test_verified_draft_displays_send_control(): void
+    {
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        $number='A012026000000305';
+        (new EdmSubmissionJournal)->recordLoadObservation($attempt->id,$attempt->account_revision,true,$number);
+        $this->statusSequence('<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>DRAFT</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>');
+        $updated=(new EdmSubmissionJournal)->reconcile($attempt->id,new EdmTestClient());
+        $this->assertSame('draft',$updated->last_portal_state);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()->assertSee('EDM gönderimini başlat');
+        Http::assertSentCount(3);
+    }
+
     public function test_claim_is_committed_once_and_never_sends(): void
     {
         Http::fake();
