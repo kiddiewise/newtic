@@ -52,8 +52,8 @@
       @if(($lookup['data']['unreadable_series'] ?? 0)>0)<p role="alert">{{ $lookup['data']['unreadable_series'] }} seri kaydı doğrulanamadı. Bunlar kullanılmayacaktır.</p>@endif
       @php($archiveReadiness=\App\Services\Invoices\EdmArchiveSeriesReadiness::inspect($lookup,(int)now('Europe/Istanbul')->format('Y')))
       <h3>e-Arşiv internet satış ön kontrolü</h3>
-      <div class="admin-detail-line"><span>Aktif internet satış serisi (bu yıl)</span><strong>{{ ['available'=>'Bulundu','not_found'=>'Bulunamadı','unverified'=>'Seri verisi doğrulanamadı'][$archiveReadiness['state']] }}</strong></div>
-      @foreach($archiveReadiness['series'] as $archiveSeries)<div class="admin-detail-line"><span>Uygun e-Arşiv serisi</span><strong>{{ $archiveSeries }}</strong></div>@endforeach
+      <div class="admin-detail-line"><span>Aktif internet satış serisi (bu yıl)</span><strong>{{ ['available'=>'Bulundu','not_found'=>'Bulunamadı','unverified'=>'Seri verisi doğrulanamadı','partial'=>'Bazı seri kayıtları doğrulanamadı'][$archiveReadiness['state']] }}</strong></div>
+      @foreach($archiveReadiness['series'] as $archiveSeries)<div class="admin-detail-line"><span>e-Arşiv seri adayı</span><strong>{{ $archiveSeries }}</strong></div>@endforeach
       <p>Bu kontrol yalnızca seri uygunluğunu gösterir; e-Arşiv gönderimini açmaz.</p>
       <p>Seriler yalnızca listelenir; numara tahsisi yapılmaz.</p>
     @else
