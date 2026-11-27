@@ -95,6 +95,50 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertSentCount(3);
     }
 
+    public function test_edm_loaded_draft_displays_send_control_without_sending(): void
+    {
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        $number='A012026000000305';
+        (new EdmSubmissionJournal)->recordLoadObservation($attempt->id,$attempt->account_revision,true,$number);
+        $this->statusSequence('<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>LOAD - SUCCEED</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>');
+        $updated=(new EdmSubmissionJournal)->reconcile($attempt->id,new EdmTestClient());
+        $this->assertSame('draft',$updated->last_portal_state);
+        $this->assertSame('LOAD - SUCCEED',$updated->last_portal_token);
+        $this->assertNull($updated->last_gib_code);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()
+            ->assertSee('LOAD - SUCCEED')->assertSee('EDM gönderimini başlat');
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+    }
+
+    public function test_edm_load_fail_or_existing_envelope_does_not_unlock_send(): void
+    {
+        $draft=$this->draft();
+        $attempt=$this->claim($draft,$this->account());
+        $number='A012026000000305';
+        (new EdmSubmissionJournal)->recordLoadObservation($attempt->id,$attempt->account_revision,true,$number);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $states=['<STATUS>LOAD - FAIL</STATUS>','<STATUS>LOAD - SUCCEED</STATUS><GIB_STATUS_CODE>1300</GIB_STATUS_CODE>'];
+        Http::preventStrayRequests();
+        $sequence=Http::sequence();
+        foreach ($states as $state) {
+            $sequence->push($this->soap('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+                ->push($this->soap('GetInvoiceStatus','<INVOICE_STATUS UUID="'.$draft->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER>'.$state.'<DIRECTION>OUT</DIRECTION></INVOICE_STATUS>'))
+                ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'));
+        }
+        Http::fake([EdmTestClient::ENDPOINT=>$sequence]);
+        foreach ($states as $state) {
+            (new EdmSubmissionJournal)->reconcile($attempt->id,new EdmTestClient());
+            $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()
+                ->assertSee('Nihai gönderim şu anda kapalı')->assertDontSee('EDM gönderimini başlat');
+        }
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+    }
+
     public function test_claim_is_committed_once_and_never_sends(): void
     {
         Http::fake();
@@ -764,7 +808,7 @@ final class EdmSubmissionJournalTest extends TestCase
             $body=match($method){
                 'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
                 'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
-                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$attempt->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>'.($sent?'PACKAGE - PROCESSING':'DRAFT').'</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$attempt->uuid.'" ID="'.$number.'"><HEADER><EARCHIVE>false</EARCHIVE></HEADER><STATUS>'.($sent?'PACKAGE - PROCESSING':'LOAD - SUCCEED').'</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
                 'SendInvoiceRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$attempt->uuid.'" ID="'.$number.'"/>',
                 default=>throw new \RuntimeException('Unexpected method'),
             };

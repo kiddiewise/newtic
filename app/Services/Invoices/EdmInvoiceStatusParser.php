@@ -48,7 +48,9 @@ final class EdmInvoiceStatusParser
         // Documented examples vary in whitespace around the hyphen.
         $status=preg_replace('/\s*-\s*/',' - ',trim($status));
         return match ($status) {
-            'DRAFT'=>'draft',
+            // EDM sandbox returns LOAD - SUCCEED for a successfully loaded, unsent draft.
+            // This is not fiscal success. SEND states and LOAD - FAIL never qualify.
+            'DRAFT','LOAD - SUCCEED'=>'draft',
             'PACKAGE - PROCESSING'=>'packaging',
             'PACKAGE - FAIL'=>'package_failed',
             'SEND - PROCESSING'=>'sending',
