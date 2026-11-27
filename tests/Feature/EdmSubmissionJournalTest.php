@@ -615,4 +615,44 @@ final class EdmSubmissionJournalTest extends TestCase
         } finally {unlink($file);}
     }
 
+
+    public function test_historical_vat_confirmation_fills_only_missing_lines_and_no_false_success(): void
+    {
+        config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
+        Http::fake();
+        $this->account();
+        $o=$this->dispatchOrder();
+        $old=$o->items()->firstOrFail();
+        $old->forceFill(['vat_rate'=>null,'quantity'=>1,'line_total_cents'=>6000])->save();
+        $known=$o->items()->create(['product_name'=>'Known rate','sku'=>'VAT-KNOWN','quantity'=>1,
+            'unit_price_cents'=>6000,'line_total_cents'=>6000,'vat_rate'=>10]);
+        $o->forceFill(['shipping_cents'=>1200,'total_cents'=>13200])->save();
+        $o->paytrAttempts()->update(['amount_cents'=>13200,'paid_total_cents'=>13200]);
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get(route('admin.invoices.index'))->assertOk()->assertSee('Eksik ürün KDV oranını onayla');
+        $this->post(route('admin.invoices.create'),['orders'=>[$o->id],'shipping_rate'=>20])
+            ->assertSessionHasErrors('invoice')->assertSessionMissing('success');
+        $this->assertNull($old->fresh()->vat_rate);
+        $this->assertDatabaseCount('invoice_dispatch_requests',0);
+        $this->post(route('admin.invoices.create'),['orders'=>[$o->id],'missing_product_rate'=>20])
+            ->assertSessionHasErrors('invoice')->assertSessionMissing('success');
+        $this->assertNull($old->fresh()->vat_rate);
+        $this->assertDatabaseCount('invoice_vat_confirmations',0);
+        $this->post(route('admin.invoices.create'),['orders'=>[$o->id],'shipping_rate'=>20,'missing_product_rate'=>20])
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertSame(20,$old->fresh()->vat_rate);
+        $this->assertSame(10,$known->fresh()->vat_rate);
+        $this->assertDatabaseHas('invoice_vat_confirmations',['order_item_id'=>$old->id,'confirmed_by'=>$admin->id,'vat_rate'=>20]);
+        $this->assertDatabaseCount('invoice_vat_confirmations',1);
+        $draft=InvoicePreparation::where('order_id',$o->id)->firstOrFail();
+        $this->assertSame(13200,$draft->gross_cents);
+        $this->assertSame([20,10,20],array_column($draft->amounts['lines'],'rate'));
+        $this->assertDatabaseHas('invoice_dispatch_requests',['order_id'=>$o->id,'state'=>'queued']);
+        $this->post(route('admin.invoices.create'),['orders'=>[$o->id],'missing_product_rate'=>1])
+            ->assertSessionHasErrors('invoice')->assertSessionMissing('success');
+        $this->assertSame(20,$old->fresh()->vat_rate);
+        $this->assertDatabaseCount('invoice_preparations',1);
+        Http::assertNothingSent();
+    }
+
 }

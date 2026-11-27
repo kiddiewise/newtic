@@ -36,8 +36,8 @@ final class InvoiceDispatch
         return self::eligible()->when(self::staging(),fn(Builder $q)=>$q->where('is_test',true))->whereNotExists(fn($q)=>$q->selectRaw('1')->from('invoice_dispatch_requests as q')->whereColumn('q.order_id','orders.id'))
             ->whereNotExists(fn($q)=>$q->selectRaw('1')->from('invoice_preparations as p')->join('edm_submission_attempts as a','a.invoice_preparation_id','=','p.id')->whereColumn('p.order_id','orders.id'));
     }
-    public function enqueue(int $orderId,?int $actor,?int $shippingRate,string $source='manual'): void {
-        DB::transaction(function()use($orderId,$actor,$shippingRate,$source){
+    public function enqueue(int $orderId,?int $actor,?int $shippingRate,string $source='manual',?int $missingProductRate=null): void {
+        DB::transaction(function()use($orderId,$actor,$shippingRate,$source,$missingProductRate){
             $account=EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
             if (!self::staging()||!$account?->configured()||!$account->revision||$account->probe_status!=='ok') throw new DomainException('EDM bağlantısı hazır değil.');
             if ($source==='auto'&&(!$account->auto_invoice||!$account->auto_invoice_since)) throw new DomainException('Otomatik faturalandırma kapalı.');
@@ -50,6 +50,21 @@ final class InvoiceDispatch
             // An existing local preview already fixes its tax calculation.
             $existing=InvoicePreparation::query()->where('order_id',$orderId)->first();
             if ($existing) $rate=$existing->shipping_rate;
+            // Historical snapshots are not guessed from today's product rate.
+            // Explicit operator confirmation fills only missing order lines.
+            $missing=$order->items()->whereNull('vat_rate')->lockForUpdate()->get(['id','vat_rate']);
+            if ($missing->isNotEmpty()) {
+                if ($existing) throw new DomainException('Mevcut taslakta KDV kaydı değiştirilemez.');
+                if ($source!=='manual'||$actor===null||!in_array($missingProductRate,[1,10,20],true)) {
+                    throw new DomainException('Ürün KDV oranı eksik. Eksik ürün KDV alanından geçerli oranı onaylayın.');
+                }
+                foreach ($missing as $item) {
+                    $item->forceFill(['vat_rate'=>$missingProductRate])->save();
+                    DB::table('invoice_vat_confirmations')->insert(['order_item_id'=>$item->id,'confirmed_by'=>$actor,
+                        'vat_rate'=>$missingProductRate,'created_at'=>now()]);
+                }
+            }
+            if ($order->shipping_cents>0 && $rate===null) throw new DomainException('Kargo KDV oranı eksik. Kargo KDV alanından oran seçin.');
             app(InvoicePreparationService::class)->prepare($order,$rate===null?null:(int)$rate);
             DB::table('invoice_dispatch_requests')->insert(['order_id'=>$orderId,'requested_by'=>$actor,'account_revision'=>$account->revision,
                 'shipping_rate'=>$rate,'source'=>$source,'state'=>'queued','created_at'=>now(),'updated_at'=>now()]);

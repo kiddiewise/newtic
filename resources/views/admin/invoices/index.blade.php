@@ -21,6 +21,8 @@
   <form method="POST" id="invoice-bulk" action="{{ route('admin.invoices.create') }}">@csrf</form>
   <div class="admin-form">
     <label>Kargo KDV oranı (gerekirse)<select name="shipping_rate" form="invoice-bulk"><option value="">Kayıtlı oranı kullan</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+    <label>Eksik ürün KDV oranı (eski siparişler)<select name="missing_product_rate" form="invoice-bulk"><option value="">Yalnızca kayıtlı ürün oranlarını kullan</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+    <p>Seçim yalnızca KDV bilgisi boş ürün satırlarını tamamlar. Mevcut oranları değiştirmez. Farklı oranlı eski ürünler için siparişleri ayrı ayrı kontrol edin.</p>
     <button class="admin-primary" type="submit" form="invoice-bulk" @disabled(!$canQueue||$pending->isEmpty())>Seçilen faturaları oluştur</button>
   </div>
   @forelse($pending as $order)
@@ -29,7 +31,17 @@
       <div class="admin-detail-line"><a href="{{ route('admin.orders.show',$order) }}">Siparişi aç</a><strong>{{ number_format($order->total_cents/100,2,',','.') }} TL</strong></div>
       <form method="POST" action="{{ route('admin.invoices.create') }}" class="admin-form">@csrf
         <input type="hidden" name="orders[]" value="{{ $order->id }}">
-        @if($order->shipping_cents>0)<label>Kargo KDV<select name="shipping_rate"><option value="">Kayıtlı oran</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>@endif
+        @if($order->shipping_cents>0)
+          <label>Kargo KDV<select name="shipping_rate" @required($shippingVat===null)><option value="">Oran seçin</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}" @selected((int)$shippingVat===$rate)>%{{ $rate }}</option>@endforeach</select></label>
+        @endif
+        @if($order->missing_vat_count>0)
+          <p role="status">{{ $order->missing_vat_count }} ürün satırında geçmiş KDV kaydı eksik.</p>
+          @foreach($order->items as $item)
+            <small>{{ $item->product_name }} — Güncel ürün KDV: {{ $item->product?->vat_rate!==null ? '%'.$item->product->vat_rate : 'Bilinmiyor' }}</small>
+          @endforeach
+          <label>Eksik ürün KDV oranını onayla<select name="missing_product_rate" required><option value="">Oran seçin</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+          <small>Seçilen oran sadece yukarıdaki eksik satırlara uygulanır. Mevcut oranlar korunur.</small>
+        @endif
         <button type="submit" class="admin-secondary" @disabled(!$canQueue)>Fatura oluştur</button>
       </form>
     </article>

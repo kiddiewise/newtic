@@ -86,6 +86,11 @@
     <form class="admin-form" method="POST" action="{{ route('admin.invoices.create') }}">@csrf
       <input type="hidden" name="orders[]" value="{{ $order->id }}">
       @if($shippingRate!==null)<input type="hidden" name="shipping_rate" value="{{ $shippingRate }}">@endif
+      @if($missingItems->isNotEmpty())
+        <p>Geçmiş KDV kaydı eksik ürünler:</p>
+        @foreach($missingItems as $item)<small>{{ $item->product_name }} — Güncel KDV: {{ $item->product?->vat_rate!==null ? '%'.$item->product->vat_rate : 'Bilinmiyor' }}</small>@endforeach
+        <label>Eksik ürün KDV oranını onayla<select name="missing_product_rate" required><option value="">Oran seçin</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+      @endif
       <button type="submit" class="admin-primary" @disabled(!\App\Services\Invoices\InvoiceDispatch::staging())>Fatura oluştur</button>
     </form>
   @endif
