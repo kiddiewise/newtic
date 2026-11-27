@@ -82,15 +82,15 @@
       <span class="payment-status-pill {{ in_array($order->status, ['preparing','shipped','out_for_delivery','completed'], true) ? 'is-verified' : '' }} {{ $order->status === 'cancelled' ? 'is-cancelled' : '' }}">{{ $tracking['payment'] }}</span>
     </div>
     @if($order->is_test)
-      <p class="checkout-testing-note"><strong>Gerçek ödeme alınmıyor.</strong> Banka hesabına para göndermeyin. Ödeme bildirimi gerçek banka tahsilatı anlamına gelmez.</p>
+      <p class="checkout-testing-note"><strong>Ödeme bildirimi</strong> — Banka hesabına para göndermeyin. Bildiriminizi ileterek sipariş işlemlerini sürdürebilirsiniz.</p>
     @endif
     @if($order->status === 'pending_payment')
-      @if($latestPaymentNotification?->status !== 'pending')
+      @if(!$order->is_test && $latestPaymentNotification?->status !== 'pending')
         <p class="payment-guide">Aşağıdaki banka hesaplarından birini seçin. Havale/EFT açıklamasına <strong>yalnızca sipariş numaranızı</strong> yazın ve <strong>toplam tutarı</strong> gönderin. Ödeme sonrası bildiriminizi iletin; banka kontrolü tamamlanana kadar sipariş ödeme bekliyor durumundadır.</p>
       @endif
       <div class="payment-copy-grid">
         <div class="payment-copy-item">
-          <span>Gönderilecek tutar</span>
+          <span>Sipariş tutarı</span>
           <strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong>
         </div>
         <div class="payment-copy-item">
@@ -125,10 +125,10 @@
                 <span class="payment-bank-information">
                   <strong>{{ $bank->bank_name }}</strong>
                   <small>{{ $bank->account_holder }}</small>
-                  <span class="payment-bank-iban">{{ trim(chunk_split($bank->iban, 4, ' ')) }}</span>
+                  @if(!$order->is_test)<span class="payment-bank-iban">{{ trim(chunk_split($bank->iban, 4, ' ')) }}</span>@endif
                 </span>
                 </label>
-                <button class="payment-copy-button" type="button" data-copy-value="{{ $bank->iban }}" data-copy-label="{{ $bank->bank_name }} IBAN" aria-label="{{ $bank->bank_name }} IBAN numarasını kopyala" title="IBAN'ı kopyala"><x-store-icon name="copy" /></button>
+                @if(!$order->is_test)<button class="payment-copy-button" type="button" data-copy-value="{{ $bank->iban }}" data-copy-label="{{ $bank->bank_name }} IBAN" aria-label="{{ $bank->bank_name }} IBAN numarasını kopyala" title="IBAN'ı kopyala"><x-store-icon name="copy" /></button>@endif
               </div>
             @endforeach
           </div>

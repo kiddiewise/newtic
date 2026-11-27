@@ -174,7 +174,7 @@ final class EdmSettingsController extends Controller
                     'username'=>$data['edm_username'],
                     'password'=>$data['edm_password'],
                     'revision'=>(string)Str::uuid(),
-                    'probe_status'=>null,'counter_left'=>null,'checked_at'=>null,
+                    'probe_status'=>null,'counter_left'=>null,'checked_at'=>null,'auto_invoice'=>false,'auto_invoice_since'=>null,
                 ])->save();
             }, 3);
         } catch (Throwable) {

@@ -181,7 +181,7 @@ jobs:
           export NEWTIC_EDM_SMOKE_DATE="$(TZ=Europe/Istanbul date +%F)"
           export NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/edm-smoke-candidates"
           mkdir -m 700 "$NEWTIC_GIB_CANDIDATES"
-          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception|test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting|test_second_numbered_smoke_with_pinned_template' --fail-on-skipped --fail-on-warning
+          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception|test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting|test_second_numbered_smoke_with_pinned_template|test_queued_order_draft_payload_with_pinned_template_preserves_money_not_customer_data|test_order_dispatch_worker_with_pinned_template_calls_edm_once_after_numbered_trial' --fail-on-skipped --fail-on-warning
           sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/edm-smoke-gib.zip" "$NEWTIC_GIB_CANDIDATES" "$RUNNER_TEMP/edm-smoke-rules"
           printf 'NEWTIC_SMOKE_DATE=%s\n' "$NEWTIC_EDM_SMOKE_DATE" >> "$GITHUB_ENV"
           printf 'NEWTIC_SMOKE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_CONTROLLED_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
@@ -403,6 +403,7 @@ jobs:
           [[ "$NEWTIC_SECOND_SHA" =~ ^[a-f0-9]{64}$ ]]
           test -s "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 240 php artisan edm:smoke-load-second '$NEWTIC_SMOKE_DATE' '$NEWTIC_SECOND_SHA' LOAD-ONE-NUMBERED-TEST-DRAFT --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && php artisan edm:install-order-template --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
       - name: Verify storefront, admin login and compiled admin stylesheet
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |

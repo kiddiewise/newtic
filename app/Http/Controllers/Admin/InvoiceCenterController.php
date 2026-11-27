@@ -42,8 +42,41 @@ final class InvoiceCenterController extends Controller
             'a.last_gib_code','a.observed_invoice_number','a.last_lookup_at')
             ->selectRaw('CASE WHEN a.account_revision = ? AND o.is_test = ? THEN 1 ELSE 0 END AS can_reconcile',[$revision,true])
             ->orderByDesc('p.id')->paginate(20)->appends(['state'=>$filter]);
-        return response()->view('admin.invoices.index',compact('rows','counts','filter'))
+        $pending=\App\Services\Invoices\InvoiceDispatch::pending()->select('id','order_number','status','total_cents','shipping_cents','currency')->latest('id')->paginate(20,['*'],'waiting_page');
+        $dispatches=DB::table('invoice_dispatch_requests as q')->join('orders as o','o.id','=','q.order_id')
+            ->select('q.id','q.order_id','q.state','q.diagnostic','o.order_number')->latest('q.id')->limit(30)->get();
+        $auto=(bool)$account?->auto_invoice; $shippingVat=$account?->shipping_vat_rate;
+        $dispatchReady=\App\Services\Invoices\InvoiceDispatch::ready($account);
+        $canQueue=\App\Services\Invoices\InvoiceDispatch::staging()&&$revision!==null;
+        return response()->view('admin.invoices.index',compact('rows','counts','filter','pending','dispatches','auto','shippingVat','dispatchReady','canQueue'))
             ->header('Cache-Control','private, no-store, max-age=0');
+    }
+
+    public function createInvoices(Request $request,\App\Services\Invoices\InvoiceDispatch $dispatch): RedirectResponse
+    {
+        $data=$request->validate(['orders'=>['required','array','min:1','max:20'],'orders.*'=>['required','integer','distinct','exists:orders,id'],
+            'shipping_rate'=>['nullable','integer','in:1,10,20']]);
+        $count=0; $failed=[];
+        foreach ($data['orders'] as $id) {
+            try {$dispatch->enqueue((int)$id,$request->user()->id,isset($data['shipping_rate'])?(int)$data['shipping_rate']:null);$count++;}
+            catch (\DomainException $e) {$failed[]='#'.$id.': '.$e->getMessage();}
+        }
+        $back=redirect()->route('admin.invoices.index')->with('success',$count.' fatura oluşturma isteği kaydedildi. EDM sonucu işlem merkezinde gösterilecek.');
+        if ($failed) $back->withErrors(['invoice'=>implode(' | ',$failed)]);
+        return $back;
+    }
+
+    public function settings(Request $request): RedirectResponse
+    {
+        $d=$request->validate(['auto_invoice'=>['required','boolean'],'shipping_vat_rate'=>['nullable','integer','in:1,10,20']]);
+        DB::transaction(function()use($d){
+            $a=EdmSetting::query()->firstOrCreate(['id'=>1]);
+            $a=EdmSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
+            $enabled=(bool)$d['auto_invoice'];
+            $a->forceFill(['auto_invoice'=>$enabled,'auto_invoice_since'=>$enabled?($a->auto_invoice_since??now()):null,
+                'shipping_vat_rate'=>$d['shipping_vat_rate']??null])->save();
+        },3);
+        return redirect()->route('admin.invoices.index')->with('success','Faturalandırma tercihleri kaydedildi.');
     }
 
     public function reconcile(EdmSubmissionAttempt $attempt,EdmSubmissionJournal $journal,EdmTestClient $client): RedirectResponse

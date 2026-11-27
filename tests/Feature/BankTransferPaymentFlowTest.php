@@ -134,14 +134,14 @@ class BankTransferPaymentFlowTest extends TestCase
         $this->assertFalse($account->fresh()->is_active);
     }
 
-    public function test_guest_can_copy_bank_details_and_send_a_single_pending_payment_claim(): void
+    public function test_guest_can_send_payment_claim_without_exposing_real_iban_in_isolated_checkout(): void
     {
         $bank = $this->bank();
         $order = $this->order();
 
         $this->get(route('checkout.success', $order))->assertOk()
             ->assertSee('Banka hesabını seç')
-            ->assertSee('data-copy-value="'.$bank->iban.'"', false)
+            ->assertDontSee('data-copy-value="'.$bank->iban.'"', false)
             ->assertSee('data-copy-value="'.$order->order_number.'"', false)
             ->assertSee('Ödeme Yaptım – Bildir');
 
@@ -177,9 +177,9 @@ class BankTransferPaymentFlowTest extends TestCase
         $notice = PaymentNotification::firstOrFail();
         $this->actingAs($this->administrator());
         $this->get(route('admin.orders.show', $order))->assertOk()
-            ->assertSee('Bu kayıt gerçek bir banka tahsilatı içermiyor.');
+            ->assertSee('Bu işlem banka hareketi oluşturmaz.');
         $this->get(route('admin.payment-notifications.index'))->assertOk()
-            ->assertSee('Bu işlemin gerçek banka tahsilatı olmadığını biliyorum.');
+            ->assertSee('Bu onay banka hareketi oluşturmaz.');
         $this->patch(route('admin.orders.update', $order), [
             'status' => 'preparing',
         ])->assertSessionHasErrors('status');

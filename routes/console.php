@@ -207,3 +207,26 @@ Artisan::command('edm:smoke-load-second {date} {sha256} {confirmation}', functio
         return 1;
     }
 })->purpose('One explicitly authorized numbered EDM sandbox draft and private readbacks');
+
+
+Artisan::command('invoices:process',function(){
+    $this->line(json_encode(app(\App\Services\Invoices\InvoiceDispatch::class)->process(),JSON_THROW_ON_ERROR));
+    return 0;
+})->purpose('Process explicitly requested invoice records and optional completion rule');
+Schedule::command('invoices:process')->everyMinute()->withoutOverlapping(15);
+
+// Private pinned template provisioning for staging only. No network calls.
+Artisan::command('edm:install-order-template',function(){
+    if (!\App\Services\Invoices\InvoiceDispatch::staging()) return 1;
+    try {
+        $bytes=stream_get_contents(STDIN,512*1024+1);
+        \App\Services\Invoices\EdmSecondSandboxFixture::templateKind($bytes);
+        $path=\App\Services\Invoices\InvoiceDispatch::templatePath();
+        $dir=dirname($path);
+        if (!is_dir($dir)&&!mkdir($dir,0700,true)) return 1;
+        if (file_put_contents($path,$bytes,LOCK_EX)!==strlen($bytes)) return 1;
+        chmod($path,0600);
+        $this->line('ORDER_TEMPLATE_VERIFIED');
+        return 0;
+    } catch (\Throwable) { $this->error('ORDER_TEMPLATE_INVALID');return 1; }
+})->purpose('Install pinned private invoice design on staging');
