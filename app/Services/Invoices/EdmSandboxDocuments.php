@@ -42,7 +42,7 @@ final class EdmSandboxDocuments
 
     public static function store(string $uuid,string $revision,string $number,string $format,#[\SensitiveParameter] string $bytes): array
     {
-        if ($uuid!==EdmSecondSandboxFixture::UUID||!in_array($format,['xml','pdf'],true)||strlen($bytes)>2*1024*1024||$bytes==='') {
+        if (!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID],true)||!in_array($format,['xml','pdf'],true)||strlen($bytes)>2*1024*1024||$bytes==='') {
             throw new DomainException('SANDBOX_ARTIFACT_SCOPE');
         }
         $digest=hash('sha256',$bytes);
@@ -67,7 +67,7 @@ final class EdmSandboxDocuments
     public static function download(string $uuid,string $format): array
     {
         if (rtrim((string)config('app.url'),'/')!==EdmSandboxSmokeFixture::STAGING_URL
-            ||$uuid!==EdmSecondSandboxFixture::UUID||!in_array($format,['xml','pdf'],true)) abort(404);
+            ||!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID],true)||!in_array($format,['xml','pdf'],true)) abort(404);
         $account=\App\Models\EdmSetting::query()->find(1);
         if (!$account?->configured()||!$account->revision) abort(404);
         $row=DB::table('edm_sandbox_documents')->where('uuid',$uuid)->where('format',$format)

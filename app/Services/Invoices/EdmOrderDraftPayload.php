@@ -42,6 +42,7 @@ final class EdmOrderDraftPayload
         $bin=$add($add($ref,$cac,'cac:Attachment'),$cbc,'cbc:EmbeddedDocumentBinaryObject',base64_encode($template));
         foreach (['filename'=>UblSaleCandidate::EDM_SERIAL_SENTINEL.'.xslt','characterSetCode'=>'UTF-8','encodingCode'=>'Base64','mimeCode'=>'application/xml'] as $k=>$v) $bin->setAttribute($k,$v);
         $xml=$doc->saveXML();
+        EdmUblNamespace::assertTransport($xml);
         (new UblCandidatePreflight)->validateProviderDraft($xml,$snapshot,$draft->uuid,$f::PROFILE);
         $fields=EdmSandboxLoadPayload::fields($xml,$draft->uuid,$f::PROFILE,$f::GB,$f::PK);
         $header=$fields['INVOICE']['HEADER'];

@@ -240,3 +240,16 @@ Artisan::command('edm:classify-stored-load-fault',function(){
     $this->line(json_encode(['operation'=>'stored_second_fault','hints'=>\App\Services\Invoices\EdmStoredFault::classify($d)],JSON_THROW_ON_ERROR));
     return 0;
 })->purpose('Classify encrypted second trial error without exposing provider text');
+
+
+Artisan::command('edm:smoke-load-namespace {date} {sha256} {confirmation}',function(){
+    try {
+        $template=stream_get_contents(STDIN,512*1024+1);
+        if (!is_string($template)||strlen($template)>512*1024) throw new \DomainException('SECOND_TEMPLATE_INVALID');
+        $r=app(\App\Services\Invoices\EdmTestClient::class)->runSecondControlledSmoke(
+            (string)$this->argument('date'),$template,(string)$this->argument('sha256'),(string)$this->argument('confirmation'),true);
+        $this->line(json_encode($r,JSON_THROW_ON_ERROR));return 0;
+    } catch (\Throwable $e) {
+        $this->error($e instanceof \DomainException&&preg_match('/^SECOND_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'SECOND_EXECUTION_UNCONFIRMED');return 1;
+    }
+})->purpose('One namespace-corrected synthetic sandbox draft; no previous UUID retry');

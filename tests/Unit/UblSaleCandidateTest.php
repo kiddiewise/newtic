@@ -317,6 +317,8 @@ final class UblSaleCandidateTest extends TestCase
             $this->assertIsString($template);
             $second=\App\Services\Invoices\EdmSecondSandboxFixture::prepare($smokeDate,$template);
             $this->assertNotFalse(file_put_contents($dir.'/EDM_SECOND_SMOKE.xml',$second['xml']));
+            $third=\App\Services\Invoices\EdmSecondSandboxFixture::prepare($smokeDate,$template,true);
+            $this->assertNotFalse(file_put_contents($dir.'/EDM_NAMESPACE_SMOKE.xml',$third['xml']));
         }
         $corporate=$this->party()+['email'=>'buyer@example.test'];
         $consumer=array_replace($corporate,['identifier'=>'11111111111','first_name'=>'Test','last_name'=>'Alıcı']);
@@ -449,5 +451,29 @@ final class UblSaleCandidateTest extends TestCase
             libxml_clear_errors();
             libxml_use_internal_errors($old);
         }
+    }
+
+    public function test_namespace_corrected_fixture_has_literal_party_tags_and_valid_xsd_shape(): void
+    {
+        $path=getenv('NEWTIC_EDM_SECOND_XSLT');
+        $schema=getenv('NEWTIC_GIB_XSD');
+        if (!$path||!$schema) $this->markTestSkipped('Pinned template and official XSD required.');
+        $f=\App\Services\Invoices\EdmSecondSandboxFixture::class;
+        $r=$f::prepare('2026-11-27',file_get_contents($path),true);
+        $this->assertSame($f::NAMESPACE_UUID,$r['uuid']);
+        $this->assertNotSame($f::UUID,$r['uuid']);
+        $this->assertSame($r['xml'],base64_decode($r['fields']['INVOICE']['CONTENT'],true));
+        $this->assertSame(1,substr_count($r['xml'],'<cac:AccountingSupplierParty>'));
+        $this->assertSame(1,substr_count($r['xml'],'<cac:AccountingCustomerParty>'));
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($r['xml'],LIBXML_NONET));
+        foreach (\App\Services\Invoices\EdmUblNamespace::NS as $prefix=>$uri) $this->assertSame($uri,$doc->documentElement->lookupNamespaceURI($prefix));
+        $old=libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        try {
+            $this->assertFalse($doc->schemaValidate($schema));
+            $errors=libxml_get_errors();$this->assertNotEmpty($errors);
+            foreach($errors as $e) $this->assertTrue(str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child'));
+        } finally {libxml_clear_errors();libxml_use_internal_errors($old);}
     }
 }

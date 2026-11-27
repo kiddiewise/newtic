@@ -19,7 +19,7 @@ final class InvoiceDispatch
     }
     public static function ready(?EdmSetting $account): bool {
         return self::staging() && $account?->configured() && $account->revision && $account->probe_status==='ok'
-            && DB::table('edm_sandbox_trials')->where('uuid',EdmSecondSandboxFixture::UUID)
+            && DB::table('edm_sandbox_trials')->whereIn('uuid',[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID])
             ->where('account_revision',$account->revision)->where('load_status','draft_acknowledged')
             ->whereNotNull('allocated_invoice_id')->exists()
             && is_file(self::templatePath());

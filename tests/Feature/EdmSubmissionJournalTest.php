@@ -556,6 +556,7 @@ final class EdmSubmissionJournalTest extends TestCase
         $this->assertStringNotContainsString('Private',$xml);
         $this->assertStringNotContainsString('private@example.test',$xml);
         $this->assertStringContainsString('120.00',$xml);
+        \App\Services\Invoices\EdmUblNamespace::assertTransport($xml);
         $this->assertStringContainsString($draft->uuid,$xml);
         $this->assertSame('true',$fields['GENERATEINVOICEIDONLOAD']);
         $this->assertSame('A01',$fields['INVOICE']['HEADER']['INVOICESERIAL_REQUESTED']);
