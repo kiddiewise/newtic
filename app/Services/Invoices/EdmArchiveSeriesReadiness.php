@@ -10,7 +10,7 @@ final class EdmArchiveSeriesReadiness
         $out=['state'=>'unverified','series'=>[],'submission_allowed'=>false];
         if (($result['status']??null)!=='ok' || !is_array($result['data']??null)) return $out;
         $data=$result['data'];
-        if (($data['unreadable_series']??null)!==0 || !is_array($data['series']??null)) return $out;
+        if (!is_int($data['unreadable_series']??null) || $data['unreadable_series']<0 || !is_array($data['series']??null)) return $out;
         $seen=[];$eligible=[];
         foreach ($data['series'] as $row) {
             if (!is_array($row) || !is_int($row['year']??null) || !is_string($row['code']??null)
@@ -22,7 +22,7 @@ final class EdmArchiveSeriesReadiness
             if ($row['active'] && $row['archive'] && $row['internet'] && !in_array($row['code'],['ABC','GIB'],true)) $eligible[]=$row['code'];
         }
         sort($eligible);
-        $out['state']=$eligible?'available':'not_found';
+        $out['state']=$data['unreadable_series']>0?'partial':($eligible?'available':'not_found');
         $out['series']=$eligible;
         return $out;
     }
