@@ -50,6 +50,9 @@ final class EdmOrderDocuments
         if ($cent('/i:Invoice/cac:TaxTotal/cbc:TaxAmount')!==$snapshot['tax_cents']) throw new DomainException('ORDER_DOCUMENT_TAX_MISMATCH');
         if ($xp->query('/i:Invoice/cac:InvoiceLine')->length!==count($snapshot['lines'])) throw new DomainException('ORDER_DOCUMENT_LINE_COUNT');
         foreach ($snapshot['lines'] as $index=>$line) {
+            $quantity=$xp->query('/i:Invoice/cac:InvoiceLine['.($index+1).']/cbc:InvoicedQuantity');
+            if ($quantity->length!==1||!preg_match('/^([0-9]+)(?:\.0+)?$/D',trim($quantity->item(0)->textContent),$qm)||
+                (int)$qm[1]!==$line['quantity']) throw new DomainException('ORDER_DOCUMENT_QUANTITY_MISMATCH');
             $base='/i:Invoice/cac:InvoiceLine['.($index+1).']';
             if ($cent($base.'/cbc:LineExtensionAmount')!==$line['net_cents']||
                 $cent($base.'/cac:TaxTotal/cbc:TaxAmount')!==$line['tax_cents']) throw new DomainException('ORDER_DOCUMENT_LINE_AMOUNT');

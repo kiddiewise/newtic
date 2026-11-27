@@ -539,12 +539,12 @@ final class EdmTestClient
             !in_array($format,['xml','pdf'],true)) throw new \DomainException('ORDER_DOCUMENT_SCOPE');
         $f=EdmSandboxSmokeFixture::class;
         return $this->read($account->username,$account->password,function($session)use($attempt,$account,$format,$f){
-            foreach (['OUT','OUT-EINVOICE'] as $direction) {
+            foreach (['OUT','OUT-EINVOICE',null] as $direction) {
                 if (!\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists()) throw new EdmLookupFailure('ORDER_ACCOUNT_CHANGED');
                 try {
-                    $reply=$this->call('GetInvoice',$session,['INVOICE_SEARCH_KEY'=>[
+                    $reply=$this->call('GetInvoice',$session,['INVOICE_SEARCH_KEY'=>array_filter([
                         'LIMIT'=>'2','ID'=>$attempt->observed_invoice_number,'UUID'=>$attempt->uuid,
-                        'READ_INCLUDED'=>'true','DIRECTION'=>$direction],
+                        'READ_INCLUDED'=>'true','DIRECTION'=>$direction],static fn($value)=>$value!==null),
                         'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>strtoupper($format)]);
                 } catch(EdmLookupFailure $e) {
                     if ($e->safeCode==='EDM_11017') continue;

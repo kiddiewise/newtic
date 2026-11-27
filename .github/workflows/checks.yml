@@ -419,6 +419,11 @@ jobs:
           test -s "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 240 php artisan edm:smoke-load-namespace '$NEWTIC_SMOKE_DATE' '$NEWTIC_NAMESPACE_SHA' LOAD-ONE-NAMESPACE-CORRECTED-TEST-DRAFT --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && php artisan edm:install-order-template --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
+      - name: Read existing acknowledged sandbox order documents
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-order-docs]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          set -euo pipefail
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 180 php artisan edm:check-observed-order-documents --no-ansi"
       - name: Verify storefront, admin login and compiled admin stylesheet
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |
