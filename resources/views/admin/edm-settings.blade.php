@@ -20,7 +20,10 @@
   </section>
   <section class="admin-panel">
     <div class="admin-panel-title"><h2>Bağlantı durumu</h2></div>
-    <div class="admin-detail-line"><span>Ortam</span><strong>Test</strong></div>
+    <div class="admin-detail-line"><span>Mağaza adresi (otomatik)</span><strong style="overflow-wrap:anywhere">{{ \App\Services\Invoices\EdmStoreScope::website() ?? 'Geçerli HTTPS mağaza adresi gerekli' }}</strong></div>
+    <div class="admin-detail-line"><span>Ortam</span><strong>EDM test</strong></div>
+    <div class="admin-detail-line"><span>Test siparişi ortamı</span><strong>{{ \App\Services\Invoices\EdmStoreScope::sandboxOrders() ? 'Uygun — hesap ön kontrolü ayrıca gerekli' : 'Kapalı' }}</strong></div>
+    <p>Mağaza adresi kurulum ayarından otomatik alınır. Canlı EDM gönderimi açılmaz.</p>
     <div class="admin-detail-line"><span>Hesap</span><strong>{{ $configured ? 'Kaydedildi' : 'Tanımlanmadı' }}</strong></div>
     <div class="admin-detail-line"><span>Son kontrol</span><strong>{{ $checkedAt?->format('d.m.Y H:i') ?? 'Henüz yapılmadı' }}</strong></div>
     <div class="admin-detail-line"><span>Sonuç</span><strong>{{ ['ok'=>'Bağlantı doğrulandı','failed'=>'Oturum açılamadı','counter_failed'=>'Oturum açıldı, kontör sorgusu başarısız','logout_failed'=>'Kontör alındı, oturum kapatma doğrulanamadı'][$status ?? ''] ?? 'Bekliyor' }}</strong></div>
@@ -47,6 +50,11 @@
         <div class="admin-detail-line"><span>{{ $series['code'] }} · {{ $series['year'] }}<small> · {{ $series['archive'] ? 'e-Arşiv' : 'e-Fatura' }}{{ $series['internet'] ? ' / İnternet satışı' : '' }}</small></span><strong>{{ $series['active'] ? 'Aktif' : 'Pasif' }}</strong></div>
       @empty <p>Seri kaydı dönmedi. EDM panelindeki seri tanımlarını kontrol edin.</p> @endforelse
       @if(($lookup['data']['unreadable_series'] ?? 0)>0)<p role="alert">{{ $lookup['data']['unreadable_series'] }} seri kaydı doğrulanamadı. Bunlar kullanılmayacaktır.</p>@endif
+      @php($archiveReadiness=\App\Services\Invoices\EdmArchiveSeriesReadiness::inspect($lookup,(int)now('Europe/Istanbul')->format('Y')))
+      <h3>e-Arşiv internet satış ön kontrolü</h3>
+      <div class="admin-detail-line"><span>Aktif internet satış serisi (bu yıl)</span><strong>{{ ['available'=>'Bulundu','not_found'=>'Bulunamadı','unverified'=>'Seri verisi doğrulanamadı'][$archiveReadiness['state']] }}</strong></div>
+      @foreach($archiveReadiness['series'] as $archiveSeries)<div class="admin-detail-line"><span>Uygun e-Arşiv serisi</span><strong>{{ $archiveSeries }}</strong></div>@endforeach
+      <p>Bu kontrol yalnızca seri uygunluğunu gösterir; e-Arşiv gönderimini açmaz.</p>
       <p>Seriler yalnızca listelenir; numara tahsisi yapılmaz.</p>
     @else
       <p role="alert">Firma sorgusu doğrulanamadı. Bu sonuç firmanın bulunmadığını kesinleştirmez.</p>
