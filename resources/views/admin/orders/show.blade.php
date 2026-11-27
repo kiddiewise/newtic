@@ -9,6 +9,7 @@
       <details class="newtic-order-actions newtic-detail-documents">
         <summary>Belgeler <x-admin-icon name="more"/></summary>
         <div>
+          <a href="{{ route('admin.invoices.index') }}"><x-admin-icon name="external-link"/> Fatura yönetimi</a>
           <a href="{{ route('admin.orders.invoice-preview', $order) }}"><x-admin-icon name="external-link"/> Fatura hesaplama ön izlemesi</a>
           <a href="{{ route('admin.orders.document', [$order, 'proforma']) }}"><x-admin-icon name="download"/> Promofatura PDF</a>
           <a href="{{ route('admin.orders.document', [$order, 'proforma', 'preview' => 1]) }}" target="_blank" rel="noopener noreferrer"><x-admin-icon name="external-link"/> Önizle / Yazdır</a>
@@ -44,7 +45,7 @@
     <div class="newtic-detail-overview-top">
       <div><span>Sipariş tutarı</span><strong>{{ number_format($paymentBreakdown['order_total_cents']/100, 2, ',', '.') }} ₺</strong></div>
       <div class="newtic-detail-status"><span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
-      @if($order->is_test)<span class="admin-test-tag">Gerçek tahsilat yok</span>@endif</div>
+</div>
     </div>
     <div class="newtic-detail-overview-meta">
       <div><span>Müşteri</span><strong>{{ $order->customer_name }}</strong></div>
@@ -226,12 +227,12 @@
                 @csrf
                 <label class="admin-check"><input type="checkbox" name="bank_verified" value="1" required>
                   @if($order->is_test)
-                    Bu kayıt gerçek bir banka tahsilatı içermiyor. İşlemi ciroya dahil etmeden yalnızca yönetim doğrulaması olarak onaylıyorum.
+                    Siparişin ödeme kaydını kontrol ettim ve yönetim işlemini onaylıyorum. Bu işlem banka hareketi oluşturmaz.
                   @else
                     Tutarı ({{ number_format($order->total_cents/100, 2, ',', '.') }} ₺) ve açıklamadaki {{ $order->order_number }} numarasını banka hareketinde kontrol ettim.
                   @endif
                 </label>
-                <button class="admin-primary" type="submit"><x-admin-icon name="check" /> {{ $order->is_test ? 'Tahsilatsız kaydı doğrula' : 'Ödemeyi doğrula' }}</button>
+                <button class="admin-primary" type="submit"><x-admin-icon name="check" /> Ödemeyi doğrula</button>
               </form>
               <form class="admin-form" method="POST" action="{{ route('admin.payment-notifications.reject', $notification) }}">
                 @csrf
@@ -328,7 +329,7 @@
       </div>
       <div class="admin-detail-line"><span>Sipariş durumu</span><strong>{{ $order->statusLabel() }}</strong></div>
       <div class="admin-detail-line"><span>Oluşturulma</span><strong>{{ $order->created_at->format('d.m.Y H:i') }}</strong></div>
-      <div class="admin-detail-line"><span>Tür</span><strong>{{ $order->is_test ? 'Tahsilatsız kayıt' : 'Sipariş' }}</strong></div>
+      <div class="admin-detail-line"><span>Tür</span><strong>Sipariş</strong></div>
     </details></section>
     </div>
   </div>

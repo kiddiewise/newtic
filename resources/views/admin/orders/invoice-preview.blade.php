@@ -8,7 +8,7 @@
 <section class="admin-panel">
   <h2>Belge düzenlenmedi</h2>
   <p>Bu ekran yalnızca kayıtlı sipariş tutarlarını kontrol eder. Resmî fatura değildir; EDM'e gönderilmez, fatura numarası alınmaz ve müşteri bilgilendirilmez.</p>
-  @if($order->is_test)<p>Test siparişi.</p>@endif
+
   @if(!$payment['payment_verified'])<p role="status">Ödeme doğrulanmadı. Fatura gönderimine uygunluk değerlendirilmedi.</p>@endif
   @if($order->status === 'cancelled')<p role="status">İptal edilmiş sipariş. Faturalandırma yapılmaz.</p>@endif
   @if($payment['provider_difference_cents']>0)
@@ -76,4 +76,19 @@
     <p>Geçerli KDV hesabı ve iptal edilmemiş sipariş gereklidir.</p>
   @endif
 </section>
+@if(in_array($order->status,\App\Services\Invoices\InvoiceDispatch::STATUSES,true) && $payment['payment_verified'])
+<section class="admin-panel">
+  <h2>Fatura işlemleri</h2>
+  @php($dispatch=\Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('order_id',$order->id)->first())
+  @if($dispatch)
+    <p>Fatura oluşturma isteği mevcut. <a href="{{ route('admin.invoices.index') }}">İşlem merkezini aç</a></p>
+  @else
+    <form class="admin-form" method="POST" action="{{ route('admin.invoices.create') }}">@csrf
+      <input type="hidden" name="orders[]" value="{{ $order->id }}">
+      @if($shippingRate!==null)<input type="hidden" name="shipping_rate" value="{{ $shippingRate }}">@endif
+      <button type="submit" class="admin-primary" @disabled(!\App\Services\Invoices\InvoiceDispatch::staging())>Fatura oluştur</button>
+    </form>
+  @endif
+</section>
+@endif
 @endsection

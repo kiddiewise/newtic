@@ -326,7 +326,7 @@ final class EdmTestClient
         if (!$currentAccount()) throw new \DomainException('SECOND_ACCOUNT_CHANGED');
         $statusCode=$oldStatus['diagnostic']??null;
         $xmlCode=$oldXml['diagnostic']??null;
-        if ($statusCode!=='Lookup: EDM_11017'||$xmlCode!=='Lookup: EDM_11017') {
+        if ($statusCode!=='Lookup: EDM_11017'||!in_array($xmlCode,['Lookup: EDM_11017','Lookup: GETINVOICE_EMPTY_RESULT'],true)) {
             return ['uuid'=>$second::UUID,'load_status'=>'blocked_first_readback','first_status_diagnostic'=>$this->safeDiagnostic($statusCode),
                 'first_xml_diagnostic'=>$this->safeDiagnostic($xmlCode),'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
         }
@@ -409,6 +409,38 @@ final class EdmTestClient
             'already_reserved'=>$existing,'automatic_retry'=>false,'fiscal_success_confirmed'=>false];
     }
 
+    public function loadQueuedOrderDraft(object $request): array
+    {
+        $account=\App\Models\EdmSetting::query()->find(1);
+        if (!InvoiceDispatch::ready($account)||$request->account_revision!==$account->revision
+            ||!\Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('id',$request->id)->where('order_id',$request->order_id)->where('state','processing')->exists()) throw new \DomainException('ORDER_CONNECTION_NOT_READY');
+        $order=InvoiceDispatch::eligible()->where('is_test',true)->find($request->order_id);
+        if (!$order) throw new \DomainException('ORDER_PAYMENT_UNVERIFIED');
+        $draft=\App\Models\InvoicePreparation::query()->where('order_id',$order->id)->firstOrFail();
+        $fresh=(new InvoiceAmounts)->preview($order,$draft->shipping_rate);
+        if (!hash_equals($draft->snapshot_hash,hash('sha256',json_encode($fresh,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)))) throw new \DomainException('ORDER_SNAPSHOT_CHANGED');
+        $date=now('Europe/Istanbul')->toDateString();
+        $template=file_get_contents(InvoiceDispatch::templatePath());
+        if (!is_string($template)) throw new \DomainException('ORDER_TEMPLATE_MISSING');
+        $fields=EdmOrderDraftPayload::fields($draft,$date,$template);
+        $f=EdmSandboxSmokeFixture::class;
+        $preview=(new EdmRoutingPreview($this))->inspect($account,$f::IDENTIFIER,$f::IDENTIFIER,$f::GB,$f::PK,$f::SERIES,(int)substr($date,0,4));
+        foreach (['company','sender_alias','series','recipient','recipient_alias'] as $key) if (($preview['checks'][$key]??null)!==true) throw new \DomainException('ORDER_ROUTE_UNVERIFIED');
+        if (!is_int($preview['unreadable_series'])||!is_int($preview['unverified_records'])||$preview['unreadable_series']>1||$preview['unverified_records']>1) throw new \DomainException('ORDER_ROUTE_WARNINGS_CHANGED');
+        $journal=new EdmSubmissionJournal;
+        $attempt=$journal->claim($draft->id,$f::PROFILE,hash('sha256',json_encode($fields,JSON_THROW_ON_ERROR)),$account->revision,true);
+        $r=$this->read($account->username,$account->password,function($session)use($fields,$account,$draft,$f,$date){
+            if (!\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists()) throw new EdmLookupFailure('ORDER_ACCOUNT_CHANGED');
+            $reply=$this->call('LoadInvoice',$session,$fields);
+            try { return EdmNumberedDraftAck::parse($reply,$draft->uuid,$f::SERIES,(int)substr($date,0,4)); }
+            catch (\DomainException $e) { throw new EdmLookupFailure($e->getMessage()); }
+        });
+        $ack=$r['status']==='ok'&&($r['data']['draft_acknowledged']??false)===true;
+        $journal->recordLoadObservation($attempt->id,$account->revision,$ack,$ack?$r['data']['allocated_invoice_id']:null);
+        if ($ack) { try {$journal->reconcile($attempt->id,$this);}catch(Throwable){} }
+        return ['load_status'=>$ack?'draft_acknowledged':'unconfirmed','diagnostic'=>$this->safeDiagnostic($r['diagnostic']??null),'fiscal_success_confirmed'=>false];
+    }
+
     public function loadSandboxDraft(int $preparationId, #[\SensitiveParameter] string $xml, string $profile,
         #[\SensitiveParameter] string $senderAlias, #[\SensitiveParameter] string $receiverAlias,
         EdmSandboxLoadPolicy $policy, EdmSubmissionJournal $journal): array
@@ -469,6 +501,12 @@ final class EdmTestClient
                 ],
                 'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>'XML',
             ]);
+            $children=[];
+            foreach ($reply->childNodes as $node) if ($node instanceof DOMElement) $children[]=$node;
+            if (count($children)===0 || (count($children)===1 && $children[0]->localName==='REQUEST_RETURN'
+                && ($children[0]->namespaceURI===null||$children[0]->namespaceURI==='') && $this->value($children[0],'RETURN_CODE')==='0')) {
+                throw new EdmLookupFailure('GETINVOICE_EMPTY_RESULT');
+            }
             return (new EdmInvoiceXmlEvidence)->parse($reply,$uuid,$profile,$seller,$buyer);
         });
     }

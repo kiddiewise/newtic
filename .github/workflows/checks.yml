@@ -403,6 +403,7 @@ jobs:
           [[ "$NEWTIC_SECOND_SHA" =~ ^[a-f0-9]{64}$ ]]
           test -s "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 240 php artisan edm:smoke-load-second '$NEWTIC_SMOKE_DATE' '$NEWTIC_SECOND_SHA' LOAD-ONE-NUMBERED-TEST-DRAFT --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && php artisan edm:install-order-template --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
       - name: Verify storefront, admin login and compiled admin stylesheet
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && !contains(github.event.head_commit.message, '[package-only]')
         run: |

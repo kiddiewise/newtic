@@ -58,7 +58,7 @@
           <div class="newtic-order-meta"><strong>{{ number_format($order->total_cents / 100, 2, ',', '.') }} ₺</strong><small>{{ $order->created_at->format('d.m.Y · H:i') }}</small><small>{{ $order->payment_method === 'paytr' ? 'Kart / PAYTR' : ($order->payment_method === 'bank_transfer' ? 'Havale / EFT' : $order->payment_method) }}</small></div>
           <div class="newtic-order-status">
             <span class="admin-state-pill state-{{ $order->status }}">{{ $order->statusLabel() }}</span>
-            @if($order->is_test)<small class="admin-test-tag">Tahsilatsız kayıt</small>@endif
+
             @if($order->shippingShipment?->remote_status)<small>Kargo: {{ \App\Support\ShippingStatus::label($order->shippingShipment->remote_status) }}</small>@endif
             @if($order->pending_payment_notifications_count)<small class="admin-table-alert">Ödeme bildirimi ({{ $order->pending_payment_notifications_count }})</small>@endif
           </div>

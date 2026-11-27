@@ -36,7 +36,7 @@ final class EdmSubmissionJournal
      * account routing and explicit operator authorization. This method only
      * commits the irreversible reservation before any network mutation.
      */
-    public function claim(int $preparationId,string $profile,string $payloadSha256,string $expectedAccountRevision): EdmSubmissionAttempt
+    public function claim(int $preparationId,string $profile,string $payloadSha256,string $expectedAccountRevision,bool $requireVerifiedPayment=false): EdmSubmissionAttempt
     {
         $this->outsideTransaction();
         if (!in_array($profile,['TEMELFATURA','TICARIFATURA'],true)
@@ -44,7 +44,7 @@ final class EdmSubmissionJournal
             throw new DomainException('Geçersiz EDM gönderim kaydı.');
         }
 
-        return DB::transaction(function () use ($preparationId,$profile,$payloadSha256,$expectedAccountRevision) {
+        return DB::transaction(function () use ($preparationId,$profile,$payloadSha256,$expectedAccountRevision,$requireVerifiedPayment) {
             $account=$this->account();
             if (!hash_equals($account->revision,$expectedAccountRevision)) throw new DomainException('EDM hesabı değişmiş.');
             $candidate=InvoicePreparation::query()->findOrFail($preparationId);
@@ -56,6 +56,7 @@ final class EdmSubmissionJournal
                 || $order->currency!=='TRY' || $order->total_cents!==$draft->gross_cents) {
                 throw new DomainException('Gönderim kaydı yalnızca uygun test siparişine açılabilir.');
             }
+            if ($requireVerifiedPayment && !InvoiceDispatch::eligible()->whereKey($order->id)->exists()) throw new DomainException('ORDER_PAYMENT_UNVERIFIED');
             $snapshot=$draft->amounts;
             if (!is_array($snapshot) || !is_string($draft->snapshot_hash)
                 || !hash_equals($draft->snapshot_hash,hash('sha256',json_encode($snapshot,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)))
@@ -137,17 +138,19 @@ final class EdmSubmissionJournal
         },3);
     }
 
-    public function recordLoadObservation(int $attemptId,string $revision,bool $acknowledged): void
+    public function recordLoadObservation(int $attemptId,string $revision,bool $acknowledged,?string $number=null): void
     {
         $this->outsideTransaction();
-        DB::transaction(function () use ($attemptId,$revision,$acknowledged) {
+        DB::transaction(function () use ($attemptId,$revision,$acknowledged,$number) {
             $current=EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
             $row=EdmSubmissionAttempt::query()->lockForUpdate()->findOrFail($attemptId);
             if (!$current || $current->revision!==$revision || $row->account_revision!==$revision) {
                 throw new DomainException('Eski EDM hesabının yükleme sonucu kaydedilmedi.');
             }
             if ($row->last_load_result!==null) throw new DomainException('Yükleme sonucu daha önce kaydedildi.');
-            $row->forceFill(['last_load_result'=>$acknowledged?'draft_acknowledged':'unconfirmed'])->save();
+            $values=['last_load_result'=>$acknowledged?'draft_acknowledged':'unconfirmed'];
+            if ($acknowledged && $number!==null) $values['observed_invoice_number']=$number;
+            $row->forceFill($values)->save();
         },3);
     }
 
