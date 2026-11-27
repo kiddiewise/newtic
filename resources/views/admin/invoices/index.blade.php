@@ -81,6 +81,12 @@
         <div class="admin-detail-line"><span>Yükleme yanıtı</span><strong>{{ ['draft_acknowledged'=>'Taslak yanıtı alındı','unconfirmed'=>'Doğrulanamadı'][$row->last_load_result ?? ''] ?? 'Henüz doğrulanmadı' }}</strong></div>
         <div class="admin-detail-line"><span>Fatura numarası</span><strong>{{ $row->observed_invoice_number ?? 'Doğrulanmadı' }}</strong></div>
         <div class="admin-detail-line"><span>Son sorgu</span><strong>{{ ['matched'=>'Eşleşti','unconfirmed'=>'Doğrulanamadı','identity_conflict'=>'Kimlik çelişkisi'][$row->last_lookup_state ?? ''] ?? 'Henüz yapılmadı' }}</strong></div>
+        @if($row->can_reconcile)
+          <div class="admin-detail-line"><span>EDM belge durumu</span><strong>{{ $row->last_lookup_state!=='matched' ? 'Güncel durum doğrulanmadı' : (['draft'=>'Taslak','packaging'=>'Paketleniyor','package_failed'=>'Paketleme başarısız','sending'=>'Gönderiliyor','waiting_gib'=>'GİB yanıtı bekleniyor','waiting_system'=>'Sistem yanıtı bekleniyor','send_failed'=>'Gönderim başarısız','send_succeeded'=>'Gönderim başarılı (EDM)','waiting_application'=>'Uygulama yanıtı bekleniyor','accepted_succeeded'=>'Kabul edildi','rejected_succeeded'=>'Reddedildi','cancelled_succeeded'=>'İptal edildi','unknown'=>'Tanınmayan durum'][$row->last_portal_state ?? ''] ?? 'Henüz sorgulanmadı') }}</strong></div>
+          @if($row->last_lookup_state==='matched' && $row->last_portal_token)
+            <div class="admin-detail-line"><span>EDM teknik durum kodu</span><strong>{{ $row->last_portal_token }}</strong></div>
+          @endif
+        @endif
         <div class="admin-detail-line"><span>GİB zarf kodu</span><strong>{{ $row->last_gib_code ?? 'Bildirilmedi' }}</strong></div>
         <div class="admin-detail-line"><span>Son sorgu zamanı</span><strong>{{ $row->last_lookup_at ?? '—' }}</strong></div>
         @if($row->can_reconcile)
@@ -95,12 +101,19 @@
             @endforeach
             @if(isset($sendRequests[$row->attempt_id]))
               <p>Gönderim: {{ ['accepted_for_processing'=>'EDM işleme aldı','unconfirmed'=>'Sonuç belirsiz','outcome_unknown'=>'İşlem ayrıldı','transport_started'=>'Gönderim başladı'][$sendRequests[$row->attempt_id]->state] ?? 'Bilinmiyor' }}. Nihai durum için sorgulayın.</p>
-            @elseif($row->last_portal_state==='draft' && !$row->last_gib_code)
+            @elseif($row->last_lookup_state==='matched' && $row->last_portal_state==='draft' && !$row->last_gib_code)
               <form method="POST" action="{{ route('admin.invoices.send',['attempt'=>$row->attempt_id]) }}" class="admin-form">@csrf
                 <label class="admin-check"><input type="checkbox" name="confirm_send" value="1" required> Bu taslağın EDM deneme ortamında nihai gönderimini onaylıyorum.</label>
                 <button type="submit" class="admin-primary">EDM gönderimini başlat</button>
                 <small>Tek seferlik işlem. XML ve taslak durumunun doğrulanması gerekir.</small>
               </form>
+            @else
+              <p role="status">Nihai gönderim şu anda kapalı:
+                @if($row->last_lookup_state!=='matched') güncel EDM sorgusu eşleşmedi.
+                @elseif($row->last_gib_code) GİB zarf kodu bildirildi; tekrar gönderilmez.
+                @else EDM taslak durumu doğrulanmadı. Teknik durum kodunu kontrol edin.
+                @endif
+              </p>
             @endif
           @endif
         @else <p>Bu kayıt için mevcut EDM hesabıyla sorgulama yapılamıyor.</p> @endif
