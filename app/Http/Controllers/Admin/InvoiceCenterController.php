@@ -38,7 +38,7 @@ final class InvoiceCenterController extends Controller
         // credentials, raw XML, payload hashes or customer contact fields.
         $rows=$query->select('p.id','p.order_id','p.uuid','p.gross_cents','p.created_at',
             'o.order_number','o.is_test','o.currency','a.id as attempt_id','a.state',
-            'a.profile','a.last_load_result','a.last_lookup_state','a.last_portal_state',
+            'a.profile','a.last_load_result','a.last_lookup_state','a.last_portal_state','a.last_portal_token',
             'a.last_gib_code','a.observed_invoice_number','a.last_lookup_at')
             ->selectRaw('CASE WHEN a.account_revision = ? AND o.is_test = ? THEN 1 ELSE 0 END AS can_reconcile',[$revision,true])
             ->orderByDesc('p.id')->paginate(20)->appends(['state'=>$filter]);
