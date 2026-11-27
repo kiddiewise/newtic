@@ -84,6 +84,9 @@ final class EdmInvoiceStatusParser
         $number=preg_match('/^[A-Z0-9]{3}[0-9]{13}$/D',$id) && $id!==UblSaleCandidate::EDM_SERIAL_SENTINEL ? $id : null;
         $status=$this->value($row,'STATUS',true);
         $portal=$this->portalState($status,$profile);
+        // Only bounded technical tokens, not descriptions or arbitrary SOAP fields.
+        $token=preg_replace('/\s*-\s*/',' - ',trim($status));
+        $token=is_string($token)&&strlen($token)<=64&&preg_match('/^[A-Z][A-Z0-9_]*(?: - [A-Z0-9_]+)*$/D',$token)?$token:null;
         $gib=$this->value($row,'GIB_STATUS_CODE');
         $specified=$this->value($row,'GIB_STATUS_CODESpecified');
         if ($specified!==null && !in_array($specified,['true','false','1','0'],true)) throw new EdmLookupFailure('STATUS_GIB_SPECIFIED_INVALID');
@@ -110,6 +113,7 @@ final class EdmInvoiceStatusParser
             'uuid'=>strtolower($uuid),
             'invoice_number'=>$number,
             'portal_state'=>$portal,
+            'portal_token'=>$token,
             'gib'=>EdmInvoiceOutcome::classify('gib',$gib??''),
             'commercial_response'=>$commercial,
             'archive_report'=>$archiveReport,
