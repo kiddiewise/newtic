@@ -230,3 +230,13 @@ Artisan::command('edm:install-order-template',function(){
         return 0;
     } catch (\Throwable) { $this->error('ORDER_TEMPLATE_INVALID');return 1; }
 })->purpose('Install pinned private invoice design on staging');
+
+
+// Read-only fixed vocabulary diagnostic for public CI. Never prints raw EDM descriptions.
+Artisan::command('edm:classify-stored-load-fault',function(){
+    $a=\App\Models\EdmSetting::query()->find(1);
+    $uuid=\App\Services\Invoices\EdmSecondSandboxFixture::UUID;
+    $d=\App\Services\Invoices\EdmStoredFault::read($uuid,$a);
+    $this->line(json_encode(['operation'=>'stored_second_fault','hints'=>\App\Services\Invoices\EdmStoredFault::classify($d)],JSON_THROW_ON_ERROR));
+    return 0;
+})->purpose('Classify encrypted second trial error without exposing provider text');

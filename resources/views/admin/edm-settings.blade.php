@@ -176,6 +176,16 @@
     <div class="admin-detail-line"><span>Yükleme</span><strong>{{ ['reserved_unknown'=>'Sonuç belirsiz','unconfirmed'=>'Doğrulanamadı','draft_acknowledged'=>'Taslak onaylandı'][$trial->load_status] ?? 'Bilinmiyor' }}</strong></div>
     <div class="admin-detail-line"><span>Fatura numarası</span><strong>{{ $trial->allocated_invoice_id ?? 'Doğrulanmadı' }}</strong></div>
     @if($trial->diagnostic)<div class="admin-detail-line"><span>Teknik sonuç</span><strong>{{ $trial->diagnostic }}</strong></div>@endif
+    @if(!empty($sandboxFaultDetails[$trial->uuid]))
+      <details class="admin-panel" style="margin:12px 0">
+        <summary>EDM ayrıntılı hata açıklaması</summary>
+        <p>EDM'nin ilgili denemede döndürdüğü açıklama. Hesap ve oturum bilgileri maskelenmiştir.</p>
+        @foreach($sandboxFaultDetails[$trial->uuid] as $field=>$description)
+          <p><strong>{{ $field==='ERROR_SHORT_DES'?'Kısa açıklama':'Ayrıntılı açıklama' }}</strong></p>
+          <pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ $description }}</pre>
+        @endforeach
+      </details>
+    @endif
     @foreach(['status_query'=>'Durum','xml_query'=>'XML','pdf_query'=>'PDF'] as $key=>$label)
       <div class="admin-detail-line"><span>{{ $label }}</span><strong>{{ $trial->$key === 'matched' ? 'Eşleşti' : ($trial->$key ? 'Doğrulanamadı' : 'Henüz alınmadı') }}</strong></div>
     @endforeach
