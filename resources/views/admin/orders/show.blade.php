@@ -2,20 +2,6 @@
 @section('title', $order->order_number.' | NEWTIC')
 @section('content')
 <div class="newtic-order-detail">
-  @if(in_array($order->status,\App\Services\Invoices\InvoiceDispatch::STATUSES,true))
-    @php($invoiceRequest=\Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('order_id',$order->id)->first())
-    <section class="admin-panel">
-      <div class="admin-panel-title"><h2>Fatura işlemleri</h2></div>
-      @if($invoiceRequest)<p>Fatura oluşturma isteği mevcut. <a href="{{ route('admin.invoices.index') }}">Fatura yönetimini aç</a></p>
-      @elseif($paymentVerified && \App\Services\Invoices\InvoiceDispatch::staging())
-        <form method="POST" action="{{ route('admin.invoices.create') }}" class="admin-form">@csrf
-          <input type="hidden" name="orders[]" value="{{ $order->id }}">
-          @if($order->shipping_cents>0)<label>Kargo KDV<select name="shipping_rate"><option value="">Kayıtlı oran</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>@endif
-          <button type="submit" class="admin-primary">Fatura oluştur</button>
-        </form>
-      @else <a class="admin-secondary" href="{{ route('admin.invoices.index') }}">Fatura yönetimini aç</a>@endif
-    </section>
-  @endif
   <header class="newtic-detail-heading">
     <a class="admin-back" href="{{ route('admin.orders.index') }}">← Siparişler</a>
     <div class="newtic-detail-heading-row">
@@ -32,6 +18,7 @@
     </div>
   </header>
   @php
+    $invoiceRequest = \Illuminate\Support\Facades\DB::table('invoice_dispatch_requests')->where('order_id',$order->id)->first();
     $processCancelled = $order->status === 'cancelled';
     $processCurrent = match($order->status) {'pending_payment'=>1,'preparing'=>2,'shipped','out_for_delivery'=>3,'completed'=>4,default=>null};
     $processStages = [
@@ -42,6 +29,21 @@
       ['label'=>'Tamamlandı','short'=>'Teslimat','done'=>$order->status === 'completed'],
     ];
   @endphp
+  @if(in_array($order->status,\App\Services\Invoices\InvoiceDispatch::STATUSES,true))
+    <section class="admin-panel">
+      <div class="admin-panel-title"><h2>Fatura işlemleri</h2></div>
+      @if($invoiceRequest)<p>Fatura oluşturma isteği mevcut. <a href="{{ route('admin.invoices.index') }}">Fatura yönetimini aç</a></p>
+      @elseif($paymentVerified && \App\Services\Invoices\InvoiceDispatch::staging())
+        <form method="POST" action="{{ route('admin.invoices.create') }}" class="admin-form">@csrf
+          <input type="hidden" name="orders[]" value="{{ $order->id }}">
+          @if($order->shipping_cents>0)<label>Kargo KDV<select name="shipping_rate"><option value="">Kayıtlı oran</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>@endif
+          <button type="submit" class="admin-primary">Fatura oluştur</button>
+        </form>
+      @else
+        <a class="admin-secondary" href="{{ route('admin.invoices.index') }}">Fatura yönetimini aç</a>
+      @endif
+    </section>
+  @endif
   <section class="admin-panel newtic-mobile-process" aria-label="Sipariş süreci" data-mobile-order-process>
     <div class="newtic-mobile-process-heading"><h2>Sipariş süreci</h2><span class="newtic-mobile-process-status {{ $processCancelled ? 'is-cancelled' : '' }}">{{ $order->statusLabel() }}</span></div>
     <ol class="newtic-mobile-process-track">
