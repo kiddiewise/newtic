@@ -157,6 +157,7 @@ final class UblSaleCandidate
         $doc=new DOMDocument('1.0','UTF-8');
         $doc->formatOutput=true;
         $root=$doc->appendChild($doc->createElementNS(self::INV,'Invoice'));
+        if ($edmRehearsal) EdmUblNamespace::declare($root);
         // The Turkish invoice XSD requires UBLExtensions and Signature.
         // This explicit non-fiscal marker is NOT a cryptographic signature.
         $extensions=$root->appendChild($doc->createElementNS(self::EXT,'ext:UBLExtensions'));
@@ -211,7 +212,10 @@ final class UblSaleCandidate
         if ($index!==count($draft->amounts['lines'])) throw new DomainException('Belge satırları uyuşmuyor.');
         $xml=$doc->saveXML();
         if ($xml===false) throw new DomainException('Fatura XML oluşturulamadı.');
-        if ($edmRehearsal) (new UblCandidatePreflight)->validateProviderDraft($xml,$draft->amounts,$draft->uuid,$profile);
+        if ($edmRehearsal) {
+            EdmUblNamespace::assertTransport($xml);
+            (new UblCandidatePreflight)->validateProviderDraft($xml,$draft->amounts,$draft->uuid,$profile);
+        }
         else (new UblCandidatePreflight)->validate($xml,$draft->amounts,$draft->uuid,$profile,$anonymousArchivePermitted);
         return $xml;
     }

@@ -11,7 +11,7 @@ final class EdmStoredFault
     public static function read(string $uuid,?EdmSetting $account): array
     {
         if (!InvoiceDispatch::staging()||!$account?->configured()||!$account->revision||
-            !in_array($uuid,[EdmSandboxSmokeFixture::UUID,EdmSecondSandboxFixture::UUID],true)) return [];
+            !in_array($uuid,[EdmSandboxSmokeFixture::UUID,EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID],true)) return [];
         $row=DB::table('edm_sandbox_trials')->where('uuid',$uuid)->where('account_revision',$account->revision)->first();
         if (!$row||!$row->fault_detail_ciphertext) return [];
         try {
@@ -59,6 +59,8 @@ final class EdmStoredFault
             'duplicate'=>'~duplicate|already exists|mükerrer|daha önce|zaten~iu',
             'date'=>'~issuedate|tarih|date~iu',
             'amount'=>'~amount|tutar|kdv|tax|vergi~iu',
+            'supplier_lexical_tag'=>'~<cac:AccountingSupplierParty>~u',
+            'customer_lexical_tag'=>'~<cac:AccountingCustomerParty>~u',
             'provider_generic_load_failure'=>'~yüklenemedi|load failed|could not load|cannot load~iu',
             'license_or_credit'=>'~kontör|credit|license|lisans~iu',
         ];
