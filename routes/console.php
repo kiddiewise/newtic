@@ -311,3 +311,8 @@ Artisan::command('edm:archive-smoke-load {date} {series} {sha256} {confirmation}
         return 1;
     }
 })->purpose('Load one independently checked synthetic archive draft only; never issue or send');
+
+Artisan::command('edm:archive-smoke-documents',function(){
+    try {$r=app(\App\Services\Invoices\EdmTestClient::class)->refreshArchiveSmokeDocuments();$this->line(json_encode($r,JSON_THROW_ON_ERROR));return 0;}
+    catch(\Throwable){$this->error('ARCHIVE_DOCUMENTS_UNCONFIRMED');return 1;}
+})->purpose('Read-only archive sandbox status and artifacts, never send');
