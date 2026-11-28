@@ -117,7 +117,7 @@ final class InvoiceCenterController extends Controller
         $v=\Illuminate\Support\Facades\Validator::make($request->only('seller_id','synthetic_confirm','anonymous_test','confirm_metadata','payment_date','dispatch_date','carrier_vkn','carrier_title'),[
             'seller_id'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111'],
             'synthetic_confirm'=>['required','accepted'],'anonymous_test'=>['nullable','boolean'],
-            'confirm_metadata'=>['nullable','accepted'],
+            'confirm_metadata'=>['sometimes','accepted'],
             'payment_date'=>['nullable','required_with:confirm_metadata','date_format:Y-m-d'],
             'dispatch_date'=>['nullable','required_with:confirm_metadata','date_format:Y-m-d'],
             'carrier_vkn'=>['nullable','required_with:confirm_metadata','string','regex:/^[0-9]{10}$/D'],
