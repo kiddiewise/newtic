@@ -42,6 +42,7 @@ final class InvoiceDispatch
             if (!self::staging()||!$account?->configured()||!$account->revision||$account->probe_status!=='ok') throw new DomainException('EDM bağlantısı hazır değil.');
             if ($source==='auto'&&(!$account->auto_invoice||!$account->auto_invoice_since)) throw new DomainException('Otomatik faturalandırma kapalı.');
             $order=Order::query()->lockForUpdate()->findOrFail($orderId);
+            if (DB::table('edm_archive_order_metadata')->where('order_id',$orderId)->exists()) throw new DomainException('Bu sipariş için e-Arşiv hazırlığı mevcut; e-Fatura gönderimi kapalı.');
             if (!$order->is_test||!self::eligible()->whereKey($orderId)->exists()) throw new DomainException('Sipariş ödeme ve ortam koşullarını karşılamıyor.');
             if ($source==='auto'&&($order->status!=='completed'||!$order->statusChanges()->where('to_status','completed')->where('created_at','>=',$account->auto_invoice_since)->exists())) throw new DomainException('Otomatik fatura koşulu sağlanmadı.');
             if (DB::table('invoice_dispatch_requests')->where('order_id',$orderId)->exists()
@@ -78,7 +79,7 @@ final class InvoiceDispatch
         $account=EdmSetting::query()->find(1);
         if (!self::ready($account)) return ['processed'=>0,'connection_pending'=>true];
         if ($account->auto_invoice&&$account->auto_invoice_since) {
-            $ids=self::pending()->where('is_test',true)->where('status','completed')
+            $ids=self::pending()->whereNotExists(fn($q)=>$q->selectRaw('1')->from('edm_archive_order_metadata as m')->whereColumn('m.order_id','orders.id'))->where('is_test',true)->where('status','completed')
                 ->whereHas('statusChanges',fn($q)=>$q->where('to_status','completed')->where('created_at','>=',$account->auto_invoice_since))
                 ->limit($limit)->pluck('id');
             foreach ($ids as $id) { try {$this->enqueue($id,null,null,'auto');} catch(DomainException) {} }
