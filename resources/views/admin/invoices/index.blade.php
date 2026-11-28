@@ -44,6 +44,14 @@
             <label>EDM test gönderici VKN/TCKN<input name="seller_id" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" required autocomplete="off" value="{{ \App\Services\Invoices\EdmStoreScope::website()===\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL ? \App\Services\Invoices\EdmSandboxSmokeFixture::IDENTIFIER : '' }}"></label>
             <label class="admin-check"><input type="checkbox" name="synthetic_confirm" value="1" required> Bu sipariş yalnızca sentetik test verisi içeriyor; mükellef sorgusunu onaylıyorum.</label>
             <label class="admin-check"><input type="checkbox" name="anonymous_test" value="1"> Kimliği olmayan sentetik bireysel alıcı için e-Arşiv teknik prova adayı</label>
+            <details><summary>Doğrulanmış ödeme ve sevk bilgileri (isteğe bağlı)</summary>
+              <p>Gerçek işlem tarihi ve taşıyıcının yasal bilgileri kayıtlı değilse yalnızca doğrulanmış kaynaklardan girin. Bu bilgiler kaydedilmez.</p>
+              <label>Ödeme tarihi<input type="date" name="payment_date"></label>
+              <label>Sevk tarihi<input type="date" name="dispatch_date"></label>
+              <label>Taşıyıcı VKN<input name="carrier_vkn" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off"></label>
+              <label>Taşıyıcı yasal unvanı<input name="carrier_title" maxlength="255"></label>
+              <label class="admin-check"><input type="checkbox" name="confirm_metadata" value="1"> Bu test ödeme ve sevk bilgilerini doğruladım.</label>
+            </details>
             <button class="admin-secondary" type="submit">Sipariş bilgilerini kontrol et</button>
             <small>Yalnızca ön kontrol; fatura numarası ayrılmaz ve belge gönderilmez.</small>
           </form>
