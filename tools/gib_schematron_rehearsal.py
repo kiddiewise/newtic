@@ -259,6 +259,14 @@ def main(zip_path, candidates, work):
                           "result":results["EDM_NAMESPACE_SMOKE"],"submission_allowed":False}),flush=True)
         if not results["EDM_NAMESPACE_SMOKE"]["no_findings"] or not results["EDM_NAMESPACE_SMOKE"]["fired-rule"]:
             raise ValueError("Namespace sandbox fixture failed official rules")
+    archive_smoke=candidates / "EDM_ARCHIVE_SMOKE.xml"
+    if archive_smoke.is_file():
+        report=transform(parse(archive_smoke),"EDM_ARCHIVE_SMOKE","earchive")
+        results["EDM_ARCHIVE_SMOKE"]=summarize(report)
+        print(json.dumps({"archive_smoke_sha256":hashlib.sha256(archive_smoke.read_bytes()).hexdigest(),
+                          "result":results["EDM_ARCHIVE_SMOKE"],"fiscal_approval":False}),flush=True)
+        if not results["EDM_ARCHIVE_SMOKE"]["no_findings"]:
+            raise ValueError("Archive sandbox fixture failed official rules")
     # A candidate can legitimately fail (unsigned/placeholder). Do not claim
     # fiscal readiness, and keep observations distinct from validation success.
     print(json.dumps({"official_rules_executed": True, "candidate_results": results,

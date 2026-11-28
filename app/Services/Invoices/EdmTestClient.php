@@ -429,13 +429,14 @@ final class EdmTestClient
             if ($existing->account_revision!==$account->revision) throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
             return $this->secondTrialSummary($existing,true);
         }
-        $candidate=$f::prepare($date,$series,EdmStoreScope::website());
-        if (!hash_equals($candidate['xml_sha256'],$checkedSha256)) throw new \DomainException('ARCHIVE_XML_DIGEST');
         $company=$this->company($account->username,$account->password,EdmSandboxSmokeFixture::IDENTIFIER);
         $readiness=EdmArchiveSeriesReadiness::inspect($company,(int)substr($date,0,4));
+        if ($series==='AUTO') $series=$readiness['series'][0]??'';
         if (!$current()||!in_array($series,$readiness['series'],true)||($company['data']['gb']??null)!==EdmSandboxSmokeFixture::GB
             ||!in_array($readiness['state'],['available','partial'],true)||($company['data']['unreadable_series']??99)>1)
             throw new \DomainException('ARCHIVE_ROUTE_UNVERIFIED');
+        $candidate=$f::prepare($date,$series,EdmStoreScope::website());
+        if (!hash_equals($candidate['xml_sha256'],$checkedSha256)) throw new \DomainException('ARCHIVE_XML_DIGEST');
         $db::transaction(function()use($db,$account,$f,$date,$candidate,$company){
             $a=\App\Models\EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
             if (!$a||$a->revision!==$account->revision||$a->probe_status!=='ok') throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
@@ -463,6 +464,59 @@ final class EdmTestClient
                 'status_query'=>$ack&&$current()&&($status['status']??null)==='ok'&&($status['data']['invoice_number']??null)===$number?'matched':'unconfirmed','updated_at'=>now()]);
         }
         return $this->secondTrialSummary($db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first(),false);
+    }
+
+    /** Read-only recovery for the isolated archive UUID. No new load or send. */
+    public function refreshArchiveSmokeDocuments(): array
+    {
+        $f=EdmArchiveSmokeFixture::class;
+        $db=\Illuminate\Support\Facades\DB::class;
+        if (!EdmStoreScope::sandboxOrders()||EdmStoreScope::website()!==EdmSandboxSmokeFixture::STAGING_URL)
+            throw new \DomainException('ARCHIVE_SCOPE');
+        $account=\App\Models\EdmSetting::query()->findOrFail(1);
+        $trial=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)->first();
+        if (!$account->configured()||$account->probe_status!=='ok'||!$trial||$trial->load_status!=='draft_acknowledged'
+            ||!preg_match('/^[A-Z0-9]{3}[0-9]{13}$/D',$trial->allocated_invoice_id??'')) throw new \DomainException('ARCHIVE_TRIAL_UNVERIFIED');
+        $current=static fn()=>\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists();
+        $status=$this->invoiceStatus($account->username,$account->password,$f::UUID,'EARSIVFATURA');
+        if (!$current()||($status['status']??null)!=='ok'||($status['data']['invoice_number']??null)!==$trial->allocated_invoice_id)
+            throw new \DomainException('ARCHIVE_STATUS_UNVERIFIED');
+        $out=['status_query'=>'matched','portal_state'=>$status['data']['portal_state'],'archive_report'=>$status['data']['archive_report'],
+            'fiscal_success_confirmed'=>false,'xml_query'=>'unconfirmed','pdf_query'=>'unconfirmed'];
+        foreach (['xml','pdf'] as $format) {
+            if ($format==='pdf'&&$out['xml_query']!=='matched') break;
+            $result=$this->read($account->username,$account->password,function($session)use($f,$trial,$format,$current){
+                foreach (['OUT','OUT-EARCHIVE',null] as $direction) {
+                    if (!$current()) throw new EdmLookupFailure('ARCHIVE_ACCOUNT_CHANGED');
+                    try {
+                        $reply=$this->call('GetInvoice',$session,['INVOICE_SEARCH_KEY'=>array_filter([
+                            'LIMIT'=>'2','ID'=>$trial->allocated_invoice_id,'UUID'=>$f::UUID,'READ_INCLUDED'=>'true','DIRECTION'=>$direction],
+                            static fn($value)=>$value!==null),'HEADER_ONLY'=>'N','INVOICE_CONTENT_TYPE'=>strtoupper($format)]);
+                    } catch(EdmLookupFailure $e) {if ($e->safeCode==='EDM_11017') continue;throw $e;}
+                    $children=[];foreach($reply->childNodes as $node) if($node instanceof DOMElement) $children[]=$node;
+                    if (!$children||(count($children)===1&&$children[0]->localName==='REQUEST_RETURN'&&$this->value($children[0],'RETURN_CODE')==='0')) continue;
+                    if ($format==='pdf') return ['bytes'=>EdmSandboxDocuments::pdf($reply,$f::UUID,$trial->allocated_invoice_id)];
+                    $e=(new EdmInvoiceXmlEvidence)->parse($reply,$f::UUID,'EARSIVFATURA',EdmSandboxSmokeFixture::IDENTIFIER,'11111111111',true);
+                    if ($e['invoice_number']!==$trial->allocated_invoice_id) throw new EdmLookupFailure('ARCHIVE_NUMBER_MISMATCH');
+                    $line=['label'=>'NEWTIC e-Arşiv sentetik test ürünü','quantity'=>1,'unit_gross_cents'=>120,'kind'=>'product','gross_cents'=>120,'net_cents'=>100,'tax_cents'=>20,'rate'=>20];
+                    $snapshot=['complete'=>true,'gross_cents'=>120,'net_cents'=>100,'tax_cents'=>20,'groups'=>[['gross_cents'=>120,'net_cents'=>100,'tax_cents'=>20,'rate'=>20]],'lines'=>[$line]];
+                    $draft=new \App\Models\InvoicePreparation(['uuid'=>$f::UUID,'gross_cents'=>120,'amounts'=>$snapshot,
+                        'snapshot_hash'=>hash('sha256',json_encode($snapshot,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE))]);
+                    EdmOrderDocuments::assertAmounts($e['private_xml_bytes'],$draft);
+                    return ['bytes'=>$e['private_xml_bytes'],'signature_present'=>$e['signature_element_present']];
+                }
+                throw new EdmLookupFailure('GETINVOICE_EMPTY_RESULT');
+            });
+            if (($result['status']??null)==='ok'&&$current()) {
+                EdmSandboxDocuments::store($f::UUID,$account->revision,$trial->allocated_invoice_id,$format,$result['data']['bytes']);
+                $out[$format.'_query']='matched';
+                if ($format==='xml') $out['signature_element_present']=$result['data']['signature_present'];
+            }
+        }
+        if (!$current()) throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
+        $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)->update([
+            'status_query'=>$out['status_query'],'xml_query'=>$out['xml_query'],'pdf_query'=>$out['pdf_query'],'updated_at'=>now()]);
+        return $out;
     }
 
     private function safeDiagnostic(?string $value): ?string

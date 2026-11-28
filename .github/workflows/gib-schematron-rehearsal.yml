@@ -44,6 +44,8 @@ jobs:
           curl --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 90 \
             'https://ebelge.gib.gov.tr/dosyalar/kilavuzlar/UBL-TR1.2.1_Paketi.zip' -o "$RUNNER_TEMP/gib-ubl.zip"
           printf '%s  %s\n' 'cb583941b8a8a239c59902c6bc455c0f75d48f2bb81d7d3fbe1ae827f981f7db' "$RUNNER_TEMP/gib-ubl.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/gib-ubl.zip" -d "$RUNNER_TEMP/gib-ubl"
+          printf 'NEWTIC_GIB_XSD=%s\n' "$RUNNER_TEMP/gib-ubl/UBLTR_1.2.1_Paketi/xsdrt/maindoc/UBL-Invoice-2.1.xsd" >> "$GITHUB_ENV"
           unzip -p "$RUNNER_TEMP/gib-ubl.zip" 'UBLTR_1.2.1_Paketi/xml/general.xslt' > "$RUNNER_TEMP/gib-general.xslt"
           printf '%s  %s\n' '8b3a2551e2dbf0375567de09d504d2b6741fe8881a59f0dbce47bddcfd693620' "$RUNNER_TEMP/gib-general.xslt" | sha256sum -c -
           printf 'NEWTIC_EDM_SECOND_XSLT=%s\n' "$RUNNER_TEMP/gib-general.xslt" >> "$GITHUB_ENV"
@@ -53,7 +55,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           mkdir -m 700 "$RUNNER_TEMP/gib-candidates"
-          NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/gib-candidates" vendor/bin/phpunit --filter test_export_synthetic_candidates_for_official_rules_when_configured --fail-on-skipped --fail-on-warning
+          NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/gib-candidates" vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_archive_smoke_exact_xml_export_and_presigning_schema' --fail-on-skipped --fail-on-warning
       - name: Execute pinned official rules and negative controls
         run: |
           sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/gib-current.zip" "$RUNNER_TEMP/gib-candidates" "$RUNNER_TEMP/gib-rules"

@@ -107,6 +107,46 @@ final class EdmSubmissionJournalTest extends TestCase
         $this->assertDatabaseCount('orders',0);
     }
 
+    public function test_archive_readback_matches_identity_money_and_admin_only_artifacts(): void
+    {
+        $f=\App\Services\Invoices\EdmArchiveSmokeFixture::class;
+        $seller=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$seller::STAGING_URL,'newtic.checkout_test_mode'=>true]);
+        $account=$this->account();
+        $number='EA12026000000001';
+        $c=$f::prepare('2026-11-28','EA1',$seller::STAGING_URL);
+        $xml=str_replace(\App\Services\Invoices\UblSaleCandidate::EDM_SERIAL_SENTINEL,$number,$c['xml']);
+        DB::table('edm_sandbox_trials')->insert(['uuid'=>$f::UUID,'account_revision'=>$account->revision,'issue_date'=>'2026-11-28',
+            'xml_sha256'=>$c['xml_sha256'],'request_sha256'=>$c['request_sha256'],'series_warnings'=>0,'recipient_warnings'=>0,
+            'load_status'=>'draft_acknowledged','allocated_invoice_id'=>$number,'created_at'=>now(),'updated_at'=>now()]);
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function($request)use($f,$seller,$number,$xml){
+            $method=$request->header('SOAPAction')[0];
+            $body=match($method){
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$f::UUID.'" ID="'.$number.'"><HEADER><EARCHIVE>true</EARCHIVE><PROFILEID>EARSIVFATURA</PROFILEID></HEADER><STATUS>LOAD - SUCCEED</STATUS><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                'GetInvoiceRequest'=>'<INVOICE UUID="'.$f::UUID.'" ID="'.$number.'"><HEADER><SENDER>'.$seller::IDENTIFIER.'</SENDER><RECEIVER>11111111111</RECEIVER><PROFILEID>EARSIVFATURA</PROFILEID></HEADER><CONTENT>'.base64_encode(str_contains($request->body(),'<INVOICE_CONTENT_TYPE>XML</INVOICE_CONTENT_TYPE>')?$xml:"%PDF-1.4\nfixture\n%%EOF\n").'</CONTENT></INVOICE>',
+                default=>throw new \RuntimeException('Unexpected SOAP mutation'),
+            };
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $r=(new EdmTestClient)->refreshArchiveSmokeDocuments();
+        $this->assertSame('matched',$r['xml_query']);
+        $this->assertSame('matched',$r['pdf_query']);
+        $this->assertSame('not_reported',$r['archive_report']);
+        $this->assertFalse($r['signature_element_present']);
+        $this->assertFalse($r['fiscal_success_confirmed']);
+        $this->assertDatabaseCount('edm_sandbox_documents',2);
+        $url=route('admin.edm.sandbox.download',['uuid'=>$f::UUID,'format'=>'xml']);
+        $this->get($url)->assertRedirect(route('admin.login'));
+        $this->actingAs(\App\Models\User::factory()->create())->get($url)->assertForbidden();
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $this->actingAs($admin)->get($url)->assertOk()->assertHeader('Content-Type','application/xml');
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest')||$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+        $this->account();$this->get($url)->assertNotFound();
+    }
+
     public function test_unknown_portal_token_visible_to_admin_does_not_unlock_send(): void
     {
         $draft=$this->draft();
