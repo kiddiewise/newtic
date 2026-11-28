@@ -627,6 +627,47 @@ final class EdmSubmissionJournalTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_order_archive_preflight_reads_series_without_reserving_invoice(): void
+    {
+        config(['app.url'=>'https://independent-shop.example.test','newtic.checkout_test_mode'=>true]);
+        $this->account();
+        $order=$this->dispatchOrder();
+        $order->forceFill(['invoice_type'=>'individual','billing_tckn'=>null])->save();
+        $order->paytrAttempts()->update(['reconciliation_result'=>'callback_success','processed_at'=>now()]);
+        $year=now('Europe/Istanbul')->format('Y');
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>Http::sequence()
+            ->push($this->soap('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+            ->push($this->soap('GetCompany','<GetCompanyList><VKN>3230512384</VKN><UNVAN>Fixture</UNVAN><SERIALLIST><SERIAL>EA1</SERIAL><YEAR>'.$year.'</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>1</EARCHIVEFLAG><INTERNETFLAG>1</INTERNETFLAG></SERIALLIST></GetCompanyList>'))
+            ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
+        $admin=\App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin'=>true])->save();
+        $url=route('admin.invoices.order-preflight',['order'=>$order->id]);
+        $data=['seller_id'=>'3230512384','synthetic_confirm'=>1,'anonymous_test'=>1];
+        $this->post($url,$data)->assertRedirect(route('admin.login'));
+        $this->actingAs($admin)->post($url,array_diff_key($data,['synthetic_confirm'=>1]))->assertSessionHasErrors('invoice');
+        $this->post($url,$data)->assertOk()->assertSee('Sentetik bireysel e-Arşiv adayı')
+            ->assertSee('EA1')->assertSee('https://independent-shop.example.test')->assertSee('Belgeyle doğrulanmalı')
+            ->assertDontSee('private@example.test');
+        $this->assertDatabaseCount('invoice_preparations',0);
+        $this->assertDatabaseCount('invoice_dispatch_requests',0);
+        $this->assertDatabaseCount('edm_submission_attempts',0);
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest')||$r->hasHeader('SOAPAction','LoadInvoiceRequest'));
+        config(['newtic.checkout_test_mode'=>false]);
+        $this->post($url,$data)->assertNotFound();
+    }
+
+    public function test_buyer_classification_fails_closed_on_uncertain_lookup(): void
+    {
+        $class=\App\Services\Invoices\EdmOrderArchivePreflight::class;
+        $this->assertSame('einvoice',$class::documentType(['status'=>'ok','data'=>['aliases'=>['urn:mail:pk@example.test'],'sender_aliases'=>[]]]));
+        $this->assertSame('archive_candidate',$class::documentType(['status'=>'ok','data'=>['aliases'=>[],'sender_aliases'=>[]]]));
+        $this->assertSame('unknown',$class::documentType(['status'=>'ok','data'=>['aliases'=>[],'sender_aliases'=>['urn:mail:gb@example.test']]]));
+        $this->assertSame('unknown',$class::documentType(['status'=>'ok','data'=>['aliases'=>[],'sender_aliases'=>[],'unverified_records'=>1]]));
+        $this->assertSame('unknown',$class::documentType(['status'=>'failed']));
+    }
+
     public function test_completion_automation_is_opt_in_and_does_not_capture_historical_orders(): void
     {
         config(['app.url'=>\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL]);
