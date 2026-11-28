@@ -147,6 +147,21 @@ final class UblSaleCandidate
             'signature_verified'=>false,'official_validation_confirmed'=>false];
     }
 
+    /** Separate controlled synthetic archive draft, not an issued document. */
+    public function rehearseArchiveDraft(InvoicePreparation $draft,array $seller,array $buyer,string $date,string $website,string $series): array
+    {
+        if ($buyer['identifier']!=='11111111111'||$buyer['email']!=='newtic-archive-test@example.invalid'
+            || $seller['identifier']!==EdmSandboxSmokeFixture::IDENTIFIER
+            || !preg_match('/^[A-Z0-9]{3}$/D',$series)||in_array($series,['ABC','GIB'],true))
+            throw new DomainException('ARCHIVE_FIXTURE_SCOPE');
+        $when=new \DateTimeImmutable($date.'T12:00:00+03:00');
+        $header=(new EdmInternetSaleDetails)->build($website,'EFT/HAVALE',null,$when,$when,
+            EdmSandboxSmokeFixture::IDENTIFIER,'Sentetik test taşıyıcısı (EDM test kimliği)');
+        $xml=$this->document($draft,$seller,$buyer,'EARSIVFATURA',$date,'NEWTIC-ARCHIVE-SMOKE-01',$date,
+            ['NEWTIC sentetik entegrasyon testi','Web adresi: '.$website,'Ödeme şekli: EFT/HAVALE','Ödeme tarihi: '.$date,'Sevk tarihi: '.$date,'Taşıyıcı: Sentetik test taşıyıcısı'],true,true);
+        return ['xml'=>$xml,'header'=>$header,'series'=>$series];
+    }
+
     private function document(InvoicePreparation $draft,array $seller,array $buyer,string $profile,string $issueDate,string $orderNumber,string $orderDate,array $notes,bool $anonymousArchivePermitted,bool $edmRehearsal=false): string
     {
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iD',$draft->uuid ?? '')) throw new DomainException('Taslak ETTN geçersiz.');
@@ -214,7 +229,8 @@ final class UblSaleCandidate
         if ($xml===false) throw new DomainException('Fatura XML oluşturulamadı.');
         if ($edmRehearsal) {
             EdmUblNamespace::assertTransport($xml);
-            (new UblCandidatePreflight)->validateProviderDraft($xml,$draft->amounts,$draft->uuid,$profile);
+            if ($profile==='EARSIVFATURA') (new UblCandidatePreflight)->validateArchiveProviderDraft($xml,$draft->amounts,$draft->uuid);
+            else (new UblCandidatePreflight)->validateProviderDraft($xml,$draft->amounts,$draft->uuid,$profile);
         }
         else (new UblCandidatePreflight)->validate($xml,$draft->amounts,$draft->uuid,$profile,$anonymousArchivePermitted);
         return $xml;
