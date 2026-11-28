@@ -412,6 +412,59 @@ final class EdmTestClient
         return $this->secondTrialSummary($db::table('edm_sandbox_trials')->where('uuid',$uuid)->first(),false);
     }
 
+    /** One isolated archive draft; only the original staging operator can invoke it.
+     * The exact checked XML is bound to this fixed UUID and current account. */
+    public function runArchiveControlledSmoke(string $date,string $series,string $checkedSha256,string $confirmation): array
+    {
+        $f=EdmArchiveSmokeFixture::class;
+        $db=\Illuminate\Support\Facades\DB::class;
+        if (PHP_SAPI!=='cli'||!EdmStoreScope::sandboxOrders()||EdmStoreScope::website()!==EdmSandboxSmokeFixture::STAGING_URL
+            ||$confirmation!==$f::CONFIRM||$date!==now('Europe/Istanbul')->toDateString()||$db::transactionLevel()!==0)
+            throw new \DomainException('ARCHIVE_SCOPE');
+        $account=\App\Models\EdmSetting::query()->findOrFail(1);
+        if (!$account->configured()||!$account->revision||$account->probe_status!=='ok') throw new \DomainException('ARCHIVE_ACCOUNT');
+        $current=static fn()=>\App\Models\EdmSetting::query()->whereKey(1)->where('revision',$account->revision)->where('probe_status','ok')->exists();
+        $existing=$db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first();
+        if ($existing) {
+            if ($existing->account_revision!==$account->revision) throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
+            return $this->secondTrialSummary($existing,true);
+        }
+        $candidate=$f::prepare($date,$series,EdmStoreScope::website());
+        if (!hash_equals($candidate['xml_sha256'],$checkedSha256)) throw new \DomainException('ARCHIVE_XML_DIGEST');
+        $company=$this->company($account->username,$account->password,EdmSandboxSmokeFixture::IDENTIFIER);
+        $readiness=EdmArchiveSeriesReadiness::inspect($company,(int)substr($date,0,4));
+        if (!$current()||!in_array($series,$readiness['series'],true)||($company['data']['gb']??null)!==EdmSandboxSmokeFixture::GB
+            ||!in_array($readiness['state'],['available','partial'],true)||($company['data']['unreadable_series']??99)>1)
+            throw new \DomainException('ARCHIVE_ROUTE_UNVERIFIED');
+        $db::transaction(function()use($db,$account,$f,$date,$candidate,$company){
+            $a=\App\Models\EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
+            if (!$a||$a->revision!==$account->revision||$a->probe_status!=='ok') throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
+            if ($db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->exists()) throw new \DomainException('ARCHIVE_RESERVED');
+            $db::table('edm_sandbox_trials')->insert(['uuid'=>$f::UUID,'account_revision'=>$account->revision,
+                'issue_date'=>$date,'xml_sha256'=>$candidate['xml_sha256'],'request_sha256'=>$candidate['request_sha256'],
+                'series_warnings'=>$company['data']['unreadable_series'],'recipient_warnings'=>0,'load_status'=>'reserved_unknown',
+                'created_at'=>now(),'updated_at'=>now()]);
+        },3);
+        $r=$this->read($account->username,$account->password,function($session)use($candidate,$f,$series,$date,$current){
+            if (!$current()) throw new EdmLookupFailure('ARCHIVE_ACCOUNT_CHANGED');
+            $reply=$this->call('LoadInvoice',$session,$candidate['fields']);
+            try {return EdmNumberedDraftAck::parse($reply,$f::UUID,$series,(int)substr($date,0,4));}
+            catch(\DomainException $e){throw new EdmLookupFailure($e->getMessage());}
+        });
+        $ack=$r['status']==='ok'&&($r['data']['draft_acknowledged']??false)===true;
+        $number=$ack?$r['data']['allocated_invoice_id']:null;
+        $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)->update([
+            'load_status'=>$ack?'draft_acknowledged':'unconfirmed','allocated_invoice_id'=>$number,
+            'diagnostic'=>$this->safeDiagnostic($r['diagnostic']??null),'fault_hints'=>json_encode($r['fault_hints']??[],JSON_THROW_ON_ERROR),
+            'fault_detail_ciphertext'=>$r['fault_detail_ciphertext']??null,'updated_at'=>now()]);
+        if ($current()) {
+            $status=$this->invoiceStatus($account->username,$account->password,$f::UUID,'EARSIVFATURA');
+            $db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->where('account_revision',$account->revision)->update([
+                'status_query'=>$ack&&$current()&&($status['status']??null)==='ok'&&($status['data']['invoice_number']??null)===$number?'matched':'unconfirmed','updated_at'=>now()]);
+        }
+        return $this->secondTrialSummary($db::table('edm_sandbox_trials')->where('uuid',$f::UUID)->first(),false);
+    }
+
     private function safeDiagnostic(?string $value): ?string
     {
         return is_string($value)&&preg_match('/^(?:Login|Lookup|Logout): [A-Z0-9_]+$/D',$value)?$value:null;
@@ -664,7 +717,11 @@ final class EdmTestClient
                 $invoice->setAttribute('UUID',$value['UUID']);
                 $invoice->setAttribute('ID',$value['ID']);
                 $invoiceHeader=$invoice->appendChild($doc->createElement('HEADER'));
-                foreach ($value['HEADER'] as $name=>$text) $this->append($doc,$invoiceHeader,$name,$text);
+                foreach ($value['HEADER'] as $name=>$text) {
+                    if ($name==='INTERNETSALESDETAILS' && is_array($text) && $value['UUID']===EdmArchiveSmokeFixture::UUID) {
+                        $this->appendArchiveDetails($doc,$invoiceHeader,$name,$text);
+                    } else $this->append($doc,$invoiceHeader,$name,$text);
+                }
                 $this->append($doc,$invoice,'CONTENT',$value['CONTENT']);
             } elseif (in_array($method,['LoadInvoice','SendInvoice'],true) && in_array($key,['SENDER','RECEIVER'],true)) {
                 $party=$operation->appendChild($doc->createElement($key));
@@ -718,6 +775,15 @@ final class EdmTestClient
         $nodes = $xpath->query('/s:Envelope/s:Body/edm:'.$method.'Response');
         if ($nodes === false || $nodes->length !== 1 || $xpath->query('/s:Envelope/s:Body/s:Fault')->length !== 0) throw new EdmLookupFailure('UNEXPECTED_SOAP_'.$method.'_RESPONSE');
         return $nodes->item(0);
+    }
+
+    private function appendArchiveDetails(DOMDocument $doc,DOMElement $parent,string $name,array $fields): void
+    {
+        $node=$parent->appendChild($doc->createElement($name));
+        foreach ($fields as $key=>$value) {
+            if (is_array($value)) $this->appendArchiveDetails($doc,$node,$key,$value);
+            else $this->append($doc,$node,$key,(string)$value);
+        }
     }
 
     private function append(DOMDocument $doc, DOMElement $parent, string $name, string $value): void

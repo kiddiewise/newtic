@@ -62,6 +62,51 @@ final class EdmSubmissionJournalTest extends TestCase
             ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
     }
 
+    public function test_archive_smoke_load_is_one_shot_and_uses_nested_internet_header(): void
+    {
+        $f=\App\Services\Invoices\EdmArchiveSmokeFixture::class;
+        $seller=\App\Services\Invoices\EdmSandboxSmokeFixture::class;
+        config(['app.url'=>$seller::STAGING_URL,'newtic.checkout_test_mode'=>true]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-28 12:00:00','Europe/Istanbul'));
+        $this->account();
+        $c=$f::prepare('2026-11-28','EA1',$seller::STAGING_URL);
+        $this->assertStringContainsString('EARSIVFATURA',$c['xml']);
+        $this->assertStringContainsString($f::EMAIL,$c['xml']);
+        $this->assertStringNotContainsString('NOT_FOR_SUBMISSION',$c['xml']);
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>function($request)use($f,$seller){
+            $method=$request->header('SOAPAction')[0];
+            if ($method==='LoadInvoiceRequest') {
+                $this->assertDatabaseHas('edm_sandbox_trials',['uuid'=>$f::UUID,'load_status'=>'reserved_unknown']);
+                $this->assertSame(0,DB::transactionLevel());
+                foreach (['<INTERNETSALES>true</INTERNETSALES>','<EARCHIVE>true</EARCHIVE>',
+                    '<INTERNETSALESDETAILS><webAdresi>'.$seller::STAGING_URL.'</webAdresi>',
+                    '<gonderiTasiyan><tuzelKisi><VKN>'.$seller::IDENTIFIER.'</VKN>',
+                    '<INVOICESERIAL_REQUESTED>EA1</INVOICESERIAL_REQUESTED>','<GENERATEINVOICEIDONLOAD>true</GENERATEINVOICEIDONLOAD>'] as $fragment)
+                    $this->assertStringContainsString($fragment,$request->body());
+                $this->assertStringNotContainsString('<odemeTarihiSpecified>',$request->body());
+            }
+            $body=match($method){
+                'LoginRequest'=>'<SESSION_ID>fixture-session</SESSION_ID>',
+                'LogoutRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>',
+                'GetCompanyRequest'=>'<GetCompanyList><VKN>'.$seller::IDENTIFIER.'</VKN><UNVAN>EDM test</UNVAN><GB>'.$seller::GB.'</GB><SERIALLIST><SERIAL>EA1</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>1</EARCHIVEFLAG><INTERNETFLAG>1</INTERNETFLAG></SERIALLIST></GetCompanyList>',
+                'LoadInvoiceRequest'=>'<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN><INVOICE UUID="'.$f::UUID.'" ID="EA12026000000001"/>',
+                'GetInvoiceStatusRequest'=>'<INVOICE_STATUS UUID="'.$f::UUID.'" ID="EA12026000000001"><HEADER><EARCHIVE>true</EARCHIVE><PROFILEID>EARSIVFATURA</PROFILEID></HEADER><STATUS>LOAD - SUCCEED</STATUS><GIB_STATUS_CODE>-1</GIB_STATUS_CODE><DIRECTION>OUT</DIRECTION></INVOICE_STATUS>',
+                default=>throw new \RuntimeException('Unexpected SOAP operation'),
+            };
+            return Http::response($this->soap(substr($method,0,-7),$body));
+        }]);
+        $client=new EdmTestClient;
+        $r=$client->runArchiveControlledSmoke('2026-11-28','EA1',$c['xml_sha256'],$f::CONFIRM);
+        $this->assertSame('draft_acknowledged',$r['load_status']);
+        $this->assertSame('matched',$r['status_query']);
+        $this->assertFalse($r['fiscal_success_confirmed']);
+        $this->assertTrue($client->runArchiveControlledSmoke('2026-11-28','EA1',$c['xml_sha256'],$f::CONFIRM)['already_reserved']);
+        $this->assertSame(1,Http::recorded(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest'))->count());
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+        $this->assertDatabaseCount('orders',0);
+    }
+
     public function test_unknown_portal_token_visible_to_admin_does_not_unlock_send(): void
     {
         $draft=$this->draft();

@@ -280,3 +280,34 @@ Artisan::command('edm:check-observed-order-documents',function(){
         $this->line(json_encode(['status'=>$row->last_lookup_state,'portal_state'=>$row->last_portal_state,'documents'=>$result,'checks'=>$checks],JSON_THROW_ON_ERROR));return 0;
     } catch(\Throwable) {$this->error('ORDER_DOCUMENT_READBACK_UNCONFIRMED');return 0;}
 })->purpose('Read previously acknowledged sandbox order only; never sends');
+
+
+// Explicit operator-only isolated e-Arsiv rehearsal. No automated deployment trigger.
+Artisan::command('edm:prepare-archive-smoke {series}',function(){
+    if (\App\Services\Invoices\EdmStoreScope::website()!==\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL
+        ||!\App\Services\Invoices\EdmStoreScope::sandboxOrders()) return 1;
+    try {
+        $date=now('Europe/Istanbul')->toDateString();
+        $r=\App\Services\Invoices\EdmArchiveSmokeFixture::prepare($date,(string)$this->argument('series'),\App\Services\Invoices\EdmStoreScope::website());
+        $dir=storage_path('app/private/edm-rehearsals');
+        if (!is_dir($dir)&&!mkdir($dir,0700,true)) return 1;
+        $path=$dir.'/archive-'.$r['xml_sha256'].'.xml';
+        $h=fopen($path,'xb');
+        if (!$h) return 1;
+        try {chmod($path,0600);if (fwrite($h,$r['xml'])!==strlen($r['xml'])) return 1;}finally{fclose($h);}
+        $this->line(json_encode(['date'=>$date,'sha256'=>$r['xml_sha256'],'private_file'=>$path],JSON_THROW_ON_ERROR));
+        return 0;
+    } catch (\Throwable) {$this->error('ARCHIVE_PREPARATION_FAILED');return 1;}
+})->purpose('Prepare one private synthetic archive XML for independent validation, no provider calls');
+
+Artisan::command('edm:archive-smoke-load {date} {series} {sha256} {confirmation}',function(){
+    try {
+        $r=app(\App\Services\Invoices\EdmTestClient::class)->runArchiveControlledSmoke((string)$this->argument('date'),
+            (string)$this->argument('series'),(string)$this->argument('sha256'),(string)$this->argument('confirmation'));
+        $this->line(json_encode($r,JSON_THROW_ON_ERROR));
+        return 0;
+    } catch(\Throwable $e){
+        $this->error($e instanceof \DomainException&&preg_match('/^ARCHIVE_[A-Z_]+$/D',$e->getMessage())?$e->getMessage():'ARCHIVE_LOAD_UNCONFIRMED');
+        return 1;
+    }
+})->purpose('Load one independently checked synthetic archive draft only; never issue or send');

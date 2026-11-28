@@ -93,6 +93,7 @@ final class EdmInvoiceStatusParser
         $specified=$this->value($row,'GIB_STATUS_CODESpecified');
         if ($specified!==null && !in_array($specified,['true','false','1','0'],true)) throw new EdmLookupFailure('STATUS_GIB_SPECIFIED_INVALID');
         if (in_array($specified,['false','0'],true)) $gib=null;
+        if ($profile==='EARSIVFATURA' && $gib==='-1') $gib=null; // documented archive sentinel, not a GIB envelope outcome
         if ($gib!==null && !preg_match('/^[0-9]{4}$/D',$gib)) throw new EdmLookupFailure('STATUS_GIB_CODE_INVALID');
         $response=$this->value($row,'RESPONSE_CODE');
         $commercial=$profile==='TICARIFATURA' ? match ($response) {
