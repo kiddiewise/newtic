@@ -58,7 +58,7 @@
             <label>Doğrulanmış e-Arşiv seri adayı (kayıt için)<input name="archive_series" pattern="[A-Z0-9]{3}" maxlength="3" autocomplete="off"></label>
             <label class="admin-check"><input type="checkbox" name="save_metadata" value="1"> Doğrulanan e-Arşiv bilgilerini bu sipariş için kaydet; e-Fatura gönderimini kapat.</label>
             <button class="admin-secondary" type="submit">Sipariş bilgilerini kontrol et</button>
-            <small>Yalnızca ön kontrol; fatura numarası ayrılmaz ve belge gönderilmez.</small>
+            <small>Yerel ön kontrol veya açık onayla hazırlık kaydı; fatura numarası ayrılmaz ve belge gönderilmez.</small>
           </form>
         </details>
       @endif
