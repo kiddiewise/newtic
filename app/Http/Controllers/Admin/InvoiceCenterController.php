@@ -49,13 +49,14 @@ final class InvoiceCenterController extends Controller
         $dispatches=DB::table('invoice_dispatch_requests as q')->join('orders as o','o.id','=','q.order_id')
             ->select('q.id','q.order_id','q.state','q.diagnostic','o.order_number')->latest('q.id')->limit(30)->get();
         $auto=(bool)$account?->auto_invoice; $shippingVat=$account?->shipping_vat_rate;
+        $archiveMetadata=DB::table('edm_archive_order_metadata')->whereIn('order_id',$pending->getCollection()->pluck('id'))->select('order_id','series','confirmed_at')->get()->keyBy('order_id');
         $dispatchReady=\App\Services\Invoices\InvoiceDispatch::ready($account);
         $canQueue=\App\Services\Invoices\InvoiceDispatch::staging()&&$revision!==null;
         $attemptIds=$rows->getCollection()->pluck('attempt_id')->filter()->all();
         $documents=DB::table('edm_order_documents')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->select('attempt_id','format','byte_count','signature_present')->get()->groupBy('attempt_id');
         $documentChecks=DB::table('edm_order_document_checks')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->get()->groupBy('attempt_id');
         $sendRequests=DB::table('edm_order_send_requests')->whereIn('attempt_id',$attemptIds)->where('account_revision',$revision)->select('attempt_id','state','diagnostic')->get()->keyBy('attempt_id');
-        return response()->view('admin.invoices.index',compact('documents','documentChecks','sendRequests','rows','counts','filter','pending','dispatches','auto','shippingVat','dispatchReady','canQueue'))
+        return response()->view('admin.invoices.index',compact('documents','documentChecks','sendRequests','rows','counts','filter','pending','dispatches','auto','shippingVat','dispatchReady','canQueue','archiveMetadata'))
             ->header('Cache-Control','private, no-store, max-age=0');
     }
 
@@ -114,10 +115,12 @@ final class InvoiceCenterController extends Controller
     public function orderPreflight(Request $request,\App\Models\Order $order,\App\Services\Invoices\EdmOrderArchivePreflight $service,EdmTestClient $client): Response|RedirectResponse
     {
         abort_unless(\App\Services\Invoices\EdmStoreScope::sandboxOrders()&&$order->is_test,404);
-        $v=\Illuminate\Support\Facades\Validator::make($request->only('seller_id','synthetic_confirm','anonymous_test','confirm_metadata','payment_date','dispatch_date','carrier_vkn','carrier_title'),[
+        $v=\Illuminate\Support\Facades\Validator::make($request->only('seller_id','synthetic_confirm','anonymous_test','confirm_metadata','payment_date','dispatch_date','carrier_vkn','carrier_title','save_metadata','archive_series'),[
             'seller_id'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111'],
             'synthetic_confirm'=>['required','accepted'],'anonymous_test'=>['nullable','boolean'],
             'confirm_metadata'=>['sometimes','accepted'],
+            'save_metadata'=>['sometimes','accepted'],
+            'archive_series'=>['nullable','required_with:save_metadata','regex:/^[A-Z0-9]{3}$/D'],
             'payment_date'=>['nullable','required_with:confirm_metadata','date_format:Y-m-d'],
             'dispatch_date'=>['nullable','required_with:confirm_metadata','date_format:Y-m-d'],
             'carrier_vkn'=>['nullable','required_with:confirm_metadata','string','regex:/^[0-9]{10}$/D'],
@@ -126,7 +129,14 @@ final class InvoiceCenterController extends Controller
         if ($v->fails()) return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Test firma kimliğini, onayları ve varsa ödeme/sevk bilgilerini kontrol edin.']);
         $a=EdmSetting::query()->find(1);
         abort_unless($a?->configured()&&$a->probe_status==='ok',409);
-        try {$r=$service->inspect($order,$a,$client,$v->validated()['seller_id'],$request->boolean('anonymous_test'),array_intersect_key($v->validated(),array_flip(['confirm_metadata','payment_date','dispatch_date','carrier_vkn','carrier_title'])));}
+        try {
+            $data=$v->validated();
+            $metadata=array_intersect_key($data,array_flip(['confirm_metadata','payment_date','dispatch_date','carrier_vkn','carrier_title']));
+            if ($request->boolean('save_metadata')) {
+                $r=app(\App\Services\Invoices\EdmArchiveOrderMetadata::class)->confirm($order,$a,$client,$request->user()->id,$data['seller_id'],$data['archive_series'],$request->boolean('anonymous_test'),$metadata);
+                $r['metadata_saved']=true;
+            } else $r=$service->inspect($order,$a,$client,$data['seller_id'],$request->boolean('anonymous_test'),$metadata);
+        }
         catch(Throwable) {return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Sipariş ön kontrolü doğrulanamadı. Fatura gönderilmedi.']);}
         return response()->view('admin.invoices.order-preflight',['result'=>$r,'orderNumber'=>$order->order_number])
             ->header('Cache-Control','private, no-store, max-age=0');

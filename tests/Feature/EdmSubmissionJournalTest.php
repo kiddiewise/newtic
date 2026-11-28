@@ -743,6 +743,37 @@ final class EdmSubmissionJournalTest extends TestCase
         $this->post($url,$data)->assertNotFound();
     }
 
+    public function test_archive_metadata_confirmation_blocks_old_invoice_flow_and_detects_changed_order(): void
+    {
+        config(['app.url'=>'https://independent-shop.example.test','newtic.checkout_test_mode'=>true]);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-28 12:00:00','Europe/Istanbul'));
+        $account=$this->account();
+        $order=$this->dispatchOrder();
+        $order->forceFill(['invoice_type'=>'individual','billing_tckn'=>null])->save();
+        $order->paytrAttempts()->update(['reconciliation_result'=>'callback_success','processed_at'=>now()]);
+        Http::preventStrayRequests();
+        Http::fake([EdmTestClient::ENDPOINT=>Http::sequence()
+            ->push($this->soap('Login','<SESSION_ID>fixture-session</SESSION_ID>'))
+            ->push($this->soap('GetCompany','<GetCompanyList><VKN>3230512384</VKN><UNVAN>Fixture</UNVAN><SERIALLIST><SERIAL>EA1</SERIAL><YEAR>2026</YEAR><ACTIVEFLAG>1</ACTIVEFLAG><EARCHIVEFLAG>1</EARCHIVEFLAG><INTERNETFLAG>1</INTERNETFLAG></SERIALLIST></GetCompanyList>'))
+            ->push($this->soap('Logout','<REQUEST_RETURN><RETURN_CODE>0</RETURN_CODE></REQUEST_RETURN>'))]);
+        $admin=\App\Models\User::factory()->create();$admin->forceFill(['is_admin'=>true])->save();
+        $url=route('admin.invoices.order-preflight',['order'=>$order->id]);
+        $data=['seller_id'=>'3230512384','synthetic_confirm'=>1,'anonymous_test'=>1,'save_metadata'=>1,'archive_series'=>'EA1',
+            'confirm_metadata'=>1,'payment_date'=>'2026-11-28','dispatch_date'=>'2026-11-28','carrier_vkn'=>'1234567890','carrier_title'=>'Synthetic Carrier'];
+        $this->actingAs($admin)->post($url,$data)->assertOk()->assertSee('Doğrulanan e-Arşiv bilgileri kaydedildi');
+        $row=DB::table('edm_archive_order_metadata')->where('order_id',$order->id)->first();
+        $this->assertSame('EA1',$row->series);
+        $this->assertStringNotContainsString('Synthetic Carrier',$row->metadata_ciphertext);
+        $this->assertTrue(\App\Services\Invoices\EdmArchiveOrderMetadata::verified($order->fresh(),$account));
+        $this->post(route('admin.invoices.create'),['orders'=>[$order->id]])->assertSessionHasErrors('invoice');
+        $this->assertDatabaseCount('invoice_preparations',0);
+        $this->assertDatabaseCount('invoice_dispatch_requests',0);
+        $order->forceFill(['street_address'=>'Changed address'])->save();
+        $this->assertFalse(\App\Services\Invoices\EdmArchiveOrderMetadata::verified($order->fresh(),$account));
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn($r)=>$r->hasHeader('SOAPAction','LoadInvoiceRequest')||$r->hasHeader('SOAPAction','SendInvoiceRequest'));
+    }
+
     public function test_buyer_classification_fails_closed_on_uncertain_lookup(): void
     {
         $class=\App\Services\Invoices\EdmOrderArchivePreflight::class;

@@ -4,6 +4,7 @@
 <div class="admin-page-heading"><div><p class="admin-eyebrow">FATURA YÖNETİMİ</p><h1>Belge türü ve e-Arşiv ön kontrolü</h1><p>{{ $orderNumber }}</p></div><a class="admin-secondary" href="{{ route('admin.invoices.index') }}">Fatura Merkezi</a></div>
 <section class="admin-panel">
   <h2>{{ ['einvoice'=>'e-Fatura mükellefi','archive_candidate'=>'e-Arşiv adayı','archive_test_anonymous'=>'Sentetik bireysel e-Arşiv adayı','unknown'=>'Belge türü doğrulanamadı'][$result['type']] }}</h2>
+  @if($result['metadata_saved']??false)<p role="status">Doğrulanan e-Arşiv bilgileri kaydedildi. Bu siparişin eski e-Fatura akışı kapatıldı.</p>@endif
   <p>Bu sonuç yalnızca test ortamında ön kontroldür. Fatura oluşturulmadı, numara ayrılmadı ve belge gönderilmedi.</p>
   <div class="admin-detail-line"><span>İnternet satış adresi</span><strong style="overflow-wrap:anywhere">{{ $result['website'] }}</strong></div>
   <div class="admin-detail-line"><span>Sipariş toplamı</span><strong>{{ $result['gross_cents']===null?'Doğrulanamadı':number_format($result['gross_cents']/100,2,',','.').' TL' }}</strong></div>
