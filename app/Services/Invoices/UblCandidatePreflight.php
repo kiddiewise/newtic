@@ -94,6 +94,11 @@ final class UblCandidatePreflight
         $this->validateDocument($xml,$snapshot,$uuid,$profile,false,true);
     }
 
+    public function validateArchiveProviderDraft(string $xml,array $snapshot,string $uuid): void
+    {
+        $this->validateDocument($xml,$snapshot,$uuid,'EARSIVFATURA',true,true);
+    }
+
     private function validateDocument(#[\SensitiveParameter] string $xml, #[\SensitiveParameter] array $snapshot, string $uuid, string $profile, bool $anonymousArchivePermitted, bool $providerDraft): void
     {
         InvoiceSnapshotRules::validate($snapshot);
