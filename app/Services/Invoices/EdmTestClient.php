@@ -429,13 +429,14 @@ final class EdmTestClient
             if ($existing->account_revision!==$account->revision) throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
             return $this->secondTrialSummary($existing,true);
         }
-        $candidate=$f::prepare($date,$series,EdmStoreScope::website());
-        if (!hash_equals($candidate['xml_sha256'],$checkedSha256)) throw new \DomainException('ARCHIVE_XML_DIGEST');
         $company=$this->company($account->username,$account->password,EdmSandboxSmokeFixture::IDENTIFIER);
         $readiness=EdmArchiveSeriesReadiness::inspect($company,(int)substr($date,0,4));
+        if ($series==='AUTO') $series=$readiness['series'][0]??'';
         if (!$current()||!in_array($series,$readiness['series'],true)||($company['data']['gb']??null)!==EdmSandboxSmokeFixture::GB
             ||!in_array($readiness['state'],['available','partial'],true)||($company['data']['unreadable_series']??99)>1)
             throw new \DomainException('ARCHIVE_ROUTE_UNVERIFIED');
+        $candidate=$f::prepare($date,$series,EdmStoreScope::website());
+        if (!hash_equals($candidate['xml_sha256'],$checkedSha256)) throw new \DomainException('ARCHIVE_XML_DIGEST');
         $db::transaction(function()use($db,$account,$f,$date,$candidate,$company){
             $a=\App\Models\EdmSetting::query()->whereKey(1)->lockForUpdate()->first();
             if (!$a||$a->revision!==$account->revision||$a->probe_status!=='ok') throw new \DomainException('ARCHIVE_ACCOUNT_CHANGED');
