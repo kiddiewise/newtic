@@ -18,7 +18,7 @@ final class EdmOrderArchivePreflight
         return count($d['sender_aliases'])===0?'archive_candidate':'unknown';
     }
 
-    public function inspect(Order $order,EdmSetting $account,EdmTestClient $client,string $sellerId,bool $syntheticAnonymous=false): array
+    public function inspect(Order $order,EdmSetting $account,EdmTestClient $client,string $sellerId,bool $syntheticAnonymous=false,array $metadata=[]): array
     {
         if (!EdmStoreScope::sandboxOrders()||!$order->is_test||!$account->configured()||!$account->revision||$account->probe_status!=='ok'
             ||!InvoiceDispatch::eligible()->whereKey($order->id)->exists()) throw new DomainException('PREFLIGHT_SCOPE');
@@ -79,13 +79,34 @@ final class EdmOrderArchivePreflight
         $checks['actual_payment_date']='requires_confirmation';
         $checks['dispatch_date']='requires_confirmation';
         $checks['carrier_identity']='requires_confirmation';
+        $internetDetailsVerified=false;
+        if ($metadata!==[] && ($metadata['confirm_metadata']??false) && $paid && $order->placed_at
+            && in_array($order->status,['shipped','out_for_delivery','completed'],true)) {
+            try {
+                $tz='Europe/Istanbul';
+                $paymentDate=\Carbon\CarbonImmutable::createFromFormat('!Y-m-d',$metadata['payment_date']??'',$tz);
+                $dispatchDate=\Carbon\CarbonImmutable::createFromFormat('!Y-m-d',$metadata['dispatch_date']??'',$tz);
+                if (!$paymentDate||!$dispatchDate||$paymentDate->format('Y-m-d')!==($metadata['payment_date']??null)
+                    ||$dispatchDate->format('Y-m-d')!==($metadata['dispatch_date']??null)
+                    ||$paymentDate->lt($order->placed_at->copy()->timezone($tz)->startOfDay())
+                    ||$paymentDate->gt($paid->copy()->timezone($tz)->startOfDay())||$dispatchDate->gt(now($tz)->startOfDay()))
+                    throw new DomainException('DATE_UNVERIFIED');
+                $method=$order->payment_method==='paytr'?'ODEMEARACISI':'EFT/HAVALE';
+                (new EdmInternetSaleDetails)->build(EdmStoreScope::website(),$method,
+                    $method==='ODEMEARACISI'?'PAYTR':null,$paymentDate,$dispatchDate,$metadata['carrier_vkn']??'',$metadata['carrier_title']??'');
+                foreach (['actual_payment_date','dispatch_date','carrier_identity'] as $field) $checks[$field]='operator_confirmed';
+                $internetDetailsVerified=true;
+            } catch (\Throwable) {
+                // Never replace missing or inconsistent source evidence with guessed values.
+            }
+        }
         $carrier=$order->shippingShipment?->carrier?->name?:$order->carrier_name;
         $this->unchanged($account);
         return ['type'=>$type,'website'=>EdmStoreScope::website(),'checks'=>$checks,'series'=>$series,
             'gross_cents'=>$gross,'payment_method'=>$order->payment_method,
             'payment_verified_at'=>$paid?->timezone('Europe/Istanbul')->format('d.m.Y H:i'),
             'carrier_name'=>is_string($carrier)?$carrier:null,
-            'submission_allowed'=>false];
+            'internet_details_prepared'=>$internetDetailsVerified,'submission_allowed'=>false];
     }
 
     private function unchanged(EdmSetting $account): void
