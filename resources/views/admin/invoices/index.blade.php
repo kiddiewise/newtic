@@ -36,22 +36,27 @@
   </div>
   @forelse($pending as $order)
     <article style="padding:12px 0;border-bottom:1px solid var(--admin-border,#ddd)">
-      <label class="admin-check"><input type="checkbox" name="orders[]" value="{{ $order->id }}" form="invoice-bulk"> {{ $order->order_number }} · {{ $order->statusLabel() }}</label>
+      <label class="admin-check"><input type="checkbox" name="orders[]" value="{{ $order->id }}" form="invoice-bulk" @disabled(isset($archiveMetadata[$order->id]))> {{ $order->order_number }} · {{ $order->statusLabel() }}</label>
       <div class="admin-detail-line"><a href="{{ route('admin.orders.show',$order) }}">Siparişi aç</a><strong>{{ number_format($order->total_cents/100,2,',','.') }} TL</strong></div>
-      @if($canQueue)
+      @if(isset($archiveMetadata[$order->id]))
+        <p role="status">e-Arşiv hazırlığı kaydedildi · Seri {{ $archiveMetadata[$order->id]->series }}. e-Fatura yüklemesi kapalı; e-Arşiv aktarımı henüz açılmadı.</p>
+      @endif
+      @if($canQueue && !isset($archiveMetadata[$order->id]))
         <details style="margin:12px 0"><summary>Belge türü ve e-Arşiv ön kontrolü</summary>
           <form method="POST" action="{{ route('admin.invoices.order-preflight',['order'=>$order->id]) }}" class="admin-form">@csrf
             <label>EDM test gönderici VKN/TCKN<input name="seller_id" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" required autocomplete="off" value="{{ \App\Services\Invoices\EdmStoreScope::website()===\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL ? \App\Services\Invoices\EdmSandboxSmokeFixture::IDENTIFIER : '' }}"></label>
             <label class="admin-check"><input type="checkbox" name="synthetic_confirm" value="1" required> Bu sipariş yalnızca sentetik test verisi içeriyor; mükellef sorgusunu onaylıyorum.</label>
             <label class="admin-check"><input type="checkbox" name="anonymous_test" value="1"> Kimliği olmayan sentetik bireysel alıcı için e-Arşiv teknik prova adayı</label>
             <details><summary>Doğrulanmış ödeme ve sevk bilgileri (isteğe bağlı)</summary>
-              <p>Gerçek işlem tarihi ve taşıyıcının yasal bilgileri kayıtlı değilse yalnızca doğrulanmış kaynaklardan girin. Bu bilgiler kaydedilmez.</p>
+              <p>Gerçek işlem tarihi ve taşıyıcının yasal bilgileri kayıtlı değilse yalnızca doğrulanmış kaynaklardan girin. Ön kontrol varsayılan olarak kayıt yapmaz.</p>
               <label>Ödeme tarihi<input type="date" name="payment_date"></label>
               <label>Sevk tarihi<input type="date" name="dispatch_date"></label>
               <label>Taşıyıcı VKN<input name="carrier_vkn" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off"></label>
               <label>Taşıyıcı yasal unvanı<input name="carrier_title" maxlength="255"></label>
               <label class="admin-check"><input type="checkbox" name="confirm_metadata" value="1"> Bu test ödeme ve sevk bilgilerini doğruladım.</label>
             </details>
+            <label>Doğrulanmış e-Arşiv seri adayı (kayıt için)<input name="archive_series" pattern="[A-Z0-9]{3}" maxlength="3" autocomplete="off"></label>
+            <label class="admin-check"><input type="checkbox" name="save_metadata" value="1"> Doğrulanan e-Arşiv bilgilerini bu sipariş için kaydet; e-Fatura gönderimini kapat.</label>
             <button class="admin-secondary" type="submit">Sipariş bilgilerini kontrol et</button>
             <small>Yalnızca ön kontrol; fatura numarası ayrılmaz ve belge gönderilmez.</small>
           </form>
@@ -70,7 +75,7 @@
           <label>Eksik ürün KDV oranını onayla<select name="missing_product_rate" required><option value="">Oran seçin</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
           <small>Seçilen oran sadece yukarıdaki eksik satırlara uygulanır. Mevcut oranlar korunur.</small>
         @endif
-        <button type="submit" class="admin-secondary" @disabled(!$canQueue)>Fatura oluştur</button>
+        <button type="submit" class="admin-secondary" @disabled(!$canQueue||isset($archiveMetadata[$order->id]))>Fatura oluştur</button>
       </form>
     </article>
   @empty <p>Fatura bekleyen uygun sipariş yok.</p>@endforelse
