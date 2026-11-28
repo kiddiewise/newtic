@@ -30,8 +30,8 @@ final class EdmSandboxDocuments
         $header=$one($i,'HEADER');
         $f=EdmSandboxSmokeFixture::class;
         if (strtolower($i->getAttribute('UUID'))!==strtolower($uuid)||$i->getAttribute('ID')!==$number
-            ||$value($one($header,'SENDER'))!==$f::IDENTIFIER||$value($one($header,'RECEIVER'))!==$f::IDENTIFIER
-            ||$value($one($header,'PROFILEID'))!==$f::PROFILE) throw new EdmLookupFailure('PDF_IDENTITY_MISMATCH');
+            ||$value($one($header,'SENDER'))!==$f::IDENTIFIER||$value($one($header,'RECEIVER'))!==($uuid===EdmArchiveSmokeFixture::UUID?'11111111111':$f::IDENTIFIER)
+            ||$value($one($header,'PROFILEID'))!==($uuid===EdmArchiveSmokeFixture::UUID?'EARSIVFATURA':$f::PROFILE)) throw new EdmLookupFailure('PDF_IDENTITY_MISMATCH');
         $encoded=preg_replace('/[\r\n\t ]/','',$value($one($i,'CONTENT')));
         if (!$encoded || strlen($encoded)>3*1024*1024) throw new EdmLookupFailure('PDF_CONTENT_SIZE');
         $bytes=base64_decode($encoded,true);
@@ -42,7 +42,7 @@ final class EdmSandboxDocuments
 
     public static function store(string $uuid,string $revision,string $number,string $format,#[\SensitiveParameter] string $bytes): array
     {
-        if (!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID],true)||!in_array($format,['xml','pdf'],true)||strlen($bytes)>2*1024*1024||$bytes==='') {
+        if (!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID,EdmArchiveSmokeFixture::UUID],true)||!in_array($format,['xml','pdf'],true)||strlen($bytes)>2*1024*1024||$bytes==='') {
             throw new DomainException('SANDBOX_ARTIFACT_SCOPE');
         }
         $digest=hash('sha256',$bytes);
@@ -67,7 +67,7 @@ final class EdmSandboxDocuments
     public static function download(string $uuid,string $format): array
     {
         if (rtrim((string)config('app.url'),'/')!==EdmSandboxSmokeFixture::STAGING_URL
-            ||!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID],true)||!in_array($format,['xml','pdf'],true)) abort(404);
+            ||!in_array($uuid,[EdmSecondSandboxFixture::UUID,EdmSecondSandboxFixture::NAMESPACE_UUID,EdmArchiveSmokeFixture::UUID],true)||!in_array($format,['xml','pdf'],true)) abort(404);
         $account=\App\Models\EdmSetting::query()->find(1);
         if (!$account?->configured()||!$account->revision) abort(404);
         $row=DB::table('edm_sandbox_documents')->where('uuid',$uuid)->where('format',$format)
