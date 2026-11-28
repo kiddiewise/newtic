@@ -289,6 +289,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/faturalar/{attempt}/belge/{format}',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'downloadDocument'])->where('format','xml|pdf')->name('invoices.documents.download');
     Route::post('/faturalar/{attempt}/gonder',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'sendDraft'])->middleware('throttle:4,1')->name('invoices.send');
     Route::post('/faturalar/{attempt}/durum', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'reconcile'])->middleware('throttle:edm-lookup')->name('invoices.reconcile');
+    Route::post('/fatura-ayarlari/edm/arsiv-test-belgeleri',[\App\Http\Controllers\Admin\EdmSettingsController::class,'refreshArchiveSmoke'])->middleware('throttle:edm-lookup')->name('edm.archive.refresh');
     Route::get('/fatura-ayarlari/edm/test-belge/{uuid}/{format}', [\App\Http\Controllers\Admin\EdmSettingsController::class,'downloadSandboxDocument'])->where('format','xml|pdf')->name('edm.sandbox.download');
     Route::get('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'edit'])->name('edm.edit');
     Route::patch('/fatura-ayarlari/edm', [\App\Http\Controllers\Admin\EdmSettingsController::class, 'update'])->middleware('throttle:edm-settings')->name('edm.update');
