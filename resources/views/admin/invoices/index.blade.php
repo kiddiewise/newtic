@@ -30,6 +30,7 @@
   <div class="admin-form">
     <label>Kargo KDV oranı (gerekirse)<select name="shipping_rate" form="invoice-bulk"><option value="">Kayıtlı oranı kullan</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
     <label>Eksik ürün KDV oranı (eski siparişler)<select name="missing_product_rate" form="invoice-bulk"><option value="">Yalnızca kayıtlı ürün oranlarını kullan</option>@foreach([1,10,20] as $rate)<option value="{{ $rate }}">%{{ $rate }}</option>@endforeach</select></label>
+    <p>Mevcut fatura oluşturma akışı e-Fatura test taslağıdır. e-Arşiv için sipariş ön kontrolünü kullanın; bu sürümde e-Arşiv yüklemesi açılmaz.</p>
     <p>Seçim yalnızca KDV bilgisi boş ürün satırlarını tamamlar. Mevcut oranları değiştirmez. Farklı oranlı eski ürünler için siparişleri ayrı ayrı kontrol edin.</p>
     <button class="admin-primary" type="submit" form="invoice-bulk" @disabled(!$canQueue||$pending->isEmpty())>Seçilen faturaları oluştur</button>
   </div>
@@ -37,6 +38,17 @@
     <article style="padding:12px 0;border-bottom:1px solid var(--admin-border,#ddd)">
       <label class="admin-check"><input type="checkbox" name="orders[]" value="{{ $order->id }}" form="invoice-bulk"> {{ $order->order_number }} · {{ $order->statusLabel() }}</label>
       <div class="admin-detail-line"><a href="{{ route('admin.orders.show',$order) }}">Siparişi aç</a><strong>{{ number_format($order->total_cents/100,2,',','.') }} TL</strong></div>
+      @if($canQueue)
+        <details style="margin:12px 0"><summary>Belge türü ve e-Arşiv ön kontrolü</summary>
+          <form method="POST" action="{{ route('admin.invoices.order-preflight',['order'=>$order->id]) }}" class="admin-form">@csrf
+            <label>EDM test gönderici VKN/TCKN<input name="seller_id" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" required autocomplete="off" value="{{ \App\Services\Invoices\EdmStoreScope::website()===\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL ? \App\Services\Invoices\EdmSandboxSmokeFixture::IDENTIFIER : '' }}"></label>
+            <label class="admin-check"><input type="checkbox" name="synthetic_confirm" value="1" required> Bu sipariş yalnızca sentetik test verisi içeriyor; mükellef sorgusunu onaylıyorum.</label>
+            <label class="admin-check"><input type="checkbox" name="anonymous_test" value="1"> Kimliği olmayan sentetik bireysel alıcı için e-Arşiv teknik prova adayı</label>
+            <button class="admin-secondary" type="submit">Sipariş bilgilerini kontrol et</button>
+            <small>Yalnızca ön kontrol; fatura numarası ayrılmaz ve belge gönderilmez.</small>
+          </form>
+        </details>
+      @endif
       <form method="POST" action="{{ route('admin.invoices.create') }}" class="admin-form">@csrf
         <input type="hidden" name="orders[]" value="{{ $order->id }}">
         @if($order->shipping_cents>0)
