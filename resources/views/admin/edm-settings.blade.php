@@ -180,6 +180,9 @@
   <div class="admin-panel-title"><h2>EDM kontrollü test kayıtları</h2></div>
   <p>Yalnızca test hesabı. Taslak onayı, imza veya GİB gönderim başarısı değildir. Tekrar yükleme yapılamaz.</p>
   @foreach($sandboxTrials as $trial)
+    @if($trial->uuid===\App\Services\Invoices\EdmArchiveSmokeFixture::UUID && $trial->load_status==='draft_acknowledged')
+      <form method="POST" action="{{ route('admin.edm.archive.refresh') }}" class="admin-form">@csrf<button class="admin-secondary" type="submit">e-Arşiv test PDF / XML ve durumunu sorgula</button></form>
+    @endif
     <div class="admin-detail-line" style="overflow-wrap:anywhere"><span>ETTN</span><strong>{{ $trial->uuid }}</strong></div>
     <div class="admin-detail-line"><span>Yükleme</span><strong>{{ ['reserved_unknown'=>'Sonuç belirsiz','unconfirmed'=>'Doğrulanamadı','draft_acknowledged'=>'Taslak onaylandı'][$trial->load_status] ?? 'Bilinmiyor' }}</strong></div>
     <div class="admin-detail-line"><span>Fatura numarası</span><strong>{{ $trial->allocated_invoice_id ?? 'Doğrulanmadı' }}</strong></div>
