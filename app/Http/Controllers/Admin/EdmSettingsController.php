@@ -46,6 +46,13 @@ final class EdmSettingsController extends Controller
         ])->header('Cache-Control','private, no-store, max-age=0');
     }
 
+    public function refreshArchiveSmoke(EdmTestClient $client): RedirectResponse
+    {
+        try {$client->refreshArchiveSmokeDocuments();}
+        catch(Throwable){return redirect()->route('admin.edm.edit')->withErrors(['edm'=>'e-Arşiv test belgeleri doğrulanamadı; yeniden fatura yüklenmedi.']);}
+        return redirect()->route('admin.edm.edit')->with('success','e-Arşiv test belgesi sorgulandı.');
+    }
+
     public function downloadSandboxDocument(string $uuid,string $format): Response
     {
         $document=\App\Services\Invoices\EdmSandboxDocuments::download($uuid,$format);
