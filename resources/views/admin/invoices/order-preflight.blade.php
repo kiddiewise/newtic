@@ -11,11 +11,12 @@
   <div class="admin-detail-line"><span>Ödemenin sistemde doğrulandığı zaman</span><strong>{{ $result['payment_verified_at']??'Doğrulanamadı' }}</strong></div>
   <div class="admin-detail-line"><span>Kayıtlı kargo firması</span><strong>{{ $result['carrier_name']??'Kayıt yok' }}</strong></div>
   @php($fields=['website'=>'Mağaza adresi','buyer'=>'Mükellefiyet','series'=>'Bu yılın internet satış serisi','recipient_details'=>'Alıcı bilgileri','amounts'=>'Ürün, kargo ve KDV hesapları','payment_evidence'=>'Ödeme doğrulaması','actual_payment_date'=>'Gerçek ödeme tarihi','dispatch_date'=>'Gerçek sevk tarihi','carrier_identity'=>'Taşıyıcı VKN ve unvanı'])
-  @php($states=['ok'=>'Doğrulandı','synthetic'=>'Yalnızca sentetik prova','missing'=>'Eksik','unverified'=>'Doğrulanamadı','requires_confirmation'=>'Belgeyle doğrulanmalı','available'=>'Aktif seri bulundu','not_found'=>'Aktif seri bulunamadı','partial'=>'Seri kayıtları kısmen doğrulandı','not_applicable'=>'Uygulanmaz'])
+  @php($states=['ok'=>'Doğrulandı','synthetic'=>'Yalnızca sentetik prova','missing'=>'Eksik','unverified'=>'Doğrulanamadı','requires_confirmation'=>'Belgeyle doğrulanmalı','operator_confirmed'=>'Yönetici onayıyla teknik kontrol tamamlandı','available'=>'Aktif seri bulundu','not_found'=>'Aktif seri bulunamadı','partial'=>'Seri kayıtları kısmen doğrulandı','not_applicable'=>'Uygulanmaz'])
   @foreach($result['checks'] as $key=>$state)
     <div class="admin-detail-line"><span>{{ $fields[$key]??$key }}</span><strong>{{ $states[$state]??'Doğrulanamadı' }}</strong></div>
   @endforeach
   @foreach($result['series'] as $series)<div class="admin-detail-line"><span>e-Arşiv seri adayı</span><strong>{{ $series }}</strong></div>@endforeach
+  @if($result['internet_details_prepared'])<p role="status">İnternet satış alanları yerel teknik kontrolden geçti. Bu sonuç EDM kabulü değildir.</p>@endif
   <p>Ödeme doğrulama zamanı banka işlem tarihiyle aynı olmayabilir. Sevk tarihi veya taşıyıcı vergi bilgisi tahmin edilmez. e-Arşiv yüklemesi bu sürümde kapalıdır.</p>
 </section>
 @endsection
