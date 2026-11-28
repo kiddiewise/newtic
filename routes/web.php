@@ -283,6 +283,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::post('/faturalar/olustur',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'createInvoices'])->middleware('throttle:8,1')->name('invoices.create');
     Route::post('/faturalar/ayarlar',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'settings'])->middleware('throttle:8,1')->name('invoices.settings');
     Route::get('/faturalar', [\App\Http\Controllers\Admin\InvoiceCenterController::class,'index'])->name('invoices.index');
+    Route::post('/faturalar/siparis/{order}/on-kontrol',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'orderPreflight'])->middleware('throttle:edm-lookup')->name('invoices.order-preflight');
     Route::post('/faturalar/alici-kontrol',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'classifyBuyer'])->middleware('throttle:edm-lookup')->name('invoices.buyer-check');
     Route::post('/faturalar/{attempt}/belgeler',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'refreshDocuments'])->middleware('throttle:edm-lookup')->name('invoices.documents.refresh');
     Route::get('/faturalar/{attempt}/belge/{format}',[\App\Http\Controllers\Admin\InvoiceCenterController::class,'downloadDocument'])->where('format','xml|pdf')->name('invoices.documents.download');
