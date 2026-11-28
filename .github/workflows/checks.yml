@@ -163,7 +163,7 @@ jobs:
       - name: Run tests
         run: php artisan test
       - name: Validate exact one-shot EDM sandbox payload before staging
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && (contains(github.event.head_commit.message, '[edm-smoke]') || contains(github.event.head_commit.message, '[edm-second]') || contains(github.event.head_commit.message, '[edm-namespace]')) && !contains(github.event.head_commit.message, '[package-only]')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && (contains(github.event.head_commit.message, '[edm-smoke]') || contains(github.event.head_commit.message, '[edm-second]') || contains(github.event.head_commit.message, '[edm-namespace]') || contains(github.event.head_commit.message, '[edm-archive-smoke]')) && !contains(github.event.head_commit.message, '[package-only]')
         run: |
           set -euo pipefail
           sudo apt-get update -qq
@@ -181,12 +181,13 @@ jobs:
           export NEWTIC_EDM_SMOKE_DATE="$(TZ=Europe/Istanbul date +%F)"
           export NEWTIC_GIB_CANDIDATES="$RUNNER_TEMP/edm-smoke-candidates"
           mkdir -m 700 "$NEWTIC_GIB_CANDIDATES"
-          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception|test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting|test_namespace_corrected_fixture_has_literal_party_tags_and_valid_xsd_shape|test_second_numbered_smoke_with_pinned_template|test_queued_order_draft_payload_with_pinned_template_preserves_money_not_customer_data|test_order_dispatch_worker_with_pinned_template_calls_edm_once_after_numbered_trial' --fail-on-skipped --fail-on-warning
+          vendor/bin/phpunit --filter 'test_export_synthetic_candidates_for_official_rules_when_configured|test_archive_smoke_exact_xml_export_and_presigning_schema|test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception|test_second_fixture_embeds_pinned_template_and_requests_number_without_submitting|test_namespace_corrected_fixture_has_literal_party_tags_and_valid_xsd_shape|test_second_numbered_smoke_with_pinned_template|test_queued_order_draft_payload_with_pinned_template_preserves_money_not_customer_data|test_order_dispatch_worker_with_pinned_template_calls_edm_once_after_numbered_trial' --fail-on-skipped --fail-on-warning
           sudo unshare --net -- runuser -u "$(id -un)" -- /usr/bin/python3 tools/gib_schematron_rehearsal.py "$RUNNER_TEMP/edm-smoke-gib.zip" "$NEWTIC_GIB_CANDIDATES" "$RUNNER_TEMP/edm-smoke-rules"
           printf 'NEWTIC_SMOKE_DATE=%s\n' "$NEWTIC_EDM_SMOKE_DATE" >> "$GITHUB_ENV"
           printf 'NEWTIC_SMOKE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_CONTROLLED_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           printf 'NEWTIC_SECOND_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_SECOND_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           printf 'NEWTIC_NAMESPACE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_NAMESPACE_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          printf 'NEWTIC_ARCHIVE_SHA=%s\n' "$(sha256sum "$NEWTIC_GIB_CANDIDATES/EDM_ARCHIVE_SMOKE.xml" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           printf 'NEWTIC_SECOND_TEMPLATE=%s\n' "$NEWTIC_EDM_SECOND_XSLT" >> "$GITHUB_ENV"
       - name: End-to-end blank MySQL first install with Hostinger PHP exec disabled
         run: |
@@ -419,6 +420,13 @@ jobs:
           test -s "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 240 php artisan edm:smoke-load-namespace '$NEWTIC_SMOKE_DATE' '$NEWTIC_NAMESPACE_SHA' LOAD-ONE-NAMESPACE-CORRECTED-TEST-DRAFT --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && php artisan edm:install-order-template --no-ansi" < "$NEWTIC_SECOND_TEMPLATE"
+      - name: Run explicitly authorized isolated archive sandbox draft
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-archive-smoke]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          set -euo pipefail
+          [[ "$NEWTIC_SMOKE_DATE" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
+          [[ "$NEWTIC_ARCHIVE_SHA" =~ ^[a-f0-9]{64}$ ]]
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 180 php artisan edm:archive-smoke-load '$NEWTIC_SMOKE_DATE' AUTO '$NEWTIC_ARCHIVE_SHA' LOAD-ONE-SYNTHETIC-ARCHIVE-DRAFT --no-ansi"
       - name: Read existing acknowledged sandbox order documents
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-order-docs]') && !contains(github.event.head_commit.message, '[package-only]')
         run: |
