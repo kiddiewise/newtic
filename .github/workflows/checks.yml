@@ -427,6 +427,10 @@ jobs:
           [[ "$NEWTIC_SMOKE_DATE" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
           [[ "$NEWTIC_ARCHIVE_SHA" =~ ^[a-f0-9]{64}$ ]]
           ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 180 php artisan edm:archive-smoke-load '$NEWTIC_SMOKE_DATE' AUTO '$NEWTIC_ARCHIVE_SHA' LOAD-ONE-SYNTHETIC-ARCHIVE-DRAFT --no-ansi"
+      - name: Read isolated archive sandbox draft documents
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-archive-smoke]') && !contains(github.event.head_commit.message, '[package-only]')
+        run: |
+          ssh -p 65002 -i ~/.ssh/newtic-deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 u880685189@147.79.123.121 "cd \"\$HOME/domains/powderblue-dinosaur-538060.hostingersite.com/newtic\" && timeout 180 php artisan edm:archive-smoke-documents --no-ansi" || echo "Archive readback unconfirmed; do not reload"
       - name: Read existing acknowledged sandbox order documents
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.NEWTIC_DEPLOY_ENABLED == 'true' && contains(github.event.head_commit.message, '[edm-order-docs]') && !contains(github.event.head_commit.message, '[package-only]')
         run: |
