@@ -382,6 +382,28 @@ final class UblSaleCandidateTest extends TestCase
     }
 
 
+    public function test_archive_smoke_exact_xml_export_and_presigning_schema(): void
+    {
+        $schema=getenv('NEWTIC_GIB_XSD');
+        $dir=getenv('NEWTIC_GIB_CANDIDATES');
+        if (!$schema || !$dir) $this->markTestSkipped('Pinned validation environment required.');
+        $date=getenv('NEWTIC_EDM_SMOKE_DATE')?:'2026-11-28';
+        $f=\App\Services\Invoices\EdmArchiveSmokeFixture::class;
+        $url=\App\Services\Invoices\EdmSandboxSmokeFixture::STAGING_URL;
+        $r=$f::prepare($date,'EA1',$url);
+        $this->assertSame($r['xml'],$f::prepare($date,'EA2',$url)['xml']);
+        $doc=new DOMDocument();
+        $this->assertTrue($doc->loadXML($r['xml'],LIBXML_NONET));
+        $old=libxml_use_internal_errors(true);libxml_clear_errors();
+        try {
+            $this->assertFalse($doc->schemaValidate($schema));
+            $errors=libxml_get_errors();
+            $this->assertNotEmpty($errors);
+            foreach ($errors as $e) $this->assertTrue(str_contains($e->message,'ExtensionContent')&&str_contains($e->message,'Missing child'),'Unexpected archive XSD failure');
+        } finally {libxml_clear_errors();libxml_use_internal_errors($old);}
+        $this->assertNotFalse(file_put_contents($dir.'/EDM_ARCHIVE_SMOKE.xml',$r['xml']));
+    }
+
     public function test_controlled_smoke_exact_xml_has_only_expected_presigning_xsd_exception(): void
     {
         $schema=getenv('NEWTIC_GIB_XSD');
