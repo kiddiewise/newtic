@@ -111,6 +111,22 @@ final class InvoiceCenterController extends Controller
         catch(Throwable) {return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Gönderim koşulları doğrulanamadı veya önceki gönderim kaydı var. Yeniden yükleme yapmayın.']);}
         return redirect()->route('admin.invoices.index')->with('success',$state==='accepted_for_processing'?'EDM gönderim isteğini kabul etti; nihai durum ayrıca sorgulanmalıdır.':'Gönderim sonucu belirsiz. Tekrar gönderilmez; durumu sorgulayın.');
     }
+    public function orderPreflight(Request $request,\App\Models\Order $order,\App\Services\Invoices\EdmOrderArchivePreflight $service,EdmTestClient $client): Response|RedirectResponse
+    {
+        abort_unless(\App\Services\Invoices\EdmStoreScope::sandboxOrders()&&$order->is_test,404);
+        $v=\Illuminate\Support\Facades\Validator::make($request->only('seller_id','synthetic_confirm','anonymous_test'),[
+            'seller_id'=>['required','string','regex:/^[0-9]{10,11}$/D','not_in:11111111111'],
+            'synthetic_confirm'=>['required','accepted'],'anonymous_test'=>['nullable','boolean'],
+        ]);
+        if ($v->fails()) return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Geçerli test firma kimliği ve sentetik veri onayı gerekli.']);
+        $a=EdmSetting::query()->find(1);
+        abort_unless($a?->configured()&&$a->probe_status==='ok',409);
+        try {$r=$service->inspect($order,$a,$client,$v->validated()['seller_id'],$request->boolean('anonymous_test'));}
+        catch(Throwable) {return redirect()->route('admin.invoices.index')->withErrors(['invoice'=>'Sipariş ön kontrolü doğrulanamadı. Fatura gönderilmedi.']);}
+        return response()->view('admin.invoices.order-preflight',['result'=>$r,'orderNumber'=>$order->order_number])
+            ->header('Cache-Control','private, no-store, max-age=0');
+    }
+
     public function classifyBuyer(Request $request,EdmTestClient $client): Response
     {
         abort_unless(\App\Services\Invoices\InvoiceDispatch::staging(),404);
@@ -118,10 +134,9 @@ final class InvoiceCenterController extends Controller
         $a=EdmSetting::query()->find(1);
         abort_unless($a?->configured()&&$a->probe_status==='ok',409);
         $r=$client->taxpayer($a->username,$a->password,$d['identifier']);
-        $valid=EdmSetting::query()->whereKey(1)->where('revision',$a->revision)->exists()&&$r['status']==='ok'&&($r['data']['unverified_records']??0)===0;
-        $type='Belge türü doğrulanamadı';
-        if ($valid && count($r['data']['aliases']??[])) $type='e-Fatura';
-        elseif ($valid && !count($r['data']['sender_aliases']??[])) $type='e-Arşiv adayı — satış ve sevk bilgileri doğrulanmalı';
+        $valid=EdmSetting::query()->whereKey(1)->where('revision',$a->revision)->where('probe_status','ok')->exists();
+        $kind=$valid?\App\Services\Invoices\EdmOrderArchivePreflight::documentType($r):'unknown';
+        $type=['einvoice'=>'e-Fatura','archive_candidate'=>'e-Arşiv adayı — satış ve sevk bilgileri doğrulanmalı','unknown'=>'Belge türü doğrulanamadı'][$kind];
         return response()->view('admin.invoices.buyer-check',compact('type'))->header('Cache-Control','private, no-store');
     }
 
