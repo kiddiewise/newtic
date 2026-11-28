@@ -15,7 +15,7 @@ final class InvoiceDispatch
 {
     public const STATUSES=['preparing','shipped','out_for_delivery','completed'];
     public static function staging(): bool {
-        return rtrim((string)config('app.url'),'/')===EdmSandboxSmokeFixture::STAGING_URL;
+        return EdmStoreScope::sandboxOrders();
     }
     public static function ready(?EdmSetting $account): bool {
         return self::staging() && $account?->configured() && $account->revision && $account->probe_status==='ok'

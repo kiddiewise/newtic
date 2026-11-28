@@ -15,11 +15,12 @@ final class EdmOrderDraftPayload
         $snapshot=$draft->amounts;
         InvoiceSnapshotRules::validate($snapshot);
         if (!hash_equals($draft->snapshot_hash,hash('sha256',json_encode($snapshot,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)))) throw new DomainException('ORDER_SNAPSHOT_CHANGED');
-        // Caller passes the staging order only; operator confirmed all current
-        // staging orders are synthetic. Use its actual product labels and order
-        // reference. Historical offline fixtures retain the anonymized variant.
+        // Existing Polaris test site alone has explicit merchant consent for
+        // site-entered synthetic names and addresses. Other stores use the
+        // anonymized path, even for test orders.
         if ($order!==null && (!InvoiceDispatch::staging()||!$order->is_test||$order->id!==$draft->order_id))
             throw new DomainException('ORDER_DATA_SCOPE');
+        if (EdmStoreScope::website()!==EdmSandboxSmokeFixture::STAGING_URL) $order=null;
         if ($order===null) {
             foreach ($snapshot['lines'] as $i=>&$line) $line['label']=$line['kind']==='shipping'?'Kargo':'Ürün '.($i+1);
             unset($line);
